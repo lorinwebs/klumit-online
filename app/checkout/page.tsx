@@ -31,9 +31,9 @@ export default function CheckoutPage() {
                 },
               ],
             },
-          });
+          }) as { cartCreate?: { cart?: { id?: string } } };
 
-          currentCartId = createCartResponse.cartCreate?.cart?.id;
+          currentCartId = createCartResponse.cartCreate?.cart?.id || null;
           if (currentCartId) {
             setCartId(currentCartId);
           }
@@ -60,7 +60,7 @@ export default function CheckoutPage() {
               }
             }`,
             { id: currentCartId }
-          );
+          ) as { cart?: { checkoutUrl?: string } };
 
           if (cartResponse.cart?.checkoutUrl) {
             window.location.href = cartResponse.cart.checkoutUrl;
