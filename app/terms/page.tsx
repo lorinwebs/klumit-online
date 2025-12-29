@@ -63,7 +63,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-light luxury-font mb-4">מחירים</h2>
             <p className="font-light leading-relaxed text-gray-700">
-              כל המחירים באתר מצוינים בשקלים חדשים (₪) וכוללים מע"מ, אלא אם צוין אחרת. אנו שומרים לעצמנו את הזכות לשנות מחירים בכל עת ללא הודעה מוקדמת.
+              כל המחירים באתר מצוינים בשקלים חדשים (₪) וכוללים מע&quot;מ, אלא אם צוין אחרת. אנו שומרים לעצמנו את הזכות לשנות מחירים בכל עת ללא הודעה מוקדמת.
             </p>
           </section>
 
