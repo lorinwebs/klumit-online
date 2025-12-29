@@ -18,6 +18,7 @@ export default function VerifyEmailPage() {
     async function verifyEmail() {
       const token = searchParams.get('token');
       const tokenHash = searchParams.get('token_hash');
+      const email = searchParams.get('email');
       const type = searchParams.get('type');
 
       // Supabase שולח token_hash בקישור האימות
@@ -41,16 +42,41 @@ export default function VerifyEmailPage() {
             return;
           }
         } else if (token) {
-          // נסה עם token (פורמט ישן)
-          const { error } = await supabase.auth.verifyOtp({
-            token: token,
-            type: 'email',
-          });
+          // נסה עם token (פורמט ישן) - צריך אימייל
+          if (!email) {
+            // ננסה לקבל את האימייל מה-session הנוכחי
+            const { data: { session } } = await supabase.auth.getSession();
+            const userEmail = session?.user?.email || email;
+            
+            if (!userEmail) {
+              setStatus('error');
+              setMessage('קישור אימות לא תקין - חסר אימייל');
+              return;
+            }
 
-          if (error) {
-            setStatus('error');
-            setMessage('קישור אימות פג תוקף או לא תקין');
-            return;
+            const { error } = await supabase.auth.verifyOtp({
+              token: token,
+              type: 'email',
+              email: userEmail,
+            });
+
+            if (error) {
+              setStatus('error');
+              setMessage('קישור אימות פג תוקף או לא תקין');
+              return;
+            }
+          } else {
+            const { error } = await supabase.auth.verifyOtp({
+              token: token,
+              type: 'email',
+              email: email,
+            });
+
+            if (error) {
+              setStatus('error');
+              setMessage('קישור אימות פג תוקף או לא תקין');
+              return;
+            }
           }
         }
 
