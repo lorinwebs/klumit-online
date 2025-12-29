@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { User, LogOut } from 'lucide-react';
+import { supabase, type User } from '@/lib/supabase';
+import { User as UserIcon, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function UserMenu() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -44,7 +44,7 @@ export default function UserMenu() {
         className="p-2 hover:opacity-70 transition-opacity"
         aria-label="התחברות"
       >
-        <User size={24} className="text-[#1a1a1a]" />
+        <UserIcon size={24} className="text-[#1a1a1a]" />
       </Link>
     );
   }
@@ -58,7 +58,7 @@ export default function UserMenu() {
   return (
     <div className="relative group">
       <button className="p-2 hover:opacity-70 transition-opacity">
-        <User size={24} className="text-[#1a1a1a]" />
+        <UserIcon size={24} className="text-[#1a1a1a]" />
       </button>
       <div className="absolute left-0 top-full mt-2 w-48 bg-white border border-gray-200 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
         <div className="p-4 border-b border-gray-200">

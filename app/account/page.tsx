@@ -1,15 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, type User } from '@/lib/supabase';
 import { getShopifyCustomerId, syncCustomerToShopify } from '@/lib/sync-customer';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { User, Phone, Package, Check, Edit2, Mail } from 'lucide-react';
+import { User as UserIcon, Phone, Package, Check, Edit2, Mail } from 'lucide-react';
 
 export default function AccountPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [shopifyCustomerId, setShopifyCustomerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -65,7 +65,14 @@ export default function AccountPage() {
       }
 
       // עדכן את הפרופיל ב-Supabase
-      const updateData: any = {
+      const updateData: {
+        data: {
+          first_name: string;
+          last_name: string;
+          email?: string;
+          email_verified?: boolean;
+        };
+      } = {
         data: {
           first_name: formData.firstName,
           last_name: formData.lastName,
@@ -130,8 +137,8 @@ export default function AccountPage() {
           setEmailVerificationSent(false);
         }, 5000);
       }
-    } catch (err: any) {
-      setError(err.message || 'שגיאה בשמירת הפרטים');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'שגיאה בשמירת הפרטים');
       setEmailVerificationSent(false);
     } finally {
       setSaving(false);

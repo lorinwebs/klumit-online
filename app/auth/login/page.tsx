@@ -34,8 +34,8 @@ export default function LoginPage() {
       if (error) throw error;
       
       setStep('verify');
-    } catch (err: any) {
-      setError(err.message || 'שגיאה בשליחת קוד');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'שגיאה בשליחת קוד');
     } finally {
       setLoading(false);
     }
@@ -86,11 +86,11 @@ export default function LoginPage() {
       } else {
         window.location.href = '/';
       }
-    } catch (err: any) {
+    } catch (err) {
       // תרגום שגיאות OTP לעברית
       let errorMessage = 'קוד שגוי';
       
-      if (err.message) {
+      if (err instanceof Error && err.message) {
         const message = err.message.toLowerCase();
         if (message.includes('expired') || message.includes('invalid') || message.includes('token')) {
           errorMessage = 'הקוד פג תוקף או לא תקין. אנא בקש קוד חדש';

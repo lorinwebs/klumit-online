@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, type User } from '@/lib/supabase';
 import { syncCustomerToShopify } from '@/lib/sync-customer';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { User, Phone, Mail } from 'lucide-react';
+import { User as UserIcon, Phone, Mail } from 'lucide-react';
 
 export default function CompleteProfilePage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -78,8 +78,8 @@ export default function CompleteProfilePage() {
 
       // אם OTP נשלח בהצלחה
       setEmailOTPSent(true);
-    } catch (err: any) {
-      setError(err.message || 'שגיאה בשליחת קוד אימות');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'שגיאה בשליחת קוד אימות');
     } finally {
       setVerifyingEmail(false);
     }
@@ -120,8 +120,8 @@ export default function CompleteProfilePage() {
           },
         });
       }
-    } catch (err: any) {
-      setError(err.message || 'שגיאה באימות הקוד');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'שגיאה באימות הקוד');
     } finally {
       setVerifyingEmail(false);
     }
@@ -138,7 +138,14 @@ export default function CompleteProfilePage() {
       }
 
       // עדכן את הפרופיל ב-Supabase
-      const updateData: any = {
+      const updateData: {
+        data: {
+          first_name: string;
+          last_name: string;
+          email?: string;
+          email_verified?: boolean;
+        };
+      } = {
         data: {
           first_name: formData.firstName,
           last_name: formData.lastName,
@@ -179,8 +186,8 @@ export default function CompleteProfilePage() {
 
       // מעבר לדף הבית
       router.push('/');
-    } catch (err: any) {
-      setError(err.message || 'שגיאה בשמירת הפרטים');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'שגיאה בשמירת הפרטים');
     } finally {
       setSaving(false);
     }

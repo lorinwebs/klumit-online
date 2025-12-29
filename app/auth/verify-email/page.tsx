@@ -94,9 +94,9 @@ export default function VerifyEmailPage() {
             router.push('/account');
           }, 2000);
         }
-      } catch (err: any) {
+      } catch (err) {
         setStatus('error');
-        setMessage('שגיאה באימות האימייל');
+        setMessage(err instanceof Error ? err.message : 'שגיאה באימות האימייל');
       }
     }
 
