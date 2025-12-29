@@ -178,7 +178,7 @@ export default function AccountPage() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4 flex-1">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                  <User size={32} className="text-gray-400" />
+                  <UserIcon size={32} className="text-gray-400" />
                 </div>
                 <div className="text-right flex-1">
                   {!editing ? (
