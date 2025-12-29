@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אימות אימייל</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Assistant:wght@200;300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Assistant', sans-serif;
+      background-color: #fdfcfb;
+      color: #1a1a1a;
+      direction: rtl;
+      text-align: right;
+      line-height: 1.6;
+    }
+    
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border: 1px solid #e5e5e5;
+    }
+    
+    .email-header {
+      background-color: #fdfcfb;
+      padding: 40px 30px;
+      text-align: center;
+      border-bottom: 1px solid #e5e5e5;
+    }
+    
+    .email-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 32px;
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      color: #1a1a1a;
+      margin-bottom: 10px;
+    }
+    
+    .email-body {
+      padding: 50px 40px;
+    }
+    
+    .email-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 300;
+      color: #1a1a1a;
+      margin-bottom: 20px;
+      text-align: right;
+      letter-spacing: 0.02em;
+    }
+    
+    .email-text {
+      font-size: 15px;
+      font-weight: 300;
+      color: #4a4a4a;
+      margin-bottom: 30px;
+      text-align: right;
+      line-height: 1.8;
+    }
+    
+    .otp-code {
+      background-color: #f9f9f9;
+      border: 1px solid #e5e5e5;
+      padding: 25px;
+      text-align: center;
+      margin: 30px 0;
+      border-radius: 2px;
+    }
+    
+    .otp-code-number {
+      font-family: 'Assistant', sans-serif;
+      font-size: 36px;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      color: #1a1a1a;
+      font-variant-numeric: tabular-nums;
+    }
+    
+    .email-button {
+      display: inline-block;
+      background-color: #1a1a1a;
+      color: #ffffff;
+      padding: 16px 40px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin: 20px 0;
+      transition: background-color 0.3s ease;
+      text-align: center;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .email-button:hover {
+      background-color: #2a2a2a;
+    }
+    
+    .email-footer {
+      background-color: #fdfcfb;
+      padding: 30px 40px;
+      border-top: 1px solid #e5e5e5;
+      text-align: center;
+    }
+    
+    .email-footer-text {
+      font-size: 12px;
+      font-weight: 300;
+      color: #8a8a8a;
+      margin-bottom: 10px;
+    }
+    
+    .email-link {
+      color: #1a1a1a;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+    
+    .divider {
+      height: 1px;
+      background-color: #e5e5e5;
+      margin: 30px 0;
+    }
+    
+    @media only screen and (max-width: 600px) {
+      .email-body {
+        padding: 30px 20px;
+      }
+      
+      .email-title {
+        font-size: 24px;
+      }
+      
+      .otp-code-number {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="email-header">
+      <div class="email-logo">KLOMIT</div>
+    </div>
+    
+    <div class="email-body">
+      <h1 class="email-title">אימות אימייל</h1>
+      
+      <p class="email-text">
+        שלום,<br><br>
+        תודה שהצטרפת אלינו. כדי להשלים את ההרשמה, אנא השתמש בקוד האימות הבא:
+      </p>
+      
+      <div class="otp-code">
+        <div class="otp-code-number">{{ .Token }}</div>
+      </div>
+      
+      <p class="email-text">
+        הקוד תקף למשך 60 דקות.<br>
+        אם לא ביקשת קוד זה, תוכל להתעלם מהאימייל הזה.
+      </p>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="{{ .ConfirmationURL }}" class="email-button">אימות אימייל</a>
+      </div>
+      
+      <div class="divider"></div>
+      
+    
+    <div class="email-footer">
+      <p class="email-footer-text">
+        עם ברכה,<br>
+        צוות KLOMIT
+      </p>
+      <p class="email-footer-text" style="margin-top: 15px;">
+        אם יש לך שאלות, אנא צור איתנו קשר
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+
