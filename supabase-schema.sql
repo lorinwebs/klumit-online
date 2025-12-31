@@ -41,3 +41,4 @@ CREATE TRIGGER update_user_shopify_sync_updated_at
 
 
 
+
