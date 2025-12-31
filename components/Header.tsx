@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingBag, Menu } from 'lucide-react';
+import { ShoppingBag, Menu, Package } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useState, useEffect } from 'react';
 import UserMenu from './UserMenu';
@@ -40,6 +40,14 @@ export default function Header() {
 
           <div className="flex items-center gap-4">
             <UserMenu />
+            {/* Mobile - Products Icon */}
+            <Link 
+              href="/products" 
+              className="md:hidden p-2 hover:opacity-70 transition-opacity"
+              aria-label="תיקים"
+            >
+              <Package size={24} className="text-[#1a1a1a]" />
+            </Link>
             <Link 
               href="/cart" 
               className="relative p-2 hover:opacity-70 transition-opacity"

@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
 import { shopifyClient, PRODUCTS_QUERY } from '@/lib/shopify';
 
 interface Product {
@@ -38,10 +37,136 @@ interface Product {
   };
 }
 
+interface FeaturedProductItemProps {
+  product: Product;
+  index: number;
+  totalProducts: number;
+  scrollYProgress: MotionValue<number>;
+}
+
+function FeaturedProductItem({ product, index, totalProducts, scrollYProgress }: FeaturedProductItemProps) {
+  const productScrollProgress = useTransform(
+    scrollYProgress,
+    [
+      index / totalProducts,
+      (index + 1) / totalProducts,
+    ],
+    [0, 1]
+  );
+
+  const imageY = useTransform(productScrollProgress, [0, 1], [100, -100]);
+  const textY = useTransform(productScrollProgress, [0, 1], [-50, 50]);
+  const opacity = useTransform(productScrollProgress, [0, 0.3, 0.7, 1], [0.3, 1, 1, 0.3]);
+
+  const firstVariant = product.variants.edges[0]?.node;
+  const firstImage = product.images.edges[0]?.node;
+  
+  // פורמט מחיר פרימיום
+  const formatPrice = (amount: string) => {
+    const num = parseFloat(amount);
+    return Math.round(num).toLocaleString('he-IL');
+  };
+  
+  const price = formatPrice(product.priceRange.minVariantPrice.amount);
+
+  return (
+    <motion.div
+      style={{ opacity }}
+      className="relative min-h-[80vh] md:min-h-[90vh] flex items-center"
+    >
+      <div className={`w-full grid md:grid-cols-2 gap-4 md:gap-8 items-start ${
+        index % 2 === 0 ? '' : 'md:grid-flow-col-dense'
+      }`}>
+        {/* Image */}
+        <motion.div
+          style={{ y: imageY }}
+          className={`relative aspect-[3/4] overflow-hidden bg-[#f9f9f9] ${
+            index % 2 === 0 ? 'md:order-1' : 'md:order-2'
+          }`}
+        >
+          {firstImage?.url ? (
+            <Image
+              src={firstImage.url}
+              alt={product.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority={index === 0}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm font-light">
+              אין תמונה
+            </div>
+          )}
+          {/* Decorative overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
+        </motion.div>
+
+        {/* Product Info */}
+        <motion.div
+          style={{ y: textY }}
+          className={`text-right ${
+            index % 2 === 0 ? 'md:order-2' : 'md:order-1'
+          }`}
+        >
+          <div className="mb-2">
+            <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+          </div>
+          
+          {/* Name, Price, Button in one row */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6">
+            <div className="flex-1">
+              <h3 className="text-2xl md:text-4xl font-light luxury-font leading-tight text-[#1a1a1a] mb-2">
+                {product.title}
+              </h3>
+              <p className="text-xl md:text-2xl font-light text-[#1a1a1a]">
+                ₪{price}
+              </p>
+            </div>
+            
+            <Link
+              href={`/products/${product.handle}`}
+              className="inline-block border border-[#1a1a1a] text-[#1a1a1a] px-6 md:px-8 py-2 md:py-3 text-xs md:text-sm tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury text-center whitespace-nowrap"
+            >
+              צפה בפרטים
+            </Link>
+          </div>
+
+          {(product.descriptionHtml || product.description) && (
+            <div 
+              className="text-sm md:text-base font-light leading-relaxed text-gray-600 line-clamp-2 mt-4"
+              dangerouslySetInnerHTML={{ 
+                __html: (product.descriptionHtml || product.description || '').substring(0, 150) + '...' 
+              }}
+            />
+          )}
+
+          {index === totalProducts - 1 && (
+            <div className="mt-6">
+              <Link
+                href="/products"
+                className="inline-block border border-gray-300 text-gray-600 px-6 md:px-8 py-2 md:py-3 text-xs md:text-sm tracking-luxury uppercase font-light hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-luxury text-center"
+              >
+                כל הקולקציה
+              </Link>
+            </div>
+          )}
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function FeaturedProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end end']
+  });
 
   useEffect(() => {
     async function fetchProducts() {
@@ -51,7 +176,9 @@ export default function FeaturedProducts() {
         }>(PRODUCTS_QUERY, {
           first: 50,
         });
-        setProducts(data.products.edges.map((edge) => edge.node));
+        // Take only first 4-5 products
+        const allProducts = data.products.edges.map((edge) => edge.node);
+        setProducts(allProducts.slice(0, 5));
       } catch (error) {
         console.error('Error fetching products:', error);
       } finally {
@@ -62,14 +189,6 @@ export default function FeaturedProducts() {
     fetchProducts();
   }, []);
 
-  const nextProduct = () => {
-    setCurrentIndex((prev) => (prev + 1) % products.length);
-  };
-
-  const prevProduct = () => {
-    setCurrentIndex((prev) => (prev - 1 + products.length) % products.length);
-  };
-
   // פורמט מחיר פרימיום
   const formatPrice = (amount: string) => {
     const num = parseFloat(amount);
@@ -78,15 +197,12 @@ export default function FeaturedProducts() {
 
   if (loading) {
     return (
-      <section className="w-full bg-[#fdfcfb] py-20 md:py-32">
+      <section className="w-full bg-white py-20">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-16 items-center min-h-[70vh]">
-            <div className="bg-gray-200 animate-pulse aspect-[4/5]" />
-            <div className="space-y-6">
-              <div className="bg-gray-200 animate-pulse h-12 w-3/4" />
-              <div className="bg-gray-200 animate-pulse h-32 w-full" />
-              <div className="bg-gray-200 animate-pulse h-8 w-1/2" />
-            </div>
+          <div className="space-y-32">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-gray-200 animate-pulse h-[80vh]" />
+            ))}
           </div>
         </div>
       </section>
@@ -97,136 +213,58 @@ export default function FeaturedProducts() {
     return null;
   }
 
-  const currentProduct = products[currentIndex];
-  const firstVariant = currentProduct.variants.edges[0]?.node;
-  const firstImage = currentProduct.images.edges[0]?.node;
-  const price = formatPrice(currentProduct.priceRange.minVariantPrice.amount);
-
   return (
-    <section className="w-full bg-[#fdfcfb] py-20 md:py-32">
+    <section ref={containerRef} className="w-full bg-white py-20 md:py-32 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="relative min-h-[70vh] flex items-center justify-center">
-          {/* Navigation Arrows */}
-          <button
-            onClick={prevProduct}
-            className="absolute right-0 z-10 p-4 bg-white/80 hover:bg-white border border-gray-200 transition-luxury hidden md:flex items-center justify-center"
-            aria-label="מוצר קודם"
-          >
-            <ChevronRight size={24} className="text-[#1a1a1a]" />
-          </button>
-
-          {/* Product Display */}
-          <div className="w-full max-w-6xl mx-16 grid md:grid-cols-2 gap-12 md:gap-20 items-center">
-            {/* Image */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`image-${currentIndex}`}
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -50 }}
-                transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
-                className="relative aspect-[4/5] overflow-hidden bg-[#f5f5f5]"
-              >
-                {firstImage?.url ? (
-                  <Image
-                    src={firstImage.url}
-                    alt={currentProduct.title}
-                    fill
-                    className="object-cover"
-                    priority
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm font-light">
-                    אין תמונה
-                  </div>
-                )}
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Product Info */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`info-${currentIndex}`}
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 50 }}
-                transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1], delay: 0.1 }}
-                className="text-right space-y-6"
-              >
-                <div>
-                  <h3 className="text-3xl md:text-4xl font-light luxury-font mb-6 leading-tight text-[#1a1a1a]">
-                    {currentProduct.title}
-                  </h3>
-                </div>
-
-                {(currentProduct.descriptionHtml || currentProduct.description) && (
-                  <div 
-                    className="text-base md:text-lg font-light leading-relaxed text-gray-600"
-                    dangerouslySetInnerHTML={{ 
-                      __html: (currentProduct.descriptionHtml || currentProduct.description || '').substring(0, 250) + '...' 
-                    }}
-                  />
-                )}
-
-                <div className="pt-4 space-y-6">
-                  <div>
-                    <p className="text-2xl md:text-3xl font-light text-[#1a1a1a] mb-2">
-                      ₪{price}
-                    </p>
-                    <p className="text-xs font-light text-gray-500">כולל מע״מ</p>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Link
-                      href={`/products/${currentProduct.handle}`}
-                      className="inline-block border border-[#1a1a1a] text-[#1a1a1a] px-8 py-3 text-sm tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury"
-                    >
-                      צפה בפרטים
-                    </Link>
-                    <Link
-                      href="/products"
-                      className="inline-block border border-gray-300 text-gray-600 px-8 py-3 text-sm tracking-luxury uppercase font-light hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-luxury"
-                    >
-                      כל הקולקציה
-                    </Link>
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Next Button */}
-          <button
-            onClick={nextProduct}
-            className="absolute left-0 z-10 p-4 bg-white/80 hover:bg-white border border-gray-200 transition-luxury hidden md:flex items-center justify-center"
-            aria-label="מוצר הבא"
-          >
-            <ChevronLeft size={24} className="text-[#1a1a1a]" />
-          </button>
-        </div>
-
-        {/* Mobile Navigation */}
-        <div className="md:hidden flex items-center justify-center gap-4 mt-8">
-          <button
-            onClick={prevProduct}
-            className="p-2 border border-gray-200 hover:border-[#1a1a1a] transition-luxury"
-            aria-label="מוצר קודם"
-          >
-            <ChevronRight size={20} className="text-[#1a1a1a]" />
-          </button>
-          <span className="text-sm font-light text-gray-600">
-            {currentIndex + 1} / {products.length}
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-20 md:mb-32"
+        >
+          <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light mb-4 block">
+            Featured Collection
           </span>
-          <button
-            onClick={nextProduct}
-            className="p-2 border border-gray-200 hover:border-[#1a1a1a] transition-luxury"
-            aria-label="מוצר הבא"
-          >
-            <ChevronLeft size={20} className="text-[#1a1a1a]" />
-          </button>
+          <h2 className="text-4xl md:text-6xl font-light luxury-font text-[#1a1a1a] mb-4">
+            הקולקציה הנבחרת
+          </h2>
+          <p className="text-sm md:text-base font-light text-gray-600 max-w-2xl mx-auto">
+            גלה את התיקים המובילים שלנו - שילוב מושלם של איכות, עיצוב ופונקציונליות
+          </p>
+        </motion.div>
+
+        {/* Products with Vertical Scroll Animation */}
+        <div className="space-y-32 md:space-y-48">
+          {products.map((product, index) => (
+            <FeaturedProductItem
+              key={product.id}
+              product={product}
+              index={index}
+              totalProducts={products.length}
+              scrollYProgress={scrollYProgress}
+            />
+          ))}
         </div>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-20 hidden md:block"
+        >
+          <motion.div
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            className="flex flex-col items-center gap-2 text-gray-400"
+          >
+            <span className="text-xs uppercase tracking-widest font-light">גלול</span>
+            <div className="w-px h-8 bg-gray-300" />
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   );
 }
-
