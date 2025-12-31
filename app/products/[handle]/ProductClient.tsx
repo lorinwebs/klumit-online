@@ -61,7 +61,6 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
-  const relatedProductsScrollRef = useRef<HTMLDivElement | null>(null);
   const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
 
   // Initialize selected variant and image
@@ -283,7 +282,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       <main className="flex-grow max-w-[1400px] mx-auto px-4 pt-0 pb-16 md:py-20 w-full overflow-x-hidden">
         <div className="grid grid-cols-12 gap-6 md:gap-8">
           {/* Left Side - Thumbnail Images (Desktop only) */}
-          <div className="hidden md:block col-span-2 order-1">
+          <div className="hidden md:block col-span-2 order-3">
             {product.images.edges.length > 0 && (
               <div className="flex flex-col gap-3">
                 {product.images.edges.map(({ node }) => (
@@ -448,7 +447,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
           </div>
 
           {/* Right Side - Product Info (Fixed, No Scroll) */}
-          <div className="col-span-12 md:col-span-4 order-2 md:order-3">
+          <div className="col-span-12 md:col-span-4 order-3 md:order-1">
             <div className="md:sticky md:top-20">
               {/* Mobile - Sticky Price & CTA Section */}
               <div className="md:hidden sticky top-0 bg-[#fdfcfb] z-10 pb-3 border-b border-gray-200 mb-4 -mt-2 w-full">
@@ -632,38 +631,72 @@ export default function ProductClient({ product, relatedProducts: initialRelated
           </div>
         </div>
 
-        {/* Related Products Section */}
+        {/* Related Products Section - Infinite Luxury Edition */}
         {relatedProducts.length > 0 && (
-          <section className="mt-16 md:mt-24 pb-8 md:pb-12 bg-gray-100 pt-12 md:pt-16 -mx-4 px-4 md:-mx-0 md:px-0">
-            <div className="max-w-[1400px] mx-auto">
-              <h2 className="text-2xl md:text-3xl font-light luxury-font mb-8 md:mb-12 text-right text-[#1a1a1a]">מוצרים דומים</h2>
-              <div className="relative">
-                {/* Products Row - Scrollable */}
-                <div 
-                  ref={relatedProductsScrollRef}
-                  className="overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:overflow-x-visible"
-                >
-                  <div className="flex gap-4 md:gap-8 min-w-max md:min-w-0 md:grid md:grid-cols-3 md:gap-12">
-                    {relatedProducts.map((relatedProduct) => {
-                      const firstVariant = relatedProduct.variants.edges[0]?.node;
-                      const firstImage = relatedProduct.images.edges[0]?.node;
-                      
-                      return (
-                        <div key={relatedProduct.id} className="flex-shrink-0 w-64 md:w-auto">
-                          <ProductCard
-                            id={relatedProduct.id}
-                            title={relatedProduct.title}
-                            handle={relatedProduct.handle}
-                            price={relatedProduct.priceRange.minVariantPrice.amount}
-                            currencyCode={relatedProduct.priceRange.minVariantPrice.currencyCode}
-                            image={firstImage?.url}
-                            variantId={firstVariant?.id || ''}
-                            available={firstVariant?.availableForSale || false}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
+          <section className="mt-24 pb-20 bg-white overflow-hidden border-t border-gray-100">
+            <div className="pt-16 mb-12 px-4">
+              <div className="max-w-[1400px] mx-auto flex justify-between items-end">
+                <div className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light">Recommended</span>
+                  <h2 className="text-3xl md:text-5xl font-light luxury-font text-[#1a1a1a]">
+                    הקולקציה המשלימה
+                  </h2>
+                </div>
+                <Link href="/products" className="text-sm border-b border-[#1a1a1a] pb-1 hover:opacity-60 transition-opacity">
+                  לכל המוצרים
+                </Link>
+              </div>
+            </div>
+
+            {/* Infinite Marquee Container */}
+            <div className="relative group">
+              {/* Overlay Gradients לטשטוש בצדדים (נותן מראה יוקרתי) */}
+              <div className="absolute inset-y-0 left-0 w-20 md:w-40 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+              <div className="absolute inset-y-0 right-0 w-20 md:w-40 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+              <div className="flex overflow-hidden" dir="ltr">
+                {/* אנחנו משכפלים את המערך כדי ליצור רצף אינסופי */}
+                <div className="flex animate-marquee py-4" style={{ width: 'max-content', flexShrink: 0 }}>
+                  {[...relatedProducts, ...relatedProducts, ...relatedProducts].map((relatedProduct, index) => {
+                    const firstVariant = relatedProduct.variants.edges[0]?.node;
+                    const firstImage = relatedProduct.images.edges[0]?.node;
+
+                    return (
+                      <div 
+                        key={`${relatedProduct.id}-${index}`} 
+                        className="w-[280px] md:w-[400px] px-3 md:px-6 transition-transform duration-500 hover:-translate-y-2"
+                      >
+                        <Link href={`/products/${relatedProduct.handle}`} className="block group/item">
+                          <div className="relative aspect-[3/4] overflow-hidden bg-[#f9f9f9]">
+                            {firstImage?.url && (
+                              <Image
+                                src={firstImage.url}
+                                alt={relatedProduct.title}
+                                fill
+                                className="object-cover transition-transform duration-700 group-hover/item:scale-105"
+                                sizes="(max-width: 768px) 280px, 400px"
+                              />
+                            )}
+                            {/* Hover Quick Add Overlay */}
+                            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover/item:opacity-100 transition-opacity flex items-end p-6">
+                              <button className="w-full bg-white text-black py-3 text-xs uppercase tracking-widest translate-y-4 group-hover/item:translate-y-0 transition-transform duration-500">
+                                צפייה מהירה
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-6 text-right space-y-1">
+                            <h3 className="text-sm md:text-base font-light tracking-tight text-gray-900">
+                              {relatedProduct.title}
+                            </h3>
+                            <p className="text-sm font-medium text-gray-500">
+                              ₪{formatPrice(relatedProduct.priceRange.minVariantPrice.amount)}
+                            </p>
+                          </div>
+                        </Link>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

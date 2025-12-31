@@ -159,3 +159,24 @@
   display: none;
 }
 
+/* Infinite Marquee Animation - RTL Support */
+@keyframes marquee-rtl {
+  0% { 
+    transform: translateX(0);
+  }
+  100% { 
+    transform: translateX(calc(-100% / 3));
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee-rtl 50s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
