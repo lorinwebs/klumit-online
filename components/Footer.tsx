@@ -36,11 +36,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/sales" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
-                  מבצעים
-                </Link>
-              </li>
-              <li>
                 <Link href="/about" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
                   אודות
                 </Link>

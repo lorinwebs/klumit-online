@@ -30,9 +30,6 @@ export default function Header() {
             <Link href="/products" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
               תיקים
             </Link>
-            <Link href="/sales" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
-              מבצעים
-            </Link>
             <Link href="/about" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
               אודות
             </Link>
@@ -77,9 +74,6 @@ export default function Header() {
               </Link>
               <Link href="/products" className="hover:text-luxury-gold transition-colors">
                 תיקים
-              </Link>
-              <Link href="/sales" className="hover:text-luxury-gold transition-colors">
-                מבצעים
               </Link>
               <Link href="/about" className="hover:text-luxury-gold transition-colors">
                 אודות
