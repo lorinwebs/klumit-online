@@ -40,3 +40,4 @@ CREATE TRIGGER update_user_shopify_sync_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 
+

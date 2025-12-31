@@ -61,7 +61,10 @@ export default function LoginPage() {
       // Redirect to complete profile page
       if (data.user) {
         // בדוק אם המשתמש כבר מילא פרטים
-        const hasProfile = data.user.user_metadata?.first_name || data.user.email;
+        // צריך גם first_name וגם last_name (שדות חובה)
+        const hasProfile = 
+          (data.user.user_metadata?.first_name && data.user.user_metadata?.last_name) ||
+          data.user.email;
         
         if (hasProfile) {
           // אם יש פרטים, סנכרן עם Shopify
@@ -70,7 +73,7 @@ export default function LoginPage() {
               data.user.id, 
               formattedPhone,
               {
-                email: data.user.email || undefined,
+                email: data.user.email || data.user.user_metadata?.email || undefined,
                 firstName: data.user.user_metadata?.first_name || undefined,
                 lastName: data.user.user_metadata?.last_name || undefined,
               }

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אישור הזמנה</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Assistant:wght@200;300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Assistant', sans-serif;
+      background-color: #fdfcfb;
+      color: #1a1a1a;
+      direction: rtl;
+      text-align: right;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    .email-wrapper {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+    }
+    
+    .email-header {
+      background-color: #fdfcfb;
+      padding: 50px 40px 40px;
+      text-align: center;
+      border-bottom: 1px solid #e5e5e5;
+    }
+    
+    .email-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 36px;
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      color: #1a1a1a;
+      margin-bottom: 10px;
+    }
+    
+    .email-body {
+      padding: 50px 40px;
+    }
+    
+    .email-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 32px;
+      font-weight: 300;
+      color: #1a1a1a;
+      margin-bottom: 15px;
+      text-align: right;
+      letter-spacing: 0.02em;
+    }
+    
+    .email-subtitle {
+      font-size: 16px;
+      font-weight: 300;
+      color: #6a6a6a;
+      margin-bottom: 40px;
+      text-align: right;
+    }
+    
+    .order-info {
+      background-color: #f9f9f9;
+      border: 1px solid #e5e5e5;
+      padding: 30px;
+      margin-bottom: 40px;
+    }
+    
+    .order-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .order-info-row:last-child {
+      border-bottom: none;
+    }
+    
+    .order-info-label {
+      font-size: 14px;
+      font-weight: 400;
+      color: #6a6a6a;
+    }
+    
+    .order-info-value {
+      font-size: 15px;
+      font-weight: 400;
+      color: #1a1a1a;
+    }
+    
+    .order-number {
+      font-family: 'Assistant', sans-serif;
+      font-size: 18px;
+      font-weight: 500;
+      color: #1a1a1a;
+    }
+    
+    .order-total {
+      font-family: 'Assistant', sans-serif;
+      font-size: 24px;
+      font-weight: 500;
+      color: #1a1a1a;
+    }
+    
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 300;
+      color: #1a1a1a;
+      margin: 40px 0 20px;
+      text-align: right;
+      letter-spacing: 0.02em;
+    }
+    
+    .section-title:first-of-type {
+      margin-top: 0;
+    }
+    
+    .products-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 40px;
+    }
+    
+    .products-table th {
+      font-size: 12px;
+      font-weight: 400;
+      color: #6a6a6a;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 15px 0;
+      border-bottom: 1px solid #e5e5e5;
+      text-align: right;
+    }
+    
+    .products-table td {
+      padding: 20px 0;
+      border-bottom: 1px solid #f0f0f0;
+      vertical-align: top;
+    }
+    
+    .product-image {
+      width: 80px;
+      height: 100px;
+      object-fit: cover;
+      border: 1px solid #e5e5e5;
+    }
+    
+    .product-name {
+      font-size: 15px;
+      font-weight: 400;
+      color: #1a1a1a;
+      margin-bottom: 5px;
+    }
+    
+    .product-variant {
+      font-size: 13px;
+      font-weight: 300;
+      color: #6a6a6a;
+      margin-top: 5px;
+    }
+    
+    .product-price {
+      font-size: 15px;
+      font-weight: 400;
+      color: #1a1a1a;
+      text-align: left;
+    }
+    
+    .product-quantity {
+      font-size: 14px;
+      font-weight: 300;
+      color: #6a6a6a;
+      text-align: center;
+    }
+    
+    .address-box {
+      background-color: #f9f9f9;
+      border: 1px solid #e5e5e5;
+      padding: 25px;
+      margin-bottom: 30px;
+    }
+    
+    .address-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1a1a1a;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    
+    .address-text {
+      font-size: 14px;
+      font-weight: 300;
+      color: #4a4a4a;
+      line-height: 1.8;
+    }
+    
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    
+    .summary-table tr {
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .summary-table td {
+      padding: 12px 0;
+      font-size: 14px;
+      color: #4a4a4a;
+    }
+    
+    .summary-table td:first-child {
+      text-align: right;
+      font-weight: 300;
+    }
+    
+    .summary-table td:last-child {
+      text-align: left;
+      font-weight: 400;
+    }
+    
+    .summary-table tr.total-row td {
+      font-size: 18px;
+      font-weight: 500;
+      color: #1a1a1a;
+      padding-top: 20px;
+      border-top: 1px solid #e5e5e5;
+      border-bottom: none;
+    }
+    
+    .email-button {
+      display: inline-block;
+      background-color: #1a1a1a;
+      color: #ffffff;
+      padding: 16px 40px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin: 30px 0;
+      transition: background-color 0.3s ease;
+      text-align: center;
+    }
+    
+    .email-button:hover {
+      background-color: #2a2a2a;
+    }
+    
+    .divider {
+      height: 1px;
+      background-color: #e5e5e5;
+      margin: 40px 0;
+    }
+    
+    .email-footer {
+      background-color: #fdfcfb;
+      padding: 40px;
+      border-top: 1px solid #e5e5e5;
+      text-align: center;
+    }
+    
+    .email-footer-text {
+      font-size: 13px;
+      font-weight: 300;
+      color: #8a8a8a;
+      margin-bottom: 15px;
+      line-height: 1.8;
+    }
+    
+    .email-footer-links {
+      margin-top: 20px;
+    }
+    
+    .email-footer-link {
+      color: #1a1a1a;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+      margin: 0 10px;
+      font-size: 13px;
+    }
+    
+    @media only screen and (max-width: 600px) {
+      .email-body {
+        padding: 30px 20px;
+      }
+      
+      .email-header {
+        padding: 40px 20px 30px;
+      }
+      
+      .email-title {
+        font-size: 28px;
+      }
+      
+      .order-info {
+        padding: 20px;
+      }
+      
+      .products-table {
+        font-size: 13px;
+      }
+      
+      .product-image {
+        width: 60px;
+        height: 75px;
+      }
+      
+      .address-box {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="email-header">
+      <div class="email-logo">KLOMIT</div>
+    </div>
+    
+    <div class="email-body">
+      <h1 class="email-title">תודה על הרכישה שלך</h1>
+      <p class="email-subtitle">ההזמנה שלך התקבלה בהצלחה</p>
+      
+      <div class="order-info">
+        <div class="order-info-row">
+          <span class="order-info-label">מספר הזמנה</span>
+          <span class="order-info-value order-number">{{ order.name }}</span>
+        </div>
+        <div class="order-info-row">
+          <span class="order-info-label">תאריך הזמנה</span>
+          <span class="order-info-value">{{ order.created_at | date: "%d/%m/%Y" }}</span>
+        </div>
+        <div class="order-info-row">
+          <span class="order-info-label">סכום כולל</span>
+          <span class="order-info-value order-total">{{ order.total_price | money }}</span>
+        </div>
+      </div>
+      
+      <h2 class="section-title">פריטים בהזמנה</h2>
+      <table class="products-table">
+        <thead>
+          <tr>
+            <th style="text-align: right; width: 50%;">מוצר</th>
+            <th style="text-align: center; width: 20%;">כמות</th>
+            <th style="text-align: left; width: 30%;">מחיר</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line_item in order.line_items %}
+          <tr>
+            <td>
+              {% if line_item.image %}
+              <img src="{{ line_item.image | img_url: '160x200' }}" alt="{{ line_item.title }}" class="product-image" style="float: right; margin-left: 15px; margin-bottom: 10px;">
+              {% endif %}
+              <div class="product-name">{{ line_item.title }}</div>
+              {% if line_item.variant_title != 'Default Title' %}
+              <div class="product-variant">{{ line_item.variant_title }}</div>
+              {% endif %}
+            </td>
+            <td class="product-quantity">{{ line_item.quantity }}</td>
+            <td class="product-price">{{ line_item.line_price | money }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      
+      <h2 class="section-title">סיכום הזמנה</h2>
+      <table class="summary-table">
+        <tr>
+          <td>סה"כ מוצרים</td>
+          <td>{{ order.subtotal_price | money }}</td>
+        </tr>
+        {% if order.shipping_price > 0 %}
+        <tr>
+          <td>משלוח</td>
+          <td>{{ order.shipping_price | money }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td>משלוח</td>
+          <td>חינם</td>
+        </tr>
+        {% endif %}
+        {% if order.total_discounts > 0 %}
+        <tr>
+          <td>הנחה</td>
+          <td>-{{ order.total_discounts | money }}</td>
+        </tr>
+        {% endif %}
+        {% if order.tax_price > 0 %}
+        <tr>
+          <td>מע״מ</td>
+          <td>{{ order.tax_price | money }}</td>
+        </tr>
+        {% endif %}
+        <tr class="total-row">
+          <td>סה״כ לתשלום</td>
+          <td>{{ order.total_price | money }} כולל מע״מ</td>
+        </tr>
+      </table>
+      
+      {% if order.shipping_address %}
+      <h2 class="section-title">כתובת משלוח</h2>
+      <div class="address-box">
+        <div class="address-title">משלוח ל:</div>
+        <div class="address-text">
+          {{ order.shipping_address.first_name }} {{ order.shipping_address.last_name }}<br>
+          {{ order.shipping_address.address1 }}<br>
+          {% if order.shipping_address.address2 %}
+          {{ order.shipping_address.address2 }}<br>
+          {% endif %}
+          {{ order.shipping_address.city }}, {{ order.shipping_address.zip }}<br>
+          {{ order.shipping_address.country }}
+        </div>
+      </div>
+      {% endif %}
+      
+      {% if order.billing_address %}
+      <h2 class="section-title">כתובת חיוב</h2>
+      <div class="address-box">
+        <div class="address-title">חיוב ל:</div>
+        <div class="address-text">
+          {{ order.billing_address.first_name }} {{ order.billing_address.last_name }}<br>
+          {{ order.billing_address.address1 }}<br>
+          {% if order.billing_address.address2 %}
+          {{ order.billing_address.address2 }}<br>
+          {% endif %}
+          {{ order.billing_address.city }}, {{ order.billing_address.zip }}<br>
+          {{ order.billing_address.country }}
+        </div>
+      </div>
+      {% endif %}
+      
+      {% if order.order_status_url %}
+      <div style="text-align: center; margin: 40px 0;">
+        <a href="{{ order.order_status_url }}" class="email-button">צפה בהזמנה</a>
+      </div>
+      {% endif %}
+      
+      <div class="divider"></div>
+      
+      <p class="email-text" style="font-size: 14px; color: #6a6a6a; line-height: 1.8;">
+        אם יש לך שאלות לגבי ההזמנה שלך, אנא צור איתנו קשר ונשמח לעזור.<br>
+        משלוח חינם מעל 500 ₪ • החזרה תוך 14 ימים
+      </p>
+    </div>
+    
+    <div class="email-footer">
+      <p class="email-footer-text">
+        עם ברכה,<br>
+        צוות KLOMIT
+      </p>
+      <div class="email-footer-links">
+        <a href="{{ shop.url }}" class="email-footer-link">בית</a>
+        <a href="{{ shop.url }}/pages/shipping" class="email-footer-link">משלוחים</a>
+        <a href="{{ shop.url }}/pages/returns" class="email-footer-link">החזרות</a>
+        <a href="{{ shop.url }}/pages/terms" class="email-footer-link">תקנון</a>
+      </div>
+      <p class="email-footer-text" style="margin-top: 20px; font-size: 12px;">
+        © {{ 'now' | date: "%Y" }} KLOMIT. כל הזכויות שמורות.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+

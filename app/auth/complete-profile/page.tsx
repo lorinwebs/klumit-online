@@ -15,7 +15,6 @@ export default function CompleteProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [emailOTPSent, setEmailOTPSent] = useState(false);
-  const [emailOTPCode, setEmailOTPCode] = useState('');
   const [verifyingEmail, setVerifyingEmail] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
   
@@ -34,7 +33,25 @@ export default function CompleteProfilePage() {
         return;
       }
 
+      // בדוק אם המשתמש כבר מילא פרטים
+      // אם יש first_name ו-last_name, המשתמש כבר נרשם - מעבר לדף הבית
+      const hasProfile = 
+        (session.user.user_metadata?.first_name && session.user.user_metadata?.last_name) ||
+        session.user.email;
+      
+      if (hasProfile) {
+        // המשתמש כבר נרשם - מעבר לדף הבית
+        router.push('/');
+        return;
+      }
+
       setUser(session.user);
+      
+      // בדוק אם האימייל כבר מאומת
+      if (session.user.email && session.user.email_confirmed_at) {
+        setEmailVerified(true);
+      }
+      
       setLoading(false);
     }
 
@@ -47,36 +64,48 @@ export default function CompleteProfilePage() {
       return;
     }
 
+    if (!user) {
+      setError('משתמש לא מחובר');
+      return;
+    }
+
     setError('');
     setVerifyingEmail(true);
 
     try {
-      // נסה לשלוח OTP דרך signInWithOtp
-      // הערה: כדי שזה יעבוד, צריך לאפשר הרשמות חדשות ב-Supabase Dashboard
-      // Auth → Settings → Email Auth → Enable email signups
-      // כדי לשלוח OTP (קוד 6 ספרות) במקום Magic Link, לא צריך להגדיר emailRedirectTo
-      // Supabase ישלח OTP אוטומטית אם emailRedirectTo לא מוגדר
-      const { error: otpError } = await supabase.auth.signInWithOtp({
+      // נסה לעדכן את האימייל של המשתמש הקיים
+      // אם האימייל כבר קיים במשתמש אחר, זה יכשל ולא יוצר משתמש חדש
+      const { error: updateError } = await supabase.auth.updateUser({
         email: formData.email,
-        options: {
-          shouldCreateUser: true, // נשתמש ב-true כדי לאפשר שליחת OTP
-          // לא מגדירים emailRedirectTo - זה יגרום לשליחת OTP (קוד 6 ספרות) במקום Magic Link
-          // אם האימייל כבר קיים, זה לא ייצור משתמש חדש
-          // אם האימייל לא קיים, זה ייצור משתמש חדש עם האימייל הזה
-        },
+      }, {
+        emailRedirectTo: `${window.location.origin}/auth/verify-email`,
       });
 
-      if (otpError) {
-        // אם יש שגיאת "Signups not allowed", צריך לאפשר הרשמות חדשות ב-Supabase
-        if (otpError.message.includes('Signups not allowed')) {
-          setError('אנא הפעל הרשמות חדשות ב-Supabase Dashboard: Auth → Settings → Email Auth → Enable email signups');
+      if (updateError) {
+        // אם האימייל כבר קיים במשתמש אחר, נשמור רק ב-user_metadata
+        if (updateError.message.includes('already registered') || 
+            updateError.message.includes('already exists') ||
+            updateError.message.includes('User already registered')) {
+          // שמור את האימייל ב-user_metadata בלבד (לא יוצר משתמש חדש)
+          const { error: metadataError } = await supabase.auth.updateUser({
+            data: {
+              email: formData.email,
+              email_verified: false,
+            },
+          });
+
+          if (metadataError) {
+            throw metadataError;
+          }
+
+          setEmailOTPSent(true);
+          setError('האימייל נשמר ב-user_metadata. הערה: האימייל כבר קיים במשתמש אחר, לכן הוא נשמר רק ב-user_metadata ולא ב-user.email.');
           return;
         }
-        
-        throw otpError;
+        throw updateError;
       }
 
-      // אם OTP נשלח בהצלחה
+      // אם updateUser הצליח, נשלח קישור אימות
       setEmailOTPSent(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה בשליחת קוד אימות');
@@ -85,47 +114,20 @@ export default function CompleteProfilePage() {
     }
   };
 
-  const handleVerifyEmailOTP = async () => {
-    if (!emailOTPCode || emailOTPCode.length !== 6) {
-      setError('אנא הזן קוד בן 6 ספרות');
-      return;
-    }
-
-    setError('');
-    setVerifyingEmail(true);
-
-    try {
-      const { data, error: verifyError } = await supabase.auth.verifyOtp({
-        email: formData.email,
-        token: emailOTPCode,
-        type: 'email',
-      });
-
-      if (verifyError) {
-        // תרגום שגיאות לעברית
-        let errorMessage = verifyError.message;
-        if (errorMessage.includes('expired') || errorMessage.includes('invalid')) {
-          errorMessage = 'הקוד פג תוקף או לא תקין';
-        }
-        throw new Error(errorMessage);
-      }
-
-      if (data.user) {
+  // בדוק אם האימייל כבר מאומת (כשהמשתמש חוזר מהקישור)
+  useEffect(() => {
+    async function checkEmailVerification() {
+      if (!user || !formData.email) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email === formData.email && session.user.email_confirmed_at) {
         setEmailVerified(true);
-        // עדכן את האימייל ב-user_metadata
-        await supabase.auth.updateUser({
-          data: {
-            email: formData.email,
-            email_verified: true,
-          },
-        });
+        setEmailOTPSent(false);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'שגיאה באימות הקוד');
-    } finally {
-      setVerifyingEmail(false);
     }
-  };
+    
+    checkEmailVerification();
+  }, [user, formData.email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -278,7 +280,6 @@ export default function CompleteProfilePage() {
                     setFormData({ ...formData, email: e.target.value });
                     setEmailOTPSent(false);
                     setEmailVerified(false);
-                    setEmailOTPCode('');
                   }}
                   disabled={emailVerified}
                   className="w-full pr-10 pl-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right disabled:bg-gray-50 disabled:cursor-not-allowed"
@@ -298,42 +299,12 @@ export default function CompleteProfilePage() {
                       disabled={verifyingEmail}
                       className="w-full bg-gray-100 text-[#1a1a1a] py-3 px-6 text-sm font-light hover:bg-gray-200 transition-luxury disabled:bg-gray-200 disabled:cursor-not-allowed"
                     >
-                      {verifyingEmail ? 'שולח...' : 'שלח קוד אימות במייל'}
+                      {verifyingEmail ? 'שולח...' : 'שלח קישור אימות במייל'}
                     </button>
                   ) : (
-                    <>
-                      <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 text-sm font-light text-right">
-                        נשלח קוד אימות לכתובת {formData.email}. אנא הזן את הקוד:
-                      </div>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={emailOTPCode}
-                          onChange={(e) => setEmailOTPCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                          className="flex-1 px-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-center tracking-widest"
-                          placeholder="000000"
-                          maxLength={6}
-                        />
-                        <button
-                          type="button"
-                          onClick={handleVerifyEmailOTP}
-                          disabled={verifyingEmail || emailOTPCode.length !== 6}
-                          className="bg-[#1a1a1a] text-white py-3 px-6 text-sm font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed"
-                        >
-                          {verifyingEmail ? 'מאמת...' : 'אמת'}
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEmailOTPSent(false);
-                          setEmailOTPCode('');
-                        }}
-                        className="text-xs text-gray-500 hover:text-gray-700 text-right"
-                      >
-                        שלח קוד חדש
-                      </button>
-                    </>
+                    <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 text-sm font-light text-right">
+                      נשלח קישור אימות לכתובת {formData.email}. אנא בדוק את תיבת הדואר שלך ולחץ על הקישור כדי לאמת את האימייל.
+                    </div>
                   )}
                 </div>
               )}

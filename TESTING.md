@@ -93,3 +93,4 @@ npm run dev
 - **סנכרון Shopify**: אם לא הגדרת Admin API, המשתמשים יווצרו רק ב-Supabase (זה בסדר!)
 
 
+
