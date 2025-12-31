@@ -13,7 +13,7 @@ export default function ReturnsPage() {
         <div className="prose prose-lg max-w-none text-right space-y-10">
           <section className="mb-8">
             <p className="font-light leading-relaxed text-gray-700 text-lg">
-              אתר "קלומית" עושה הכל כדי שתהיי מרוצה מהרכישה. עם זאת, במידה ואת מעוניינת לבצע שינוי בהזמנה, להלן המדיניות הרשמית של האתר הפועלת על פי חוק הגנת הצרכן:
+              אתר &quot;קלומית&quot; עושה הכל כדי שתהיי מרוצה מהרכישה. עם זאת, במידה ואת מעוניינת לבצע שינוי בהזמנה, להלן המדיניות הרשמית של האתר הפועלת על פי חוק הגנת הצרכן:
             </p>
           </section>
 
@@ -48,7 +48,7 @@ export default function ReturnsPage() {
             <ul className="list-none space-y-4 font-light leading-relaxed text-gray-700">
               <li className="flex items-start gap-4">
                 <span className="text-[#1a1a1a] mt-1 font-medium">•</span>
-                <span><strong>דמי ביטול:</strong> בהתאם לחוק, ינוכו דמי ביטול בשיעור של 5% ממחיר המוצר או 100 ש"ח – הנמוך מביניהם.</span>
+                <span><strong>דמי ביטול:</strong> בהתאם לחוק, ינוכו דמי ביטול בשיעור של 5% ממחיר המוצר או 100 ש&quot;ח – הנמוך מביניהם.</span>
               </li>
               <li className="flex items-start gap-4">
                 <span className="text-[#1a1a1a] mt-1 font-medium">•</span>
@@ -98,7 +98,7 @@ export default function ReturnsPage() {
               </li>
               <li className="flex items-start gap-4">
                 <span className="text-[#1a1a1a] mt-1 font-medium">•</span>
-                <span><strong>שירות שליחים:</strong> ניתן לתאם שליח שיאסוף ממך את הפריט בעלות של 29.90 ש"ח (עלות זו לא תוחזר ותקוזז מהזיכוי/ההחזר).</span>
+                <span><strong>שירות שליחים:</strong> ניתן לתאם שליח שיאסוף ממך את הפריט בעלות של 29.90 ש&quot;ח (עלות זו לא תוחזר ותקוזז מהזיכוי/ההחזר).</span>
               </li>
             </ul>
           </section>
@@ -108,7 +108,7 @@ export default function ReturnsPage() {
             <ul className="list-none space-y-4 font-light leading-relaxed text-gray-700">
               <li className="flex items-start gap-4">
                 <span className="text-[#1a1a1a] mt-1 font-medium">•</span>
-                <span>אין החזר כספי על מוצר שערכו נמוך מ-50 ש"ח.</span>
+                <span>אין החזר כספי על מוצר שערכו נמוך מ-50 ש&quot;ח.</span>
               </li>
               <li className="flex items-start gap-4">
                 <span className="text-[#1a1a1a] mt-1 font-medium">•</span>

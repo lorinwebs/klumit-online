@@ -7,9 +7,9 @@ import Link from 'next/link';
 export default function Hero() {
   return (
     <section className="relative flex items-center justify-center overflow-hidden bg-[#fdfcfb]">
-      <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-0 w-full">
+      <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-0 md:gap-0 w-full">
         {/* Image Section - Centered */}
-        <div className="relative h-[60vh] md:h-[80vh] order-2 md:order-1 flex items-center justify-center px-4 md:px-8">
+        <div className="relative h-[60vh] md:h-[80vh] order-2 md:order-1 flex items-center justify-center px-4 md:px-8 py-8 md:py-0">
           <div className="relative w-full h-full max-w-2xl mx-auto">
             <Image
               src="/hero-venice.jpg"
@@ -24,7 +24,7 @@ export default function Hero() {
         </div>
         
         {/* Text Section */}
-        <div className="flex items-center justify-center order-1 md:order-2 bg-[#fdfcfb] px-8 md:px-16">
+        <div className="flex items-center justify-center order-1 md:order-2 bg-[#fdfcfb] px-8 md:px-16 py-12 md:py-0">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
