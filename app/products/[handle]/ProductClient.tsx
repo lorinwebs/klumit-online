@@ -56,6 +56,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const [showToast, setShowToast] = useState(false);
   const [showFloatingCart, setShowFloatingCart] = useState(false);
   const [relatedProducts] = useState<Product[]>(initialRelatedProducts);
+  const [maxImageHeight, setMaxImageHeight] = useState<number>(0);
   const addItem = useCartStore((state) => state.addItem);
   const imageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -73,6 +74,44 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       setSelectedImage(product.images.edges[0].node.url);
       setCurrentImageIndex(0);
     }
+  }, [product]);
+
+  // Calculate max image height for viewport
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const calculateMaxHeight = () => {
+      let maxHeight = 0;
+      product.images.edges.forEach(({ node }) => {
+        const imageElement = imageRefs.current[node.url];
+        if (imageElement) {
+          const height = imageElement.offsetHeight;
+          if (height > maxHeight) {
+            maxHeight = height;
+          }
+        }
+      });
+      if (maxHeight > 0) {
+        setMaxImageHeight(maxHeight);
+      }
+    };
+
+    // Wait for images to load and recalculate
+    const timers: NodeJS.Timeout[] = [];
+    product.images.edges.forEach((_, index) => {
+      const timer = setTimeout(() => {
+        calculateMaxHeight();
+      }, 200 * (index + 1));
+      timers.push(timer);
+    });
+
+    // Recalculate on window resize
+    window.addEventListener('resize', calculateMaxHeight);
+    
+    return () => {
+      timers.forEach(timer => clearTimeout(timer));
+      window.removeEventListener('resize', calculateMaxHeight);
+    };
   }, [product]);
 
   // Use Intersection Observer instead of scroll listener for better performance
@@ -416,9 +455,13 @@ export default function ProductClient({ product, relatedProducts: initialRelated
               {/* Desktop - Scrollable images */}
               <div 
                 ref={scrollContainerRef}
-                className="hidden md:block overflow-y-auto max-h-[calc(100vh-120px)]"
+                className="hidden md:block overflow-y-auto scrollbar-hide"
+                style={{ 
+                  maxHeight: maxImageHeight > 0 ? `${maxImageHeight}px` : 'calc(100vh - 120px)',
+                  height: maxImageHeight > 0 ? `${maxImageHeight}px` : 'calc(100vh - 120px)'
+                }}
               >
-                <div className="space-y-4">
+                <div className="space-y-4" style={{ width: '100%' }}>
                   {product.images.edges.map(({ node }) => (
                     <div
                       key={node.url}
@@ -429,15 +472,30 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                         }
                         imageRefs.current[node.url] = el;
                       }}
-                      className="relative aspect-[4/5] bg-[#fdfcfb] overflow-hidden"
+                      className="relative w-full bg-[#fdfcfb] overflow-hidden"
+                      style={{ flexShrink: 0 }}
                     >
                       <Image
                         src={node.url}
                         alt={node.altText || product.title}
                         fill
-                        className="object-cover"
+                        className="object-contain"
                         priority={selectedImage === node.url}
                         sizes="(max-width: 768px) 100vw, 50vw"
+                        onLoadingComplete={(img) => {
+                          // Calculate natural aspect ratio and set container height
+                          const container = img.closest('div[class*="relative"]') as HTMLElement;
+                          if (container && img.naturalWidth && img.naturalHeight) {
+                            const containerWidth = container.offsetWidth || (container.parentElement?.clientWidth ?? 600);
+                            const aspectRatio = img.naturalHeight / img.naturalWidth;
+                            const calculatedHeight = containerWidth * aspectRatio;
+                            container.style.height = `${calculatedHeight}px`;
+                            container.style.minHeight = `${calculatedHeight}px`;
+                            
+                            // Update max height for viewport (only for the tallest image)
+                            setMaxImageHeight((prev) => Math.max(prev, calculatedHeight));
+                          }
+                        }}
                       />
                     </div>
                   ))}
