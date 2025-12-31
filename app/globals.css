@@ -70,3 +70,92 @@
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Product description styling */
+.product-description {
+  text-align: right;
+  direction: rtl;
+}
+
+.product-description > * {
+  margin-bottom: 0;
+}
+
+.product-description > p {
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 300;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.product-description > p:first-child {
+  margin-bottom: 1.5rem;
+}
+
+.product-description h3 {
+  display: block;
+  font-size: 0.875rem !important;
+  font-weight: 300 !important;
+  font-family: 'Assistant', sans-serif !important;
+  letter-spacing: 0.15em !important;
+  text-transform: uppercase !important;
+  margin-bottom: 0.75rem !important;
+  margin-top: 1.5rem !important;
+  padding-bottom: 0.75rem !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  color: #1a1a1a !important;
+  line-height: 1.5 !important;
+}
+
+.product-description h3:first-of-type {
+  margin-top: 0 !important;
+}
+
+.product-description h4 {
+  display: block;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  font-family: 'Assistant', sans-serif !important;
+  letter-spacing: 0.15em !important;
+  text-transform: uppercase !important;
+  color: #4b5563 !important;
+  margin-bottom: 0.5rem !important;
+  margin-top: 1rem !important;
+  line-height: 1.5 !important;
+}
+
+.product-description ul {
+  display: block;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 0 1rem 0 !important;
+  margin-bottom: 1rem !important;
+}
+
+.product-description li {
+  display: list-item;
+  font-size: 0.875rem !important;
+  font-weight: 300 !important;
+  color: #374151 !important;
+  margin-bottom: 0.25rem !important;
+  padding-right: 0 !important;
+  line-height: 1.6 !important;
+}
+
+.product-description li::before {
+  content: '•' !important;
+  margin-left: 0.5rem !important;
+  margin-right: 0.25rem !important;
+  display: inline-block;
+}
+
+/* Hide scrollbar */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+

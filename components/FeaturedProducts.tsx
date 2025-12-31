@@ -12,6 +12,7 @@ interface Product {
   title: string;
   handle: string;
   description?: string;
+  descriptionHtml?: string;
   priceRange: {
     minVariantPrice: {
       amount: string;
@@ -153,19 +154,16 @@ export default function FeaturedProducts() {
                 className="text-right space-y-6"
               >
                 <div>
-                  <h3 className="text-3xl md:text-4xl font-light luxury-font mb-3 leading-tight text-[#1a1a1a]">
+                  <h3 className="text-3xl md:text-4xl font-light luxury-font mb-6 leading-tight text-[#1a1a1a]">
                     {currentProduct.title}
                   </h3>
-                  <p className="text-sm font-light text-gray-600 tracking-luxury mb-6">
-                    תיק ערב בעבודת יד • עור אמיתי • ניטים בגימור זהב
-                  </p>
                 </div>
 
-                {currentProduct.description && (
+                {(currentProduct.descriptionHtml || currentProduct.description) && (
                   <div 
                     className="text-base md:text-lg font-light leading-relaxed text-gray-600"
                     dangerouslySetInnerHTML={{ 
-                      __html: currentProduct.description.substring(0, 250) + '...' 
+                      __html: (currentProduct.descriptionHtml || currentProduct.description || '').substring(0, 250) + '...' 
                     }}
                   />
                 )}

@@ -49,6 +49,7 @@ export const PRODUCTS_QUERY = `
           title
           handle
           description
+          descriptionHtml
           priceRange {
             minVariantPrice {
               amount
@@ -90,6 +91,7 @@ export const PRODUCT_QUERY = `
       title
       handle
       description
+      descriptionHtml
       priceRange {
         minVariantPrice {
           amount
