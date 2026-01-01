@@ -1,94 +1,97 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GROW_WEBHOOK_KEY, verifyWebhookSignature } from '@/lib/grow';
+import { verifyWebhookSignature } from '@/lib/grow';
 import { updateShopifyOrder } from '@/lib/shopify-admin';
 
 /**
- * Webhook endpoint לקבלת עדכוני תשלום מ-Grow
+ * Webhook endpoint לקבלת עדכונים מ-Grow
  * 
  * URL: https://your-domain.com/api/grow/webhook
  * 
- * הגדר ב-Grow:
- * - לינק לעדכון השרת: https://your-domain.com/api/grow/webhook
- * - פרמטר מזהה: order_id או order_number
- * - סוג: עדכון לאחר ביצוע עסקה
- * - דיווחים: Payment Links / כל העסקאות
- * - פורמט: JSON
+ * הגדרה ב-Grow Dashboard:
+ * - URL: https://your-domain.com/api/grow/webhook
+ * - Webhook Key: (המפתח שמוגדר ב-GROW_WEBHOOK_KEY)
+ * - Events: Payment Links / כל העסקאות
  */
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // אימות Webhook
     const signature = request.headers.get('x-webhook-signature') || request.headers.get('x-api-key');
-    if (!verifyWebhookSignature(body, signature)) {
+    // המרת null ל-undefined עבור TypeScript
+    const signatureValue = signature ?? undefined;
+    
+    if (!verifyWebhookSignature(body, signatureValue)) {
       return NextResponse.json(
         { error: 'Invalid webhook signature' },
         { status: 401 }
       );
     }
 
-    // בדיקה שהתשלום הצליח
-    const paymentStatus = body.status || body.paymentStatus || body.transactionStatus;
-    const isPaid = paymentStatus === 'paid' || paymentStatus === 'completed' || paymentStatus === 'success';
+    // עיבוד ה-webhook לפי סוג האירוע
+    const eventType = body.event || body.type || 'unknown';
+    const paymentStatus = body.status || body.payment_status || 'unknown';
+    const orderReference = body.reference || body.order_id || body.order_number;
 
-    if (!isPaid) {
-      // אם התשלום לא הצליח, רק נרשום לוג
-      console.log('Payment not completed:', body);
-      return NextResponse.json({ received: true, status: 'not_paid' });
-    }
-
-    // קבלת מזהה ההזמנה
-    const orderReference = body.reference || body.orderReference || body.metadata?.orderReference;
-    
-    if (!orderReference) {
-      console.error('No order reference in webhook:', body);
-      return NextResponse.json(
-        { error: 'Missing order reference' },
-        { status: 400 }
-      );
-    }
-
-    // עדכון ההזמנה ב-Shopify
-    try {
-      await updateShopifyOrder(orderReference, {
-        tags: ['Paid via Grow'],
-        note: `תשלום אושר דרך Grow. תאריך: ${new Date().toLocaleString('he-IL')}`,
-        financialStatus: 'paid',
-      });
-
-      console.log(`Order ${orderReference} updated successfully via Grow webhook`);
-    } catch (error) {
-      console.error('Error updating Shopify order:', error);
-      // נחזיר 200 כדי ש-Grow לא ינסה שוב, אבל נרשום את השגיאה
-      return NextResponse.json({ 
-        received: true, 
-        error: 'Failed to update order',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-
-    // החזרת תשובה חיובית ל-Grow
-    return NextResponse.json({ 
-      received: true, 
-      status: 'success',
-      orderReference 
+    console.log('Grow Webhook received:', {
+      eventType,
+      paymentStatus,
+      orderReference,
+      body,
     });
 
+    // אם התשלום הצליח, עדכן את ההזמנה ב-Shopify
+    if (paymentStatus === 'paid' || paymentStatus === 'completed' || eventType === 'payment.completed') {
+      if (!orderReference) {
+        console.error('No order reference in webhook');
+        return NextResponse.json(
+          { error: 'Missing order reference' },
+          { status: 400 }
+        );
+      }
+
+      try {
+        // עדכן את ההזמנה ב-Shopify
+        await updateShopifyOrder(orderReference, {
+          tags: ['Paid via Grow', 'Payment Completed'],
+          note: `תשלום אושר דרך Grow-il ב-${new Date().toLocaleString('he-IL')}`,
+        });
+
+        console.log(`Order ${orderReference} updated successfully`);
+      } catch (error) {
+        console.error('Error updating Shopify order:', error);
+        // לא נזרוק שגיאה - נחזיר 200 כדי ש-Grow לא ינסה שוב
+        return NextResponse.json({
+          success: true,
+          message: 'Webhook received but order update failed',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    // החזר תשובה מוצלחת
+    return NextResponse.json({
+      success: true,
+      message: 'Webhook processed successfully',
+    });
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('Error processing webhook:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
 }
 
-// GET endpoint לבדיקה
+// GET endpoint לבדיקת תקינות ה-webhook
 export async function GET() {
-  return NextResponse.json({ 
-    message: 'Grow webhook endpoint is active',
-    webhookKey: GROW_WEBHOOK_KEY ? `${GROW_WEBHOOK_KEY.substring(0, 10)}...` : 'not set'
+  return NextResponse.json({
+    message: 'Grow Webhook endpoint is active',
+    timestamp: new Date().toISOString(),
   });
 }
 

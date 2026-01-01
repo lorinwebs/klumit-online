@@ -89,6 +89,36 @@ function VerifyEmailContent() {
         // עדכן את המשתמש המקומי
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
+          // בדוק אם יש pending_email ב-user_metadata שצריך לעדכן
+          const pendingEmail = session.user.user_metadata?.pending_email;
+          const newEmailParam = searchParams.get('new_email');
+          
+          // אם יש pending_email או new_email param, עדכן את האימייל
+          const emailToUpdate = pendingEmail || newEmailParam;
+          
+          if (emailToUpdate && emailToUpdate !== session.user.email) {
+            // עדכן את האימייל ב-user.email
+            const { error: updateError } = await supabase.auth.updateUser({
+              email: emailToUpdate,
+              data: {
+                email_verified: true,
+                pending_email: null, // נקה את pending_email
+              },
+            });
+
+            if (updateError) {
+              console.error('Error updating email:', updateError);
+            }
+          } else if (session.user.user_metadata?.email && session.user.user_metadata.email !== session.user.email) {
+            // אם יש אימייל ב-user_metadata שעדיין לא עודכן ב-user.email, עדכן אותו
+            await supabase.auth.updateUser({
+              email: session.user.user_metadata.email,
+              data: {
+                email_verified: true,
+              },
+            });
+          }
+          
           // רענן את הנתונים
           window.location.href = '/account';
         } else {

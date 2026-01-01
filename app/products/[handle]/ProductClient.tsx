@@ -57,6 +57,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const [showFloatingCart, setShowFloatingCart] = useState(false);
   const [relatedProducts] = useState<Product[]>(initialRelatedProducts);
   const [maxImageHeight, setMaxImageHeight] = useState<number>(0);
+  const [hasOverflow, setHasOverflow] = useState<boolean>(false);
   const addItem = useCartStore((state) => state.addItem);
   const imageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -76,7 +77,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     }
   }, [product]);
 
-  // Calculate max image height for viewport
+  // Calculate max image height for viewport and check for overflow
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -96,17 +97,34 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       }
     };
 
+    const checkOverflow = () => {
+      if (scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        const hasOverflowContent = container.scrollHeight > container.clientHeight;
+        setHasOverflow(hasOverflowContent);
+      }
+    };
+
     // Wait for images to load and recalculate
     const timers: NodeJS.Timeout[] = [];
     product.images.edges.forEach((_, index) => {
       const timer = setTimeout(() => {
         calculateMaxHeight();
+        checkOverflow();
       }, 200 * (index + 1));
       timers.push(timer);
     });
 
     // Recalculate on window resize
-    window.addEventListener('resize', calculateMaxHeight);
+    window.addEventListener('resize', () => {
+      calculateMaxHeight();
+      checkOverflow();
+    });
+    
+    // Initial check
+    setTimeout(() => {
+      checkOverflow();
+    }, 500);
     
     return () => {
       timers.forEach(timer => clearTimeout(timer));
@@ -455,7 +473,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
               {/* Desktop - Scrollable images */}
               <div 
                 ref={scrollContainerRef}
-                className="hidden md:block overflow-y-auto scrollbar-hide"
+                className={`hidden md:block overflow-y-auto ${hasOverflow ? '' : 'scrollbar-hide'}`}
                 style={{ 
                   maxHeight: maxImageHeight > 0 ? `${maxImageHeight}px` : 'calc(100vh - 120px)',
                   height: maxImageHeight > 0 ? `${maxImageHeight}px` : 'calc(100vh - 120px)'

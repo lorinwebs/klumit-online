@@ -73,8 +73,7 @@ export default function CompleteProfilePage() {
     setVerifyingEmail(true);
 
     try {
-      // נסה לעדכן את האימייל של המשתמש הקיים
-      // אם האימייל כבר קיים במשתמש אחר, זה יכשל ולא יוצר משתמש חדש
+      // עדכן את האימייל של המשתמש הקיים ושלח magic link
       const { error: updateError } = await supabase.auth.updateUser({
         email: formData.email,
       }, {
@@ -86,7 +85,7 @@ export default function CompleteProfilePage() {
         if (updateError.message.includes('already registered') || 
             updateError.message.includes('already exists') ||
             updateError.message.includes('User already registered')) {
-          // שמור את האימייל ב-user_metadata בלבד (לא יוצר משתמש חדש)
+          // שמור את האימייל ב-user_metadata בלבד
           const { error: metadataError } = await supabase.auth.updateUser({
             data: {
               email: formData.email,
@@ -105,10 +104,10 @@ export default function CompleteProfilePage() {
         throw updateError;
       }
 
-      // אם updateUser הצליח, נשלח קישור אימות
+      // אם updateUser הצליח, נשלח magic link אוטומטית
       setEmailOTPSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'שגיאה בשליחת קוד אימות');
+      setError(err instanceof Error ? err.message : 'שגיאה בשליחת קישור אימות');
     } finally {
       setVerifyingEmail(false);
     }
@@ -280,6 +279,7 @@ export default function CompleteProfilePage() {
                     setFormData({ ...formData, email: e.target.value });
                     setEmailOTPSent(false);
                     setEmailVerified(false);
+                    setError('');
                   }}
                   disabled={emailVerified}
                   className="w-full pr-10 pl-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right disabled:bg-gray-50 disabled:cursor-not-allowed"

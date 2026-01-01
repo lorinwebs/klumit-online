@@ -111,6 +111,62 @@ export default function AboutPage() {
             </p>
           </div>
         </section>
+
+        {/* Contact Section */}
+        <section className="py-16 md:py-24 bg-white border-y border-gray-200">
+          <div className="max-w-4xl mx-auto px-4">
+            <div className="text-center mb-12">
+              <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light mb-4 block">
+                Contact Us
+              </span>
+              <h2 className="text-4xl md:text-5xl font-light luxury-font text-[#1a1a1a] mb-6">
+                יצירת קשר
+              </h2>
+            </div>
+            <div className="grid md:grid-cols-2 gap-8 md:gap-12 max-w-3xl mx-auto text-right">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-light text-gray-400 mb-2">חברה</h3>
+                  <p className="text-base md:text-lg font-light text-[#1a1a1a]">
+                    קלומית בע&quot;מ<br />
+                    <span className="text-sm text-gray-600">KLOMIT LTD.</span>
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-light text-gray-400 mb-2">כתובת</h3>
+                  <p className="text-base md:text-lg font-light text-[#1a1a1a]">
+                    גאולה 45<br />
+                    תל אביב יפו 6330447
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-light text-gray-400 mb-2">טלפון</h3>
+                  <p className="text-base md:text-lg font-light text-[#1a1a1a]">
+                    <a href="tel:+97235178502" className="hover:opacity-70 transition-opacity">
+                      03-5178502
+                    </a>
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-light text-gray-400 mb-2">פקס</h3>
+                  <p className="text-base md:text-lg font-light text-[#1a1a1a]">
+                    03-5106781
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-light text-gray-400 mb-2">אימייל</h3>
+                  <p className="text-base md:text-lg font-light text-[#1a1a1a]">
+                    <a href="mailto:info@klomit.com" className="hover:opacity-70 transition-opacity">
+                      info@klomit.com
+                    </a>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

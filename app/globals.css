@@ -159,6 +159,7 @@
   display: none;
 }
 
+
 /* Infinite Marquee Animation - RTL Support */
 @keyframes marquee-rtl {
   0% { 

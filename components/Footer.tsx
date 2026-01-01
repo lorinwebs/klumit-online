@@ -8,8 +8,11 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <h3 className="text-xl md:text-2xl font-light luxury-font mb-2 md:mb-4 text-[#1a1a1a]">
-              Klomit
+              קלומית בע&quot;מ
             </h3>
+            <p className="text-xs md:text-sm font-light text-gray-600 leading-relaxed mb-2 md:mb-3">
+              KLOMIT LTD.
+            </p>
             <p className="text-xs md:text-sm font-light text-gray-600 leading-relaxed mb-3 md:mb-6">
               תיקים יוקרתיים בעיצוב איטלקי
             </p>
@@ -79,13 +82,20 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="tel:+972501234567" className="hover:text-[#1a1a1a] transition-colors">
-                  +972 50-123-4567
+                <a href="tel:+97235178502" className="hover:text-[#1a1a1a] transition-colors">
+                  03-5178502
                 </a>
               </li>
+              <li className="text-gray-500">
+                פקס: 03-5106781
+              </li>
             </ul>
-            <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200 hidden md:block">
-              <p className="text-xs font-light text-gray-500 leading-relaxed">
+            <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200">
+              <p className="text-xs font-light text-gray-500 leading-relaxed mb-2 md:mb-3">
+                <span className="font-medium text-gray-600">כתובת:</span><br />
+                גאולה 45, תל אביב יפו 6330447
+              </p>
+              <p className="text-xs font-light text-gray-500 leading-relaxed hidden md:block">
                 שעות פעילות<br />
                 א׳-ה׳: 09:00-18:00<br />
                 ו׳: 09:00-14:00
@@ -98,7 +108,7 @@ export default function Footer() {
         <div className="border-t border-gray-200 mt-6 md:mt-12 pt-4 md:pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
             <p className="text-xs font-light text-gray-500 text-center md:text-right">
-              &copy; {new Date().getFullYear()} Klomit. כל הזכויות שמורות.
+              &copy; {new Date().getFullYear()} קלומית בע&quot;מ (KLOMIT LTD.). כל הזכויות שמורות.
             </p>
             <div className="flex gap-4 md:gap-6 text-xs font-light text-gray-500">
               <Link href="/terms" className="hover:text-[#1a1a1a] transition-colors">

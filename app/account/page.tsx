@@ -37,10 +37,12 @@ export default function AccountPage() {
       
       // טען את הנתונים לטופס
       if (session.user) {
+        // הצג את האימייל הקיים (לא את pending_email)
+        const currentEmail = session.user.email || session.user.user_metadata?.email || '';
         setFormData({
           firstName: session.user.user_metadata?.first_name || '',
           lastName: session.user.user_metadata?.last_name || '',
-          email: session.user.email || session.user.user_metadata?.email || '',
+          email: currentEmail,
         });
 
         // קבל את ה-Shopify Customer ID
@@ -71,7 +73,8 @@ export default function AccountPage() {
           last_name: string;
           email?: string;
           email_verified?: boolean;
-        };
+          pending_email?: string;
+        } & Record<string, any>;
       } = {
         data: {
           first_name: formData.firstName,
@@ -79,32 +82,58 @@ export default function AccountPage() {
         },
       };
 
-      // אם האימייל השתנה, צריך לאמת אותו
+      // בדוק אם יש אימייל מאומת
+      const hasVerifiedEmail = user.email && user.email_confirmed_at;
+      
+      // אם האימייל השתנה, צריך לאמת אותו לפני עדכון
       const emailChanged = formData.email && formData.email !== (user.email || user.user_metadata?.email);
       
       if (formData.email) {
-        if (emailChanged) {
-          // עדכן אימייל עם אימות
-          const { error: emailError } = await supabase.auth.updateUser({
-            email: formData.email,
-          }, {
-            emailRedirectTo: `${window.location.origin}/auth/verify-email`,
-          });
-
-          if (emailError) throw emailError;
-          
-          // שמור את האימייל ב-user_metadata (עד שיאומת)
-          updateData.data.email = formData.email;
+        if (emailChanged && !hasVerifiedEmail) {
+          // אם האימייל השתנה ואין אימייל מאומת, נשמור אותו ב-user_metadata ונשלח magic link
+          // לא נעדכן את האימייל ישירות - רק אחרי אימות מוצלח
+          updateData.data.pending_email = formData.email;
           updateData.data.email_verified = false;
           
+          // שלח magic link לאימות דרך signInWithOtp (לא יוצר משתמש חדש)
+          const { error: otpError } = await supabase.auth.signInWithOtp({
+            email: formData.email,
+            options: {
+              shouldCreateUser: false,
+              emailRedirectTo: `${window.location.origin}/auth/verify-email?new_email=${encodeURIComponent(formData.email)}`,
+            },
+          });
+
+          if (otpError) {
+            // אם signInWithOtp נכשל, נסה דרך resend
+            const { error: resendError } = await supabase.auth.resend({
+              type: 'signup',
+              email: formData.email,
+              options: {
+                emailRedirectTo: `${window.location.origin}/auth/verify-email?new_email=${encodeURIComponent(formData.email)}`,
+              },
+            });
+
+            if (resendError && !resendError.message.includes('Signups not allowed')) {
+              throw resendError;
+            }
+          }
+          
           setEmailVerificationSent(true);
-        } else {
-          // אם האימייל לא השתנה, רק עדכן את user_metadata
-          updateData.data.email = formData.email;
+          // אל תסגור את מצב העריכה - המשתמש צריך לראות את ההודעה
+        } else if (!emailChanged) {
+          // אם האימייל לא השתנה, רק עדכן את user_metadata (אם יש אימייל מאומת, הוא לא ישתנה)
+          if (hasVerifiedEmail) {
+            // אם יש אימייל מאומת, לא נעדכן אותו
+            updateData.data.email = user.email;
+          } else {
+            // אם אין אימייל מאומת, עדכן את user_metadata
+            updateData.data.email = formData.email;
+          }
         }
       }
 
-      // עדכן את השם
+      // עדכן את השם (ולא את האימייל אם הוא השתנה)
       const { error: updateError, data } = await supabase.auth.updateUser(updateData);
 
       if (updateError) throw updateError;
@@ -114,28 +143,27 @@ export default function AccountPage() {
         setUser(data.user);
       }
 
-      // סנכרן עם Shopify
-      try {
-        await syncCustomerToShopify(
-          user.id,
-          user.phone || '',
-          {
-            email: formData.email || undefined,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-          }
-        );
-      } catch (syncError) {
-        console.warn('Could not sync to Shopify:', syncError);
+      // סנכרן עם Shopify (רק אם האימייל לא השתנה או אם הוא כבר מאומת)
+      if (!emailChanged) {
+        try {
+          await syncCustomerToShopify(
+            user.id,
+            user.phone || '',
+            {
+              email: formData.email || undefined,
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+            }
+          );
+        } catch (syncError) {
+          console.warn('Could not sync to Shopify:', syncError);
+        }
       }
 
-      setEditing(false);
-      
-      // אם נשלח אימייל אימות, הצג הודעה
-      if (emailVerificationSent) {
-        setTimeout(() => {
-          setEmailVerificationSent(false);
-        }, 5000);
+      // אם האימייל לא השתנה, סגור את מצב העריכה
+      // אם האימייל השתנה, השאר במצב עריכה כדי שהמשתמש יראה את ההודעה
+      if (!emailChanged) {
+        setEditing(false);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה בשמירת הפרטים');
@@ -144,6 +172,7 @@ export default function AccountPage() {
       setSaving(false);
     }
   };
+
 
   if (loading) {
     return (
@@ -239,17 +268,32 @@ export default function AccountPage() {
                           <input
                             type="email"
                             value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            className="w-full pr-10 pl-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
-                            placeholder="your@email.com"
+                            onChange={(e) => {
+                              setFormData({ ...formData, email: e.target.value });
+                              setEmailVerificationSent(false);
+                              setError('');
+                            }}
+                            disabled={!!(user.email && user.email_confirmed_at)}
+                            className="w-full pr-10 pl-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right disabled:bg-gray-50 disabled:cursor-not-allowed"
+                            placeholder={user.email && user.email_confirmed_at ? 'אימייל מאומת - לא ניתן לערוך' : 'your@email.com'}
                           />
                         </div>
+                        {user.email && user.email_confirmed_at && (
+                          <p className="mt-1 text-xs text-gray-500 text-right">
+                            אימייל מאומת - לא ניתן לערוך. ניתן להוסיף אימייל נוסף רק אם אין אימייל מאומת.
+                          </p>
+                        )}
+                        {!user.email && !user.email_confirmed_at && formData.email && (
+                          <p className="mt-1 text-xs text-gray-500 text-right">
+                            הוסף אימייל כדי לקבל עדכונים והזמנות
+                          </p>
+                        )}
+                        {emailVerificationSent && (
+                          <div className="mt-2 bg-blue-50 border border-blue-200 text-blue-700 px-3 py-2 text-xs font-light text-right">
+                            נשלח קישור אימות לכתובת {formData.email}. אנא בדוק את תיבת הדואר שלך ולחץ על הקישור כדי לאמת את האימייל. האימייל יתעדכן רק אחרי אימות מוצלח.
+                          </div>
+                        )}
                       </div>
-                      {emailVerificationSent && (
-                        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-3 py-2 text-xs font-light text-right">
-                          נשלח אימייל אימות לכתובת {formData.email}. אנא בדוק את תיבת הדואר שלך ואימות את האימייל.
-                        </div>
-                      )}
                       {error && (
                         <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 text-xs font-light text-right">
                           {error}

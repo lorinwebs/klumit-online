@@ -14,7 +14,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-light luxury-font mb-4">הקדמה</h2>
             <p className="font-light leading-relaxed text-gray-700">
-              ברוכים הבאים לאתר Klomit. השימוש באתר זה כפוף לתנאים המפורטים להלן. שימוש באתר מהווה הסכמה מלאה לתנאים אלה.
+              ברוכים הבאים לאתר קלומית בע&quot;מ (KLOMIT LTD.). השימוש באתר זה כפוף לתנאים המפורטים להלן. שימוש באתר מהווה הסכמה מלאה לתנאים אלה.
             </p>
           </section>
 
@@ -104,9 +104,28 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-2xl font-light luxury-font mb-4">יצירת קשר</h2>
-            <p className="font-light leading-relaxed text-gray-700">
-              לשאלות או הבהרות בנוגע לתקנון זה, אנא צרו קשר עם שירות הלקוחות שלנו.
-            </p>
+            <div className="font-light leading-relaxed text-gray-700 space-y-3">
+              <p>
+                לשאלות או הבהרות בנוגע לתקנון זה, אנא צרו קשר עם שירות הלקוחות שלנו:
+              </p>
+              <div className="space-y-2 text-sm">
+                <p>
+                  <strong>קלומית בע&quot;מ (KLOMIT LTD.)</strong>
+                </p>
+                <p>
+                  כתובת: גאולה 45, תל אביב יפו 6330447
+                </p>
+                <p>
+                  טלפון: <a href="tel:+97235178502" className="hover:text-[#1a1a1a] transition-colors">03-5178502</a>
+                </p>
+                <p>
+                  פקס: 03-5106781
+                </p>
+                <p>
+                  אימייל: <a href="mailto:info@klomit.com" className="hover:text-[#1a1a1a] transition-colors">info@klomit.com</a>
+                </p>
+              </div>
+            </div>
           </section>
         </div>
       </main>
