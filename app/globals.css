@@ -181,3 +181,10 @@
   animation-play-state: paused;
 }
 
+/* Fix for Google Maps wheel event warning */
+.pac-container {
+  /* Force passive event listeners for Google Maps autocomplete */
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+

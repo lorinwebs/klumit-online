@@ -515,6 +515,14 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     onClick={() => {
                       setSelectedImage(node.url);
                       setCurrentImageIndex(index);
+                      // Scroll to image in center container
+                      const imageElement = imageRefs.current[node.url];
+                      if (imageElement && scrollContainerRef.current) {
+                        imageElement.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'center',
+                        });
+                      }
                     }}
                     className={`relative w-full aspect-square overflow-hidden border transition-luxury ${
                       selectedImage === node.url

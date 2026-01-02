@@ -32,6 +32,8 @@ interface Order {
 }
 
 export default function AccountPage() {
+  console.log('🔵 AccountPage: Component rendering');
+  
   const [user, setUser] = useState<User | null>(null);
   const [shopifyCustomerId, setShopifyCustomerId] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -43,6 +45,8 @@ export default function AccountPage() {
   const [emailVerificationSent, setEmailVerificationSent] = useState(false);
   const [originalFormData, setOriginalFormData] = useState<typeof formData | null>(null);
   const router = useRouter();
+  
+  console.log('🔵 AccountPage: State initialized', { loading, user: !!user });
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -58,56 +62,164 @@ export default function AccountPage() {
   });
 
   useEffect(() => {
-    async function getUser() {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        router.push('/auth/login');
-        return;
+    console.log('🟢 AccountPage: useEffect started');
+    let isMounted = true;
+    let loadingFinished = false;
+    
+    // Timeout למקרה שהטעינה נתקעת - קיצר ל-3 שניות
+    const timeoutId = setTimeout(() => {
+      if (isMounted && !loadingFinished) {
+        console.warn('⚠️ Loading timeout - forcing loading to false');
+        loadingFinished = true;
+        setLoading(false);
+        // אם אין user אחרי timeout, נסה לטעון שוב או redirect
+        if (!user) {
+          setTimeout(() => {
+            router.push('/auth/login');
+          }, 500);
+        }
       }
-
-      setUser(session.user);
-      
-      // טען את הנתונים לטופס
-      if (session.user) {
-        // הצג את האימייל הקיים (לא את pending_email)
-        const currentEmail = session.user.email || session.user.user_metadata?.email || '';
-        setFormData({
-          firstName: session.user.user_metadata?.first_name || '',
-          lastName: session.user.user_metadata?.last_name || '',
-          email: currentEmail,
-          phone: session.user.phone || session.user.user_metadata?.phone || '',
-          shippingAddress: session.user.user_metadata?.shipping_address || '',
-          shippingCity: session.user.user_metadata?.shipping_city || '',
-          shippingZipCode: session.user.user_metadata?.shipping_zip_code || '',
-          shippingApartment: session.user.user_metadata?.shipping_apartment || '',
-          shippingFloor: session.user.user_metadata?.shipping_floor || '',
-          shippingNotes: session.user.user_metadata?.shipping_notes || '',
+    }, 3000); // 3 שניות - יותר אגרסיבי
+    
+    async function getUser() {
+      console.log('🟡 AccountPage: getUser called');
+      try {
+        // בדוק אם Supabase client תקין
+        if (!supabase || !supabase.auth) {
+          console.error('❌ Supabase client not initialized');
+          if (isMounted) {
+            setLoading(false);
+          }
+          return;
+        }
+        
+        console.log('🟡 AccountPage: Calling supabase.auth.getSession()');
+        
+        // הוסף timeout ל-getSession עם wrapper
+        let sessionTimeout: NodeJS.Timeout | undefined;
+        const sessionPromise = supabase.auth.getSession().then(result => {
+          if (sessionTimeout) {
+            clearTimeout(sessionTimeout);
+            sessionTimeout = undefined;
+          }
+          console.log('🟡 AccountPage: getSession promise resolved');
+          return result;
+        }).catch(err => {
+          if (sessionTimeout) {
+            clearTimeout(sessionTimeout);
+            sessionTimeout = undefined;
+          }
+          console.error('❌ getSession promise rejected:', err);
+          throw err;
         });
         
-        // שמור את הנתונים המקוריים להשוואה
-        setOriginalFormData({
-          firstName: session.user.user_metadata?.first_name || '',
-          lastName: session.user.user_metadata?.last_name || '',
-          email: currentEmail,
-          phone: session.user.phone || session.user.user_metadata?.phone || '',
-          shippingAddress: session.user.user_metadata?.shipping_address || '',
-          shippingCity: session.user.user_metadata?.shipping_city || '',
-          shippingZipCode: session.user.user_metadata?.shipping_zip_code || '',
-          shippingApartment: session.user.user_metadata?.shipping_apartment || '',
-          shippingFloor: session.user.user_metadata?.shipping_floor || '',
-          shippingNotes: session.user.user_metadata?.shipping_notes || '',
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          sessionTimeout = setTimeout(() => {
+            console.error('❌ Session timeout after 5 seconds');
+            reject(new Error('Session timeout after 5 seconds'));
+          }, 5000);
         });
+        
+        let sessionResult: { data: { session: any }; error: any };
+        try {
+          sessionResult = await Promise.race([
+            sessionPromise,
+            timeoutPromise
+          ]) as { data: { session: any }; error: any };
+        } catch (timeoutError: any) {
+          console.error('❌ Session timeout error:', timeoutError?.message || timeoutError);
+          if (isMounted) {
+            setLoading(false);
+          }
+          return;
+        }
+        
+        const { data: { session }, error: sessionError } = sessionResult;
+        console.log('🟡 AccountPage: Session received', { hasSession: !!session, hasError: !!sessionError });
+        
+        if (!isMounted) return;
+        
+        if (sessionError) {
+          console.error('❌ Error getting session:', sessionError);
+          setLoading(false);
+          return;
+        }
+        
+        if (!session) {
+          console.log('🟡 AccountPage: No session, redirecting to login');
+          setLoading(false);
+          // Redirect ב-useEffect במקום ב-render
+          setTimeout(() => {
+            router.push('/auth/login');
+          }, 0);
+          return;
+        }
 
-        // קבל את ה-Shopify Customer ID
-        const customerId = await getShopifyCustomerId(session.user.id);
-        setShopifyCustomerId(customerId);
+        console.log('🟢 AccountPage: Session found, setting user');
+        setUser(session.user);
+        
+        // טען את הנתונים לטופס
+        if (session.user) {
+          // הצג את האימייל הקיים (לא את pending_email)
+          const currentEmail = session.user.email || session.user.user_metadata?.email || '';
+          setFormData({
+            firstName: session.user.user_metadata?.first_name || '',
+            lastName: session.user.user_metadata?.last_name || '',
+            email: currentEmail,
+            phone: session.user.phone || session.user.user_metadata?.phone || '',
+            shippingAddress: session.user.user_metadata?.shipping_address || '',
+            shippingCity: session.user.user_metadata?.shipping_city || '',
+            shippingZipCode: session.user.user_metadata?.shipping_zip_code || '',
+            shippingApartment: session.user.user_metadata?.shipping_apartment || '',
+            shippingFloor: session.user.user_metadata?.shipping_floor || '',
+            shippingNotes: session.user.user_metadata?.shipping_notes || '',
+          });
+          
+          // שמור את הנתונים המקוריים להשוואה
+          setOriginalFormData({
+            firstName: session.user.user_metadata?.first_name || '',
+            lastName: session.user.user_metadata?.last_name || '',
+            email: currentEmail,
+            phone: session.user.phone || session.user.user_metadata?.phone || '',
+            shippingAddress: session.user.user_metadata?.shipping_address || '',
+            shippingCity: session.user.user_metadata?.shipping_city || '',
+            shippingZipCode: session.user.user_metadata?.shipping_zip_code || '',
+            shippingApartment: session.user.user_metadata?.shipping_apartment || '',
+            shippingFloor: session.user.user_metadata?.shipping_floor || '',
+            shippingNotes: session.user.user_metadata?.shipping_notes || '',
+          });
+        }
+        
+        // קבל את ה-Shopify Customer ID ברקע (לא חוסם את הטעינה)
+        if (session.user) {
+          getShopifyCustomerId(session.user.id)
+            .then((customerId) => {
+              if (isMounted) {
+                setShopifyCustomerId(customerId);
+              }
+            })
+            .catch((err) => {
+              console.warn('Could not get Shopify Customer ID:', err);
+            });
+        }
+      } catch (err) {
+        console.error('❌ Error in getUser:', err);
+      } finally {
+        if (isMounted) {
+          loadingFinished = true;
+          console.log('🟢 AccountPage: Setting loading to false');
+          setLoading(false);
+        }
       }
-      
-      setLoading(false);
     }
 
     getUser();
+    console.log('🟢 AccountPage: getUser() called');
+    
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
   }, [router]);
 
   // טען הזמנות כשהמשתמש נטען
@@ -326,33 +438,33 @@ export default function AccountPage() {
           }
         });
 
-        // שמור את כל השינויים
-        if (changes.length > 0) {
-          await logProfileChanges(changes);
-        }
-
         // עדכן את הנתונים המקוריים
         setOriginalFormData({ ...formData });
+        
+        // שמור את כל השינויים ברקע (לא חוסם את השמירה)
+        if (changes.length > 0) {
+          logProfileChanges(changes).catch((err) => {
+            console.warn('Could not log profile changes:', err);
+          });
+        }
       }
 
-      // סנכרן עם Shopify (רק אם האימייל לא השתנה או אם הוא כבר מאומת)
+      // סנכרן עם Shopify ברקע (רק אם האימייל לא השתנה או אם הוא כבר מאומת)
       if (!emailChanged) {
-        try {
-          await syncCustomerToShopify(
-            user.id,
-            formData.phone || user.phone || '',
-            {
-              email: formData.email || undefined,
-              firstName: formData.firstName,
-              lastName: formData.lastName,
-              address: formData.shippingAddress || undefined,
-              city: formData.shippingCity || undefined,
-              zipCode: formData.shippingZipCode || undefined,
-            }
-          );
-        } catch (syncError) {
+        syncCustomerToShopify(
+          user.id,
+          formData.phone || user.phone || '',
+          {
+            email: formData.email || undefined,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            address: formData.shippingAddress || undefined,
+            city: formData.shippingCity || undefined,
+            zipCode: formData.shippingZipCode || undefined,
+          }
+        ).catch((syncError) => {
           console.warn('Could not sync to Shopify:', syncError);
-        }
+        });
       }
 
       // אם האימייל לא השתנה, סגור את מצב העריכה
@@ -369,7 +481,10 @@ export default function AccountPage() {
   };
 
 
+  console.log('🔵 AccountPage: Render check', { loading, user: !!user });
+  
   if (loading) {
+    console.log('🟡 AccountPage: Rendering loading state');
     return (
       <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
         <Header />
@@ -384,9 +499,35 @@ export default function AccountPage() {
     );
   }
 
+  // Redirect ל-login אם אין משתמש אחרי הטעינה
+  useEffect(() => {
+    if (!loading && !user) {
+      console.log('🟡 AccountPage: No user after loading, redirecting to login');
+      router.push('/auth/login');
+    }
+  }, [loading, user, router]);
+
   if (!user) {
+    console.log('🟡 AccountPage: No user, loading:', loading);
+    // אם אין משתמש אחרי הטעינה, הצג הודעת טעינה
+    if (!loading) {
+      return (
+        <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
+          <Header />
+          <main className="flex-grow max-w-4xl mx-auto px-4 py-20">
+            <div className="text-center">
+              <p className="text-sm font-light text-gray-600">מעבר לדף ההתחברות...</p>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      );
+    }
+    console.log('🟡 AccountPage: Returning null (still loading)');
     return null;
   }
+  
+  console.log('🟢 AccountPage: Rendering main content');
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">

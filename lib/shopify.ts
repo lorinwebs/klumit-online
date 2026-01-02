@@ -233,18 +233,6 @@ export const UPDATE_CART_BUYER_IDENTITY_MUTATION = `
         buyerIdentity {
           email
           phone
-          deliveryAddressPreferences {
-            deliveryAddress {
-              address1
-              address2
-              city
-              zip
-              countryCodeV2
-              firstName
-              lastName
-              phone
-            }
-          }
         }
       }
       userErrors {
@@ -289,6 +277,48 @@ export const UPDATE_CART_DISCOUNT_CODES_MUTATION = `
       warnings {
         code
         message
+      }
+    }
+  }
+`;
+
+export const GET_CART_QUERY = `
+  query getCart($id: ID!) {
+    cart(id: $id) {
+      id
+      checkoutUrl
+      lines(first: 100) {
+        edges {
+          node {
+            id
+            quantity
+            merchandise {
+              ... on ProductVariant {
+                id
+                title
+                price {
+                  amount
+                  currencyCode
+                }
+                product {
+                  title
+                  images(first: 1) {
+                    edges {
+                      node {
+                        url
+                        altText
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      buyerIdentity {
+        email
+        phone
       }
     }
   }

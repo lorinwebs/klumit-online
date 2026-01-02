@@ -15,14 +15,54 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const validatePhoneNumber = (phoneNumber: string): boolean => {
+    // הסר כל תווים שאינם ספרות
+    const digitsOnly = phoneNumber.replace(/\D/g, '');
+    
+    // בדוק אם המספר מתחיל ב-+972 או 972
+    if (phoneNumber.startsWith('+972')) {
+      const afterCountryCode = digitsOnly.slice(3); // הסר 972
+      // מספר ישראלי צריך להיות 9 ספרות אחרי קידומת המדינה
+      return afterCountryCode.length === 9 && afterCountryCode.startsWith('5');
+    }
+    
+    // אם מתחיל ב-0, הסר אותו ובדוק
+    if (phoneNumber.startsWith('0')) {
+      const withoutZero = digitsOnly.slice(1);
+      // מספר ישראלי צריך להיות 9 ספרות אחרי ה-0
+      return withoutZero.length === 9 && withoutZero.startsWith('5');
+    }
+    
+    // אם לא מתחיל ב-0 או +, בדוק אם זה 9 ספרות שמתחילות ב-5
+    if (digitsOnly.length === 9 && digitsOnly.startsWith('5')) {
+      return true;
+    }
+    
+    return false;
+  };
+
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    // בדוק ולידציה לפני שליחה
+    if (!validatePhoneNumber(phone)) {
+      setError('מספר טלפון לא תקין. אנא הכנס מספר ישראלי תקין (למשל: 050-123-4567)');
+      return;
+    }
+    
     setLoading(true);
 
     try {
       // Format phone number (add country code if needed)
-      const formattedPhone = phone.startsWith('+') ? phone : `+972${phone.replace(/^0/, '')}`;
+      const formattedPhone = phone.startsWith('+') ? phone : `+972${phone.replace(/^0/, '').replace(/\D/g, '')}`;
+      
+      // בדיקה נוספת אחרי עיצוב
+      if (!formattedPhone.match(/^\+9725\d{8}$/)) {
+        setError('מספר טלפון לא תקין. אנא הכנס מספר ישראלי תקין (למשל: 050-123-4567)');
+        setLoading(false);
+        return;
+      }
       
       const { error } = await supabase.auth.signInWithOtp({
         phone: formattedPhone,
@@ -58,7 +98,7 @@ export default function LoginPage() {
       if (error) throw error;
 
       // סנכרן עם Shopify אחרי התחברות מוצלחת
-      // Redirect to complete profile page
+      // תמיד נסנכרן עם Shopify כדי ליצור קישור בין הטלפון ל-Shopify Customer
       if (data.user) {
         // בדוק אם המשתמש כבר מילא פרטים
         // צריך גם first_name וגם last_name (שדות חובה)
@@ -66,24 +106,24 @@ export default function LoginPage() {
           (data.user.user_metadata?.first_name && data.user.user_metadata?.last_name) ||
           data.user.email;
         
-        if (hasProfile) {
-          // אם יש פרטים, סנכרן עם Shopify
-          try {
-            await syncCustomerToShopify(
-              data.user.id, 
-              formattedPhone,
-              {
-                email: data.user.email || data.user.user_metadata?.email || undefined,
-                firstName: data.user.user_metadata?.first_name || undefined,
-                lastName: data.user.user_metadata?.last_name || undefined,
-              }
-            );
-          } catch (syncError) {
-            console.error('Error syncing to Shopify:', syncError);
+        // תמיד סנכרן עם Shopify ברקע (לא חוסם את ההתחברות)
+        // זה יוצר/מוצא customer ב-Shopify לפי טלפון ושומר את הקישור ב-DB
+        syncCustomerToShopify(
+          data.user.id, 
+          formattedPhone,
+          {
+            email: data.user.email || data.user.user_metadata?.email || undefined,
+            firstName: data.user.user_metadata?.first_name || undefined,
+            lastName: data.user.user_metadata?.last_name || undefined,
           }
+        ).catch((syncError) => {
+          console.error('Error syncing to Shopify:', syncError);
+        });
+        
+        // מעבר מיידי לדף המתאים (לא מחכים לסנכרון)
+        if (hasProfile) {
           window.location.href = '/';
         } else {
-          // אם אין פרטים, מעבר לדף השלמת פרטים
           window.location.href = '/auth/complete-profile';
         }
       } else {

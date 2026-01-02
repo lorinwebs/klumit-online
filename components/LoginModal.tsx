@@ -28,13 +28,53 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     }
   }, [isOpen]);
 
+  const validatePhoneNumber = (phoneNumber: string): boolean => {
+    // הסר כל תווים שאינם ספרות
+    const digitsOnly = phoneNumber.replace(/\D/g, '');
+    
+    // בדוק אם המספר מתחיל ב-+972 או 972
+    if (phoneNumber.startsWith('+972')) {
+      const afterCountryCode = digitsOnly.slice(3); // הסר 972
+      // מספר ישראלי צריך להיות 9 ספרות אחרי קידומת המדינה
+      return afterCountryCode.length === 9 && afterCountryCode.startsWith('5');
+    }
+    
+    // אם מתחיל ב-0, הסר אותו ובדוק
+    if (phoneNumber.startsWith('0')) {
+      const withoutZero = digitsOnly.slice(1);
+      // מספר ישראלי צריך להיות 9 ספרות אחרי ה-0
+      return withoutZero.length === 9 && withoutZero.startsWith('5');
+    }
+    
+    // אם לא מתחיל ב-0 או +, בדוק אם זה 9 ספרות שמתחילות ב-5
+    if (digitsOnly.length === 9 && digitsOnly.startsWith('5')) {
+      return true;
+    }
+    
+    return false;
+  };
+
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    // בדוק ולידציה לפני שליחה
+    if (!validatePhoneNumber(phone)) {
+      setError('מספר טלפון לא תקין. אנא הכנס מספר ישראלי תקין (למשל: 050-123-4567)');
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      const formattedPhone = phone.startsWith('+') ? phone : `+972${phone.replace(/^0/, '')}`;
+      const formattedPhone = phone.startsWith('+') ? phone : `+972${phone.replace(/^0/, '').replace(/\D/g, '')}`;
+      
+      // בדיקה נוספת אחרי עיצוב
+      if (!formattedPhone.match(/^\+9725\d{8}$/)) {
+        setError('מספר טלפון לא תקין. אנא הכנס מספר ישראלי תקין (למשל: 050-123-4567)');
+        setLoading(false);
+        return;
+      }
       
       const { error } = await supabase.auth.signInWithOtp({
         phone: formattedPhone,
@@ -70,20 +110,18 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       if (error) throw error;
 
       if (data.user) {
-        // סנכרן עם Shopify
-        try {
-          await syncCustomerToShopify(
-            data.user.id, 
-            formattedPhone,
-            {
-              email: data.user.email || data.user.user_metadata?.email || undefined,
-              firstName: data.user.user_metadata?.first_name || undefined,
-              lastName: data.user.user_metadata?.last_name || undefined,
-            }
-          );
-        } catch (syncError) {
+        // סנכרן עם Shopify ברקע (לא חוסם את ההתחברות)
+        syncCustomerToShopify(
+          data.user.id, 
+          formattedPhone,
+          {
+            email: data.user.email || data.user.user_metadata?.email || undefined,
+            firstName: data.user.user_metadata?.first_name || undefined,
+            lastName: data.user.user_metadata?.last_name || undefined,
+          }
+        ).catch((syncError) => {
           console.error('Error syncing to Shopify:', syncError);
-        }
+        });
         
         // קריאה ל-onSuccess אם קיים
         if (onSuccess) {
