@@ -111,6 +111,8 @@ export async function syncCustomerToShopify(
         // לא נזרוק שגיאה - זה לא קריטי
       } else {
         console.log('✅ Saved Shopify Customer ID to Supabase');
+        // עדכן את ה-cache
+        customerIdCache.set(userId, { id: shopifyCustomerId, timestamp: Date.now() });
       }
 
       // עדכן כתובת ב-Shopify אם יש
@@ -136,10 +138,22 @@ export async function syncCustomerToShopify(
   }
 }
 
+// Cache ל-Shopify Customer ID כדי למנוע קריאות מיותרות ל-DB
+const customerIdCache = new Map<string, { id: string | null; timestamp: number }>();
+const CACHE_TTL = 60000; // 60 שניות
+
 /**
  * מקבל את ה-Shopify Customer ID של משתמש
  */
-export async function getShopifyCustomerId(userId: string): Promise<string | null> {
+export async function getShopifyCustomerId(userId: string, useCache: boolean = true): Promise<string | null> {
+  // בדוק cache אם מופעל
+  if (useCache) {
+    const cached = customerIdCache.get(userId);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.id;
+    }
+  }
+  
   try {
     const { data, error } = await supabase
       .from('user_shopify_sync')
@@ -157,14 +171,28 @@ export async function getShopifyCustomerId(userId: string): Promise<string | nul
       return null;
     }
 
-    if (!data) {
-      return null;
+    const customerId = data?.shopify_customer_id || null;
+    
+    // שמור ב-cache
+    if (useCache) {
+      customerIdCache.set(userId, { id: customerId, timestamp: Date.now() });
     }
-
-    return data.shopify_customer_id;
+    
+    return customerId;
   } catch (error) {
     console.error('Error getting Shopify Customer ID:', error);
     return null;
+  }
+}
+
+/**
+ * מנקה את ה-cache של Shopify Customer ID
+ */
+export function clearCustomerIdCache(userId?: string): void {
+  if (userId) {
+    customerIdCache.delete(userId);
+  } else {
+    customerIdCache.clear();
   }
 }
 

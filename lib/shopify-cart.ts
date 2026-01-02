@@ -4,24 +4,59 @@ import { shopifyClient, CREATE_CART_MUTATION, ADD_TO_CART_MUTATION, GET_CART_QUE
 import { supabase } from './supabase';
 import type { CartItem } from '@/store/cartStore';
 
+// Debouncing ל-saveCartIdToMetafields כדי למנוע קריאות מיותרות
+let saveCartIdTimeout: NodeJS.Timeout | null = null;
+let pendingCartId: string | null = null;
+
 /**
  * פונקציה עזר לשמירת cart ID ב-metafields
+ * עם debouncing כדי למנוע קריאות מיותרות
  */
-export async function saveCartIdToMetafields(cartId: string): Promise<void> {
+export async function saveCartIdToMetafields(cartId: string, immediate: boolean = false): Promise<void> {
+  // אם זה קריאה מיידית, נקה את ה-timeout ונקרא מיד
+  if (immediate) {
+    if (saveCartIdTimeout) {
+      clearTimeout(saveCartIdTimeout);
+      saveCartIdTimeout = null;
+    }
+    pendingCartId = null;
+    return saveCartIdToMetafieldsImpl(cartId);
+  }
+  
+  // שמור את ה-cart ID האחרון
+  pendingCartId = cartId;
+  
+  // נקה את ה-timeout הקודם
+  if (saveCartIdTimeout) {
+    clearTimeout(saveCartIdTimeout);
+  }
+  
+  // קבע timeout חדש (500ms debounce)
+  saveCartIdTimeout = setTimeout(() => {
+    if (pendingCartId) {
+      saveCartIdToMetafieldsImpl(pendingCartId).catch(err => {
+        console.warn('Failed to save cart ID to metafields:', err);
+      });
+      pendingCartId = null;
+    }
+    saveCartIdTimeout = null;
+  }, 500);
+}
+
+/**
+ * הפונקציה הפנימית שמבצעת את השמירה
+ */
+async function saveCartIdToMetafieldsImpl(cartId: string): Promise<void> {
   try {
-    console.log('💾 Attempting to save cart ID to metafields:', cartId);
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session?.user) {
-      console.warn('⚠️ No user session - cannot save cart ID to metafields');
       return; // אין משתמש מחובר
     }
 
-    // קבל Shopify Customer ID
+    // קבל Shopify Customer ID (עם cache כדי למנוע קריאות מיותרות)
     const { getShopifyCustomerId, syncCustomerToShopify } = await import('@/lib/sync-customer');
-    let shopifyCustomerId = await getShopifyCustomerId(session.user.id);
-    
-    console.log('👤 Shopify Customer ID from DB:', shopifyCustomerId);
+    let shopifyCustomerId = await getShopifyCustomerId(session.user.id, true);
     
     // אם אין Shopify Customer ID, ננסה ליצור customer אוטומטית
     // רק אם המשתמש מחובר (יש session)
@@ -41,7 +76,7 @@ export async function saveCartIdToMetafields(cartId: string): Promise<void> {
             }
           );
         } catch (err) {
-          console.warn('⚠️ Could not create Shopify customer:', err);
+          // שקט - לא נדפיס שגיאה כאן כי זה לא קריטי
         }
       }
     }
@@ -57,17 +92,13 @@ export async function saveCartIdToMetafields(cartId: string): Promise<void> {
         }),
       });
       
-      if (response.ok) {
-        console.log('✅ Cart ID saved to metafields successfully');
-      } else {
+      if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.warn('❌ Failed to save cart ID to metafields:', response.status, response.statusText, errorData);
+        console.warn('❌ Failed to save cart ID to metafields:', response.status, errorData);
       }
-    } else {
-      console.warn('⚠️ No Shopify Customer ID - cannot save cart ID to metafields');
     }
   } catch (err) {
-    console.warn('❌ Could not save cart ID to metafields:', err);
+    // שקט - לא נדפיס שגיאה כאן כי זה לא קריטי
   }
 }
 
@@ -188,9 +219,9 @@ export async function syncCartToShopify(
         const { getShopifyCustomerId } = await import('@/lib/sync-customer');
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (session?.user) {
-          const shopifyCustomerId = await getShopifyCustomerId(session.user.id);
-          if (shopifyCustomerId) {
+      if (session?.user) {
+        const shopifyCustomerId = await getShopifyCustomerId(session.user.id, true);
+        if (shopifyCustomerId) {
             const response = await fetch(`/api/cart/save-cart-id?customerId=${encodeURIComponent(shopifyCustomerId)}`);
             if (response.ok) {
               const data = await response.json();
@@ -405,11 +436,9 @@ export async function findCartByBuyerIdentity(
     
     if (session?.user) {
       console.log('🔍 Looking for cart ID in metafields...');
-      // קבל Shopify Customer ID
+      // קבל Shopify Customer ID (עם cache)
       const { getShopifyCustomerId } = await import('@/lib/sync-customer');
-      const shopifyCustomerId = await getShopifyCustomerId(session.user.id);
-      
-      console.log('👤 Shopify Customer ID from DB:', shopifyCustomerId);
+      const shopifyCustomerId = await getShopifyCustomerId(session.user.id, true);
       
       if (shopifyCustomerId) {
         // טען cart ID מ-metafields
