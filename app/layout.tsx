@@ -9,7 +9,7 @@ const assistant = Assistant({
 });
 
 export const metadata: Metadata = {
-  title: 'קלומית בע"מ (KLOMIT LTD.) - תיקים יוקרתיים',
+  title: 'קלומית בע"מ (KLUMIT LTD.) - תיקים יוקרתיים',
   description: 'תיקים יוקרתיים בעיצוב איטלקי',
 };
 

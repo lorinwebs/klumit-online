@@ -1,4 +1,4 @@
-# Klomit - אתר E-commerce לתיקים יוקרתיים
+# Klumit - אתר E-commerce לתיקים יוקרתיים
 
 אתר E-commerce מודרני ומעוצב לתיקים יוקרתיים עם תמיכה מלאה ב-RTL (עברית) ואינטגרציה עם Shopify.
 
@@ -22,6 +22,7 @@ npm install
 ```
 NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN=your-store.myshopify.com
 NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN=your-storefront-access-token
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 ```
 
 3. הפעל את שרת הפיתוח:
@@ -70,7 +71,7 @@ npm run dev
 
 ## רישיון
 
-כל הזכויות שמורות © 2024 Klomit
+כל הזכויות שמורות © 2024 Klumit
 
 
 # klumit-online

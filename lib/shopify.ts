@@ -130,41 +130,14 @@ export const CREATE_CART_MUTATION = `
       cart {
         id
         checkoutUrl
-        lines(first: 100) {
-          edges {
-            node {
-              id
-              quantity
-              merchandise {
-                ... on ProductVariant {
-                  id
-                  title
-                  price {
-                    amount
-                    currencyCode
-                  }
-                  product {
-                    title
-                    images(first: 1) {
-                      edges {
-                        node {
-                          url
-                          altText
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
+        buyerIdentity {
+          email
+          phone
         }
-        cost {
-          totalAmount {
-            amount
-            currencyCode
-          }
-        }
+      }
+      userErrors {
+        field
+        message
       }
     }
   }
@@ -211,6 +184,103 @@ export const ADD_TO_CART_MUTATION = `
             currencyCode
           }
         }
+      }
+    }
+  }
+`;
+
+export const UPDATE_CART_DELIVERY_ADDRESS_MUTATION = `
+  mutation cartDeliveryAddressUpdate($cartId: ID!, $deliveryAddress: MailingAddressInput!) {
+    cartDeliveryAddressUpdate(cartId: $cartId, deliveryAddress: $deliveryAddress) {
+      cart {
+        id
+        checkoutUrl
+        deliveryGroups {
+          deliveryAddress {
+            address1
+            address2
+            city
+            zip
+            countryCodeV2
+            firstName
+            lastName
+            phone
+          }
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+export const UPDATE_CART_BUYER_IDENTITY_MUTATION = `
+  mutation cartBuyerIdentityUpdate($cartId: ID!, $buyerIdentity: CartBuyerIdentityInput!) {
+    cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
+      cart {
+        id
+        checkoutUrl
+        buyerIdentity {
+          email
+          phone
+          deliveryAddressPreferences {
+            deliveryAddress {
+              address1
+              address2
+              city
+              zip
+              countryCodeV2
+              firstName
+              lastName
+              phone
+            }
+          }
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+export const UPDATE_CART_DISCOUNT_CODES_MUTATION = `
+  mutation cartDiscountCodesUpdate($cartId: ID!, $discountCodes: [String!]) {
+    cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
+      cart {
+        id
+        checkoutUrl
+        cost {
+          totalAmount {
+            amount
+            currencyCode
+          }
+          subtotalAmount {
+            amount
+            currencyCode
+          }
+        }
+        discountCodes {
+          code
+          applicable
+        }
+        discountAllocations {
+          discountedAmount {
+            amount
+            currencyCode
+          }
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+      warnings {
+        code
+        message
       }
     }
   }

@@ -103,7 +103,7 @@ export async function createPaymentLink(data: CreatePaymentLinkRequest): Promise
         'Content-Type': 'application/json',
         'x-api-key': GROW_API_KEY!,
         'Accept': 'application/json',
-        'User-Agent': 'Klomit-Shopify/1.0',
+        'User-Agent': 'Klumit-Shopify/1.0',
       },
       body: JSON.stringify(requestBody),
       // הוסף cache control

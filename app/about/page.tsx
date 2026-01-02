@@ -11,7 +11,7 @@ export default function AboutPage() {
           <div className="max-w-7xl mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center">
               <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light mb-4 block">
-                About Klomit
+                About Klumit
               </span>
               <h1 className="text-5xl md:text-7xl font-light luxury-font text-[#1a1a1a] mb-6 leading-tight">
                 אודות קלומית
@@ -129,7 +129,7 @@ export default function AboutPage() {
                   <h3 className="text-sm font-light text-gray-400 mb-2">חברה</h3>
                   <p className="text-base md:text-lg font-light text-[#1a1a1a]">
                     קלומית בע&quot;מ<br />
-                    <span className="text-sm text-gray-600">KLOMIT LTD.</span>
+                    <span className="text-sm text-gray-600">KLUMIT LTD.</span>
                   </p>
                 </div>
                 <div>
@@ -158,8 +158,8 @@ export default function AboutPage() {
                 <div>
                   <h3 className="text-sm font-light text-gray-400 mb-2">אימייל</h3>
                   <p className="text-base md:text-lg font-light text-[#1a1a1a]">
-                    <a href="mailto:info@klomit.com" className="hover:opacity-70 transition-opacity">
-                      info@klomit.com
+                    <a href="mailto:info@klumit.com" className="hover:opacity-70 transition-opacity">
+                      info@klumit.com
                     </a>
                   </p>
                 </div>

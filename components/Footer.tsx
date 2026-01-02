@@ -11,7 +11,7 @@ export default function Footer() {
               קלומית בע&quot;מ
             </h3>
             <p className="text-xs md:text-sm font-light text-gray-600 leading-relaxed mb-2 md:mb-3">
-              KLOMIT LTD.
+              KLUMIT LTD.
             </p>
             <p className="text-xs md:text-sm font-light text-gray-600 leading-relaxed mb-3 md:mb-6">
               תיקים יוקרתיים בעיצוב איטלקי
@@ -77,8 +77,8 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 md:space-y-3 text-xs md:text-sm font-light text-gray-600">
               <li>
-                <a href="mailto:info@klomit.com" className="hover:text-[#1a1a1a] transition-colors">
-                  info@klomit.com
+                <a href="mailto:info@klumit.com" className="hover:text-[#1a1a1a] transition-colors">
+                  info@klumit.com
                 </a>
               </li>
               <li>
@@ -108,7 +108,7 @@ export default function Footer() {
         <div className="border-t border-gray-200 mt-6 md:mt-12 pt-4 md:pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
             <p className="text-xs font-light text-gray-500 text-center md:text-right">
-              &copy; {new Date().getFullYear()} קלומית בע&quot;מ (KLOMIT LTD.). כל הזכויות שמורות.
+              &copy; {new Date().getFullYear()} קלומית בע&quot;מ (KLUMIT LTD.). כל הזכויות שמורות.
             </p>
             <div className="flex gap-4 md:gap-6 text-xs font-light text-gray-500">
               <Link href="/terms" className="hover:text-[#1a1a1a] transition-colors">

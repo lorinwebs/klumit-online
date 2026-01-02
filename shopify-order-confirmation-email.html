@@ -332,7 +332,7 @@
 <body>
   <div class="email-wrapper">
     <div class="email-header">
-      <div class="email-logo">KLOMIT</div>
+      <div class="email-logo">KLUMIT</div>
     </div>
     
     <div class="email-body">
@@ -449,11 +449,9 @@
       </div>
       {% endif %}
       
-      {% if order.order_status_url %}
       <div style="text-align: center; margin: 40px 0;">
-        <a href="{{ order.order_status_url }}" class="email-button">צפה בהזמנה</a>
+        <a href="{{ shop.url }}/order/{{ order.name }}" class="email-button">צפה בהזמנה</a>
       </div>
-      {% endif %}
       
       <div class="divider"></div>
       
@@ -466,7 +464,7 @@
     <div class="email-footer">
       <p class="email-footer-text">
         עם ברכה,<br>
-        צוות KLOMIT
+        צוות KLUMIT
       </p>
       <div class="email-footer-links">
         <a href="{{ shop.url }}" class="email-footer-link">בית</a>
@@ -475,7 +473,7 @@
         <a href="{{ shop.url }}/pages/terms" class="email-footer-link">תקנון</a>
       </div>
       <p class="email-footer-text" style="margin-top: 20px; font-size: 12px;">
-        © {{ 'now' | date: "%Y" }} KLOMIT. כל הזכויות שמורות.
+        © {{ 'now' | date: "%Y" }} KLUMIT. כל הזכויות שמורות.
       </p>
     </div>
   </div>

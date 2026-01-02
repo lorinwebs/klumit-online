@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { shopifyClient } from './shopify';
-import { CREATE_CUSTOMER_MUTATION } from './shopify-admin';
+import { CREATE_CUSTOMER_MUTATION, updateCustomerAddress } from './shopify-admin';
 
 /**
  * מסנכרן לקוח מ-Supabase ל-Shopify
@@ -13,6 +13,9 @@ export async function syncCustomerToShopify(
     email?: string;
     firstName?: string;
     lastName?: string;
+    address?: string;
+    city?: string;
+    zipCode?: string;
   }
 ) {
   try {
@@ -37,7 +40,7 @@ export async function syncCustomerToShopify(
       console.log('ℹ️ Customer already synced to Shopify:', shopifyCustomerId);
     } else {
       // השתמש בפרטים שהתקבלו, או צור email מ-phone אם אין
-      const userEmail = customerData?.email || `phone-${phoneWithoutPlus.replace(/\D/g, '')}@klomit.local`;
+      const userEmail = customerData?.email || `phone-${phoneWithoutPlus.replace(/\D/g, '')}@klumit.local`;
       const firstName = customerData?.firstName || '';
       const lastName = customerData?.lastName || '';
       
@@ -101,6 +104,21 @@ export async function syncCustomerToShopify(
       } else {
         console.log('✅ Saved Shopify Customer ID to Supabase');
       }
+
+      // עדכן כתובת ב-Shopify אם יש
+      if (customerData?.address && customerData?.city && customerData?.zipCode) {
+        try {
+          await updateCustomerAddress(shopifyCustomerId, {
+            address1: customerData.address,
+            city: customerData.city,
+            zip: customerData.zipCode,
+            country: 'IL',
+          });
+          console.log('✅ Updated customer address in Shopify');
+        } catch (error) {
+          console.warn('⚠️ Could not update customer address:', error);
+        }
+      }
     }
 
     return shopifyCustomerId;
@@ -119,9 +137,19 @@ export async function getShopifyCustomerId(userId: string): Promise<string | nul
       .from('user_shopify_sync')
       .select('shopify_customer_id')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle(); // משתמש ב-maybeSingle במקום single כדי לא לזרוק שגיאה אם אין רשומה
 
-    if (error || !data) {
+    if (error) {
+      // אם הטבלה לא קיימת (PGRST116) או שגיאה אחרת, נחזיר null
+      if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+        console.warn('⚠️ user_shopify_sync table does not exist - run supabase-schema.sql');
+        return null;
+      }
+      console.warn('⚠️ Error getting Shopify Customer ID:', error.message);
+      return null;
+    }
+
+    if (!data) {
       return null;
     }
 

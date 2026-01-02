@@ -74,7 +74,7 @@ export const useCartStore = create<CartStore>()(
       },
     }),
     {
-      name: 'klomit-cart',
+      name: 'klumit-cart',
     }
   )
 );
