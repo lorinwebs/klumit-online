@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { shopifyAdminClient } from '@/lib/shopify-admin';
 
+export const dynamic = 'force-dynamic';
+
 const SAVE_CART_ID_MUTATION = `
   mutation metafieldsSet($metafields: [MetafieldsSetInput!]!) {
     metafieldsSet(metafields: $metafields) {

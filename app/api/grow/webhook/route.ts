@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyWebhookSignature } from '@/lib/grow';
 import { updateShopifyOrder } from '@/lib/shopify-admin';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Webhook endpoint לקבלת עדכונים מ-Grow
  * 

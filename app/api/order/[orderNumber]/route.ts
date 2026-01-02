@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { shopifyAdminClient } from '@/lib/shopify-admin';
 
+export const dynamic = 'force-dynamic';
+
 const GET_ORDER_QUERY = `
   query getOrder($query: String!) {
     orders(first: 1, query: $query) {

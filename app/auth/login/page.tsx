@@ -88,20 +88,44 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      // בדוק אם Supabase client תקין
+      if (!supabase || !supabase.auth) {
+        console.error('❌ Supabase client not initialized');
+        setError('שגיאה בחיבור לשרת. אנא רענן את הדף ונסה שוב');
+        setLoading(false);
+        return;
+      }
+      
       const formattedPhone = phone.startsWith('+') ? phone : `+972${phone.replace(/^0/, '')}`;
       console.log('🟡 handleVerifyCode: Calling verifyOtp', { phone: formattedPhone, codeLength: code.length });
       
       // הוסף timeout ל-verifyOtp
+      let verifyTimeout: NodeJS.Timeout | undefined;
       const verifyPromise = supabase.auth.verifyOtp({
         phone: formattedPhone,
         token: code,
         type: 'sms',
+      }).then(result => {
+        if (verifyTimeout) {
+          clearTimeout(verifyTimeout);
+          verifyTimeout = undefined;
+        }
+        console.log('🟡 handleVerifyCode: verifyOtp promise resolved');
+        return result;
+      }).catch(err => {
+        if (verifyTimeout) {
+          clearTimeout(verifyTimeout);
+          verifyTimeout = undefined;
+        }
+        console.error('❌ handleVerifyCode: verifyOtp promise rejected', err);
+        throw err;
       });
       
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Timeout: verifyOtp took too long (10 seconds)'));
-        }, 10000);
+        verifyTimeout = setTimeout(() => {
+          console.error('❌ handleVerifyCode: verifyOtp timeout after 8 seconds');
+          reject(new Error('Timeout: verifyOtp took too long (8 seconds)'));
+        }, 8000); // קיצר ל-8 שניות
       });
       
       let verifyResult: { data: any; error: any };
@@ -109,7 +133,7 @@ export default function LoginPage() {
         verifyResult = await Promise.race([verifyPromise, timeoutPromise]) as { data: any; error: any };
       } catch (timeoutError: any) {
         console.error('❌ handleVerifyCode: verifyOtp timeout', timeoutError?.message || timeoutError);
-        setError('הקוד אימות לוקח יותר מדי זמן. אנא נסה שוב');
+        setError('הקוד אימות לוקח יותר מדי זמן. אנא בדוק את החיבור לאינטרנט ונסה שוב');
         setLoading(false);
         return;
       }
@@ -134,23 +158,27 @@ export default function LoginPage() {
         
         console.log('🟡 handleVerifyCode: Profile check', { hasProfile, hasEmail: !!data.user.email, hasFirstName: !!data.user.user_metadata?.first_name });
         
-        // תמיד סנכרן עם Shopify ברקע (לא חוסם את ההתחברות)
-        // זה יוצר/מוצא customer ב-Shopify לפי טלפון ושומר את הקישור ב-DB
-        console.log('🟡 handleVerifyCode: Starting Shopify sync');
-        syncCustomerToShopify(
-          data.user.id, 
-          formattedPhone,
-          {
-            email: data.user.email || data.user.user_metadata?.email || undefined,
-            firstName: data.user.user_metadata?.first_name || undefined,
-            lastName: data.user.user_metadata?.last_name || undefined,
-          }
-        ).catch((syncError) => {
-          console.error('❌ handleVerifyCode: Error syncing to Shopify:', syncError);
-        });
-        
         // מעבר מיידי לדף המתאים (לא מחכים לסנכרון)
-        console.log('🟢 handleVerifyCode: Redirecting', { hasProfile, target: hasProfile ? '/' : '/auth/complete-profile' });
+        console.log('🟢 handleVerifyCode: Redirecting immediately', { hasProfile, target: hasProfile ? '/' : '/auth/complete-profile' });
+        
+        // סנכרן עם Shopify ברקע אחרי ה-redirect (לא חוסם את ההתחברות)
+        // זה יוצר/מוצא customer ב-Shopify לפי טלפון ושומר את הקישור ב-DB
+        // נעשה את זה ב-setTimeout כדי לא לחסום את ה-redirect
+        setTimeout(() => {
+          console.log('🟡 handleVerifyCode: Starting Shopify sync in background');
+          syncCustomerToShopify(
+            data.user.id, 
+            formattedPhone,
+            {
+              email: data.user.email || data.user.user_metadata?.email || undefined,
+              firstName: data.user.user_metadata?.first_name || undefined,
+              lastName: data.user.user_metadata?.last_name || undefined,
+            }
+          ).catch((syncError) => {
+            console.error('❌ handleVerifyCode: Error syncing to Shopify:', syncError);
+          });
+        }, 100); // קצת delay כדי לא לחסום את ה-redirect
+        
         if (hasProfile) {
           window.location.href = '/';
         } else {

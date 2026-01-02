@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPaymentLink } from '@/lib/grow';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * API endpoint ליצירת Payment Link ב-Grow
  * 

@@ -3,6 +3,8 @@ import { shopifyAdminClient } from '@/lib/shopify-admin';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 const GET_USER_ORDERS_QUERY = `
   query getUserOrders($query: String!) {
     orders(first: 50, query: $query, sortKey: CREATED_AT, reverse: true) {
