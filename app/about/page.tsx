@@ -11,14 +11,14 @@ export default function AboutPage() {
         <section className="relative py-12 border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center">
-              <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light mb-3 block">
+              <span className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-light mb-3 block">
                 About Klumit
               </span>
               <h1 className="text-4xl md:text-5xl font-light luxury-font text-[#1a1a1a] mb-4 leading-tight">
-                אודות קלומית
+                אודות קלומית (Klumit)
               </h1>
               <p className="text-base md:text-lg font-light text-gray-600 leading-relaxed max-w-2xl mx-auto">
-                מורשת של אומנות, מסורת איטלקית ואיכות ללא פשרות
+                מורשת של אומנות, מסורת איטלקית ואיכות ללא פשרות.
               </p>
             </div>
           </div>
@@ -30,7 +30,7 @@ export default function AboutPage() {
             <div className="grid md:grid-cols-2 gap-8 items-center mb-12">
               <div className="relative aspect-[4/3] order-2 md:order-1">
                 <Image
-                  src="/about-image-1.jpg"
+                  src="/about-image-3.jpg"
                   alt="שני גברים הולכים בחוץ"
                   fill
                   className="object-contain object-top"
@@ -38,18 +38,24 @@ export default function AboutPage() {
                 />
               </div>
               <div className="text-right space-y-4 order-1 md:order-2">
-                <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light block">
+                <span className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-light block">
                   Our Story
                 </span>
                 <h2 className="text-3xl md:text-4xl font-light luxury-font text-[#1a1a1a] mb-4">
                   המורשת שלנו
                 </h2>
-                <div className="space-y-3 text-base font-light text-gray-700 leading-relaxed">
-                  <p>
-                    חברת &quot;קלומית&quot;, בבעלות משה חייט, היא מהחברות הוותיקות והמוערכות בישראל בתחום ייבוא אביזרי האופנה. עם ניסיון של מעל ל-40 שנה, החברה מתמחה ביבוא של תיקים וארנקים ממותגים איטלקיים.
+                <div className="space-y-4 text-base font-light text-gray-700 leading-relaxed">
+                  <p className="text-lg font-light text-gray-800 italic">
+                    למקום בו נמצאים הדברים החשובים לנו ביותר, נדרשת תשומת הלב הגדולה ביותר.
                   </p>
                   <p>
-                    קלומית נולדה מתוך אהבה עמוקה לאומנות העור האיטלקית המסורתית. כל תיק שאנו מייבאים נושא עמו את המורשת של מאות שנות עבודת יד איטלקית, המשולבת עם עיצוב מודרני ופונקציונלי.
+                    סיפורה של חברת &quot;קלומית&quot;, בבעלות משה חייט, מתחיל לפני למעלה מ-40 שנה. כמי שצמח מתוך עולם האופנה הישראלי, זיהה משה את הצורך בחיבור בין הקהל המקומי לבין הסטנדרט הבינלאומי הגבוה ביותר – אומנות העור האיטלקית המסורתית.
+                  </p>
+                  <p>
+                    במהלך עשורים של פעילות, הפכה קלומית לאחת החברות הוותיקות והמוערכות בישראל בתחום ייבוא אביזרי האופנה. אנו מתמחים ביבוא של תיקים וארנקים ממותגים איטלקיים מובילים, מתוך אמונה שכל תיק הוא לא רק אביזר, אלא ביטוי של מורשת, איכות וסטייל אישי.
+                  </p>
+                  <p className="text-lg font-light text-gray-800 mt-6">
+                    המשפחה שלנו, התיק שלכם
                   </p>
                 </div>
               </div>
@@ -73,6 +79,25 @@ export default function AboutPage() {
                 />
               </div>
             </div>
+
+            <div className="grid md:grid-cols-2 gap-8 items-center mt-12">
+              <div className="relative aspect-[4/3] order-2 md:order-1">
+                <Image
+                  src="/about-image-1.jpg"
+                  alt="תמונה נוספת"
+                  fill
+                  className="object-contain object-top"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              </div>
+              <div className="text-right space-y-4 order-1 md:order-2">
+                <div className="space-y-3 text-base font-light text-gray-700 leading-relaxed">
+                  <p>
+                    הקולקציות שלנו משקפות את המסורת האיטלקית העתיקה, המשולבת עם עיצוב עכשווי ופונקציונלי. כל פריט שאנו מייבאים עובר בחירה קפדנית כדי להבטיח איכות ללא פשרות.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -80,7 +105,7 @@ export default function AboutPage() {
         <section className="py-16 md:py-20 bg-white border-t border-gray-200 mt-16 md:mt-20">
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center mb-8">
-              <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light mb-3 block">
+              <span className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-light mb-3 block">
                 What Makes Us Unique
               </span>
               <h2 className="text-3xl md:text-4xl font-light luxury-font text-[#1a1a1a] mb-6">
@@ -89,18 +114,18 @@ export default function AboutPage() {
             </div>
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
               <div className="text-right space-y-3 border-t border-gray-200 pt-6">
-                <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light block">
+                <span className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-light block">
                   01
                 </span>
                 <h3 className="text-xl md:text-2xl font-light luxury-font text-[#1a1a1a] mb-3">
                   נבחרת מותגים
                 </h3>
                 <p className="text-sm md:text-base font-light text-gray-600 leading-relaxed">
-                  ייצוג בלעדי של בתי אופנה איטלקיים מובילים כמו <span className="font-medium">Renato Angi</span> ו-<span className="font-medium">Carlino Group</span>.
+                  ייצוג בלעדי של בתי אופנה איטלקיים מובילים כמו <span className="font-medium text-amber-700">Renato Angi</span> ו-<span className="font-medium text-amber-700">Carlino Group</span>.
                 </p>
               </div>
               <div className="text-right space-y-3 border-t border-gray-200 pt-6">
-                <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light block">
+                <span className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-light block">
                   02
                 </span>
                 <h3 className="text-xl md:text-2xl font-light luxury-font text-[#1a1a1a] mb-3">
@@ -111,7 +136,7 @@ export default function AboutPage() {
                 </p>
               </div>
               <div className="text-right space-y-3 border-t border-gray-200 pt-6">
-                <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light block">
+                <span className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-light block">
                   03
                 </span>
                 <h3 className="text-xl md:text-2xl font-light luxury-font text-[#1a1a1a] mb-3">
@@ -128,7 +153,7 @@ export default function AboutPage() {
         {/* Commitment Section */}
         <section className="pt-12 pb-6">
           <div className="max-w-4xl mx-auto px-4 text-center">
-            <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light mb-3 block">
+            <span className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-light mb-3 block">
               Our Commitment
             </span>
             <h2 className="text-3xl md:text-4xl font-light luxury-font text-[#1a1a1a] mb-4">

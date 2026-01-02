@@ -31,20 +31,15 @@ export async function saveOrderAddress(address: OrderAddress): Promise<void> {
     if (selectError) {
       // אם זו שגיאת 400, יכול להיות שהטבלה לא קיימת או שיש בעיית הרשאות
       if (selectError.code === 'PGRST116' || selectError.message?.includes('does not exist')) {
-        console.warn('Order addresses table does not exist - skipping save');
+
         return;
       }
       // אם זו שגיאת הרשאות, נדפיס פרטים נוספים
       if (selectError.code === '42501' || selectError.message?.includes('permission') || selectError.message?.includes('policy')) {
-        console.error('Permission denied when checking existing address:', {
-          error: selectError.message,
-          code: selectError.code,
-          details: selectError.details,
-          hint: selectError.hint,
-        });
+
         // נמשיך לנסות לשמור - אולי זו רק בעיה ב-SELECT
       } else {
-        console.error('Error checking existing address:', selectError);
+
         // נמשיך לנסות לשמור
       }
     }
@@ -69,7 +64,7 @@ export async function saveOrderAddress(address: OrderAddress): Promise<void> {
         .eq('user_id', address.user_id);
 
       if (error) {
-        console.error('Error updating order address:', error);
+
         throw error;
       }
     } else {
@@ -81,17 +76,12 @@ export async function saveOrderAddress(address: OrderAddress): Promise<void> {
       if (error) {
         // אם הטבלה לא קיימת, זה בסדר - נמשיך בלי לשמור
         if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
-          console.warn('Order addresses table does not exist - skipping save');
+
           return;
         }
         // אם זו שגיאת הרשאות, נדפיס פרטים נוספים
         if (error.code === '42501' || error.message?.includes('permission') || error.message?.includes('policy')) {
-          console.error('Permission denied - RLS policy issue:', {
-            error: error.message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint,
-          });
+
         }
         throw error;
       }
@@ -99,19 +89,14 @@ export async function saveOrderAddress(address: OrderAddress): Promise<void> {
   } catch (error: any) {
     // אם הטבלה לא קיימת, זה בסדר - נמשיך בלי לשמור
     if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
-      console.warn('Order addresses table does not exist - skipping save');
+
       return;
     }
     // אם זו שגיאת הרשאות, נדפיס פרטים נוספים
     if (error.code === '42501' || error.message?.includes('permission') || error.message?.includes('policy')) {
-      console.error('Permission denied - RLS policy issue:', {
-        error: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint,
-      });
+
     }
-    console.error('Error saving order address:', error);
+
     throw error;
   }
 }
@@ -136,7 +121,7 @@ export async function getOrderAddress(orderReference: string): Promise<OrderAddr
 
     return data as OrderAddress | null;
   } catch (error) {
-    console.error('Error getting order address:', error);
+
     return null;
   }
 }
@@ -161,7 +146,7 @@ export async function getUserOrderAddresses(userId: string): Promise<OrderAddres
 
     return (data || []) as OrderAddress[];
   } catch (error) {
-    console.error('Error getting user order addresses:', error);
+
     return [];
   }
 }

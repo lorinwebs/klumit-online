@@ -4,9 +4,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('⚠️ Supabase credentials missing. Phone authentication will not work.');
-}
+// Supabase credentials check - will fail gracefully if missing
 
 // Create a custom storage adapter that uses localStorage
 const localStorageAdapter = {
@@ -15,7 +13,6 @@ const localStorageAdapter = {
     try {
       return window.localStorage.getItem(key);
     } catch (error) {
-      console.error('Error reading from localStorage:', error);
       return null;
     }
   },
@@ -24,7 +21,7 @@ const localStorageAdapter = {
     try {
       window.localStorage.setItem(key, value);
     } catch (error) {
-      console.error('Error writing to localStorage:', error);
+      // Error writing to localStorage - ignore
     }
   },
   removeItem: (key: string): void => {
@@ -32,7 +29,7 @@ const localStorageAdapter = {
     try {
       window.localStorage.removeItem(key);
     } catch (error) {
-      console.error('Error removing from localStorage:', error);
+      // Error removing from localStorage - ignore
     }
   },
 };

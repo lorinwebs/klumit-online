@@ -31,18 +31,18 @@ export async function logProfileChange(change: ProfileChange): Promise<void> {
     if (error) {
       // אם הטבלה לא קיימת, זה בסדר - נמשיך בלי לשמור
       if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
-        console.warn('Profile changes table does not exist - skipping log');
+
         return;
       }
-      console.error('Error logging profile change:', error);
+
     }
   } catch (error: any) {
     // אם הטבלה לא קיימת, זה בסדר - נמשיך בלי לשמור
     if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
-      console.warn('Profile changes table does not exist - skipping log');
+
       return;
     }
-    console.error('Error logging profile change:', error);
+
   }
 }
 
@@ -57,17 +57,17 @@ export async function logProfileChanges(changes: ProfileChange[]): Promise<void>
 
     if (error) {
       if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
-        console.warn('Profile changes table does not exist - skipping log');
+
         return;
       }
-      console.error('Error logging profile changes:', error);
+
     }
   } catch (error: any) {
     if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
-      console.warn('Profile changes table does not exist - skipping log');
+
       return;
     }
-    console.error('Error logging profile changes:', error);
+
   }
 }
 
@@ -108,7 +108,7 @@ export async function getUserProfileChanges(
 
     return (data || []) as ProfileChangeHistory[];
   } catch (error) {
-    console.error('Error getting user profile changes:', error);
+
     return [];
   }
 }

@@ -1,20 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { supabase } from '@/lib/supabase';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Phone, ArrowLeft } from 'lucide-react';
+import { Phone, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { verifyOtpServer } from '@/app/auth/actions';
 
 export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [step, setStep] = useState<'phone' | 'verify'>('phone');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [localError, setLocalError] = useState('');
+  const [isPending, startTransition] = useTransition();
 
-  // נרמול מספר טלפון ישראלי ל-E.164
+  // נרמול מספר טלפון ישראלי
   const normalizePhone = (raw: string): string => {
     const digits = raw.replace(/\D/g, '');
     const without972 = digits.startsWith('972') ? digits.slice(3) : digits;
@@ -22,7 +24,6 @@ export default function LoginPage() {
     return `+972${local}`;
   };
 
-  // בדיקת תקינות מספר טלפון
   const isValidPhone = (phoneNumber: string): boolean => {
     const digits = phoneNumber.replace(/\D/g, '');
     const without972 = digits.startsWith('972') ? digits.slice(3) : digits;
@@ -33,121 +34,32 @@ export default function LoginPage() {
   // שליחת קוד OTP
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setLocalError('');
 
     if (!isValidPhone(phone)) {
-      setError('מספר טלפון לא תקין. אנא הכנס מספר ישראלי תקין');
+      setLocalError('מספר טלפון לא תקין');
       return;
     }
 
     setLoading(true);
+    const formattedPhone = normalizePhone(phone);
 
     try {
-      const formattedPhone = normalizePhone(phone);
-
       const { error } = await supabase.auth.signInWithOtp({
         phone: formattedPhone,
-        options: {
-          channel: 'sms',
-        },
+        options: { channel: 'sms' },
       });
 
       if (error) throw error;
-
       setStep('verify');
     } catch (err: any) {
-      setError(err?.message || 'שגיאה בשליחת קוד. אנא נסה שוב');
+      console.error(err);
+      setLocalError(err?.message || 'שגיאה בשליחת קוד');
     } finally {
       setLoading(false);
     }
   };
 
-  // אימות קוד OTP
-  const handleVerifyCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    if (!code || code.trim().length !== 6) {
-      setError('אנא הכנס קוד אימות בן 6 ספרות');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const formattedPhone = normalizePhone(phone);
-
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: formattedPhone,
-        token: code.trim(),
-        type: 'sms',
-      });
-
-      if (error) {
-        if (error.message?.toLowerCase().includes('expired')) {
-          setError('הקוד פג תוקף. אנא בקש קוד חדש');
-        } else if (error.message?.toLowerCase().includes('invalid')) {
-          setError('קוד שגוי. אנא נסה שוב');
-        } else {
-          setError(error.message || 'קוד שגוי');
-        }
-        setLoading(false);
-        return;
-      }
-
-      // בדוק אם יש user ב-data או ב-session
-      const user = data?.user;
-      
-      console.log('✅ verifyOtp success', { hasUser: !!user, userId: user?.id });
-      
-      if (!user) {
-        // נסה לקבל session כגיבוי
-        console.log('⚠️ No user in data, checking session...');
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          console.log('✅ Found user in session', { userId: session.user.id });
-          // יש session - המשתמש מחובר
-          const hasProfile = 
-            (session.user.user_metadata?.first_name && session.user.user_metadata?.last_name) ||
-            session.user.email;
-
-          console.log('🔄 Redirecting...', { hasProfile, target: hasProfile ? '/' : '/auth/complete-profile' });
-          setLoading(false);
-
-          // השתמש ב-window.location.replace במקום href כדי למנוע בעיות
-          if (hasProfile) {
-            window.location.replace('/');
-          } else {
-            window.location.replace('/auth/complete-profile');
-          }
-          return;
-        } else {
-          console.error('❌ No user in data or session');
-          setError('שגיאה באימות הקוד. אנא נסה שוב');
-          setLoading(false);
-          return;
-        }
-      }
-
-      // יש user - המשתמש מחובר
-      const hasProfile = 
-        (user.user_metadata?.first_name && user.user_metadata?.last_name) ||
-        user.email;
-
-      console.log('🔄 Redirecting...', { hasProfile, target: hasProfile ? '/' : '/auth/complete-profile' });
-      setLoading(false);
-
-      // השתמש ב-window.location.replace במקום href כדי למנוע בעיות
-      if (hasProfile) {
-        window.location.replace('/');
-      } else {
-        window.location.replace('/auth/complete-profile');
-      }
-    } catch (err: any) {
-      setError(err?.message || 'שגיאה באימות הקוד. אנא נסה שוב');
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
@@ -166,7 +78,10 @@ export default function LoginPage() {
             התחברות
           </h1>
           <p className="text-sm font-light text-gray-600 mb-8 text-right">
-            הכנס את מספר הטלפון שלך לקבלת קוד אימות
+            {step === 'phone' 
+              ? 'הכנס את מספר הטלפון שלך לקבלת קוד אימות'
+              : `נשלח קוד ל-${phone}`
+            }
           </p>
 
           {step === 'phone' ? (
@@ -182,7 +97,7 @@ export default function LoginPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="050-123-4567"
-                    className="w-full pr-10 pl-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury"
+                    className="w-full pr-10 pl-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                     required
                   />
                 </div>
@@ -191,9 +106,9 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              {error && (
+              {localError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm font-light text-right">
-                  {error}
+                  {localError}
                 </div>
               )}
 
@@ -206,13 +121,56 @@ export default function LoginPage() {
               </button>
             </form>
           ) : (
-            <form onSubmit={handleVerifyCode} className="space-y-6">
+            <form 
+              action={async (formData: FormData) => {
+                console.log('🟡 LoginPage: Form submitted', { 
+                  hasFormData: !!formData,
+                  token: formData.get('token'),
+                  phone: formData.get('phone')
+                });
+                setLocalError('');
+                startTransition(async () => {
+                  try {
+                    console.log('🟡 LoginPage: Calling verifyOtpServer...');
+                    const result = await verifyOtpServer(null, formData);
+                    console.log('🟡 LoginPage: verifyOtpServer returned', { hasResult: !!result, hasError: !!result?.error });
+                    if (result?.error) {
+                      console.log('🔴 LoginPage: Server Action returned error', result.error);
+                      setLocalError(result.error);
+                    }
+                  } catch (err: any) {
+                    console.log('🟡 LoginPage: Exception in form action', { 
+                      errorMessage: err?.message,
+                      errorDigest: err?.digest,
+                      isRedirect: err?.digest?.includes('NEXT_REDIRECT') || err?.message?.includes('NEXT_REDIRECT')
+                    });
+                    // redirect זורק שגיאה ב-Next.js - זה תקין
+                    const errorMessage = err?.message || '';
+                    const errorDigest = err?.digest || '';
+                    if (errorMessage && !errorMessage.includes('NEXT_REDIRECT') && !errorDigest.includes('NEXT_REDIRECT')) {
+                      console.log('🔴 LoginPage: Unexpected error (not redirect)', err);
+                      setLocalError('שגיאה באימות הקוד');
+                    } else {
+                      console.log('✅ LoginPage: Redirect error (expected)');
+                    }
+                  }
+                });
+              }}
+              className="space-y-6"
+            >
+              {/* Hidden input לטלפון המנורמל */}
+              <input
+                type="hidden"
+                name="phone"
+                value={normalizePhone(phone)}
+              />
               <div>
                 <label className="block text-sm font-light mb-2 text-right">
                   קוד אימות
                 </label>
                 <input
                   type="text"
+                  name="token"
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000"
@@ -225,26 +183,27 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              {error && (
+              {localError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm font-light text-right">
-                  {error}
+                  {localError}
                 </div>
               )}
 
               <div className="space-y-3">
                 <button
                   type="submit"
-                  disabled={loading || code.length !== 6}
-                  className="w-full bg-[#1a1a1a] text-white py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  disabled={isPending || code.length !== 6}
+                  className="w-full bg-[#1a1a1a] text-white py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {loading ? 'מאמת...' : 'אמת קוד'}
+                  {(isPending || loading) && <Loader2 className="animate-spin" size={20} />}
+                  {(isPending || loading) ? 'מאמת...' : 'אמת קוד'}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     setStep('phone');
                     setCode('');
-                    setError('');
+                    setLocalError('');
                   }}
                   className="w-full border border-gray-300 text-gray-700 py-3 px-6 text-sm tracking-luxury uppercase font-light hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-luxury"
                 >

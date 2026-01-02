@@ -84,11 +84,7 @@ export async function createPaymentLink(data: CreatePaymentLinkRequest): Promise
   // בדוק את הדוקומנטציה - יכול להיות שהפורמט שונה
   const url = `${GROW_BASE_URL}/api/light/server/1.0/CreatePaymentLink`;
   
-  console.log('Calling Grow API:', {
-    url,
-    method: 'POST',
-    hasApiKey: !!GROW_API_KEY,
-    apiKeyPrefix: GROW_API_KEY?.substring(0, 10) + '...',
+  + '...',
     environment: GROW_ENVIRONMENT,
     baseUrl: GROW_BASE_URL,
     requestBody: requestBody,
@@ -110,17 +106,7 @@ export async function createPaymentLink(data: CreatePaymentLinkRequest): Promise
       cache: 'no-store',
     });
   } catch (fetchError: any) {
-    console.error('Fetch error details:', {
-      error: fetchError,
-      errorName: fetchError?.name,
-      errorMessage: fetchError?.message,
-      errorCause: fetchError?.cause,
-      url,
-      hasApiKey: !!GROW_API_KEY,
-      environment: GROW_ENVIRONMENT,
-      baseUrl: GROW_BASE_URL,
-    });
-    
+
     if (fetchError instanceof Error) {
       // בדיקה אם זו שגיאת רשת
       if (fetchError.name === 'AbortError') {
@@ -139,10 +125,7 @@ export async function createPaymentLink(data: CreatePaymentLinkRequest): Promise
   }
 
   const responseText = await response.text();
-  console.log('Grow API response:', {
-    status: response.status,
-    statusText: response.statusText,
-    body: responseText.substring(0, 500), // רק 500 תווים ראשונים
+  // רק 500 תווים ראשונים
   });
 
   if (!response.ok) {
@@ -166,7 +149,7 @@ export async function createPaymentLink(data: CreatePaymentLinkRequest): Promise
   // בדיקה שהתקבל payment link
   const paymentLink = result.paymentLink || result.url || result.link || result.payment_url;
   if (!paymentLink) {
-    console.error('Grow API response:', result);
+
     throw new Error(`No payment link in response: ${JSON.stringify(result)}`);
   }
 

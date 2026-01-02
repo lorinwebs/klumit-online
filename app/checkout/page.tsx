@@ -89,7 +89,7 @@ function fixCheckoutUrl(url: string, cartId: string | null): string {
 }
 
 export default function CheckoutPage() {
-  const { items, cartId, setCartId } = useCartStore();
+  const { items, cartId, loadFromShopify } = useCartStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -255,7 +255,8 @@ export default function CheckoutPage() {
           return;
         }
 
-        setCartId(currentCartId);
+        // ה-cart ID יתעדכן אוטומטית כשטוענים את העגלה
+        await loadFromShopify();
         console.log('✅ Cart created for discount application:', currentCartId);
       } catch (err) {
         console.error('Error creating cart:', err);
@@ -531,7 +532,8 @@ export default function CheckoutPage() {
             }
 
             console.log('✅ Cart created successfully:', currentCartId);
-            setCartId(currentCartId);
+            // ה-cart ID יתעדכן אוטומטית כשטוענים את העגלה
+            await loadFromShopify();
             
             // עדכן את כתובת המשלוח מיד אחרי יצירת העגלה
             // זה מבטיח שהפרטים (שם, כתובת) יעברו ל-Checkout

@@ -62,11 +62,14 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showToast, setShowToast] = useState(false);
+  const [showStockToast, setShowStockToast] = useState(false);
+  const [stockMessage, setStockMessage] = useState('');
   const [showFloatingCart, setShowFloatingCart] = useState(false);
   const [relatedProducts] = useState<Product[]>(initialRelatedProducts);
   const [maxImageHeight, setMaxImageHeight] = useState<number>(0);
   const [hasOverflow, setHasOverflow] = useState<boolean>(false);
   const addItem = useCartStore((state) => state.addItem);
+  const items = useCartStore((state) => state.items);
   const imageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number>(0);
@@ -404,14 +407,44 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     touchEndX.current = 0;
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product || !selectedVariant) return;
     
     if (currentVariant && currentVariant.availableForSale) {
+      // בדיקת מלאי לפני הוספה
+      const existingItem = items.find((i) => i.variantId === currentVariant.id);
+      const currentQuantity = existingItem?.quantity || 0;
+      const newQuantity = currentQuantity + 1;
+      
+      // בדיקת מלאי: רק אם יש מידע על מלאי (לא undefined ולא null)
+      const quantityAvailable = currentVariant.quantityAvailable;
+      if (quantityAvailable !== undefined && quantityAvailable !== null) {
+        // אם המלאי הוא 0 - חוסמים (אזל במלאי)
+        if (quantityAvailable === 0) {
+          setStockMessage('אזל במלאי');
+          setShowStockToast(true);
+          setTimeout(() => {
+            setShowStockToast(false);
+          }, 3000);
+          return;
+        }
+        
+        // אם הכמות החדשה גדולה מהמלאי הזמין - חוסמים
+        if (newQuantity > quantityAvailable) {
+          setStockMessage(`יש רק ${quantityAvailable} יחידות במלאי`);
+          setShowStockToast(true);
+          setTimeout(() => {
+            setShowStockToast(false);
+          }, 3000);
+          return;
+        }
+      }
+      // אם quantityAvailable הוא undefined או null - מאפשרים הוספה (אין מידע על מלאי)
+      
       // Use variant image if available, otherwise use selected image
       const imageToUse = currentVariant.image?.url || selectedImage;
       
-      addItem({
+      await addItem({
         id: currentVariant.id,
         variantId: currentVariant.id,
         title: product.title,
@@ -419,8 +452,10 @@ export default function ProductClient({ product, relatedProducts: initialRelated
         currencyCode: currentVariant.price.currencyCode,
         image: imageToUse,
         available: currentVariant.availableForSale,
+        quantityAvailable: currentVariant.quantityAvailable,
         color: currentColor || undefined,
         variantTitle: currentVariant.title,
+        handle: product.handle,
       });
       
       // Show toast
@@ -806,13 +841,22 @@ export default function ProductClient({ product, relatedProducts: initialRelated
 
                   {/* CTAs */}
                   <div className="space-y-2" data-cta-section>
-                    <button
-                      onClick={handleAddToCart}
-                      disabled={!currentVariant?.availableForSale}
-                      className="w-full bg-[#1a1a1a] text-white py-3 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-                    >
-                      הוסף לעגלה
-                    </button>
+                    {(() => {
+                      const existingItem = items.find((i) => i.variantId === currentVariant?.id);
+                      const currentQuantity = existingItem?.quantity || 0;
+                      const isMaxStock = currentVariant?.quantityAvailable !== undefined && 
+                                         currentQuantity >= currentVariant.quantityAvailable;
+                      return (
+                        <button
+                          onClick={handleAddToCart}
+                          disabled={!currentVariant?.availableForSale || isMaxStock}
+                          className="w-full bg-[#1a1a1a] text-white py-3 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
+                          title={isMaxStock ? `מקסימום ${currentVariant?.quantityAvailable} יחידות במלאי` : undefined}
+                        >
+                          {isMaxStock ? 'מקסימום במלאי' : 'הוסף לעגלה'}
+                        </button>
+                      );
+                    })()}
                     <button className="w-full border border-[#1a1a1a] text-[#1a1a1a] py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury flex items-center justify-center gap-2">
                       <Heart size={18} />
                       שמור למועדפים
@@ -928,13 +972,22 @@ export default function ProductClient({ product, relatedProducts: initialRelated
 
                 {/* Desktop CTAs */}
                 <div className="hidden md:block space-y-3 pt-4">
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={!currentVariant?.availableForSale}
-                    className="w-full bg-[#1a1a1a] text-white py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-                  >
-                    הוסף לעגלה
-                  </button>
+                  {(() => {
+                    const existingItem = items.find((i) => i.variantId === currentVariant?.id);
+                    const currentQuantity = existingItem?.quantity || 0;
+                    const isMaxStock = currentVariant?.quantityAvailable !== undefined && 
+                                       currentQuantity >= currentVariant.quantityAvailable;
+                    return (
+                      <button
+                        onClick={handleAddToCart}
+                        disabled={!currentVariant?.availableForSale || isMaxStock}
+                        className="w-full bg-[#1a1a1a] text-white py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
+                        title={isMaxStock ? `מקסימום ${currentVariant?.quantityAvailable} יחידות במלאי` : undefined}
+                      >
+                        {isMaxStock ? 'מקסימום במלאי' : 'הוסף לעגלה'}
+                      </button>
+                    );
+                  })()}
                   <button className="w-full border border-[#1a1a1a] text-[#1a1a1a] py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury flex items-center justify-center gap-2">
                     <Heart size={18} />
                     שמור למועדפים
@@ -1051,17 +1104,28 @@ export default function ProductClient({ product, relatedProducts: initialRelated
               <p className="text-lg font-light text-[#1a1a1a]">₪{price}</p>
               <p className="text-xs font-light text-gray-500">{product.title}</p>
             </div>
-            <button
-              onClick={handleAddToCart}
-              className="bg-[#1a1a1a] text-white py-3 px-8 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury flex-shrink-0"
-            >
-              הוסף לעגלה
-            </button>
+            {(() => {
+              const existingItem = items.find((i) => i.variantId === currentVariant?.id);
+              const currentQuantity = existingItem?.quantity || 0;
+              const isMaxStock = currentVariant?.quantityAvailable !== undefined && 
+                                 currentQuantity >= currentVariant.quantityAvailable;
+              return (
+                <button
+                  onClick={handleAddToCart}
+                  disabled={!currentVariant?.availableForSale || isMaxStock}
+                  className="bg-[#1a1a1a] text-white py-3 px-8 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury flex-shrink-0 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
+                  title={isMaxStock ? `מקסימום ${currentVariant?.quantityAvailable} יחידות במלאי` : undefined}
+                >
+                  {isMaxStock ? 'מקסימום במלאי' : 'הוסף לעגלה'}
+                </button>
+              );
+            })()}
           </div>
         </div>
       )}
       
       <Toast show={showToast} message="נוסף לעגלה" showViewCart={true} />
+      <Toast show={showStockToast} message={stockMessage} showViewCart={false} type="warning" />
     </>
   );
 }

@@ -15,7 +15,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-light luxury-font mb-4">הקדמה</h2>
             <p className="font-light leading-relaxed text-gray-700">
-              ברוכים הבאים לאתר קלומית בע&quot;מ (KLUMIT LTD.). השימוש באתר זה כפוף לתנאים המפורטים להלן. שימוש באתר מהווה הסכמה מלאה לתנאים אלה.
+              ברוכים הבאים לאתר קלומית. השימוש באתר זה כפוף לתנאים המפורטים להלן. שימוש באתר מהווה הסכמה מלאה לתנאים אלה.
             </p>
           </section>
 
@@ -195,7 +195,7 @@ export default function TermsPage() {
               </p>
               <div className="space-y-2 text-sm">
                 <p>
-                  <strong>קלומית בע&quot;מ (KLUMIT LTD.)</strong>
+                  <strong>קלומית</strong>
                 </p>
                 <p>
                   כתובת: גאולה 45, תל אביב יפו 6330447
@@ -207,7 +207,7 @@ export default function TermsPage() {
                   פקס: 03-5106781
                 </p>
                 <p>
-                  אימייל: <a href="mailto:info@klumit.com" className="hover:text-[#1a1a1a] transition-colors">info@klumit.com</a>
+                  אימייל: <a href="mailto:klumitltd@gmail.com" className="hover:text-[#1a1a1a] transition-colors">klumitltd@gmail.com</a>
                 </p>
               </div>
             </div>

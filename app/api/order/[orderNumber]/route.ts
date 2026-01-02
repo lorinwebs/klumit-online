@@ -98,7 +98,7 @@ const GET_ORDER_QUERY = `
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderNumber: string } }
+  { params }: { params: Promise<{ orderNumber: string }> }
 ) {
   try {
     if (!shopifyAdminClient) {
@@ -124,7 +124,7 @@ export async function GET(
       console.log('✅ Admin API token נמצא ומתחיל ב-shpat_');
     }
 
-    const { orderNumber } = params;
+    const { orderNumber } = await params;
     
     // הסרת # אם קיים
     const cleanOrderNumber = orderNumber.replace('#', '').trim();

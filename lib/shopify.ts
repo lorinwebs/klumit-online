@@ -23,20 +23,22 @@ const storeDomain = domain.includes('.myshopify.com')
   ? domain 
   : `${domain}.myshopify.com`;
 
-// בדיקה שהמשתנים מוגדרים
-if (!domain || !storefrontAccessToken) {
-  console.error('❌ Shopify credentials missing!');
-  console.error('Domain:', domain || 'NOT SET');
-  console.error('Token:', storefrontAccessToken ? `${storefrontAccessToken.substring(0, 10)}...` : 'NOT SET');
-}
+// Shopify credentials check - will fail gracefully if missing
 
 export const shopifyClient = new GraphQLClient(
-  `https://${storeDomain}/api/2024-01/graphql.json`,
+  `https://${storeDomain}/api/2024-07/graphql.json`,
   {
     headers: {
       'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
       'Content-Type': 'application/json',
     },
+    // ביטול Cache - קריטי! מונע קבלת תשובות ישנות מ-Next.js
+    fetch: (url, options) => 
+      fetch(url, { 
+        ...options as RequestInit, 
+        cache: 'no-store',
+        next: { revalidate: 0 }
+      } as RequestInit)
   }
 );
 
@@ -198,6 +200,94 @@ export const ADD_TO_CART_MUTATION = `
   }
 `;
 
+export const REMOVE_CART_LINES_MUTATION = `
+  mutation removeCartLines($cartId: ID!, $lineIds: [ID!]!) {
+    cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
+      cart {
+        id
+        checkoutUrl
+        lines(first: 100) {
+          edges {
+            node {
+              id
+              quantity
+              merchandise {
+                ... on ProductVariant {
+                  id
+                  title
+                  price {
+                    amount
+                    currencyCode
+                  }
+                  product {
+                    title
+                    images(first: 1) {
+                      edges {
+                        node {
+                          url
+                          altText
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+export const UPDATE_CART_LINES_MUTATION = `
+  mutation updateCartLines($cartId: ID!, $lines: [CartLineUpdateInput!]!) {
+    cartLinesUpdate(cartId: $cartId, lines: $lines) {
+      cart {
+        id
+        checkoutUrl
+        lines(first: 100) {
+          edges {
+            node {
+              id
+              quantity
+              merchandise {
+                ... on ProductVariant {
+                  id
+                  title
+                  price {
+                    amount
+                    currencyCode
+                  }
+                  product {
+                    title
+                    images(first: 1) {
+                      edges {
+                        node {
+                          url
+                          altText
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
 export const UPDATE_CART_DELIVERY_ADDRESS_MUTATION = `
   mutation cartDeliveryAddressUpdate($cartId: ID!, $deliveryAddress: MailingAddressInput!) {
     cartDeliveryAddressUpdate(cartId: $cartId, deliveryAddress: $deliveryAddress) {
@@ -297,12 +387,18 @@ export const GET_CART_QUERY = `
               ... on ProductVariant {
                 id
                 title
+                quantityAvailable
+                selectedOptions {
+                  name
+                  value
+                }
                 price {
                   amount
                   currencyCode
                 }
                 product {
                   title
+                  handle
                   images(first: 1) {
                     edges {
                       node {

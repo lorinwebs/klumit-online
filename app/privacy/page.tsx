@@ -14,7 +14,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-2xl font-light luxury-font mb-4">הקדמה</h2>
             <p className="font-light leading-relaxed text-gray-700">
-              קלומית בע&quot;מ (KLOMIT LTD.) מתחייבת להגן על הפרטיות שלכם. מדיניות פרטיות זו מסבירה כיצד אנו אוספים, משתמשים, מגנים ומחש�ים את המידע האישי שלכם בעת שימוש באתר שלנו.
+              קלומית מתחייבת להגן על הפרטיות שלכם. מדיניות פרטיות זו מסבירה כיצד אנו אוספים, משתמשים, מגנים ומחש�ים את המידע האישי שלכם בעת שימוש באתר שלנו.
             </p>
           </section>
 
@@ -157,7 +157,7 @@ export default function PrivacyPage() {
               </p>
               <div className="space-y-2 text-sm">
                 <p>
-                  <strong>קלומית בע&quot;מ (KLOMIT LTD.)</strong>
+                  <strong>קלומית</strong>
                 </p>
                 <p>
                   כתובת: גאולה 45, תל אביב יפו 6330447
@@ -169,7 +169,7 @@ export default function PrivacyPage() {
                   פקס: 03-5106781
                 </p>
                 <p>
-                  אימייל: <a href="mailto:info@klomit.com" className="hover:text-[#1a1a1a] transition-colors">info@klomit.com</a>
+                  אימייל: <a href="mailto:klumitltd@gmail.com" className="hover:text-[#1a1a1a] transition-colors">klumitltd@gmail.com</a>
                 </p>
               </div>
             </div>

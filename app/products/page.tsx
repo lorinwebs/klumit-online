@@ -115,6 +115,7 @@ function ProductsContent() {
                 image={firstImage?.url}
                 variantId={firstVariant?.id || ''}
                 available={firstVariant?.availableForSale || false}
+                quantityAvailable={firstVariant?.quantityAvailable}
               />
             );
           })}

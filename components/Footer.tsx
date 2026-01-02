@@ -8,11 +8,8 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <h3 className="text-xl md:text-2xl font-light luxury-font mb-2 md:mb-4 text-[#1a1a1a]">
-              קלומית בע&quot;מ
+              קלומית
             </h3>
-            <p className="text-xs md:text-sm font-light text-gray-600 leading-relaxed mb-2 md:mb-3">
-              KLUMIT LTD.
-            </p>
             <p className="text-xs md:text-sm font-light text-gray-600 leading-relaxed mb-3 md:mb-6">
               תיקים יוקרתיים בעיצוב איטלקי
             </p>
@@ -77,8 +74,8 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2 md:space-y-3 text-xs md:text-sm font-light text-gray-600">
               <li>
-                <a href="mailto:info@klumit.com" className="hover:text-[#1a1a1a] transition-colors">
-                  info@klumit.com
+                <a href="mailto:klumitltd@gmail.com" className="hover:text-[#1a1a1a] transition-colors">
+                  klumitltd@gmail.com
                 </a>
               </li>
               <li>
@@ -97,8 +94,7 @@ export default function Footer() {
               </p>
               <p className="text-xs font-light text-gray-500 leading-relaxed hidden md:block">
                 שעות פעילות<br />
-                א׳-ה׳: 09:00-18:00<br />
-                ו׳: 09:00-14:00
+                א׳-ה׳: 10:00-17:00
               </p>
             </div>
           </div>
@@ -108,7 +104,7 @@ export default function Footer() {
         <div className="border-t border-gray-200 mt-6 md:mt-12 pt-4 md:pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
             <p className="text-xs font-light text-gray-500 text-center md:text-right">
-              &copy; {new Date().getFullYear()} <span className="luxury-font text-[#1a1a1a]">קלומית בע&quot;מ</span> (KLUMIT LTD.). כל הזכויות שמורות.
+              &copy; {new Date().getFullYear()} כל הזכויות שמורות <span className="luxury-font text-[#1a1a1a]">קלומית בע&quot;מ</span>
             </p>
             <div className="flex gap-4 md:gap-6 text-xs font-light text-gray-500">
               <Link href="/terms" className="hover:text-[#1a1a1a] transition-colors">

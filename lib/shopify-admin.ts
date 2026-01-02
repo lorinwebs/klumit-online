@@ -22,48 +22,22 @@ function getAdminApiToken(): string | undefined {
   
   // בדיקה אם זה רץ ב-server-side
   if (typeof window !== 'undefined') {
-    console.warn('⚠️  getAdminApiToken נקרא ב-client-side - זה לא אמור לקרות!');
     return undefined;
   }
   
   // בדיקה אם process.env קיים
   if (!process || !process.env) {
-    console.error('❌ process.env לא קיים!');
     return undefined;
   }
   
-  // הדפסה לדיבוג (רק ב-server-side)
   const token = process.env.SHOPIFY_ADMIN_API_TOKEN;
-  if (!token) {
-    console.warn('⚠️  SHOPIFY_ADMIN_API_TOKEN לא נמצא ב-process.env');
-    console.warn('⚠️  ודאי שהקובץ .env.local קיים בתיקיית השורש של הפרויקט');
-    console.warn('⚠️  ודאי שהשרת הופעל מחדש אחרי הוספת המשתנה');
-    // הדפס את כל המשתנים הזמינים (רק לדיבוג)
-    const envKeys = Object.keys(process.env).filter(key => key.includes('SHOPIFY'));
-    console.warn('⚠️  משתני Shopify זמינים:', envKeys);
-  }
   
   return token;
 }
 
 // בדיקה אם משתמשים ב-Storefront token במקום Admin token
 function validateAdminToken(token: string | undefined): void {
-  if (!token) {
-    console.warn('⚠️  SHOPIFY_ADMIN_API_TOKEN לא מוגדר!');
-    console.warn('⚠️  Storefront API לא יכול לקרוא הזמנות - צריך Admin API token');
-    console.warn('⚠️  הוסף ל-.env.local: SHOPIFY_ADMIN_API_TOKEN=shpat_xxxxx');
-    console.warn('⚠️  חשוב: הפעל מחדש את השרת (npm run dev) אחרי הוספת המשתנה!');
-  } else {
-    // בדיקה שהטוקן נראה תקין
-    if (token.startsWith('shpat_')) {
-      console.log('✅ Admin API token נמצא (מתחיל ב-shpat_)');
-    } else if (token.startsWith('shpss_') || token.startsWith('shpca_')) {
-      console.error('❌ זה נראה כמו Storefront API token, לא Admin API token!');
-      console.error('❌ Admin API token חייב להתחיל ב-shpat_');
-    } else {
-      console.warn('⚠️  Token לא מתחיל ב-shpat_ - ודאי שזה Admin API token תקין');
-    }
-  }
+  // Token validation - will fail gracefully if invalid
 }
 
 // בדיקה ראשונית (רק ב-server-side runtime)
@@ -79,7 +53,7 @@ function createAdminClient(): GraphQLClient | null {
   // חשוב: Admin API token לא אמור להיות זמין ב-client-side!
   if (typeof window !== 'undefined') {
     // זה לא אמור לקרות - Admin API צריך להיות רק ב-server-side
-    console.warn('⚠️  createAdminClient נקרא ב-client-side - זה לא אמור לקרות!');
+
     return null;
   }
   
@@ -298,7 +272,7 @@ export async function updateCustomerAddress(
   addressOptions: UpdateCustomerAddressOptions
 ): Promise<void> {
   if (!shopifyAdminClient) {
-    console.warn('SHOPIFY_ADMIN_API_TOKEN לא מוגדר - לא ניתן לעדכן כתובת לקוח');
+
     return;
   }
 
@@ -331,7 +305,7 @@ export async function updateCustomerAddress(
     }>(findCustomerQuery, { id: customerId });
 
     if (!customerResult.customer) {
-      console.warn('Customer not found:', customerId);
+
       return;
     }
 
@@ -371,7 +345,7 @@ export async function updateCustomerAddress(
       });
 
       if (updateResult.customerAddressUpdate.userErrors.length > 0) {
-        console.error('Error updating customer address:', updateResult.customerAddressUpdate.userErrors);
+
       }
     } else {
       // צור כתובת חדשה
@@ -406,11 +380,11 @@ export async function updateCustomerAddress(
       });
 
       if (createResult.customerAddressCreate.userErrors.length > 0) {
-        console.error('Error creating customer address:', createResult.customerAddressCreate.userErrors);
+
       }
     }
   } catch (error: any) {
-    console.warn('Could not update customer address in Shopify:', error.message);
+
   }
 }
 

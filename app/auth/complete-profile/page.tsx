@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { User as UserIcon, Phone, Mail } from 'lucide-react';
+import { verifyEmailOtpServer } from '@/app/auth/actions';
 
 export default function CompleteProfilePage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function CompleteProfilePage() {
   const [emailOTPSent, setEmailOTPSent] = useState(false);
   const [verifyingEmail, setVerifyingEmail] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
+  const [emailVerificationCode, setEmailVerificationCode] = useState('');
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -73,18 +75,19 @@ export default function CompleteProfilePage() {
     setVerifyingEmail(true);
 
     try {
-      // עדכן את האימייל של המשתמש הקיים ושלח magic link
-      const { error: updateError } = await supabase.auth.updateUser({
+      // שלח קוד OTP לאימייל (ללא קישור)
+      const { error: otpError } = await supabase.auth.signInWithOtp({
         email: formData.email,
-      }, {
-        emailRedirectTo: `${window.location.origin}/auth/verify-email`,
+        options: {
+          shouldCreateUser: false,
+        },
       });
 
-      if (updateError) {
+      if (otpError) {
         // אם האימייל כבר קיים במשתמש אחר, נשמור רק ב-user_metadata
-        if (updateError.message.includes('already registered') || 
-            updateError.message.includes('already exists') ||
-            updateError.message.includes('User already registered')) {
+        if (otpError.message.includes('already registered') || 
+            otpError.message.includes('already exists') ||
+            otpError.message.includes('User already registered')) {
           // שמור את האימייל ב-user_metadata בלבד
           const { error: metadataError } = await supabase.auth.updateUser({
             data: {
@@ -97,36 +100,30 @@ export default function CompleteProfilePage() {
             throw metadataError;
           }
 
-          setEmailOTPSent(true);
-          setError('האימייל נשמר ב-user_metadata. הערה: האימייל כבר קיים במשתמש אחר, לכן הוא נשמר רק ב-user_metadata ולא ב-user.email.');
-          return;
+          // נסה לשלוח OTP שוב
+          const { error: retryError } = await supabase.auth.signInWithOtp({
+            email: formData.email,
+            options: {
+              shouldCreateUser: false,
+            },
+          });
+
+          if (retryError && !retryError.message.includes('Signups not allowed')) {
+            throw retryError;
+          }
+        } else {
+          throw otpError;
         }
-        throw updateError;
       }
 
-      // אם updateUser הצליח, נשלח magic link אוטומטית
       setEmailOTPSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'שגיאה בשליחת קישור אימות');
+      setError(err instanceof Error ? err.message : 'שגיאה בשליחת קוד אימות');
     } finally {
       setVerifyingEmail(false);
     }
   };
 
-  // בדוק אם האימייל כבר מאומת (כשהמשתמש חוזר מהקישור)
-  useEffect(() => {
-    async function checkEmailVerification() {
-      if (!user || !formData.email) return;
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.email === formData.email && session.user.email_confirmed_at) {
-        setEmailVerified(true);
-        setEmailOTPSent(false);
-      }
-    }
-    
-    checkEmailVerification();
-  }, [user, formData.email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,7 +178,6 @@ export default function CompleteProfilePage() {
           }
         );
       } catch (syncError) {
-        console.warn('Could not sync to Shopify:', syncError);
         // לא נזרוק שגיאה - זה לא קריטי
       }
 
@@ -279,6 +275,7 @@ export default function CompleteProfilePage() {
                     setFormData({ ...formData, email: e.target.value });
                     setEmailOTPSent(false);
                     setEmailVerified(false);
+                    setEmailVerificationCode('');
                     setError('');
                   }}
                   disabled={emailVerified}
@@ -299,11 +296,69 @@ export default function CompleteProfilePage() {
                       disabled={verifyingEmail}
                       className="w-full bg-gray-100 text-[#1a1a1a] py-3 px-6 text-sm font-light hover:bg-gray-200 transition-luxury disabled:bg-gray-200 disabled:cursor-not-allowed"
                     >
-                      {verifyingEmail ? 'שולח...' : 'שלח קישור אימות במייל'}
+                      {verifyingEmail ? 'שולח...' : 'שלח קוד אימות במייל'}
                     </button>
                   ) : (
-                    <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 text-sm font-light text-right">
-                      נשלח קישור אימות לכתובת {formData.email}. אנא בדוק את תיבת הדואר שלך ולחץ על הקישור כדי לאמת את האימייל.
+                    <div className="space-y-3">
+                      <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 text-sm font-light text-right">
+                        נשלח קוד אימות לכתובת {formData.email}. אנא בדוק את תיבת הדואר שלך והזן את הקוד למטה כדי לאמת את האימייל.
+                      </div>
+                      <div>
+                        <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                          קוד אימות
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={emailVerificationCode}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                              setEmailVerificationCode(value);
+                            }}
+                            className="flex-1 px-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-center tracking-widest"
+                            placeholder="000000"
+                            maxLength={6}
+                          />
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (!emailVerificationCode || emailVerificationCode.length !== 6) {
+                                setError('אנא הזן קוד אימות תקין (6 ספרות)');
+                                return;
+                              }
+                              
+                              setVerifyingEmail(true);
+                              setError('');
+                              
+                              const formDataToSend = new FormData();
+                              formDataToSend.append('email', formData.email);
+                              formDataToSend.append('token', emailVerificationCode);
+                              
+                              const result = await verifyEmailOtpServer(null, formDataToSend);
+                              
+                              if (result.error) {
+                                setError(result.error);
+                                setVerifyingEmail(false);
+                              } else {
+                                setEmailVerified(true);
+                                setEmailOTPSent(false);
+                                setEmailVerificationCode('');
+                                setVerifyingEmail(false);
+                                
+                                // עדכן את האימייל ב-user
+                                const { data: { user: updatedUser } } = await supabase.auth.getUser();
+                                if (updatedUser) {
+                                  setUser(updatedUser);
+                                }
+                              }
+                            }}
+                            disabled={verifyingEmail || emailVerificationCode.length !== 6}
+                            className="px-4 py-2 bg-[#1a1a1a] text-white text-xs tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
+                          >
+                            {verifyingEmail ? 'מאמת...' : 'אמת'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

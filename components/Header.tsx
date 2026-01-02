@@ -1,18 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingBag, Menu, Package, CircleDot } from 'lucide-react';
+import { ShoppingBag, Menu, Package, CircleDot, Info } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useState, useEffect } from 'react';
 import UserMenu from './UserMenu';
 
 export default function Header() {
   const itemCount = useCartStore((state) => state.getItemCount());
+  const loadFromShopify = useCartStore((state) => state.loadFromShopify);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    // טען את העגלה מ-Shopify רק פעם אחת בהתחלה
+    loadFromShopify().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -55,6 +59,14 @@ export default function Header() {
               aria-label="תיקים"
             >
               <Package size={24} className="text-[#1a1a1a]" />
+            </Link>
+            {/* Mobile - About Icon */}
+            <Link 
+              href="/about" 
+              className="md:hidden p-2 hover:opacity-70 transition-opacity"
+              aria-label="אודות"
+            >
+              <Info size={24} className="text-[#1a1a1a]" />
             </Link>
             <Link 
               href="/cart" 

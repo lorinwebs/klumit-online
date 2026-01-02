@@ -17,6 +17,7 @@ interface ProductCardProps {
   image?: string;
   variantId: string;
   available: boolean;
+  quantityAvailable?: number;
   onSale?: boolean;
   originalPrice?: string;
 }
@@ -29,16 +30,24 @@ export default function ProductCard({
   image,
   variantId,
   available,
+  quantityAvailable,
   onSale = false,
   originalPrice,
 }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
+  const items = useCartStore((state) => state.items);
   const [showToast, setShowToast] = useState(false);
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  // בדיקה אם המוצר הגיע למקסימום במלאי
+  const existingItem = items.find((i) => i.variantId === variantId);
+  const currentQuantity = existingItem?.quantity || 0;
+  const isMaxStock = quantityAvailable !== undefined && 
+                     currentQuantity >= quantityAvailable;
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
-    if (available) {
-      addItem({
+    if (available && !isMaxStock) {
+      await addItem({
         id: variantId,
         variantId,
         title,
@@ -46,6 +55,8 @@ export default function ProductCard({
         currencyCode,
         image,
         available,
+        quantityAvailable,
+        handle,
       });
       
       // Show toast
@@ -98,10 +109,11 @@ export default function ProductCard({
             <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-white/98 border-t border-gray-100">
               <button
                 onClick={handleAddToCart}
-                disabled={!available}
+                disabled={!available || isMaxStock}
                 className="w-full py-2 text-[10px] tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury disabled:opacity-50 disabled:cursor-not-allowed"
+                title={isMaxStock ? `מקסימום ${quantityAvailable} יחידות במלאי` : undefined}
               >
-                הוספה לסל
+                {isMaxStock ? 'מקסימום במלאי' : 'הוספה לסל'}
               </button>
             </div>
           </div>

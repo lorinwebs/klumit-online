@@ -49,13 +49,13 @@ interface Product {
 }
 
 interface PageProps {
-  params: {
+  params: Promise<{
     handle: string;
-  };
+  }>;
 }
 
 export default async function ProductPage({ params }: PageProps) {
-  const { handle } = params;
+  const { handle } = await params;
 
   try {
     // Fetch product data on server
