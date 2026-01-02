@@ -769,13 +769,20 @@ export default function CheckoutPage() {
           throw new Error('החנות מוגנת בסיסמה. אנא הסר את ההגנה ב-Shopify Admin → Settings → Store availability');
         }
         
+        // ניקוי cart ID מה-key אם הוא מכיל אותו
+        let cleanCartId = currentCartId;
+        if (cleanCartId && cleanCartId.includes('?key=')) {
+          cleanCartId = cleanCartId.split('?key=')[0];
+          console.log('🧹 Cleaned cart ID (removed key):', cleanCartId);
+        }
+        
         // תיקון URL אם הוא מכיל את הדומיין של האתר במקום Shopify
         // השתמש בפונקציה fixCheckoutUrl שתתקן את ה-URL אם צריך
-        const finalCheckoutUrl = fixCheckoutUrl(checkoutUrl, currentCartId);
+        let finalCheckoutUrl = fixCheckoutUrl(checkoutUrl, cleanCartId);
         
         console.log('🔄 Redirecting to Shopify Checkout...');
         console.log('📍 Original URL:', checkoutUrl);
-        console.log('📍 Final URL:', finalCheckoutUrl);
+        console.log('📍 Fixed URL:', finalCheckoutUrl);
         
         // בדוק שהתיקון עבד - וודא שה-URL מכיל את הדומיין הנכון של Shopify
         const isValidShopifyUrl = finalCheckoutUrl.includes('.myshopify.com') || 
@@ -784,12 +791,18 @@ export default function CheckoutPage() {
         if (!isValidShopifyUrl) {
           console.error('❌ Failed to fix URL - still contains custom domain');
           console.error('⚠️ Original URL:', checkoutUrl);
-          console.error('⚠️ Final URL:', finalCheckoutUrl);
+          console.error('⚠️ Fixed URL:', finalCheckoutUrl);
           console.error('⚠️ Shopify Store Domain:', process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN);
-          console.error('⚠️ Cart ID:', currentCartId);
+          console.error('⚠️ Cart ID:', cleanCartId);
           
-          // נסה לתקן שוב עם fallback
-          const cartIdFromGid = currentCartId.replace('gid://shopify/Cart/', '');
+          // נסה לתקן שוב עם fallback - חלץ את ה-cart ID מה-GID
+          let cartIdFromGid = cleanCartId.replace('gid://shopify/Cart/', '');
+          // הסר את ה-key מה-cart ID אם הוא עדיין שם
+          if (cartIdFromGid.includes('?key=')) {
+            cartIdFromGid = cartIdFromGid.split('?key=')[0];
+          }
+          
+          // חלץ את ה-key מה-URL המקורי
           const urlMatch = checkoutUrl.match(/[?&]key=([^&]+)/);
           const key = urlMatch ? urlMatch[1] : '';
           
@@ -800,19 +813,27 @@ export default function CheckoutPage() {
           
           const fallbackUrl = `https://${fullShopifyDomain}/cart/c/${cartIdFromGid}${key ? `?key=${key}` : ''}`;
           console.log('🔄 Trying fallback URL:', fallbackUrl);
+          console.log('📋 Fallback details:', {
+            cartIdFromGid,
+            key,
+            shopifyStoreDomain,
+            fullShopifyDomain
+          });
           
           if (fallbackUrl.includes('.myshopify.com')) {
             console.log('✅ Fallback URL is valid, using it');
-            // Delay redirect to allow reading console logs
-            console.log('⏳ Waiting 5 seconds before redirect...');
-            setTimeout(() => {
-              console.log('🚀 Redirecting now to:', fallbackUrl);
-              window.location.href = fallbackUrl;
-            }, 5000);
-            return;
+            finalCheckoutUrl = fallbackUrl;
           } else {
+            console.error('❌ Fallback URL is also invalid!');
             throw new Error('שגיאה: לא ניתן לתקן את קישור התשלום. אנא בדוק את הגדרות Shopify.');
           }
+        }
+        
+        // בדיקה אחרונה לפני redirect
+        if (!finalCheckoutUrl.includes('.myshopify.com') && !finalCheckoutUrl.includes('checkout.shopify.com')) {
+          console.error('❌ CRITICAL: Final URL is still not a Shopify URL!');
+          console.error('Final URL:', finalCheckoutUrl);
+          throw new Error('שגיאה קריטית: לא ניתן לתקן את קישור התשלום.');
         }
         
         if (finalCheckoutUrl !== checkoutUrl) {
@@ -821,9 +842,17 @@ export default function CheckoutPage() {
         
         // Delay redirect to allow reading console logs
         console.log('⏳ Waiting 5 seconds before redirect...');
+        console.log('🎯 Final redirect URL:', finalCheckoutUrl);
         setTimeout(() => {
           console.log('🚀 Redirecting now to:', finalCheckoutUrl);
-          window.location.href = finalCheckoutUrl;
+          // בדיקה אחרונה לפני redirect בפועל
+          if (finalCheckoutUrl.includes('.myshopify.com') || finalCheckoutUrl.includes('checkout.shopify.com')) {
+            window.location.href = finalCheckoutUrl;
+          } else {
+            console.error('❌ CRITICAL ERROR: About to redirect to invalid URL!');
+            console.error('Invalid URL:', finalCheckoutUrl);
+            alert('שגיאה: לא ניתן להמשיך לתשלום. אנא צור קשר עם התמיכה.');
+          }
         }, 5000); // 5 seconds delay
         return; // חשוב: אל תמשיך אחרי redirect
       } else if (currentCartId) {
