@@ -307,7 +307,7 @@ export async function syncCartToShopify(
           merchandiseId: item.variantId,
           quantity: item.quantity,
         })),
-        buyerIdentity: hasValidBuyerIdentity ? {
+        buyerIdentity: hasValidBuyerIdentity && buyerIdentity ? {
           email: buyerIdentity.email || undefined,
           phone: buyerIdentity.phone || undefined,
         } : undefined,

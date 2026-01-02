@@ -13,6 +13,11 @@ interface OrderLineItem {
   image: { url: string; altText: string | null } | null;
   originalUnitPriceSet: { shopMoney: { amount: string; currencyCode: string } };
   discountedTotalSet: { shopMoney: { amount: string; currencyCode: string } };
+  variant: {
+    id: string;
+    title: string;
+    image: { url: string; altText: string | null } | null;
+  } | null;
 }
 
 interface Order {

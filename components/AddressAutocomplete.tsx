@@ -1,5 +1,7 @@
 'use client';
 
+/// <reference types="@types/google.maps" />
+
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 interface AddressAutocompleteProps {
@@ -59,7 +61,6 @@ export default function AddressAutocomplete({
       const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
         componentRestrictions: { country: 'il' }, // רק כתובות מישראל
         fields: ['address_components', 'formatted_address'],
-        language: 'he',
       });
 
       autocompleteRef.current = autocomplete;

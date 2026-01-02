@@ -91,12 +91,30 @@ export default function LoginPage() {
       const formattedPhone = phone.startsWith('+') ? phone : `+972${phone.replace(/^0/, '')}`;
       console.log('🟡 handleVerifyCode: Calling verifyOtp', { phone: formattedPhone, codeLength: code.length });
       
-      const { data, error } = await supabase.auth.verifyOtp({
+      // הוסף timeout ל-verifyOtp
+      const verifyPromise = supabase.auth.verifyOtp({
         phone: formattedPhone,
         token: code,
         type: 'sms',
       });
+      
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Timeout: verifyOtp took too long (10 seconds)'));
+        }, 10000);
+      });
+      
+      let verifyResult: { data: any; error: any };
+      try {
+        verifyResult = await Promise.race([verifyPromise, timeoutPromise]) as { data: any; error: any };
+      } catch (timeoutError: any) {
+        console.error('❌ handleVerifyCode: verifyOtp timeout', timeoutError?.message || timeoutError);
+        setError('הקוד אימות לוקח יותר מדי זמן. אנא נסה שוב');
+        setLoading(false);
+        return;
+      }
 
+      const { data, error } = verifyResult;
       console.log('🟡 handleVerifyCode: verifyOtp response', { hasData: !!data, hasError: !!error, hasUser: !!data?.user });
 
       if (error) {
