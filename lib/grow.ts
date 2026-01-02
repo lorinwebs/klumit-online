@@ -83,12 +83,6 @@ export async function createPaymentLink(data: CreatePaymentLinkRequest): Promise
   // URL לפי הדוקומנטציה של Grow
   // בדוק את הדוקומנטציה - יכול להיות שהפורמט שונה
   const url = `${GROW_BASE_URL}/api/light/server/1.0/CreatePaymentLink`;
-  
-  + '...',
-    environment: GROW_ENVIRONMENT,
-    baseUrl: GROW_BASE_URL,
-    requestBody: requestBody,
-  });
 
   let response;
   try {
@@ -125,8 +119,6 @@ export async function createPaymentLink(data: CreatePaymentLinkRequest): Promise
   }
 
   const responseText = await response.text();
-  // רק 500 תווים ראשונים
-  });
 
   if (!response.ok) {
     let errorMessage = `Grow API error: ${response.status} ${response.statusText}`;

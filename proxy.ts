@@ -2,6 +2,16 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // הסר /en מהתחלת ה-URL אם הוא קיים
+  if (pathname.startsWith('/en')) {
+    const newPathname = pathname.replace(/^\/en/, '') || '/';
+    const url = request.nextUrl.clone();
+    url.pathname = newPathname;
+    return NextResponse.redirect(url);
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
