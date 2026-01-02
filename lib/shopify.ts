@@ -41,8 +41,8 @@ export const shopifyClient = new GraphQLClient(
 );
 
 export const PRODUCTS_QUERY = `
-  query getProducts($first: Int!) {
-    products(first: $first) {
+  query getProducts($first: Int!, $query: String) {
+    products(first: $first, query: $query) {
       edges {
         node {
           id
@@ -50,6 +50,7 @@ export const PRODUCTS_QUERY = `
           handle
           description
           descriptionHtml
+          productType
           priceRange {
             minVariantPrice {
               amount

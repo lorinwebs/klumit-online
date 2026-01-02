@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
@@ -10,6 +11,7 @@ interface Product {
   id: string;
   title: string;
   handle: string;
+  productType?: string;
   priceRange: {
     minVariantPrice: {
       amount: string;
@@ -35,17 +37,42 @@ interface Product {
   };
 }
 
+type TabType = 'bags' | 'belts';
+
 export default function ProductsPage() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get('tab') as TabType | null;
+  const [activeTab, setActiveTab] = useState<TabType>(tabParam === 'belts' ? 'belts' : 'bags');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Update tab from URL params
+    const currentTabParam = searchParams?.get('tab') as TabType | null;
+    if (currentTabParam === 'belts') {
+      setActiveTab('belts');
+    } else {
+      setActiveTab('bags');
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     async function fetchProducts() {
+      setLoading(true);
       try {
+        // Build query filter based on active tab
+        let queryFilter = '';
+        if (activeTab === 'bags') {
+          queryFilter = '(product_type:תיק OR product_type:bag OR product_type:תיקים OR product_type:bags)';
+        } else if (activeTab === 'belts') {
+          queryFilter = '(product_type:חגורות OR product_type:belt OR product_type:belts OR product_type:חגורה)';
+        }
+
         const data = await shopifyClient.request<{
           products: { edges: Array<{ node: Product }> };
         }>(PRODUCTS_QUERY, {
           first: 50,
+          query: queryFilter || undefined,
         });
         setProducts(data.products.edges.map((edge) => edge.node));
       } catch (error) {
@@ -56,17 +83,22 @@ export default function ProductsPage() {
     }
 
     fetchProducts();
-  }, []);
+  }, [activeTab]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
       <main className="flex-grow w-full px-4 py-12 md:py-16">
+        {/* Products Grid */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="bg-gray-200 animate-pulse aspect-[4/5]" />
             ))}
+          </div>
+        ) : products.length === 0 ? (
+          <div className="max-w-7xl mx-auto text-center py-20">
+            <p className="text-gray-400 font-light text-lg">לא נמצאו מוצרים בקטגוריה זו</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">

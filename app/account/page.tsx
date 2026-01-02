@@ -32,8 +32,6 @@ interface Order {
 }
 
 export default function AccountPage() {
-  console.log('🔵 AccountPage: Component rendering');
-  
   const [user, setUser] = useState<User | null>(null);
   const [shopifyCustomerId, setShopifyCustomerId] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -45,8 +43,6 @@ export default function AccountPage() {
   const [emailVerificationSent, setEmailVerificationSent] = useState(false);
   const [originalFormData, setOriginalFormData] = useState<typeof formData | null>(null);
   const router = useRouter();
-  
-  console.log('🔵 AccountPage: State initialized', { loading, user: !!user });
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -62,7 +58,6 @@ export default function AccountPage() {
   });
 
   useEffect(() => {
-    console.log('🟢 AccountPage: useEffect started');
     let isMounted = true;
     let loadingFinished = false;
     
@@ -82,7 +77,6 @@ export default function AccountPage() {
     }, 3000); // 3 שניות - יותר אגרסיבי
     
     async function getUser() {
-      console.log('🟡 AccountPage: getUser called');
       try {
         // בדוק אם Supabase client תקין
         if (!supabase || !supabase.auth) {
@@ -93,8 +87,6 @@ export default function AccountPage() {
           return;
         }
         
-        console.log('🟡 AccountPage: Calling supabase.auth.getSession()');
-        
         // הוסף timeout ל-getSession עם wrapper
         let sessionTimeout: NodeJS.Timeout | undefined;
         const sessionPromise = supabase.auth.getSession().then(result => {
@@ -102,7 +94,6 @@ export default function AccountPage() {
             clearTimeout(sessionTimeout);
             sessionTimeout = undefined;
           }
-          console.log('🟡 AccountPage: getSession promise resolved');
           return result;
         }).catch(err => {
           if (sessionTimeout) {
@@ -135,7 +126,6 @@ export default function AccountPage() {
         }
         
         const { data: { session }, error: sessionError } = sessionResult;
-        console.log('🟡 AccountPage: Session received', { hasSession: !!session, hasError: !!sessionError });
         
         if (!isMounted) return;
         
@@ -146,7 +136,6 @@ export default function AccountPage() {
         }
         
         if (!session) {
-          console.log('🟡 AccountPage: No session, redirecting to login');
           setLoading(false);
           // Redirect ב-useEffect במקום ב-render
           setTimeout(() => {
@@ -155,7 +144,6 @@ export default function AccountPage() {
           return;
         }
 
-        console.log('🟢 AccountPage: Session found, setting user');
         setUser(session.user);
         
         // טען את הנתונים לטופס
@@ -207,20 +195,90 @@ export default function AccountPage() {
       } finally {
         if (isMounted) {
           loadingFinished = true;
-          console.log('🟢 AccountPage: Setting loading to false');
           setLoading(false);
         }
       }
     }
 
-    getUser();
-    console.log('🟢 AccountPage: getUser() called');
+    // רץ רק פעם אחת ב-mount, או אם אין user (אחרי logout)
+    if (!user) {
+      getUser();
+    } else {
+      // אם יש user, רק נסמן שהטעינה הסתיימה
+      if (isMounted) {
+        setLoading(false);
+      }
+    }
     
     return () => {
       isMounted = false;
       clearTimeout(timeoutId);
     };
-  }, [router, user]);
+  }, []); // רץ רק פעם אחת ב-mount - הסרתי router כדי למנוע infinite loop
+
+  // האזן לשינויים ב-auth state (המשתמש מתחבר/יוצא)
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🟡 AccountPage: Auth state changed', { event, hasSession: !!session });
+      
+      if (event === 'SIGNED_IN' && session) {
+        // אם המשתמש התחבר, עדכן את ה-state
+        setUser(session.user);
+        setLoading(false);
+        
+        // טען את הנתונים לטופס
+        if (session.user) {
+          const currentEmail = session.user.email || session.user.user_metadata?.email || '';
+          setFormData({
+            firstName: session.user.user_metadata?.first_name || '',
+            lastName: session.user.user_metadata?.last_name || '',
+            email: currentEmail,
+            phone: session.user.phone || session.user.user_metadata?.phone || '',
+            shippingAddress: session.user.user_metadata?.shipping_address || '',
+            shippingCity: session.user.user_metadata?.shipping_city || '',
+            shippingZipCode: session.user.user_metadata?.shipping_zip_code || '',
+            shippingApartment: session.user.user_metadata?.shipping_apartment || '',
+            shippingFloor: session.user.user_metadata?.shipping_floor || '',
+            shippingNotes: session.user.user_metadata?.shipping_notes || '',
+          });
+          
+          setOriginalFormData({
+            firstName: session.user.user_metadata?.first_name || '',
+            lastName: session.user.user_metadata?.last_name || '',
+            email: currentEmail,
+            phone: session.user.phone || session.user.user_metadata?.phone || '',
+            shippingAddress: session.user.user_metadata?.shipping_address || '',
+            shippingCity: session.user.user_metadata?.shipping_city || '',
+            shippingZipCode: session.user.user_metadata?.shipping_zip_code || '',
+            shippingApartment: session.user.user_metadata?.shipping_apartment || '',
+            shippingFloor: session.user.user_metadata?.shipping_floor || '',
+            shippingNotes: session.user.user_metadata?.shipping_notes || '',
+          });
+        }
+        
+        // קבל את ה-Shopify Customer ID ברקע
+        if (session.user) {
+          getShopifyCustomerId(session.user.id)
+            .then((customerId) => {
+              setShopifyCustomerId(customerId);
+            })
+            .catch((err) => {
+              console.warn('Could not get Shopify Customer ID:', err);
+            });
+        }
+      } else if (event === 'SIGNED_OUT') {
+        // אם המשתמש יצא, נקה את ה-state
+        setUser(null);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // טען הזמנות כשהמשתמש נטען
   useEffect(() => {
@@ -481,18 +539,14 @@ export default function AccountPage() {
   };
 
 
-  console.log('🔵 AccountPage: Render check', { loading, user: !!user });
-  
   // Redirect ל-login אם אין משתמש אחרי הטעינה
   useEffect(() => {
     if (!loading && !user) {
-      console.log('🟡 AccountPage: No user after loading, redirecting to login');
       router.push('/auth/login');
     }
-  }, [loading, user, router]);
+  }, [loading, user]); // הסרתי router מה-dependencies כדי למנוע infinite loop
   
   if (loading) {
-    console.log('🟡 AccountPage: Rendering loading state');
     return (
       <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
         <Header />

@@ -15,40 +15,21 @@ export default function UserMenu() {
   // רק אם המשתמש מחובר
   const ensureShopifyCustomer = async (user: User) => {
     if (!user) {
-      console.log('ℹ️ No user - skipping Shopify customer creation');
       return;
     }
     
     try {
       const { getShopifyCustomerId, syncCustomerToShopify } = await import('@/lib/sync-customer');
-      let shopifyCustomerId = await getShopifyCustomerId(user.id);
+      const shopifyCustomerId = await getShopifyCustomerId(user.id);
       
-      // אם אין Shopify Customer ID, ננסה למצוא/ליצור אותו אוטומטית
-      // אבל רק אם לא ניסינו לאחרונה (כדי למנוע throttling)
+      // אם אין Shopify Customer ID, ננסה ליצור אותו
       if (!shopifyCustomerId) {
-        // בדוק אם ניסינו ליצור customer לאחרונה (ב-5 דקות האחרונות)
-        const lastAttemptKey = `shopify_customer_creation_attempt_${user.id}`;
-        const lastAttempt = localStorage.getItem(lastAttemptKey);
-        const now = Date.now();
-        const fiveMinutes = 5 * 60 * 1000;
-        
-        if (lastAttempt && (now - parseInt(lastAttempt)) < fiveMinutes) {
-          console.log('⏳ Skipping customer creation - last attempt was less than 5 minutes ago (throttling protection)');
-          return; // אל תנסה ליצור customer שוב אם ניסינו לאחרונה
-        }
-        
-        console.log('🔄 No Shopify Customer ID found, attempting to find/create customer...');
         const phone = user.phone || user.user_metadata?.phone;
         const email = user.email || user.user_metadata?.email;
         
-        // חייב להיות טלפון כדי ליצור customer (זה המזהה העיקרי)
         if (phone) {
-          // שמור זמן ניסיון
-          localStorage.setItem(lastAttemptKey, now.toString());
-          
           try {
-            // syncCustomerToShopify יחפש customer קיים לפי טלפון או ייצור חדש
-            shopifyCustomerId = await syncCustomerToShopify(
+            await syncCustomerToShopify(
               user.id,
               phone,
               {
@@ -57,20 +38,9 @@ export default function UserMenu() {
                 lastName: user.user_metadata?.last_name || undefined,
               }
             );
-            
-            // אם הצלחנו, מחק את ה-timestamp
-            if (shopifyCustomerId) {
-              localStorage.removeItem(lastAttemptKey);
-              console.log('✅ Created/found Shopify Customer automatically:', shopifyCustomerId);
-            } else {
-              console.warn('⚠️ Could not create/find Shopify customer');
-            }
           } catch (err) {
             console.warn('⚠️ Could not create Shopify customer:', err);
-            // אם זו שגיאת throttling, נשאיר את ה-timestamp כדי לא לנסות שוב
           }
-        } else {
-          console.warn('⚠️ No phone - cannot create/find Shopify customer (phone is required)');
         }
       }
     } catch (err) {

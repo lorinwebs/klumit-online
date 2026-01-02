@@ -17,6 +17,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
   const [step, setStep] = useState<'phone' | 'verify'>('phone');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [e164Phone, setE164Phone] = useState(''); // שמור את המספר המנורמל ב-E.164
 
   useEffect(() => {
     if (!isOpen) {
@@ -25,8 +26,24 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       setCode('');
       setStep('phone');
       setError('');
+      setE164Phone(''); // נקה את המספר המנורמל
     }
   }, [isOpen]);
+
+  // פונקציה לנרמול מספר טלפון ישראלי ל-E.164
+  const normalizeILPhone = (raw: string): string => {
+    // הסר כל תווים שאינם ספרות
+    const digits = raw.replace(/\D/g, '');
+    
+    // אם כבר יש קידומת 972, הסר אותה
+    const without972 = digits.startsWith('972') ? digits.slice(3) : digits;
+    
+    // אם מתחיל ב-0, הסר אותו
+    const local = without972.startsWith('0') ? without972.slice(1) : without972;
+    
+    // החזר בפורמט E.164
+    return `+972${local}`;
+  };
 
   const validatePhoneNumber = (phoneNumber: string): boolean => {
     // הסר כל תווים שאינם ספרות
@@ -67,7 +84,8 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     setLoading(true);
 
     try {
-      const formattedPhone = phone.startsWith('+') ? phone : `+972${phone.replace(/^0/, '').replace(/\D/g, '')}`;
+      // ננרמל את המספר ל-E.164 ונשמור אותו
+      const formattedPhone = normalizeILPhone(phone);
       
       // בדיקה נוספת אחרי עיצוב
       if (!formattedPhone.match(/^\+9725\d{8}$/)) {
@@ -76,18 +94,36 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         return;
       }
       
-      const { error } = await supabase.auth.signInWithOtp({
+      // שמור את המספר המנורמל ב-state לשימוש באימות
+      setE164Phone(formattedPhone);
+      console.log('🟢 LoginModal handleSendCode: Normalized phone', { original: phone, normalized: formattedPhone });
+      
+      // הוסף timeout ל-signInWithOtp
+      const sendPromise = supabase.auth.signInWithOtp({
         phone: formattedPhone,
         options: {
           channel: 'sms',
         },
       });
+      
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Timeout: signInWithOtp took too long (10 seconds)'));
+        }, 10000);
+      });
+      
+      const { error } = await Promise.race([sendPromise, timeoutPromise]);
 
       if (error) throw error;
       
       setStep('verify');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'שגיאה בשליחת קוד');
+      console.error('❌ LoginModal handleSendCode: Error', err);
+      if (err instanceof Error && err.message.includes('Timeout')) {
+        setError('שליחת הקוד לוקחת יותר מדי זמן. אנא נסה שוב');
+      } else {
+        setError(err instanceof Error ? err.message : 'שגיאה בשליחת קוד');
+      }
     } finally {
       setLoading(false);
     }
@@ -99,10 +135,17 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     setLoading(true);
 
     try {
-      const formattedPhone = phone.startsWith('+') ? phone : `+972${phone.replace(/^0/, '')}`;
+      // השתמש במספר המנורמל שנשמר בשליחה, או ננרמל מחדש
+      const phoneToVerify = e164Phone || normalizeILPhone(phone);
+      console.log('🟡 LoginModal handleVerifyCode: Calling verifyOtp', { 
+        originalPhone: phone, 
+        e164Phone, 
+        phoneToVerify, 
+        codeLength: code.length 
+      });
       
       const { data, error } = await supabase.auth.verifyOtp({
-        phone: formattedPhone,
+        phone: phoneToVerify,
         token: code,
         type: 'sms',
       });
@@ -113,7 +156,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         // סנכרן עם Shopify ברקע (לא חוסם את ההתחברות)
         syncCustomerToShopify(
           data.user.id, 
-          formattedPhone,
+          phoneToVerify,
           {
             email: data.user.email || data.user.user_metadata?.email || undefined,
             firstName: data.user.user_metadata?.first_name || undefined,
@@ -132,6 +175,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         onClose();
       }
     } catch (err) {
+      console.error('❌ LoginModal handleVerifyCode: Error', err);
       let errorMessage = 'קוד שגוי';
       if (err instanceof Error) {
         if (err.message.includes('expired')) {

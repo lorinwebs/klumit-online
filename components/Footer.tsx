@@ -108,7 +108,7 @@ export default function Footer() {
         <div className="border-t border-gray-200 mt-6 md:mt-12 pt-4 md:pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
             <p className="text-xs font-light text-gray-500 text-center md:text-right">
-              &copy; {new Date().getFullYear()} קלומית בע&quot;מ (KLUMIT LTD.). כל הזכויות שמורות.
+              &copy; {new Date().getFullYear()} <span className="luxury-font text-[#1a1a1a]">קלומית בע&quot;מ</span> (KLUMIT LTD.). כל הזכויות שמורות.
             </p>
             <div className="flex gap-4 md:gap-6 text-xs font-light text-gray-500">
               <Link href="/terms" className="hover:text-[#1a1a1a] transition-colors">

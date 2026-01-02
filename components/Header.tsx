@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingBag, Menu, Package } from 'lucide-react';
+import { ShoppingBag, Menu, Package, CircleDot } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useState, useEffect } from 'react';
 import UserMenu from './UserMenu';
@@ -30,6 +30,9 @@ export default function Header() {
             <Link href="/products" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
               תיקים
             </Link>
+            <Link href="/products?tab=belts" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
+              חגורות
+            </Link>
             <Link href="/about" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
               אודות
             </Link>
@@ -37,6 +40,14 @@ export default function Header() {
 
           <div className="flex items-center gap-4">
             <UserMenu />
+            {/* Mobile - Belts Icon */}
+            <Link 
+              href="/products?tab=belts" 
+              className="md:hidden p-2 hover:opacity-70 transition-opacity"
+              aria-label="חגורות"
+            >
+              <CircleDot size={24} className="text-[#1a1a1a]" />
+            </Link>
             {/* Mobile - Products Icon */}
             <Link 
               href="/products" 
@@ -74,6 +85,9 @@ export default function Header() {
               </Link>
               <Link href="/products" className="hover:text-luxury-gold transition-colors">
                 תיקים
+              </Link>
+              <Link href="/products?tab=belts" className="hover:text-luxury-gold transition-colors">
+                חגורות
               </Link>
               <Link href="/about" className="hover:text-luxury-gold transition-colors">
                 אודות

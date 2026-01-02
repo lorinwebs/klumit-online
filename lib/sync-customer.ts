@@ -32,209 +32,65 @@ export async function syncCustomerToShopify(
       .from('user_shopify_sync')
       .select('shopify_customer_id')
       .eq('user_id', userId)
-      .maybeSingle(); // שימוש ב-maybeSingle במקום single כדי לא לזרוק שגיאה אם אין רשומה
+      .maybeSingle();
 
     if (existingSync.data?.shopify_customer_id) {
-      // הלקוח כבר קיים - נשמור את ה-ID ונמשיך
+      // הלקוח כבר קיים - החזר את ה-ID
       shopifyCustomerId = existingSync.data.shopify_customer_id;
       console.log('ℹ️ Customer already synced to Shopify:', shopifyCustomerId);
-      return shopifyCustomerId; // החזר מיד - אין צורך לעשות כלום נוסף
-    } else {
-      // נסה למצוא customer קיים ב-Shopify לפני יצירה חדשה
-      // תמיד נחפש לפי טלפון קודם (זה המזהה העיקרי)
-      console.log('🔍 No customer ID in DB, searching for existing customer in Shopify by phone...');
-      
-      try {
-        const { shopifyAdminClient } = await import('./shopify-admin');
-        if (shopifyAdminClient) {
-          const FIND_CUSTOMER_QUERY = `
-            query getCustomers($query: String!) {
-              customers(first: 1, query: $query) {
-                edges {
-                  node {
-                    id
-                  }
-                }
-              }
-            }
-          `;
-          
-          // תמיד נחפש לפי טלפון קודם (זה המזהה העיקרי)
-          console.log('🔍 Searching for customer by phone:', formattedPhone);
-          
-          let customerResult = await shopifyAdminClient.request<{
-            customers: { edges: Array<{ node: { id: string } }> };
-          }>(FIND_CUSTOMER_QUERY, { query: `phone:${formattedPhone}` });
-          
-          console.log('📊 Search results by phone:', {
-            found: customerResult.customers.edges.length,
-            results: customerResult.customers.edges.map(e => e.node.id)
-          });
-          
-          // אם לא מצאנו לפי טלפון, ננסה לפי email (אם יש)
-          if (customerResult.customers.edges.length === 0 && customerData?.email) {
-            console.log('🔍 No customer found by phone, trying by email:', customerData.email);
-            customerResult = await shopifyAdminClient.request<{
-              customers: { edges: Array<{ node: { id: string } }> };
-            }>(FIND_CUSTOMER_QUERY, { query: `email:${customerData.email}` });
-            
-            console.log('📊 Search results by email:', {
-              found: customerResult.customers.edges.length,
-              results: customerResult.customers.edges.map(e => e.node.id)
-            });
-          }
-          
-          if (customerResult.customers.edges.length > 0) {
-            shopifyCustomerId = customerResult.customers.edges[0].node.id;
-            console.log('✅ Found existing customer in Shopify:', shopifyCustomerId);
-            
-            // שמור את ה-ID ב-DB מיד עם הקישור לטלפון
-            console.log('💾 Saving to Supabase:', {
-              user_id: userId,
-              shopify_customer_id: shopifyCustomerId,
-              phone: phone
-            });
-            
-            const { data: saveData, error: saveError } = await supabase
-              .from('user_shopify_sync')
-              .upsert({
-                user_id: userId,
-                shopify_customer_id: shopifyCustomerId,
-                phone: phone,
-                updated_at: new Date().toISOString(),
-              }, {
-                onConflict: 'user_id',
-              })
-              .select();
-            
-            if (saveError) {
-              console.error('❌ Error saving found customer to Supabase:', saveError);
-              console.error('Error details:', JSON.stringify(saveError, null, 2));
-            } else {
-              console.log('✅ Saved found customer ID to Supabase with phone link:', saveData);
-            }
-            
-            return shopifyCustomerId; // החזר את ה-ID שנמצא
-          } else {
-            console.log('ℹ️ No existing customer found in Shopify, will create new customer...');
-          }
-        }
-      } catch (findError) {
-        console.warn('⚠️ Could not search for existing customer in Shopify:', findError);
-        // נמשיך לנסות ליצור customer חדש
-      }
-      // השתמש בפרטים שהתקבלו, או צור email מ-phone אם אין
-      const userEmail = customerData?.email || `phone-${phoneWithoutPlus.replace(/\D/g, '')}@klumit.local`;
-      const firstName = customerData?.firstName || '';
-      const lastName = customerData?.lastName || '';
-      
-      // סיסמה אקראית (לא נשתמש בה - אנחנו משתמשים ב-SMS auth)
-      const randomPassword = Math.random().toString(36).slice(-12) + 'A1!';
+      return shopifyCustomerId;
+    }
 
-      try {
-        const result = await shopifyClient.request<{
-          customerCreate: {
-            customer: { id: string } | null;
-            customerUserErrors: Array<{ field: string[]; message: string; code?: string }>;
-          };
-        }>(CREATE_CUSTOMER_MUTATION, {
-          input: {
-            email: userEmail,
-            phone: formattedPhone,
-            password: randomPassword,
-            firstName: firstName || undefined,
-            lastName: lastName || undefined,
-            acceptsMarketing: false,
-          },
-        });
+    // השתמש בפרטים שהתקבלו, או צור email מ-phone אם אין
+    const userEmail = customerData?.email || `phone-${phoneWithoutPlus.replace(/\D/g, '')}@klumit.local`;
+    const firstName = customerData?.firstName || '';
+    const lastName = customerData?.lastName || '';
+    
+    // סיסמה אקראית (לא נשתמש בה - אנחנו משתמשים ב-SMS auth)
+    const randomPassword = Math.random().toString(36).slice(-12) + 'A1!';
 
-        if (result.customerCreate.customerUserErrors && result.customerCreate.customerUserErrors.length > 0) {
-          // אם הלקוח כבר קיים (לפי טלפון או אימייל), ננסה להמשיך
-          const errorMessage = result.customerCreate.customerUserErrors[0].message;
-          const errorCode = result.customerCreate.customerUserErrors[0].code;
-          
-          if (errorCode === 'TAKEN' || errorMessage.includes('already exists') || errorMessage.includes('taken')) {
-            console.log('ℹ️ Customer already exists in Shopify (by phone or email)');
-            // Shopify זיהה שהלקוח כבר קיים - ננסה למצוא אותו ב-Admin API
-            try {
-              const { shopifyAdminClient } = await import('./shopify-admin');
-              if (shopifyAdminClient) {
-                // נסה למצוא customer לפי email או phone ב-Admin API
-                const searchQuery = customerData?.email 
-                  ? `email:${customerData.email}`
-                  : `phone:${formattedPhone}`;
-                
-                const FIND_CUSTOMER_QUERY = `
-                  query getCustomers($query: String!) {
-                    customers(first: 1, query: $query) {
-                      edges {
-                        node {
-                          id
-                        }
-                      }
-                    }
-                  }
-                `;
-                
-                const customerResult = await shopifyAdminClient.request<{
-                  customers: { edges: Array<{ node: { id: string } }> };
-                }>(FIND_CUSTOMER_QUERY, { query: searchQuery });
-                
-                if (customerResult.customers.edges.length > 0) {
-                  shopifyCustomerId = customerResult.customers.edges[0].node.id;
-                  console.log('✅ Found existing customer in Shopify:', shopifyCustomerId);
-                  
-                  // שמור את ה-ID ב-DB מיד
-                  console.log('💾 Saving found customer to Supabase:', {
-                    user_id: userId,
-                    shopify_customer_id: shopifyCustomerId,
-                    phone: phone
-                  });
-                  
-                  const { data: saveData, error: saveError } = await supabase
-                    .from('user_shopify_sync')
-                    .upsert({
-                      user_id: userId,
-                      shopify_customer_id: shopifyCustomerId,
-                      phone: phone,
-                      updated_at: new Date().toISOString(),
-                    }, {
-                      onConflict: 'user_id',
-                    })
-                    .select();
-                  
-                  if (saveError) {
-                    console.error('❌ Error saving found customer to Supabase:', saveError);
-                  } else {
-                    console.log('✅ Saved found customer ID to Supabase:', saveData);
-                  }
-                  
-                  // החזר את ה-ID שנמצא
-                  return shopifyCustomerId;
-                }
-              }
-            } catch (findError) {
-              console.warn('⚠️ Could not find existing customer:', findError);
-            }
-          } else if (errorCode === 'THROTTLED' || errorMessage.includes('Limit exceeded')) {
-            console.warn('⚠️ Shopify API throttled - customer creation limit exceeded. Will retry later.');
-            // לא נזרוק שגיאה - נחזיר null וננסה שוב בפעם הבאה
-            return null;
-          } else {
-            console.error('❌ Error creating customer:', result.customerCreate.customerUserErrors);
-          }
-        } else if (result.customerCreate.customer) {
-          shopifyCustomerId = result.customerCreate.customer.id;
-          console.log('✅ Customer created in Shopify:', shopifyCustomerId);
-        }
-      } catch (error: any) {
-        // בדוק אם זו שגיאת throttling
-        if (error.message?.includes('Limit exceeded') || error.message?.includes('THROTTLED')) {
+    try {
+      const result = await shopifyClient.request<{
+        customerCreate: {
+          customer: { id: string } | null;
+          customerUserErrors: Array<{ field: string[]; message: string; code?: string }>;
+        };
+      }>(CREATE_CUSTOMER_MUTATION, {
+        input: {
+          email: userEmail,
+          phone: formattedPhone,
+          password: randomPassword,
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
+          acceptsMarketing: false,
+        },
+      });
+
+      if (result.customerCreate.customerUserErrors && result.customerCreate.customerUserErrors.length > 0) {
+        const errorMessage = result.customerCreate.customerUserErrors[0].message;
+        const errorCode = result.customerCreate.customerUserErrors[0].code;
+        
+        if (errorCode === 'TAKEN' || errorMessage.includes('already exists') || errorMessage.includes('taken')) {
+          console.log('ℹ️ Customer already exists in Shopify (by phone or email)');
+          // אם הלקוח כבר קיים, נחזיר null וננסה שוב בפעם הבאה
+          return null;
+        } else if (errorCode === 'THROTTLED' || errorMessage.includes('Limit exceeded')) {
           console.warn('⚠️ Shopify API throttled - customer creation limit exceeded. Will retry later.');
           return null;
+        } else {
+          console.error('❌ Error creating customer:', result.customerCreate.customerUserErrors);
         }
-        console.warn('⚠️ Could not create customer in Shopify:', error.message);
+      } else if (result.customerCreate.customer) {
+        shopifyCustomerId = result.customerCreate.customer.id;
+        console.log('✅ Customer created in Shopify:', shopifyCustomerId);
       }
+    } catch (error: any) {
+      // בדוק אם זו שגיאת throttling
+      if (error.message?.includes('Limit exceeded') || error.message?.includes('THROTTLED')) {
+        console.warn('⚠️ Shopify API throttled - customer creation limit exceeded. Will retry later.');
+        return null;
+      }
+      console.warn('⚠️ Could not create customer in Shopify:', error.message);
     }
 
     // שמור את ה-Shopify Customer ID ב-Supabase

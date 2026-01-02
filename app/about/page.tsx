@@ -1,5 +1,6 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import Image from 'next/image';
 
 export default function AboutPage() {
   return (
@@ -43,6 +44,34 @@ export default function AboutPage() {
                 <p>
                   אנו מתמחים ביצירת קולקציות יוקרתיות שמשלבות בין איכות בלתי מתפשרת, עיצוב אלגנטי וקלאסי, ופונקציונליות מושלמת. כל תיק מיוצר בקפידה עם תשומת לב לפרטים הקטנים ביותר, תוך שימוש בעור איטלקי משובח ותפירה ידנית מדויקת.
                 </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Images Gallery Section */}
+        <section className="py-16 md:py-24 bg-white border-y border-gray-200">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="grid md:grid-cols-2 gap-8 md:gap-12 max-w-6xl mx-auto">
+              <div className="relative w-full overflow-hidden">
+                <Image
+                  src="/about-image-1.jpg"
+                  alt="שני גברים הולכים בחוץ"
+                  width={800}
+                  height={600}
+                  className="w-full h-auto object-contain"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              </div>
+              <div className="relative w-full overflow-hidden">
+                <Image
+                  src="/about-image-2.jpg"
+                  alt="שני גברים עומדים זה לצד זה"
+                  width={800}
+                  height={600}
+                  className="w-full h-auto object-contain"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
               </div>
             </div>
           </div>

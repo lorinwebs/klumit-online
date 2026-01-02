@@ -23,31 +23,14 @@ export async function saveCartIdToMetafields(cartId: string): Promise<void> {
     
     console.log('👤 Shopify Customer ID from DB:', shopifyCustomerId);
     
-    // אם אין Shopify Customer ID, ננסה למצוא/ליצור customer אוטומטית
+    // אם אין Shopify Customer ID, ננסה ליצור customer אוטומטית
     // רק אם המשתמש מחובר (יש session)
     if (!shopifyCustomerId && session?.user) {
-      console.log('🔄 No Shopify Customer ID found, attempting to find/create customer (user is logged in)...');
       const phone = session.user.phone || session.user.user_metadata?.phone;
       const email = session.user.email || session.user.user_metadata?.email;
       
-      // חייב להיות טלפון כדי ליצור customer (זה המזהה העיקרי)
       if (phone) {
         try {
-          // בדוק אם ניסינו ליצור customer לאחרונה (ב-5 דקות האחרונות)
-          // זה רק למניעת יצירה חדשה, לא למניעת חיפוש customer קיים
-          const lastAttemptKey = `shopify_customer_creation_attempt_${session.user.id}`;
-          const lastAttempt = typeof window !== 'undefined' ? localStorage.getItem(lastAttemptKey) : null;
-          const now = Date.now();
-          const fiveMinutes = 5 * 60 * 1000;
-          const shouldSkipCreation = lastAttempt && (now - parseInt(lastAttempt)) < fiveMinutes;
-          
-          if (shouldSkipCreation) {
-            console.log('⏳ Skipping customer creation - last attempt was less than 5 minutes ago (throttling protection)');
-            console.log('🔍 But still trying to find existing customer...');
-          }
-          
-          // syncCustomerToShopify יחפש customer קיים לפי טלפון או ייצור חדש
-          // אם יש throttling, הוא עדיין ינסה למצוא customer קיים
           shopifyCustomerId = await syncCustomerToShopify(
             session.user.id,
             phone,
@@ -57,28 +40,10 @@ export async function saveCartIdToMetafields(cartId: string): Promise<void> {
               lastName: session.user.user_metadata?.last_name || undefined,
             }
           );
-          
-          // אם הצלחנו, מחק את ה-timestamp
-          if (shopifyCustomerId) {
-            if (typeof window !== 'undefined') {
-              localStorage.removeItem(lastAttemptKey);
-            }
-            console.log('✅ Created/found Shopify Customer ID:', shopifyCustomerId);
-          } else {
-            if (!shouldSkipCreation && typeof window !== 'undefined') {
-              // שמור זמן ניסיון רק אם ניסינו ליצור (לא רק למצוא)
-              localStorage.setItem(lastAttemptKey, now.toString());
-            }
-            console.warn('⚠️ Could not create/find Shopify customer');
-          }
         } catch (err) {
           console.warn('⚠️ Could not create Shopify customer:', err);
         }
-      } else {
-        console.warn('⚠️ No phone - cannot create/find Shopify customer (phone is required)');
       }
-    } else if (!session?.user) {
-      console.log('ℹ️ User not logged in - skipping Shopify customer creation');
     }
     
     if (shopifyCustomerId) {
