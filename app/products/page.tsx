@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -39,7 +39,7 @@ interface Product {
 
 type TabType = 'bags' | 'belts';
 
-export default function ProductsPage() {
+function ProductsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams?.get('tab') as TabType | null;
   const [activeTab, setActiveTab] = useState<TabType>(tabParam === 'belts' ? 'belts' : 'bags');
@@ -86,42 +86,58 @@ export default function ProductsPage() {
   }, [activeTab]);
 
   return (
+    <>
+      {/* Products Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="bg-gray-200 animate-pulse aspect-[4/5]" />
+          ))}
+        </div>
+      ) : products.length === 0 ? (
+        <div className="max-w-7xl mx-auto text-center py-20">
+          <p className="text-gray-400 font-light text-lg">לא נמצאו מוצרים בקטגוריה זו</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
+          {products.map((product) => {
+            const firstVariant = product.variants.edges[0]?.node;
+            const firstImage = product.images.edges[0]?.node;
+            
+            return (
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                title={product.title}
+                handle={product.handle}
+                price={product.priceRange.minVariantPrice.amount}
+                currencyCode={product.priceRange.minVariantPrice.currencyCode}
+                image={firstImage?.url}
+                variantId={firstVariant?.id || ''}
+                available={firstVariant?.availableForSale || false}
+              />
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
+export default function ProductsPage() {
+  return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
       <main className="flex-grow w-full px-4 py-12 md:py-16">
-        {/* Products Grid */}
-        {loading ? (
+        <Suspense fallback={
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="bg-gray-200 animate-pulse aspect-[4/5]" />
             ))}
           </div>
-        ) : products.length === 0 ? (
-          <div className="max-w-7xl mx-auto text-center py-20">
-            <p className="text-gray-400 font-light text-lg">לא נמצאו מוצרים בקטגוריה זו</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
-            {products.map((product) => {
-              const firstVariant = product.variants.edges[0]?.node;
-              const firstImage = product.images.edges[0]?.node;
-              
-              return (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  title={product.title}
-                  handle={product.handle}
-                  price={product.priceRange.minVariantPrice.amount}
-                  currencyCode={product.priceRange.minVariantPrice.currencyCode}
-                  image={firstImage?.url}
-                  variantId={firstVariant?.id || ''}
-                  available={firstVariant?.availableForSale || false}
-                />
-              );
-            })}
-          </div>
-        )}
+        }>
+          <ProductsContent />
+        </Suspense>
       </main>
       <Footer />
     </div>
