@@ -10,6 +10,8 @@ export interface CartItem {
   quantity: number;
   image?: string;
   available: boolean;
+  color?: string;
+  variantTitle?: string;
 }
 
 interface CartStore {

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { useCartStore } from '@/store/cartStore';
-import { Heart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import Link from 'next/link';
 import Toast from '@/components/Toast';
 import ProductCard from '@/components/ProductCard';
@@ -39,6 +39,14 @@ interface Product {
         };
         availableForSale: boolean;
         quantityAvailable: number;
+        selectedOptions?: Array<{
+          name: string;
+          value: string;
+        }>;
+        image?: {
+          url: string;
+          altText: string | null;
+        } | null;
       };
     }>;
   };
@@ -65,17 +73,171 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const touchEndX = useRef<number>(0);
   const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
 
+  // Type for variant node
+  type VariantNode = Product['variants']['edges'][0]['node'];
+
+  // Extract colors from variants
+  const getColorFromVariant = (variant: VariantNode): string | null => {
+    const colorOption = variant.selectedOptions?.find(opt => 
+      opt.name.toLowerCase() === 'color' || 
+      opt.name.toLowerCase() === 'צבע' ||
+      opt.name.toLowerCase() === 'colour'
+    );
+    return colorOption?.value || null;
+  };
+
+  // Convert color name to hex value
+  const getColorHex = (colorName: string): string => {
+    const colorMap: { [key: string]: string } = {
+      // English colors
+      'black': '#000000',
+      'white': '#FFFFFF',
+      'red': '#FF0000',
+      'blue': '#0000FF',
+      'green': '#008000',
+      'yellow': '#FFFF00',
+      'orange': '#FFA500',
+      'purple': '#800080',
+      'pink': '#FFC0CB',
+      'brown': '#A52A2A',
+      'gray': '#808080',
+      'grey': '#808080',
+      'navy': '#000080',
+      'beige': '#F5F5DC',
+      'khaki': '#C3B091',
+      'tan': '#D2B48C',
+      'burgundy': '#800020',
+      'maroon': '#800000',
+      'coral': '#FF7F50',
+      'turquoise': '#40E0D0',
+      'teal': '#008080',
+      'olive': '#808000',
+      'lime': '#00FF00',
+      'cyan': '#00FFFF',
+      'magenta': '#FF00FF',
+      'gold': '#FFD700',
+      'silver': '#C0C0C0',
+      // Hebrew colors
+      'שחור': '#000000',
+      'לבן': '#FFFFFF',
+      'אדום': '#FF0000',
+      'כחול': '#0000FF',
+      'ירוק': '#008000',
+      'צהוב': '#FFFF00',
+      'כתום': '#FFA500',
+      'סגול': '#800080',
+      'ורוד': '#FFC0CB',
+      'חום': '#A52A2A',
+      'אפור': '#808080',
+      'כחול כהה': '#000080',
+      'בז': '#F5F5DC',
+      'קרם': '#FFFDD0',
+      'בורדו': '#800020',
+      'טורקיז': '#40E0D0',
+      'זהב': '#FFD700',
+      'כסף': '#C0C0C0',
+    };
+    
+    const normalizedName = colorName.toLowerCase().trim();
+    return colorMap[normalizedName] || '#CCCCCC'; // Default gray if color not found
+  };
+
+  // Group variants by color
+  const colorMap = new Map<string, VariantNode[]>();
+  product.variants.edges.forEach(({ node }) => {
+    const color = getColorFromVariant(node);
+    if (color) {
+      if (!colorMap.has(color)) {
+        colorMap.set(color, []);
+      }
+      colorMap.get(color)!.push(node);
+    }
+  });
+
+  // Get available colors
+  const availableColors = Array.from(colorMap.keys());
+  const hasColors = availableColors.length > 0;
+
+  // Get current variant's color
+  const currentVariant = useMemo(() => 
+    product.variants.edges.find((e) => e.node.id === selectedVariant)?.node,
+    [product.variants.edges, selectedVariant]
+  );
+  
+  const currentColor = useMemo(() => 
+    currentVariant ? getColorFromVariant(currentVariant) : null,
+    [currentVariant]
+  );
+
+  // Filter images by selected variant/color
+  const filteredImages = useMemo(() => {
+    if (!hasColors || !currentColor) {
+      return product.images.edges;
+    }
+
+    // If variant has its own image, prioritize it
+    if (currentVariant?.image?.url) {
+      const variantImage = currentVariant.image.url;
+      // Check if variant image is in product images
+      const variantImageInList = product.images.edges.find(
+        ({ node }) => node.url === variantImage
+      );
+      
+      if (variantImageInList) {
+        // Return images starting with variant image
+        const variantIndex = product.images.edges.findIndex(
+          ({ node }) => node.url === variantImage
+        );
+        return [
+          ...product.images.edges.slice(variantIndex),
+          ...product.images.edges.slice(0, variantIndex)
+        ];
+      }
+      
+      // If variant image is not in product images, add it first
+      return [
+        { node: { url: variantImage, altText: currentVariant.image.altText } },
+        ...product.images.edges
+      ];
+    }
+
+    // Fallback: return all images
+    return product.images.edges;
+  }, [hasColors, currentColor, currentVariant, product.images.edges]);
+
   // Initialize selected variant and image
   useEffect(() => {
     if (product.variants.edges.length > 0) {
       const firstVariant = product.variants.edges[0].node;
       setSelectedVariant(firstVariant.id);
-    }
-    if (product.images.edges.length > 0) {
+      
+      // Set initial image from variant if available
+      if (firstVariant.image?.url) {
+        setSelectedImage(firstVariant.image.url);
+        setCurrentImageIndex(0);
+      } else if (product.images.edges.length > 0) {
+        setSelectedImage(product.images.edges[0].node.url);
+        setCurrentImageIndex(0);
+      }
+    } else if (product.images.edges.length > 0) {
       setSelectedImage(product.images.edges[0].node.url);
       setCurrentImageIndex(0);
     }
   }, [product]);
+
+  // Update image when variant changes
+  useEffect(() => {
+    if (currentVariant?.image?.url) {
+      const variantImageUrl = currentVariant.image.url;
+      const imageIndex = filteredImages.findIndex(
+        ({ node }) => node.url === variantImageUrl
+      );
+      if (imageIndex >= 0) {
+        setSelectedImage(variantImageUrl);
+        setCurrentImageIndex(imageIndex);
+      }
+    }
+  }, [selectedVariant, currentVariant, filteredImages]);
 
   // Calculate max image height for viewport and check for overflow
   useEffect(() => {
@@ -83,7 +245,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
 
     const calculateMaxHeight = () => {
       let maxHeight = 0;
-      product.images.edges.forEach(({ node }) => {
+      filteredImages.forEach(({ node }) => {
         const imageElement = imageRefs.current[node.url];
         if (imageElement) {
           const height = imageElement.offsetHeight;
@@ -107,7 +269,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
 
     // Wait for images to load and recalculate
     const timers: NodeJS.Timeout[] = [];
-    product.images.edges.forEach((_, index) => {
+    filteredImages.forEach((_, index) => {
       const timer = setTimeout(() => {
         calculateMaxHeight();
         checkOverflow();
@@ -130,7 +292,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       timers.forEach(timer => clearTimeout(timer));
       window.removeEventListener('resize', calculateMaxHeight);
     };
-  }, [product]);
+  }, [product, filteredImages]);
 
   // Use Intersection Observer instead of scroll listener for better performance
   useEffect(() => {
@@ -172,7 +334,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     );
 
     // Observe all images
-    product.images.edges.forEach(({ node }) => {
+    filteredImages.forEach(({ node }) => {
       const imageElement = imageRefs.current[node.url];
       if (imageElement) {
         imageElement.setAttribute('data-image-url', node.url);
@@ -187,7 +349,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
         intersectionObserverRef.current.disconnect();
       }
     };
-  }, [product, selectedImage]);
+  }, [product, selectedImage, filteredImages]);
 
   // Show/hide floating cart button on mobile scroll
   useEffect(() => {
@@ -223,18 +385,18 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     if (Math.abs(distance) > minSwipeDistance) {
       if (distance > 0) {
         // Swipe left - next image
-        const newIndex = currentImageIndex === product.images.edges.length - 1 
+        const newIndex = currentImageIndex === filteredImages.length - 1 
           ? 0 
           : currentImageIndex + 1;
         setCurrentImageIndex(newIndex);
-        setSelectedImage(product.images.edges[newIndex].node.url);
+        setSelectedImage(filteredImages[newIndex].node.url);
       } else {
         // Swipe right - previous image
         const newIndex = currentImageIndex === 0 
-          ? product.images.edges.length - 1 
+          ? filteredImages.length - 1 
           : currentImageIndex - 1;
         setCurrentImageIndex(newIndex);
-        setSelectedImage(product.images.edges[newIndex].node.url);
+        setSelectedImage(filteredImages[newIndex].node.url);
       }
     }
 
@@ -245,21 +407,20 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const handleAddToCart = () => {
     if (!product || !selectedVariant) return;
     
-    const variant = product.variants.edges.find(
-      (e) => e.node.id === selectedVariant
-    )?.node;
-    
-    if (variant && variant.availableForSale) {
-      // TODO: Security - In production, only send variantId and fetch price from server
-      // For now, we keep price for display purposes but it should be validated server-side
+    if (currentVariant && currentVariant.availableForSale) {
+      // Use variant image if available, otherwise use selected image
+      const imageToUse = currentVariant.image?.url || selectedImage;
+      
       addItem({
-        id: variant.id,
-        variantId: variant.id,
-        title: `${product.title} - ${variant.title}`,
-        price: variant.price.amount,
-        currencyCode: variant.price.currencyCode,
-        image: selectedImage,
-        available: variant.availableForSale,
+        id: currentVariant.id,
+        variantId: currentVariant.id,
+        title: product.title,
+        price: currentVariant.price.amount,
+        currencyCode: currentVariant.price.currencyCode,
+        image: imageToUse,
+        available: currentVariant.availableForSale,
+        color: currentColor || undefined,
+        variantTitle: currentVariant.title,
       });
       
       // Show toast
@@ -270,9 +431,15 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     }
   };
 
-  const currentVariant = product.variants.edges.find(
-    (e) => e.node.id === selectedVariant
-  )?.node;
+  // Handle color selection
+  const handleColorSelect = (color: string) => {
+    const variantsForColor = colorMap.get(color);
+    if (variantsForColor && variantsForColor.length > 0) {
+      // Select first available variant for this color, or first variant if none available
+      const availableVariant = variantsForColor.find(v => v.availableForSale) || variantsForColor[0];
+      setSelectedVariant(availableVariant.id);
+    }
+  };
 
   // פורמט מחיר פרימיום
   const formatPrice = (amount: string) => {
@@ -340,12 +507,15 @@ export default function ProductClient({ product, relatedProducts: initialRelated
         <div className="grid grid-cols-12 gap-6 md:gap-8">
           {/* Left Side - Thumbnail Images (Desktop only) */}
           <div className="hidden md:block col-span-2 order-3">
-            {product.images.edges.length > 0 && (
-              <div className="flex flex-col gap-3">
-                {product.images.edges.map(({ node }) => (
+            {filteredImages.length > 0 && (
+              <div className={`flex flex-col gap-3 transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}>
+                {filteredImages.map(({ node }, index) => (
                   <button
                     key={node.url}
-                    onClick={() => setSelectedImage(node.url)}
+                    onClick={() => {
+                      setSelectedImage(node.url);
+                      setCurrentImageIndex(index);
+                    }}
                     className={`relative w-full aspect-square overflow-hidden border transition-luxury ${
                       selectedImage === node.url
                         ? 'border-[#1a1a1a] ring-2 ring-[#1a1a1a] ring-opacity-20 opacity-100'
@@ -371,15 +541,15 @@ export default function ProductClient({ product, relatedProducts: initialRelated
               {/* Mobile - Image Gallery */}
               <div className="md:hidden mb-1">
                 {/* Navigation Arrows - Outside image */}
-                {product.images.edges.length > 1 && (
+                {filteredImages.length > 1 && (
                   <div className="flex items-center justify-center gap-4 mb-2 w-full">
                     <button
                       onClick={() => {
-                        const newIndex = currentImageIndex === product.images.edges.length - 1 
+                        const newIndex = currentImageIndex === filteredImages.length - 1 
                           ? 0 
                           : currentImageIndex + 1;
                         setCurrentImageIndex(newIndex);
-                        setSelectedImage(product.images.edges[newIndex].node.url);
+                        setSelectedImage(filteredImages[newIndex].node.url);
                       }}
                       className="bg-white/90 hover:bg-white rounded-full p-2 shadow-md transition-all border border-gray-200 flex-shrink-0"
                       aria-label="Next image"
@@ -388,13 +558,13 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     </button>
                     {/* Main Image */}
                     <div 
-                      className="relative bg-[#fdfcfb] overflow-hidden touch-none flex-shrink-0" 
+                      className={`relative bg-[#fdfcfb] overflow-hidden touch-none flex-shrink-0 transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}
                       style={{ width: '70%', maxWidth: '100%', aspectRatio: '2/3' }}
                       onTouchStart={handleTouchStart}
                       onTouchMove={handleTouchMove}
                       onTouchEnd={handleTouchEnd}
                       aria-live="polite"
-                      aria-label={`תמונה ${currentImageIndex + 1} מתוך ${product.images.edges.length}`}
+                      aria-label={`תמונה ${currentImageIndex + 1} מתוך ${filteredImages.length}`}
                     >
                       {selectedImage && (
                         <Image
@@ -411,10 +581,10 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     <button
                       onClick={() => {
                         const newIndex = currentImageIndex === 0 
-                          ? product.images.edges.length - 1 
+                          ? filteredImages.length - 1 
                           : currentImageIndex - 1;
                         setCurrentImageIndex(newIndex);
-                        setSelectedImage(product.images.edges[newIndex].node.url);
+                        setSelectedImage(filteredImages[newIndex].node.url);
                       }}
                       className="bg-white/90 hover:bg-white rounded-full p-2 shadow-md transition-all border border-gray-200 flex-shrink-0"
                       aria-label="Previous image"
@@ -424,9 +594,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                   </div>
                 )}
                 {/* Main Image - Without arrows if only one image */}
-                {product.images.edges.length === 1 && (
+                {filteredImages.length === 1 && (
                   <div 
-                    className="relative bg-[#fdfcfb] overflow-hidden mb-2 mx-auto touch-none" 
+                    className={`relative bg-[#fdfcfb] overflow-hidden mb-2 mx-auto touch-none transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}
                     style={{ width: '70%', aspectRatio: '2/3' }}
                   >
                     {selectedImage && (
@@ -443,9 +613,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                   </div>
                 )}
                 {/* Thumbnail Images - Scrollable */}
-                {product.images.edges.length > 1 && (
-                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide justify-center w-full">
-                    {product.images.edges.map(({ node }, index) => (
+                {filteredImages.length > 1 && (
+                  <div className={`flex gap-2 overflow-x-auto pb-2 scrollbar-hide justify-center w-full transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}>
+                    {filteredImages.map(({ node }, index) => (
                       <button
                         key={node.url}
                         onClick={() => {
@@ -473,14 +643,14 @@ export default function ProductClient({ product, relatedProducts: initialRelated
               {/* Desktop - Scrollable images */}
               <div 
                 ref={scrollContainerRef}
-                className={`hidden md:block overflow-y-auto ${hasOverflow ? '' : 'scrollbar-hide'}`}
+                className={`hidden md:block overflow-y-auto transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''} ${hasOverflow ? '' : 'scrollbar-hide'}`}
                 style={{ 
                   maxHeight: maxImageHeight > 0 ? `${maxImageHeight}px` : 'calc(100vh - 120px)',
                   height: maxImageHeight > 0 ? `${maxImageHeight}px` : 'calc(100vh - 120px)'
                 }}
               >
                 <div className="space-y-4" style={{ width: '100%' }}>
-                  {product.images.edges.map(({ node }) => (
+                  {filteredImages.map(({ node }) => (
                     <div
                       key={node.url}
                       ref={(el) => {
@@ -549,9 +719,53 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     <p className="text-xs font-light text-gray-500 mt-1">כולל מע״מ</p>
                   </div>
 
-                  {/* Variants */}
-                  {product.variants.edges.length > 1 && (
+                  {/* Color Selection */}
+                  {hasColors && (
                     <div>
+                      <label className="block text-xs font-light mb-2 tracking-luxury uppercase text-gray-600">
+                        צבע
+                      </label>
+                      <div className="flex flex-wrap gap-3">
+                        {availableColors.map((color) => {
+                          const isSelected = currentColor === color;
+                          const variantsForColor = colorMap.get(color) || [];
+                          const isAvailable = variantsForColor.some(v => v.availableForSale);
+                          const colorHex = getColorHex(color);
+                          
+                          return (
+                            <button
+                              key={color}
+                              onClick={() => handleColorSelect(color)}
+                              className={`relative w-10 h-10 rounded-full border-2 transition-luxury ${
+                                isSelected
+                                  ? 'border-[#1a1a1a] ring-2 ring-[#1a1a1a] ring-opacity-30'
+                                  : isAvailable
+                                  ? 'border-gray-300 hover:border-[#1a1a1a]'
+                                  : 'border-gray-200 opacity-60'
+                              }`}
+                              style={{ backgroundColor: colorHex }}
+                              title={isAvailable ? color : `${color} - אזל במלאי`}
+                              aria-label={isAvailable ? color : `${color} - אזל במלאי`}
+                            >
+                              {!isAvailable && (
+                                <X 
+                                  size={16} 
+                                  className="absolute inset-0 m-auto text-[#1a1a1a] stroke-[3]" 
+                                />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Variants (if no colors or additional options) */}
+                  {product.variants.edges.length > 1 && !hasColors && (
+                    <div>
+                      <label className="block text-xs font-light mb-2 tracking-luxury uppercase text-gray-600">
+                        בחר גרסה
+                      </label>
                       <select
                         value={selectedVariant}
                         onChange={(e) => setSelectedVariant(e.target.value)}
@@ -622,8 +836,49 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                   <p className="text-xs font-light text-gray-500 mt-1">כולל מע״מ</p>
                 </div>
 
-                {/* Desktop Variants */}
-                {product.variants.edges.length > 1 && (
+                {/* Desktop Color Selection */}
+                {hasColors && (
+                  <div className="hidden md:block">
+                    <label className="block text-sm font-light mb-3 tracking-luxury uppercase">
+                      צבע
+                    </label>
+                    <div className="flex flex-wrap gap-3">
+                      {availableColors.map((color) => {
+                        const isSelected = currentColor === color;
+                        const variantsForColor = colorMap.get(color) || [];
+                        const isAvailable = variantsForColor.some(v => v.availableForSale);
+                        const colorHex = getColorHex(color);
+                        
+                        return (
+                          <button
+                            key={color}
+                            onClick={() => handleColorSelect(color)}
+                            className={`relative w-12 h-12 rounded-full border-2 transition-luxury ${
+                              isSelected
+                                ? 'border-[#1a1a1a] ring-2 ring-[#1a1a1a] ring-opacity-30'
+                                : isAvailable
+                                ? 'border-gray-300 hover:border-[#1a1a1a]'
+                                : 'border-gray-200 opacity-60'
+                            }`}
+                            style={{ backgroundColor: colorHex }}
+                            title={isAvailable ? color : `${color} - אזל במלאי`}
+                            aria-label={isAvailable ? color : `${color} - אזל במלאי`}
+                          >
+                            {!isAvailable && (
+                              <X 
+                                size={18} 
+                                className="absolute inset-0 m-auto text-[#1a1a1a] stroke-[3]" 
+                              />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Desktop Variants (if no colors or additional options) */}
+                {product.variants.edges.length > 1 && !hasColors && (
                   <div className="hidden md:block">
                     <label className="block text-sm font-light mb-3 tracking-luxury uppercase">
                       בחר גרסה

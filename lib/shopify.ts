@@ -117,6 +117,14 @@ export const PRODUCT_QUERY = `
             }
             availableForSale
             quantityAvailable
+            selectedOptions {
+              name
+              value
+            }
+            image {
+              url
+              altText
+            }
           }
         }
       }

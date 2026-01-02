@@ -35,6 +35,14 @@ interface Product {
         };
         availableForSale: boolean;
         quantityAvailable: number;
+        selectedOptions?: Array<{
+          name: string;
+          value: string;
+        }>;
+        image?: {
+          url: string;
+          altText: string | null;
+        } | null;
       };
     }>;
   };

@@ -12,6 +12,82 @@ import LoginModal from '@/components/LoginModal';
 import Link from 'next/link';
 import { Check, User } from 'lucide-react';
 
+// פונקציה עזר לתיקון checkout URL
+function fixCheckoutUrl(url: string, cartId: string | null): string {
+  if (!url || !cartId) return url;
+  
+  // בדוק אם ה-URL כבר מכיל את הדומיין הנכון של Shopify
+  if (url.includes('.myshopify.com') || url.includes('checkout.shopify.com')) {
+    return url; // כבר תקין
+  }
+  
+  // בדוק אם זה custom domain או localhost
+  const isCustomDomain = url.includes('klumit-online.vercel.app') || 
+                        url.includes('localhost') ||
+                        url.includes('127.0.0.1') ||
+                        (!url.includes('.myshopify.com') && !url.includes('checkout.shopify.com'));
+  
+  if (!isCustomDomain) {
+    return url; // כבר תקין
+  }
+  
+  console.log('⚠️ Fixing checkout URL from custom domain to Shopify domain...');
+  console.log('🔍 Original URL:', url);
+  
+  try {
+    // נסה לחלץ את ה-cart ID וה-key מה-URL (עובד גם עם http:// או https:// או ללא פרוטוקול)
+    const cartMatch = url.match(/\/cart\/c\/([^?\/]+)(\?.*)?/);
+    if (cartMatch) {
+      const cartIdFromUrl = cartMatch[1];
+      const queryString = cartMatch[2] || '';
+      
+      // קבל את הדומיין של Shopify מה-env
+      const shopifyStoreDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'htcudj-yw';
+      const fullShopifyDomain = shopifyStoreDomain.includes('.myshopify.com') 
+        ? shopifyStoreDomain 
+        : `${shopifyStoreDomain}.myshopify.com`;
+      
+      const fixedUrl = `https://${fullShopifyDomain}/cart/c/${cartIdFromUrl}${queryString}`;
+      console.log('🔧 Fixed checkout URL:', fixedUrl);
+      return fixedUrl;
+    } else {
+      // אם לא הצלחנו לחלץ מה-URL, ננסה להשתמש ב-cartId מה-GID
+      const cartIdFromGid = cartId.replace('gid://shopify/Cart/', '');
+      const urlMatch = url.match(/[?&]key=([^&]+)/);
+      const key = urlMatch ? urlMatch[1] : '';
+      
+      const shopifyStoreDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'htcudj-yw';
+      const fullShopifyDomain = shopifyStoreDomain.includes('.myshopify.com') 
+        ? shopifyStoreDomain 
+        : `${shopifyStoreDomain}.myshopify.com`;
+      
+      const fixedUrl = `https://${fullShopifyDomain}/cart/c/${cartIdFromGid}${key ? `?key=${key}` : ''}`;
+      console.log('🔧 Fixed checkout URL (using GID):', fixedUrl);
+      return fixedUrl;
+    }
+  } catch (urlError) {
+    console.error('❌ Error fixing checkout URL:', urlError);
+    // נסה לתקן גם אם יש שגיאה - חלץ את ה-cart ID מה-GID
+    try {
+      const cartIdFromGid = cartId.replace('gid://shopify/Cart/', '');
+      const urlMatch = url.match(/[?&]key=([^&]+)/);
+      const key = urlMatch ? urlMatch[1] : '';
+      
+      const shopifyStoreDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'htcudj-yw';
+      const fullShopifyDomain = shopifyStoreDomain.includes('.myshopify.com') 
+        ? shopifyStoreDomain 
+        : `${shopifyStoreDomain}.myshopify.com`;
+      
+      const fixedUrl = `https://${fullShopifyDomain}/cart/c/${cartIdFromGid}${key ? `?key=${key}` : ''}`;
+      console.log('🔧 Fixed checkout URL (fallback):', fixedUrl);
+      return fixedUrl;
+    } catch (fallbackError) {
+      console.error('❌ Fallback error:', fallbackError);
+      return url; // החזר את ה-URL המקורי אם יש שגיאה
+    }
+  }
+}
+
 export default function CheckoutPage() {
   const { items, cartId, setCartId } = useCartStore();
   const [loading, setLoading] = useState(false);
@@ -411,7 +487,36 @@ export default function CheckoutPage() {
             }
 
           currentCartId = createCartResponse.cartCreate?.cart?.id || null;
-            checkoutUrl = createCartResponse.cartCreate?.cart?.checkoutUrl || null;
+            const rawCheckoutUrl = createCartResponse.cartCreate?.cart?.checkoutUrl || null;
+            
+            // אם ה-URL מכיל custom domain, נבנה אותו מחדש עם Shopify domain
+            if (rawCheckoutUrl && currentCartId) {
+              const isCustomDomainUrl = rawCheckoutUrl.includes('klumit-online.vercel.app') || 
+                                       rawCheckoutUrl.includes('localhost') ||
+                                       (!rawCheckoutUrl.includes('.myshopify.com') && !rawCheckoutUrl.includes('checkout.shopify.com'));
+              
+              if (isCustomDomainUrl) {
+                // חלץ את ה-cart ID מה-GID
+                const cartIdFromGid = currentCartId.replace('gid://shopify/Cart/', '');
+                // חלץ את ה-key מה-URL המקורי
+                const urlMatch = rawCheckoutUrl.match(/[?&]key=([^&]+)/);
+                const key = urlMatch ? urlMatch[1] : '';
+                
+                // בנה URL חדש עם Shopify domain
+                const shopifyStoreDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'htcudj-yw';
+                const fullShopifyDomain = shopifyStoreDomain.includes('.myshopify.com') 
+                  ? shopifyStoreDomain 
+                  : `${shopifyStoreDomain}.myshopify.com`;
+                
+                checkoutUrl = `https://${fullShopifyDomain}/cart/c/${cartIdFromGid}${key ? `?key=${key}` : ''}`;
+                console.log('🔧 Rebuilt checkout URL with Shopify domain:', checkoutUrl);
+              } else {
+                // גם אם לא מזוהה כ-custom domain, נבדוק שוב עם הפונקציה
+                checkoutUrl = fixCheckoutUrl(rawCheckoutUrl, currentCartId);
+              }
+            } else {
+              checkoutUrl = fixCheckoutUrl(rawCheckoutUrl || '', currentCartId);
+            }
             
             console.log('📊 Cart Creation Summary:', {
               cartId: currentCartId,
@@ -465,7 +570,8 @@ export default function CheckoutPage() {
                 console.log('✅ Delivery address updated successfully');
                 // עדכן את checkoutUrl אם קיבלנו אחד חדש
                 if (deliveryAddressResponse.cartDeliveryAddressUpdate?.cart?.checkoutUrl) {
-                  checkoutUrl = deliveryAddressResponse.cartDeliveryAddressUpdate.cart.checkoutUrl;
+                  const updatedUrl = deliveryAddressResponse.cartDeliveryAddressUpdate.cart.checkoutUrl;
+                  checkoutUrl = fixCheckoutUrl(updatedUrl, currentCartId);
                   console.log('🔗 Updated checkout URL from delivery address update:', checkoutUrl);
                 }
               }
@@ -581,7 +687,8 @@ export default function CheckoutPage() {
             } 
           };
           console.log('✅ Checkout URL response:', checkoutResponse);
-          checkoutUrl = checkoutResponse.cart?.checkoutUrl || null;
+          const retrievedUrl = checkoutResponse.cart?.checkoutUrl || null;
+          checkoutUrl = retrievedUrl ? fixCheckoutUrl(retrievedUrl, currentCartId) : null;
           console.log('🔗 Retrieved checkout URL:', checkoutUrl);
         } catch (shopifyError: any) {
           console.error('❌ Error getting checkout URL from Shopify:', shopifyError);
@@ -662,11 +769,62 @@ export default function CheckoutPage() {
           throw new Error('החנות מוגנת בסיסמה. אנא הסר את ההגנה ב-Shopify Admin → Settings → Store availability');
         }
         
-        console.log('🔄 Redirecting to Shopify Checkout...');
-        console.log('📍 URL:', checkoutUrl);
+        // תיקון URL אם הוא מכיל את הדומיין של האתר במקום Shopify
+        // השתמש בפונקציה fixCheckoutUrl שתתקן את ה-URL אם צריך
+        const finalCheckoutUrl = fixCheckoutUrl(checkoutUrl, currentCartId);
         
-        // Redirect immediately
-        window.location.href = checkoutUrl;
+        console.log('🔄 Redirecting to Shopify Checkout...');
+        console.log('📍 Original URL:', checkoutUrl);
+        console.log('📍 Final URL:', finalCheckoutUrl);
+        
+        // בדוק שהתיקון עבד - וודא שה-URL מכיל את הדומיין הנכון של Shopify
+        const isValidShopifyUrl = finalCheckoutUrl.includes('.myshopify.com') || 
+                                  finalCheckoutUrl.includes('checkout.shopify.com');
+        
+        if (!isValidShopifyUrl) {
+          console.error('❌ Failed to fix URL - still contains custom domain');
+          console.error('⚠️ Original URL:', checkoutUrl);
+          console.error('⚠️ Final URL:', finalCheckoutUrl);
+          console.error('⚠️ Shopify Store Domain:', process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN);
+          console.error('⚠️ Cart ID:', currentCartId);
+          
+          // נסה לתקן שוב עם fallback
+          const cartIdFromGid = currentCartId.replace('gid://shopify/Cart/', '');
+          const urlMatch = checkoutUrl.match(/[?&]key=([^&]+)/);
+          const key = urlMatch ? urlMatch[1] : '';
+          
+          const shopifyStoreDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'htcudj-yw';
+          const fullShopifyDomain = shopifyStoreDomain.includes('.myshopify.com') 
+            ? shopifyStoreDomain 
+            : `${shopifyStoreDomain}.myshopify.com`;
+          
+          const fallbackUrl = `https://${fullShopifyDomain}/cart/c/${cartIdFromGid}${key ? `?key=${key}` : ''}`;
+          console.log('🔄 Trying fallback URL:', fallbackUrl);
+          
+          if (fallbackUrl.includes('.myshopify.com')) {
+            console.log('✅ Fallback URL is valid, using it');
+            // Delay redirect to allow reading console logs
+            console.log('⏳ Waiting 5 seconds before redirect...');
+            setTimeout(() => {
+              console.log('🚀 Redirecting now to:', fallbackUrl);
+              window.location.href = fallbackUrl;
+            }, 5000);
+            return;
+          } else {
+            throw new Error('שגיאה: לא ניתן לתקן את קישור התשלום. אנא בדוק את הגדרות Shopify.');
+          }
+        }
+        
+        if (finalCheckoutUrl !== checkoutUrl) {
+          console.log('✅ Using fixed URL with Shopify domain');
+        }
+        
+        // Delay redirect to allow reading console logs
+        console.log('⏳ Waiting 5 seconds before redirect...');
+        setTimeout(() => {
+          console.log('🚀 Redirecting now to:', finalCheckoutUrl);
+          window.location.href = finalCheckoutUrl;
+        }, 5000); // 5 seconds delay
         return; // חשוב: אל תמשיך אחרי redirect
       } else if (currentCartId) {
         console.error('❌ No checkout URL but cart exists');
@@ -706,94 +864,82 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
+    <div className="h-screen flex flex-col bg-[#fdfcfb] overflow-hidden">
       <Header />
-      <main className="flex-grow max-w-4xl mx-auto px-4 py-12 md:py-20 w-full">
-        <h1 className="text-4xl md:text-5xl font-light luxury-font mb-12 text-right">
-          תשלום
-        </h1>
-
-        {/* Guest Checkout Notice */}
-        {!user && (
-          <div className="bg-blue-50 border border-blue-200 p-6 mb-8 rounded-sm">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 flex-1">
-                <User className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                <div className="text-right">
-                  <p className="text-sm font-light text-blue-900">
-                    אתה קונה כאורח
-                  </p>
-                  <p className="text-xs text-blue-700 mt-1">
-                    התחברי כדי לשמור את הפרטים שלך ולעקוב אחרי ההזמנות
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowLoginModal(true)}
-                className="px-6 py-2 bg-[#1a1a1a] text-white text-sm font-light hover:bg-[#2a2a2a] transition-luxury whitespace-nowrap"
-              >
-                התחברי
-              </button>
+      <main className="flex-1 overflow-hidden">
+        <div className="h-full max-w-7xl mx-auto px-4 md:px-6 py-2 md:py-3">
+          <div className="h-full flex flex-col">
+            <div className="flex items-center justify-between mb-2 md:mb-3">
+              <h1 className="text-lg md:text-xl font-light luxury-font text-right">
+                תשלום
+              </h1>
+              {/* Guest Checkout Notice - Compact */}
+              {!user && (
+                <button
+                  onClick={() => setShowLoginModal(true)}
+                  className="px-3 py-1.5 bg-[#1a1a1a] text-white text-xs font-light hover:bg-[#2a2a2a] transition-luxury whitespace-nowrap"
+                >
+                  התחברי
+                </button>
+              )}
             </div>
-          </div>
-        )}
 
-        <div className="grid md:grid-cols-3 gap-12 md:gap-16">
+            <div className="grid md:grid-cols-5 gap-3 md:gap-4 flex-1 min-h-0 overflow-hidden">
           {/* Checkout Form */}
-          <div className="md:col-span-2">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="md:col-span-3 overflow-y-auto pr-2">
+            <form onSubmit={handleSubmit} className="space-y-3">
               {/* Personal Information */}
-              <div className="bg-white border border-gray-200 p-6 md:p-8">
-                <h2 className="text-xl md:text-2xl font-light luxury-font mb-6 text-right">
+              <div className="bg-white border border-gray-200 p-4">
+                <h2 className="text-base md:text-lg font-light luxury-font mb-3 text-right">
                   פרטים אישיים
                 </h2>
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-light mb-2 text-right text-gray-600">
+                    <label className="block text-xs font-light mb-1 text-right text-gray-600">
                       שם פרטי *
                     </label>
                     <input
                       type="text"
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                      className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-light mb-2 text-right text-gray-600">
+                    <label className="block text-xs font-light mb-1 text-right text-gray-600">
                       שם משפחה *
                     </label>
                     <input
                       type="text"
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                      className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                       required
                     />
                   </div>
                 </div>
-                <div className="mt-4">
-                  <label className="block text-sm font-light mb-2 text-right text-gray-600">
+                <div className="mt-3">
+                  <label className="block text-xs font-light mb-1 text-right text-gray-600">
                     אימייל *
                   </label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                    className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                     required
                   />
                 </div>
-                <div className="mt-4">
-                  <label className="block text-sm font-light mb-2 text-right text-gray-600">
+                <div className="mt-3">
+                  <label className="block text-xs font-light mb-1 text-right text-gray-600">
                     טלפון *
                   </label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                    className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                     placeholder="050-123-4567"
                     required
                   />
@@ -801,12 +947,12 @@ export default function CheckoutPage() {
               </div>
 
               {/* Shipping Address */}
-              <div className="bg-white border border-gray-200 p-6 md:p-8">
-                <h2 className="text-xl md:text-2xl font-light luxury-font mb-6 text-right">
+              <div className="bg-white border border-gray-200 p-4">
+                <h2 className="text-base md:text-lg font-light luxury-font mb-3 text-right">
                   כתובת משלוח
                 </h2>
-                <div className="mt-4">
-                  <label className="block text-sm font-light mb-2 text-right text-gray-600">
+                <div className="mt-3">
+                  <label className="block text-xs font-light mb-1 text-right text-gray-600">
                     כתובת *
                   </label>
                   <AddressAutocomplete
@@ -822,136 +968,121 @@ export default function CheckoutPage() {
                       });
                     }}
                     placeholder="הזן כתובת (או בחר מהרשימה)"
-                    className="w-full px-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                    className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                     required
                   />
                 </div>
-                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                <div className="grid md:grid-cols-2 gap-3 mt-3">
                   <div>
-                    <label className="block text-sm font-light mb-2 text-right text-gray-600">
+                    <label className="block text-xs font-light mb-1 text-right text-gray-600">
                       עיר *
                     </label>
                     <input
                       type="text"
                       value={formData.city}
                       onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                      className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-light mb-2 text-right text-gray-600">
+                    <label className="block text-xs font-light mb-1 text-right text-gray-600">
                       מיקוד *
                     </label>
                     <input
                       type="text"
                       value={formData.zipCode}
                       onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                      className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                       required
                     />
                   </div>
                 </div>
-                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                <div className="grid md:grid-cols-2 gap-3 mt-3">
                   <div>
-                    <label className="block text-sm font-light mb-2 text-right text-gray-600">
+                    <label className="block text-xs font-light mb-1 text-right text-gray-600">
                       דירה
                     </label>
                     <input
                       type="text"
                       value={formData.apartment}
                       onChange={(e) => setFormData({ ...formData, apartment: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                      className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                       placeholder="מספר דירה"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-light mb-2 text-right text-gray-600">
+                    <label className="block text-xs font-light mb-1 text-right text-gray-600">
                       קומה
                     </label>
                     <input
                       type="text"
                       value={formData.floor}
                       onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                      className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                       placeholder="מספר קומה"
                     />
                   </div>
                 </div>
-                <div className="mt-4">
-                  <label className="block text-sm font-light mb-2 text-right text-gray-600">
+                <div className="mt-3">
+                  <label className="block text-xs font-light mb-1 text-right text-gray-600">
                     הערות (קוד ללובי, הוראות משלוח וכו')
                   </label>
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right resize-none"
+                    className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right resize-none"
                     placeholder="קוד ללובי, הוראות משלוח, הערות נוספות..."
-                    rows={3}
+                    rows={2}
                   />
+                </div>
+                
+                {/* Save Address Checkbox */}
+                <div className="mt-4 pt-3 border-t border-gray-100">
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="saveAddress"
+                      checked={saveAddressPermanently}
+                      onChange={(e) => setSaveAddressPermanently(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 border-gray-300 text-[#1a1a1a] focus:ring-[#1a1a1a]"
+                    />
+                    <label htmlFor="saveAddress" className="text-xs font-light text-gray-700 text-right flex-1 cursor-pointer leading-relaxed">
+                      שמור כתובת זו ופרטים אלה בפרופיל שלי לשימוש עתידי (ברירת מחדל לרכישות הבאות)
+                    </label>
+                  </div>
                 </div>
               </div>
 
-              {/* Save Address Checkbox */}
-              <div className="bg-white border border-gray-200 p-6 md:p-8">
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    id="saveAddress"
-                    checked={saveAddressPermanently}
-                    onChange={(e) => setSaveAddressPermanently(e.target.checked)}
-                    className="mt-1 w-4 h-4 border-gray-300 text-[#1a1a1a] focus:ring-[#1a1a1a]"
-                  />
-                  <label htmlFor="saveAddress" className="text-sm font-light text-gray-700 text-right flex-1 cursor-pointer">
-                    שמור כתובת זו ופרטים אלה בפרופיל שלי לשימוש עתידי (ברירת מחדל לרכישות הבאות)
-                  </label>
-                </div>
-              </div>
-
-              {/* Terms Checkbox */}
-              <div className="bg-white border border-gray-200 p-6 md:p-8">
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    id="terms"
-                    checked={acceptedTerms}
-                    onChange={(e) => setAcceptedTerms(e.target.checked)}
-                    className="mt-1 w-4 h-4 border-gray-300 text-[#1a1a1a] focus:ring-[#1a1a1a]"
-                    required
-                  />
-                  <label htmlFor="terms" className="text-sm font-light text-gray-700 text-right flex-1 cursor-pointer">
-                    אני מאשר/ת שקראתי והבנתי את <Link href="/terms" target="_blank" className="text-[#1a1a1a] underline hover:no-underline">תנאי הרכישה והתקנון</Link> ואני מסכים/ה להם. אני מאשר/ת כי גילי הוא 18 שנים ומעלה.
-                  </label>
-                </div>
-              </div>
 
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm font-light text-right">
                   {error}
                 </div>
               )}
-
-              <button
-                type="submit"
-                disabled={loading || !acceptedTerms}
-                className="w-full bg-[#1a1a1a] text-white py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                {loading ? 'מעבר לתשלום...' : 'המשך לתשלום מאובטח'}
-              </button>
             </form>
           </div>
 
           {/* Order Summary */}
-          <div className="md:col-span-1">
-            <div className="sticky top-24 bg-white border border-gray-200 p-6 md:p-8">
-              <h2 className="text-xl md:text-2xl font-light luxury-font mb-6 text-right">
+          <div className="md:col-span-2">
+            <div className="bg-white border border-gray-200 p-5 md:p-6 h-full flex flex-col">
+              <h2 className="text-lg md:text-xl font-light luxury-font mb-4 text-right">
                 סיכום הזמנה
               </h2>
               
-              <div className="space-y-4 text-sm font-light mb-6">
+              <div className="space-y-3 text-sm font-light mb-4 flex-1 overflow-y-auto">
                 {items.map((item) => (
                   <div key={item.variantId} className="flex justify-between text-gray-700">
-                    <span className="text-right">{item.title} x{item.quantity}</span>
+                    <div className="text-right">
+                      <span>{item.title}</span>
+                      {item.color && (
+                        <span className="block text-xs text-gray-500 mt-0.5">צבע: {item.color}</span>
+                      )}
+                      {item.variantTitle && item.variantTitle !== 'Default Title' && !item.color && (
+                        <span className="block text-xs text-gray-500 mt-0.5">{item.variantTitle}</span>
+                      )}
+                      <span className="text-xs text-gray-500"> x{item.quantity}</span>
+                    </div>
                     <span>₪{formatPrice(parseFloat(item.price) * item.quantity)}</span>
                   </div>
                 ))}
@@ -972,7 +1103,7 @@ export default function CheckoutPage() {
                       <span className="font-light">מוחל</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-base md:text-lg pt-2 border-t border-gray-200">
+                  <div className="flex justify-between text-base pt-3 border-t border-gray-200">
                     <span className="font-light">סה״כ</span>
                     <span className="font-light text-[#1a1a1a]">
                       ₪{formatPrice(getTotal)}
@@ -983,8 +1114,8 @@ export default function CheckoutPage() {
               </div>
               
               {/* Coupon Code Section - Moved to bottom */}
-              <div className="pt-6 border-t border-gray-200">
-                <h3 className="text-sm font-light mb-3 text-right text-gray-600">
+              <div className="pt-4 border-t border-gray-200 mt-auto">
+                <h3 className="text-xs font-light mb-2 text-right text-gray-600">
                   קוד קופון
                 </h3>
                 {appliedDiscountCode ? (
@@ -1044,16 +1175,59 @@ export default function CheckoutPage() {
                 )}
               </div>
               
-              <div className="pt-6 border-t border-gray-200 mt-6">
+              {/* Terms Checkbox */}
+              <div className="pt-4 border-t border-gray-200 mt-4">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 border-gray-300 text-[#1a1a1a] focus:ring-[#1a1a1a]"
+                    required
+                  />
+                  <label htmlFor="terms" className="text-xs font-light text-gray-700 text-right flex-1 cursor-pointer leading-relaxed">
+                    אני מאשר/ת שקראתי והבנתי את <Link href="/terms" target="_blank" className="text-[#1a1a1a] underline hover:no-underline">תנאי הרכישה והתקנון</Link> ואני מסכים/ה להם. אני מאשר/ת כי גילי הוא 18 שנים ומעלה.
+                  </label>
+                </div>
+              </div>
+
+              {/* Payment Button */}
+              <div className="pt-4 border-t border-gray-200 mt-4">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const form = document.querySelector('form');
+                    if (form) {
+                      form.requestSubmit();
+                    } else {
+                      handleSubmit(e as any);
+                    }
+                  }}
+                  disabled={loading || !acceptedTerms}
+                  className="w-full bg-[#1a1a1a] text-white py-3 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'מעבר לתשלום...' : 'המשך לתשלום מאובטח'}
+                </button>
+                {(!acceptedTerms || !formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.zipCode) && (
+                  <p className="text-xs text-gray-500 mt-2 text-right">
+                    אנא מלא/י את כל הפרטים הנדרשים
+                  </p>
+                )}
+              </div>
+              
+              <div className="pt-4 border-t border-gray-200 mt-4">
                 <p className="text-xs font-light text-gray-600 leading-relaxed">
                   משלוח חינם מעל 500 ₪ • החזרה תוך 14 ימים
                 </p>
               </div>
             </div>
           </div>
+            </div>
+          </div>
         </div>
       </main>
-      <Footer />
       
       {/* Login Modal */}
       <LoginModal

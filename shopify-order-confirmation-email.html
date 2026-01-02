@@ -450,7 +450,9 @@
       {% endif %}
       
       <div style="text-align: center; margin: 40px 0;">
-        <a href="{{ shop.url }}/order/{{ order.name }}" class="email-button">צפה בהזמנה</a>
+        {% comment %} שנה את ה-URL לאתר שלך - לדוגמה: https://klumit-online.vercel.app או הדומיין שלך {% endcomment %}
+        {% assign custom_site_url = 'https://klumit-online.vercel.app' %}
+        <a href="{{ custom_site_url }}/order/{{ order.name | replace: '#', '' }}" class="email-button">צפה בהזמנה</a>
       </div>
       
       <div class="divider"></div>
@@ -467,10 +469,12 @@
         צוות KLUMIT
       </p>
       <div class="email-footer-links">
-        <a href="{{ shop.url }}" class="email-footer-link">בית</a>
-        <a href="{{ shop.url }}/pages/shipping" class="email-footer-link">משלוחים</a>
-        <a href="{{ shop.url }}/pages/returns" class="email-footer-link">החזרות</a>
-        <a href="{{ shop.url }}/pages/terms" class="email-footer-link">תקנון</a>
+        {% comment %} שנה את ה-URL לאתר שלך - לדוגמה: https://klumit-online.vercel.app או הדומיין שלך {% endcomment %}
+        {% assign custom_site_url = 'https://klumit-online.vercel.app' %}
+        <a href="{{ custom_site_url }}" class="email-footer-link">בית</a>
+        <a href="{{ custom_site_url }}/shipping" class="email-footer-link">משלוחים</a>
+        <a href="{{ custom_site_url }}/returns" class="email-footer-link">החזרות</a>
+        <a href="{{ custom_site_url }}/terms" class="email-footer-link">תקנון</a>
       </div>
       <p class="email-footer-text" style="margin-top: 20px; font-size: 12px;">
         © {{ 'now' | date: "%Y" }} KLUMIT. כל הזכויות שמורות.
