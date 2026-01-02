@@ -9,7 +9,7 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "type-check": "tsc --noEmit",
-    "prebuild": "npm run lint && npm run type-check",
+    "prebuild": "npm run type-check",
     "check": "npm run lint && npm run type-check"
   },
   "dependencies": {
