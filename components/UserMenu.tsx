@@ -12,7 +12,13 @@ export default function UserMenu() {
   const loadFromShopify = useCartStore((state) => state.loadFromShopify);
 
   // פונקציה לבדיקה ויצירת Shopify Customer אם צריך
+  // רק אם המשתמש מחובר
   const ensureShopifyCustomer = async (user: User) => {
+    if (!user) {
+      console.log('ℹ️ No user - skipping Shopify customer creation');
+      return;
+    }
+    
     try {
       const { getShopifyCustomerId, syncCustomerToShopify } = await import('@/lib/sync-customer');
       let shopifyCustomerId = await getShopifyCustomerId(user.id);

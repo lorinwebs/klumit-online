@@ -171,7 +171,7 @@ export default function LoginPage() {
           </p>
 
           {step === 'phone' ? (
-            <form onSubmit={handleSendCode} className="space-y-6">
+            <form onSubmit={handleSendCode} className="space-y-6" suppressHydrationWarning>
               <div>
                 <label className="block text-sm font-light mb-2 text-right">
                   מספר טלפון
@@ -202,12 +202,13 @@ export default function LoginPage() {
                 type="submit"
                 disabled={loading}
                 className="w-full bg-[#1a1a1a] text-white py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed"
+                suppressHydrationWarning
               >
                 {loading ? 'שולח...' : 'שלח קוד'}
               </button>
             </form>
           ) : (
-            <form onSubmit={handleVerifyCode} className="space-y-6">
+            <form onSubmit={handleVerifyCode} className="space-y-6" suppressHydrationWarning>
               <div>
                 <label className="block text-sm font-light mb-2 text-right">
                   קוד אימות
@@ -237,6 +238,7 @@ export default function LoginPage() {
                   type="submit"
                   disabled={loading || code.length !== 6}
                   className="w-full bg-[#1a1a1a] text-white py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  suppressHydrationWarning
                 >
                   {loading ? 'מאמת...' : 'אמת קוד'}
                 </button>
@@ -248,6 +250,7 @@ export default function LoginPage() {
                     setError('');
                   }}
                   className="w-full border border-gray-300 text-gray-700 py-3 px-6 text-sm tracking-luxury uppercase font-light hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-luxury"
+                  suppressHydrationWarning
                 >
                   שנה מספר
                 </button>

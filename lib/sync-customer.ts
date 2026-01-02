@@ -1,4 +1,4 @@
-[Violation] Added non-passive event listener to a scroll-blocking 'wheel' event. Consider marking event handler as 'passive' to make the page more responsive. See https://www.chromestatus.com/feature/5745543795965952import { supabase } from './supabase';
+import { supabase } from './supabase';
 import { shopifyClient } from './shopify';
 import { CREATE_CUSTOMER_MUTATION, updateCustomerAddress } from './shopify-admin';
 
@@ -183,6 +183,34 @@ export async function syncCustomerToShopify(
                 if (customerResult.customers.edges.length > 0) {
                   shopifyCustomerId = customerResult.customers.edges[0].node.id;
                   console.log('✅ Found existing customer in Shopify:', shopifyCustomerId);
+                  
+                  // שמור את ה-ID ב-DB מיד
+                  console.log('💾 Saving found customer to Supabase:', {
+                    user_id: userId,
+                    shopify_customer_id: shopifyCustomerId,
+                    phone: phone
+                  });
+                  
+                  const { data: saveData, error: saveError } = await supabase
+                    .from('user_shopify_sync')
+                    .upsert({
+                      user_id: userId,
+                      shopify_customer_id: shopifyCustomerId,
+                      phone: phone,
+                      updated_at: new Date().toISOString(),
+                    }, {
+                      onConflict: 'user_id',
+                    })
+                    .select();
+                  
+                  if (saveError) {
+                    console.error('❌ Error saving found customer to Supabase:', saveError);
+                  } else {
+                    console.log('✅ Saved found customer ID to Supabase:', saveData);
+                  }
+                  
+                  // החזר את ה-ID שנמצא
+                  return shopifyCustomerId;
                 }
               }
             } catch (findError) {
