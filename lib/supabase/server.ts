@@ -23,13 +23,6 @@ export async function createClient() {
             // user sessions.
           }
         },
-        remove(name: string, options: any) {
-          try {
-            cookieStore.delete(name);
-          } catch {
-            // Ignore errors in Server Components
-          }
-        },
       },
     }
   );
