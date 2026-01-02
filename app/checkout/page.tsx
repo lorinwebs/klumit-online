@@ -1055,7 +1055,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="mt-3">
                   <label className="block text-xs font-light mb-1 text-right text-gray-600">
-                    הערות (קוד ללובי, הוראות משלוח וכו')
+                    הערות (קוד ללובי, הוראות משלוח וכו&apos;)
                   </label>
                   <textarea
                     value={formData.notes}

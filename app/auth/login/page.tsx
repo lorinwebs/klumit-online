@@ -83,11 +83,13 @@ export default function LoginPage() {
 
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🟢 handleVerifyCode: Starting verification');
     setError('');
     setLoading(true);
 
     try {
       const formattedPhone = phone.startsWith('+') ? phone : `+972${phone.replace(/^0/, '')}`;
+      console.log('🟡 handleVerifyCode: Calling verifyOtp', { phone: formattedPhone, codeLength: code.length });
       
       const { data, error } = await supabase.auth.verifyOtp({
         phone: formattedPhone,
@@ -95,19 +97,28 @@ export default function LoginPage() {
         type: 'sms',
       });
 
-      if (error) throw error;
+      console.log('🟡 handleVerifyCode: verifyOtp response', { hasData: !!data, hasError: !!error, hasUser: !!data?.user });
+
+      if (error) {
+        console.error('❌ handleVerifyCode: verifyOtp error', error);
+        throw error;
+      }
 
       // סנכרן עם Shopify אחרי התחברות מוצלחת
       // תמיד נסנכרן עם Shopify כדי ליצור קישור בין הטלפון ל-Shopify Customer
       if (data.user) {
+        console.log('🟢 handleVerifyCode: User verified, checking profile');
         // בדוק אם המשתמש כבר מילא פרטים
         // צריך גם first_name וגם last_name (שדות חובה)
         const hasProfile = 
           (data.user.user_metadata?.first_name && data.user.user_metadata?.last_name) ||
           data.user.email;
         
+        console.log('🟡 handleVerifyCode: Profile check', { hasProfile, hasEmail: !!data.user.email, hasFirstName: !!data.user.user_metadata?.first_name });
+        
         // תמיד סנכרן עם Shopify ברקע (לא חוסם את ההתחברות)
         // זה יוצר/מוצא customer ב-Shopify לפי טלפון ושומר את הקישור ב-DB
+        console.log('🟡 handleVerifyCode: Starting Shopify sync');
         syncCustomerToShopify(
           data.user.id, 
           formattedPhone,
@@ -117,19 +128,22 @@ export default function LoginPage() {
             lastName: data.user.user_metadata?.last_name || undefined,
           }
         ).catch((syncError) => {
-          console.error('Error syncing to Shopify:', syncError);
+          console.error('❌ handleVerifyCode: Error syncing to Shopify:', syncError);
         });
         
         // מעבר מיידי לדף המתאים (לא מחכים לסנכרון)
+        console.log('🟢 handleVerifyCode: Redirecting', { hasProfile, target: hasProfile ? '/' : '/auth/complete-profile' });
         if (hasProfile) {
           window.location.href = '/';
         } else {
           window.location.href = '/auth/complete-profile';
         }
       } else {
+        console.warn('⚠️ handleVerifyCode: No user in response, redirecting to home');
         window.location.href = '/';
       }
     } catch (err) {
+      console.error('❌ handleVerifyCode: Error caught', err);
       // תרגום שגיאות OTP לעברית
       let errorMessage = 'קוד שגוי';
       
@@ -144,8 +158,10 @@ export default function LoginPage() {
         }
       }
       
+      console.log('🟡 handleVerifyCode: Setting error message', errorMessage);
       setError(errorMessage);
     } finally {
+      console.log('🟢 handleVerifyCode: Setting loading to false');
       setLoading(false);
     }
   };

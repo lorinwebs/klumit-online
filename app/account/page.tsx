@@ -220,7 +220,7 @@ export default function AccountPage() {
       isMounted = false;
       clearTimeout(timeoutId);
     };
-  }, [router]);
+  }, [router, user]);
 
   // טען הזמנות כשהמשתמש נטען
   useEffect(() => {
@@ -483,6 +483,14 @@ export default function AccountPage() {
 
   console.log('🔵 AccountPage: Render check', { loading, user: !!user });
   
+  // Redirect ל-login אם אין משתמש אחרי הטעינה
+  useEffect(() => {
+    if (!loading && !user) {
+      console.log('🟡 AccountPage: No user after loading, redirecting to login');
+      router.push('/auth/login');
+    }
+  }, [loading, user, router]);
+  
   if (loading) {
     console.log('🟡 AccountPage: Rendering loading state');
     return (
@@ -498,14 +506,6 @@ export default function AccountPage() {
       </div>
     );
   }
-
-  // Redirect ל-login אם אין משתמש אחרי הטעינה
-  useEffect(() => {
-    if (!loading && !user) {
-      console.log('🟡 AccountPage: No user after loading, redirecting to login');
-      router.push('/auth/login');
-    }
-  }, [loading, user, router]);
 
   if (!user) {
     console.log('🟡 AccountPage: No user, loading:', loading);
@@ -744,7 +744,7 @@ export default function AccountPage() {
                           </div>
                           <div>
                             <label className="block text-xs font-light mb-1 text-right text-gray-600">
-                              הערות (קוד ללובי, הוראות משלוח וכו')
+                              הערות (קוד ללובי, הוראות משלוח וכו&apos;)
                             </label>
                             <textarea
                               value={formData.shippingNotes}

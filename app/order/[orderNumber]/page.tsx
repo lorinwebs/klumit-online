@@ -216,7 +216,7 @@ export default function OrderPage() {
           </h2>
           <div className="space-y-4">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">סה"כ מוצרים</span>
+              <span className="text-gray-600">סה&quot;כ מוצרים</span>
               <span className="text-[#1a1a1a]">
                 ₪{formatPrice(order.subtotalPriceSet.shopMoney.amount)}
               </span>

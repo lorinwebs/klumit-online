@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { useCartStore } from '@/store/cartStore';
 import { Heart, ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -77,14 +77,14 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   type VariantNode = Product['variants']['edges'][0]['node'];
 
   // Extract colors from variants
-  const getColorFromVariant = (variant: VariantNode): string | null => {
+  const getColorFromVariant = useCallback((variant: VariantNode): string | null => {
     const colorOption = variant.selectedOptions?.find(opt => 
       opt.name.toLowerCase() === 'color' || 
       opt.name.toLowerCase() === 'צבע' ||
       opt.name.toLowerCase() === 'colour'
     );
     return colorOption?.value || null;
-  };
+  }, []);
 
   // Convert color name to hex value
   const getColorHex = (colorName: string): string => {
@@ -166,7 +166,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   
   const currentColor = useMemo(() => 
     currentVariant ? getColorFromVariant(currentVariant) : null,
-    [currentVariant]
+    [currentVariant, getColorFromVariant]
   );
 
   // Filter images by selected variant/color
