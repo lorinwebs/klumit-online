@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
@@ -130,6 +129,13 @@ export default function OrderPage() {
     );
   }
 
+  const orderNumberDisplay = order.name.startsWith('#') ? order.name : `#${order.name}`;
+  const fulfillmentStatus = order.displayFulfillmentStatus === 'FULFILLED' 
+    ? 'נשלח' 
+    : order.displayFulfillmentStatus === 'UNFULFILLED' 
+    ? 'טרם נשלח' 
+    : order.displayFulfillmentStatus;
+
   return (
     <div className="min-h-screen bg-[#fdfcfb] py-12 px-4">
       <div className="max-w-4xl mx-auto">
@@ -143,193 +149,42 @@ export default function OrderPage() {
             חזרה לעמוד הבית
           </Link>
           <h1 className="text-4xl md:text-5xl font-light luxury-font text-[#1a1a1a] mb-2">
-            הזמנה #{order.name}
+            הזמנה {orderNumberDisplay}
           </h1>
           <p className="text-sm text-gray-600">
             תאריך הזמנה: {formatDate(order.createdAt)}
           </p>
         </div>
 
-        {/* Order Status */}
-        <div className="bg-white border border-gray-200 p-6 mb-8">
-          <div className="flex flex-wrap gap-6">
+        {/* Order Status - Columns */}
+        <div className="bg-white border border-gray-200 p-8 mb-8">
+          <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <span className="text-xs uppercase tracking-wider text-gray-500 block mb-1">
-                סטטוס תשלום
-              </span>
-              <span className="text-sm font-light text-[#1a1a1a]">
-                {order.displayFinancialStatus === 'PAID' ? 'שולם' : order.displayFinancialStatus}
-              </span>
-            </div>
-            <div>
-              <span className="text-xs uppercase tracking-wider text-gray-500 block mb-1">
+              <span className="text-xs uppercase tracking-wider text-gray-500 block mb-2">
                 סטטוס משלוח
               </span>
-              <span className="text-sm font-light text-[#1a1a1a]">
-                {order.displayFulfillmentStatus === 'FULFILLED' ? 'נשלח' : 
-                 order.displayFulfillmentStatus === 'UNFULFILLED' ? 'טרם נשלח' : 
-                 order.displayFulfillmentStatus}
+              <span className="text-lg font-light text-[#1a1a1a]">
+                {fulfillmentStatus}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Order Items */}
-        <div className="bg-white border border-gray-200 mb-8">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-2xl font-light luxury-font text-[#1a1a1a]">
-              פריטים בהזמנה
-            </h2>
-          </div>
-          <div className="divide-y divide-gray-200">
+        {/* Order Items - Product Names Only */}
+        <div className="bg-white border border-gray-200 p-8">
+          <h2 className="text-2xl font-light luxury-font text-[#1a1a1a] mb-6">
+            פריטים בהזמנה
+          </h2>
+          <div className="space-y-4">
             {order.lineItems.edges.map(({ node: item }) => (
-              <div key={item.id} className="p-6 flex gap-6">
-                {item.variant?.image && (
-                  <div className="relative w-24 h-32 flex-shrink-0 bg-gray-100">
-                    <Image
-                      src={item.variant.image.url}
-                      alt={item.variant.image.altText || item.title}
-                      fill
-                      className="object-cover"
-                      sizes="96px"
-                    />
-                  </div>
-                )}
-                <div className="flex-1">
-                  <h3 className="text-base font-light text-[#1a1a1a] mb-1">
-                    {item.title}
-                  </h3>
-                  {item.variant?.title && item.variant.title !== 'Default Title' && (
-                    <p className="text-sm text-gray-600 mb-2">{item.variant.title}</p>
-                  )}
-                  <div className="flex justify-between items-end mt-4">
-                    <span className="text-sm text-gray-600">כמות: {item.quantity}</span>
-                    <span className="text-base font-light text-[#1a1a1a]">
-                      ₪{formatPrice(item.discountedTotalSet.shopMoney.amount)}
-                    </span>
-                  </div>
-                </div>
+              <div key={item.id} className="pb-4 border-b border-gray-100 last:border-0 last:pb-0">
+                <h3 className="text-base font-light text-[#1a1a1a]">
+                  {item.title}
+                </h3>
               </div>
             ))}
           </div>
         </div>
-
-        {/* Order Summary */}
-        <div className="bg-white border border-gray-200 p-6 mb-8">
-          <h2 className="text-2xl font-light luxury-font text-[#1a1a1a] mb-6">
-            סיכום הזמנה
-          </h2>
-          <div className="space-y-4">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">סה&quot;כ מוצרים</span>
-              <span className="text-[#1a1a1a]">
-                ₪{formatPrice(order.subtotalPriceSet.shopMoney.amount)}
-              </span>
-            </div>
-            {parseFloat(order.totalShippingPriceSet.shopMoney.amount) > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">משלוח</span>
-                <span className="text-[#1a1a1a]">
-                  ₪{formatPrice(order.totalShippingPriceSet.shopMoney.amount)}
-                </span>
-              </div>
-            )}
-            {parseFloat(order.totalDiscountsSet.shopMoney.amount) > 0 && (
-              <div className="flex justify-between text-sm text-green-600">
-                <span>הנחה</span>
-                <span>
-                  -₪{formatPrice(order.totalDiscountsSet.shopMoney.amount)}
-                </span>
-              </div>
-            )}
-            {parseFloat(order.totalTaxSet.shopMoney.amount) > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">מע״מ</span>
-                <span className="text-[#1a1a1a]">
-                  ₪{formatPrice(order.totalTaxSet.shopMoney.amount)}
-                </span>
-              </div>
-            )}
-            <div className="flex justify-between text-lg pt-4 border-t border-gray-200">
-              <span className="font-light text-[#1a1a1a]">סה״כ</span>
-              <span className="font-light text-[#1a1a1a]">
-                ₪{formatPrice(order.totalPriceSet.shopMoney.amount)}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Addresses */}
-        {(order.shippingAddress || order.billingAddress) && (
-          <div className="grid md:grid-cols-2 gap-8">
-            {order.shippingAddress && (
-              <div className="bg-white border border-gray-200 p-6">
-                <h3 className="text-lg font-light luxury-font text-[#1a1a1a] mb-4">
-                  כתובת משלוח
-                </h3>
-                <div className="text-sm text-gray-600 space-y-1">
-                  {order.shippingAddress.firstName && order.shippingAddress.lastName && (
-                    <p>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
-                  )}
-                  {order.shippingAddress.address1 && (
-                    <p>{order.shippingAddress.address1}</p>
-                  )}
-                  {order.shippingAddress.address2 && (
-                    <p>{order.shippingAddress.address2}</p>
-                  )}
-                  {order.shippingAddress.city && (
-                    <p>
-                      {order.shippingAddress.city}
-                      {order.shippingAddress.zip && `, ${order.shippingAddress.zip}`}
-                    </p>
-                  )}
-                  {order.shippingAddress.province && (
-                    <p>{order.shippingAddress.province}</p>
-                  )}
-                  {order.shippingAddress.country && (
-                    <p>{order.shippingAddress.country}</p>
-                  )}
-                  {order.shippingAddress.phone && (
-                    <p>{order.shippingAddress.phone}</p>
-                  )}
-                </div>
-              </div>
-            )}
-            {order.billingAddress && (
-              <div className="bg-white border border-gray-200 p-6">
-                <h3 className="text-lg font-light luxury-font text-[#1a1a1a] mb-4">
-                  כתובת חיוב
-                </h3>
-                <div className="text-sm text-gray-600 space-y-1">
-                  {order.billingAddress.firstName && order.billingAddress.lastName && (
-                    <p>{order.billingAddress.firstName} {order.billingAddress.lastName}</p>
-                  )}
-                  {order.billingAddress.address1 && (
-                    <p>{order.billingAddress.address1}</p>
-                  )}
-                  {order.billingAddress.address2 && (
-                    <p>{order.billingAddress.address2}</p>
-                  )}
-                  {order.billingAddress.city && (
-                    <p>
-                      {order.billingAddress.city}
-                      {order.billingAddress.zip && `, ${order.billingAddress.zip}`}
-                    </p>
-                  )}
-                  {order.billingAddress.province && (
-                    <p>{order.billingAddress.province}</p>
-                  )}
-                  {order.billingAddress.country && (
-                    <p>{order.billingAddress.country}</p>
-                  )}
-                  {order.billingAddress.phone && (
-                    <p>{order.billingAddress.phone}</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

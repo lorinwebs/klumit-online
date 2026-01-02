@@ -12,82 +12,6 @@ import LoginModal from '@/components/LoginModal';
 import Link from 'next/link';
 import { Check, User } from 'lucide-react';
 
-// פונקציה עזר לתיקון checkout URL
-function fixCheckoutUrl(url: string, cartId: string | null): string {
-  if (!url || !cartId) return url;
-  
-  // בדוק אם ה-URL כבר מכיל את הדומיין הנכון של Shopify
-  if (url.includes('.myshopify.com') || url.includes('checkout.shopify.com')) {
-    return url; // כבר תקין
-  }
-  
-  // בדוק אם זה custom domain או localhost
-  const isCustomDomain = url.includes('klumit-online.vercel.app') || 
-                        url.includes('localhost') ||
-                        url.includes('127.0.0.1') ||
-                        (!url.includes('.myshopify.com') && !url.includes('checkout.shopify.com'));
-  
-  if (!isCustomDomain) {
-    return url; // כבר תקין
-  }
-  
-  console.log('⚠️ Fixing checkout URL from custom domain to Shopify domain...');
-  console.log('🔍 Original URL:', url);
-  
-  try {
-    // נסה לחלץ את ה-cart ID וה-key מה-URL (עובד גם עם http:// או https:// או ללא פרוטוקול)
-    const cartMatch = url.match(/\/cart\/c\/([^?\/]+)(\?.*)?/);
-    if (cartMatch) {
-      const cartIdFromUrl = cartMatch[1];
-      const queryString = cartMatch[2] || '';
-      
-      // קבל את הדומיין של Shopify מה-env
-      const shopifyStoreDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'htcudj-yw';
-      const fullShopifyDomain = shopifyStoreDomain.includes('.myshopify.com') 
-        ? shopifyStoreDomain 
-        : `${shopifyStoreDomain}.myshopify.com`;
-      
-      const fixedUrl = `https://${fullShopifyDomain}/cart/c/${cartIdFromUrl}${queryString}`;
-      console.log('🔧 Fixed checkout URL:', fixedUrl);
-      return fixedUrl;
-    } else {
-      // אם לא הצלחנו לחלץ מה-URL, ננסה להשתמש ב-cartId מה-GID
-      const cartIdFromGid = cartId.replace('gid://shopify/Cart/', '');
-      const urlMatch = url.match(/[?&]key=([^&]+)/);
-      const key = urlMatch ? urlMatch[1] : '';
-      
-      const shopifyStoreDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'htcudj-yw';
-      const fullShopifyDomain = shopifyStoreDomain.includes('.myshopify.com') 
-        ? shopifyStoreDomain 
-        : `${shopifyStoreDomain}.myshopify.com`;
-      
-      const fixedUrl = `https://${fullShopifyDomain}/cart/c/${cartIdFromGid}${key ? `?key=${key}` : ''}`;
-      console.log('🔧 Fixed checkout URL (using GID):', fixedUrl);
-      return fixedUrl;
-    }
-  } catch (urlError) {
-    console.error('❌ Error fixing checkout URL:', urlError);
-    // נסה לתקן גם אם יש שגיאה - חלץ את ה-cart ID מה-GID
-    try {
-      const cartIdFromGid = cartId.replace('gid://shopify/Cart/', '');
-      const urlMatch = url.match(/[?&]key=([^&]+)/);
-      const key = urlMatch ? urlMatch[1] : '';
-      
-      const shopifyStoreDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'htcudj-yw';
-      const fullShopifyDomain = shopifyStoreDomain.includes('.myshopify.com') 
-        ? shopifyStoreDomain 
-        : `${shopifyStoreDomain}.myshopify.com`;
-      
-      const fixedUrl = `https://${fullShopifyDomain}/cart/c/${cartIdFromGid}${key ? `?key=${key}` : ''}`;
-      console.log('🔧 Fixed checkout URL (fallback):', fixedUrl);
-      return fixedUrl;
-    } catch (fallbackError) {
-      console.error('❌ Fallback error:', fallbackError);
-      return url; // החזר את ה-URL המקורי אם יש שגיאה
-    }
-  }
-}
-
 export default function CheckoutPage() {
   const { items, cartId, loadFromShopify } = useCartStore();
   const [loading, setLoading] = useState(false);
@@ -125,30 +49,69 @@ export default function CheckoutPage() {
     // טען פרטים מהפרופיל אם המשתמש מחובר
     async function loadProfileData() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const currentUser = session.user;
-          setUser(currentUser);
-          const currentEmail = currentUser.email || currentUser.user_metadata?.email || '';
+        // השתמש ב-API route כדי לבדוק את הסשן מהקוקיז (אמין יותר)
+        const response = await fetch('/api/auth/session', { 
+          credentials: 'include',
+          cache: 'no-store'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const session = data?.session || (data?.user ? { user: data.user } : null);
           
-          // טען פרטים מהפרופיל כ-default
-          setFormData({
-            firstName: currentUser.user_metadata?.first_name || '',
-            lastName: currentUser.user_metadata?.last_name || '',
-            email: currentEmail,
-            phone: currentUser.phone || currentUser.user_metadata?.phone || '',
-            address: currentUser.user_metadata?.shipping_address || '',
-            city: currentUser.user_metadata?.shipping_city || '',
-            zipCode: currentUser.user_metadata?.shipping_zip_code || '',
-            apartment: currentUser.user_metadata?.shipping_apartment || '',
-            floor: currentUser.user_metadata?.shipping_floor || '',
-            notes: currentUser.user_metadata?.shipping_notes || '',
-          });
+          if (session?.user) {
+            const currentUser = session.user;
+            setUser(currentUser);
+            const currentEmail = currentUser.email || currentUser.user_metadata?.email || '';
+            
+            // טען פרטים מהפרופיל כ-default
+            setFormData({
+              firstName: currentUser.user_metadata?.first_name || '',
+              lastName: currentUser.user_metadata?.last_name || '',
+              email: currentEmail,
+              phone: currentUser.phone || currentUser.user_metadata?.phone || '',
+              address: currentUser.user_metadata?.shipping_address || '',
+              city: currentUser.user_metadata?.shipping_city || '',
+              zipCode: currentUser.user_metadata?.shipping_zip_code || '',
+              apartment: currentUser.user_metadata?.shipping_apartment || '',
+              floor: currentUser.user_metadata?.shipping_floor || '',
+              notes: currentUser.user_metadata?.shipping_notes || '',
+            });
+          } else {
+            setUser(null);
+          }
         } else {
-          setUser(null);
+          // Fallback ל-supabase.auth.getSession
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+              const currentUser = session.user;
+              setUser(currentUser);
+              const currentEmail = currentUser.email || currentUser.user_metadata?.email || '';
+              
+              setFormData({
+                firstName: currentUser.user_metadata?.first_name || '',
+                lastName: currentUser.user_metadata?.last_name || '',
+                email: currentEmail,
+                phone: currentUser.phone || currentUser.user_metadata?.phone || '',
+                address: currentUser.user_metadata?.shipping_address || '',
+                city: currentUser.user_metadata?.shipping_city || '',
+                zipCode: currentUser.user_metadata?.shipping_zip_code || '',
+                apartment: currentUser.user_metadata?.shipping_apartment || '',
+                floor: currentUser.user_metadata?.shipping_floor || '',
+                notes: currentUser.user_metadata?.shipping_notes || '',
+              });
+            } else {
+              setUser(null);
+            }
+          } catch (fallbackErr) {
+            console.error('Error in fallback session check:', fallbackErr);
+            setUser(null);
+          }
         }
       } catch (err) {
         console.error('Error loading profile data:', err);
+        setUser(null);
       } finally {
         setLoadingProfile(false);
       }
@@ -488,36 +451,7 @@ export default function CheckoutPage() {
             }
 
           currentCartId = createCartResponse.cartCreate?.cart?.id || null;
-            const rawCheckoutUrl = createCartResponse.cartCreate?.cart?.checkoutUrl || null;
-            
-            // אם ה-URL מכיל custom domain, נבנה אותו מחדש עם Shopify domain
-            if (rawCheckoutUrl && currentCartId) {
-              const isCustomDomainUrl = rawCheckoutUrl.includes('klumit-online.vercel.app') || 
-                                       rawCheckoutUrl.includes('localhost') ||
-                                       (!rawCheckoutUrl.includes('.myshopify.com') && !rawCheckoutUrl.includes('checkout.shopify.com'));
-              
-              if (isCustomDomainUrl) {
-                // חלץ את ה-cart ID מה-GID
-                const cartIdFromGid = currentCartId.replace('gid://shopify/Cart/', '');
-                // חלץ את ה-key מה-URL המקורי
-                const urlMatch = rawCheckoutUrl.match(/[?&]key=([^&]+)/);
-                const key = urlMatch ? urlMatch[1] : '';
-                
-                // בנה URL חדש עם Shopify domain
-                const shopifyStoreDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'htcudj-yw';
-                const fullShopifyDomain = shopifyStoreDomain.includes('.myshopify.com') 
-                  ? shopifyStoreDomain 
-                  : `${shopifyStoreDomain}.myshopify.com`;
-                
-                checkoutUrl = `https://${fullShopifyDomain}/cart/c/${cartIdFromGid}${key ? `?key=${key}` : ''}`;
-                console.log('🔧 Rebuilt checkout URL with Shopify domain:', checkoutUrl);
-              } else {
-                // גם אם לא מזוהה כ-custom domain, נבדוק שוב עם הפונקציה
-                checkoutUrl = fixCheckoutUrl(rawCheckoutUrl, currentCartId);
-              }
-            } else {
-              checkoutUrl = fixCheckoutUrl(rawCheckoutUrl || '', currentCartId);
-            }
+            checkoutUrl = createCartResponse.cartCreate?.cart?.checkoutUrl || null;
             
             console.log('📊 Cart Creation Summary:', {
               cartId: currentCartId,
@@ -572,8 +506,7 @@ export default function CheckoutPage() {
                 console.log('✅ Delivery address updated successfully');
                 // עדכן את checkoutUrl אם קיבלנו אחד חדש
                 if (deliveryAddressResponse.cartDeliveryAddressUpdate?.cart?.checkoutUrl) {
-                  const updatedUrl = deliveryAddressResponse.cartDeliveryAddressUpdate.cart.checkoutUrl;
-                  checkoutUrl = fixCheckoutUrl(updatedUrl, currentCartId);
+                  checkoutUrl = deliveryAddressResponse.cartDeliveryAddressUpdate.cart.checkoutUrl;
                   console.log('🔗 Updated checkout URL from delivery address update:', checkoutUrl);
                 }
               }
@@ -689,8 +622,7 @@ export default function CheckoutPage() {
             } 
           };
           console.log('✅ Checkout URL response:', checkoutResponse);
-          const retrievedUrl = checkoutResponse.cart?.checkoutUrl || null;
-          checkoutUrl = retrievedUrl ? fixCheckoutUrl(retrievedUrl, currentCartId) : null;
+          checkoutUrl = checkoutResponse.cart?.checkoutUrl || null;
           console.log('🔗 Retrieved checkout URL:', checkoutUrl);
         } catch (shopifyError: any) {
           console.error('❌ Error getting checkout URL from Shopify:', shopifyError);
@@ -771,90 +703,13 @@ export default function CheckoutPage() {
           throw new Error('החנות מוגנת בסיסמה. אנא הסר את ההגנה ב-Shopify Admin → Settings → Store availability');
         }
         
-        // ניקוי cart ID מה-key אם הוא מכיל אותו
-        let cleanCartId = currentCartId;
-        if (cleanCartId && cleanCartId.includes('?key=')) {
-          cleanCartId = cleanCartId.split('?key=')[0];
-          console.log('🧹 Cleaned cart ID (removed key):', cleanCartId);
-        }
-        
-        // תיקון URL אם הוא מכיל את הדומיין של האתר במקום Shopify
-        // השתמש בפונקציה fixCheckoutUrl שתתקן את ה-URL אם צריך
-        let finalCheckoutUrl = fixCheckoutUrl(checkoutUrl, cleanCartId);
-        
         console.log('🔄 Redirecting to Shopify Checkout...');
-        console.log('📍 Original URL:', checkoutUrl);
-        console.log('📍 Fixed URL:', finalCheckoutUrl);
-        
-        // בדוק שהתיקון עבד - וודא שה-URL מכיל את הדומיין הנכון של Shopify
-        const isValidShopifyUrl = finalCheckoutUrl.includes('.myshopify.com') || 
-                                  finalCheckoutUrl.includes('checkout.shopify.com');
-        
-        if (!isValidShopifyUrl) {
-          console.error('❌ Failed to fix URL - still contains custom domain');
-          console.error('⚠️ Original URL:', checkoutUrl);
-          console.error('⚠️ Fixed URL:', finalCheckoutUrl);
-          console.error('⚠️ Shopify Store Domain:', process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN);
-          console.error('⚠️ Cart ID:', cleanCartId);
-          
-          // נסה לתקן שוב עם fallback - חלץ את ה-cart ID מה-GID
-          let cartIdFromGid = cleanCartId.replace('gid://shopify/Cart/', '');
-          // הסר את ה-key מה-cart ID אם הוא עדיין שם
-          if (cartIdFromGid.includes('?key=')) {
-            cartIdFromGid = cartIdFromGid.split('?key=')[0];
-          }
-          
-          // חלץ את ה-key מה-URL המקורי
-          const urlMatch = checkoutUrl.match(/[?&]key=([^&]+)/);
-          const key = urlMatch ? urlMatch[1] : '';
-          
-          const shopifyStoreDomain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || 'htcudj-yw';
-          const fullShopifyDomain = shopifyStoreDomain.includes('.myshopify.com') 
-            ? shopifyStoreDomain 
-            : `${shopifyStoreDomain}.myshopify.com`;
-          
-          const fallbackUrl = `https://${fullShopifyDomain}/cart/c/${cartIdFromGid}${key ? `?key=${key}` : ''}`;
-          console.log('🔄 Trying fallback URL:', fallbackUrl);
-          console.log('📋 Fallback details:', {
-            cartIdFromGid,
-            key,
-            shopifyStoreDomain,
-            fullShopifyDomain
-          });
-          
-          if (fallbackUrl.includes('.myshopify.com')) {
-            console.log('✅ Fallback URL is valid, using it');
-            finalCheckoutUrl = fallbackUrl;
-          } else {
-            console.error('❌ Fallback URL is also invalid!');
-            throw new Error('שגיאה: לא ניתן לתקן את קישור התשלום. אנא בדוק את הגדרות Shopify.');
-          }
-        }
-        
-        // בדיקה אחרונה לפני redirect
-        if (!finalCheckoutUrl.includes('.myshopify.com') && !finalCheckoutUrl.includes('checkout.shopify.com')) {
-          console.error('❌ CRITICAL: Final URL is still not a Shopify URL!');
-          console.error('Final URL:', finalCheckoutUrl);
-          throw new Error('שגיאה קריטית: לא ניתן לתקן את קישור התשלום.');
-        }
-        
-        if (finalCheckoutUrl !== checkoutUrl) {
-          console.log('✅ Using fixed URL with Shopify domain');
-        }
+        console.log('🎯 Checkout URL:', checkoutUrl);
         
         // Delay redirect to allow reading console logs
-        console.log('⏳ Waiting 5 seconds before redirect...');
-        console.log('🎯 Final redirect URL:', finalCheckoutUrl);
         setTimeout(() => {
-          console.log('🚀 Redirecting now to:', finalCheckoutUrl);
-          // בדיקה אחרונה לפני redirect בפועל
-          if (finalCheckoutUrl.includes('.myshopify.com') || finalCheckoutUrl.includes('checkout.shopify.com')) {
-            window.location.href = finalCheckoutUrl;
-          } else {
-            console.error('❌ CRITICAL ERROR: About to redirect to invalid URL!');
-            console.error('Invalid URL:', finalCheckoutUrl);
-            alert('שגיאה: לא ניתן להמשיך לתשלום. אנא צור קשר עם התמיכה.');
-          }
+          console.log('🚀 Redirecting now to:', checkoutUrl);
+          window.location.href = checkoutUrl;
         }, 5000); // 5 seconds delay
         return; // חשוב: אל תמשיך אחרי redirect
       } else if (currentCartId) {
@@ -910,7 +765,7 @@ export default function CheckoutPage() {
                   onClick={() => setShowLoginModal(true)}
                   className="px-3 py-1.5 bg-[#1a1a1a] text-white text-xs font-light hover:bg-[#2a2a2a] transition-luxury whitespace-nowrap"
                 >
-                  התחברי
+                  התחבר
                 </button>
               )}
             </div>
