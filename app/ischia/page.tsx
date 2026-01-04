@@ -30,14 +30,13 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
       <div className="relative">
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 md:p-8 min-w-[70px] sm:min-w-[100px] md:min-w-[140px] border border-white/20 shadow-2xl">
-          <span className="text-4xl sm:text-6xl md:text-8xl font-black text-white tabular-nums block text-center">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl p-2 sm:p-3 md:p-4 min-w-[60px] sm:min-w-[80px] md:min-w-[100px] border border-white/20 shadow-2xl">
+          <span className="text-3xl sm:text-4xl md:text-5xl font-black text-white tabular-nums block text-center">
             {String(value).padStart(2, '0')}
           </span>
         </div>
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-4 bg-black/20 blur-xl rounded-full" />
       </div>
-      <span className="text-white/80 text-sm sm:text-base md:text-xl mt-3 sm:mt-4 font-medium tracking-wider uppercase">
+      <span className="text-white/80 text-xs sm:text-sm mt-1 sm:mt-2 font-medium tracking-wider uppercase">
         {label}
       </span>
     </div>
@@ -73,7 +72,7 @@ export default function IschiaCountdown() {
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-cyan-700 to-teal-500 animate-gradient" />
       
       {/* Animated waves */}
-      <div className="absolute bottom-0 left-0 right-0 h-64 overflow-hidden">
+      <div className="absolute bottom-0 left-0 right-0 h-32 overflow-hidden">
         <svg className="absolute bottom-0 w-[200%] animate-wave" viewBox="0 0 1440 320" preserveAspectRatio="none">
           <path fill="rgba(255,255,255,0.1)" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
         </svg>
@@ -83,29 +82,29 @@ export default function IschiaCountdown() {
       </div>
 
       {/* Floating elements */}
-      <div className="absolute top-20 left-10 text-6xl sm:text-8xl animate-float opacity-30">🏝️</div>
-      <div className="absolute top-40 right-20 text-5xl sm:text-7xl animate-float-delayed opacity-30">✈️</div>
-      <div className="absolute bottom-40 left-20 text-4xl sm:text-6xl animate-float opacity-20">🌊</div>
-      <div className="absolute top-1/3 right-10 text-5xl sm:text-6xl animate-float-slow opacity-25">☀️</div>
+      <div className="absolute top-10 left-6 text-3xl sm:text-5xl animate-float opacity-20">🏝️</div>
+      <div className="absolute top-16 right-10 text-2xl sm:text-4xl animate-float-delayed opacity-20">✈️</div>
+      <div className="absolute bottom-24 left-10 text-2xl sm:text-4xl animate-float opacity-15">🌊</div>
+      <div className="absolute top-1/4 right-6 text-2xl sm:text-4xl animate-float-slow opacity-20">☀️</div>
 
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-8">
+      <div className="relative z-10 h-screen flex flex-col items-center justify-center px-4 py-4 overflow-hidden">
         {/* Header */}
-        <div className="text-center mb-8 sm:mb-12">
-          <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-white mb-2 sm:mb-4 tracking-tight">
+        <div className="text-center mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-white mb-1 tracking-tight">
             משפחת חייט
           </h1>
-          <div className="flex items-center justify-center gap-2 sm:gap-4 text-white/90">
-            <span className="text-4xl sm:text-6xl">🇮🇹</span>
-            <h2 className="text-xl sm:text-3xl md:text-4xl font-bold">
+          <div className="flex items-center justify-center gap-2 text-white/90">
+            <span className="text-2xl sm:text-4xl">🇮🇹</span>
+            <h2 className="text-lg sm:text-2xl md:text-3xl font-bold">
               טסים לאיסקיה!
             </h2>
-            <span className="text-4xl sm:text-6xl">🌋</span>
+            <span className="text-2xl sm:text-4xl">🌋</span>
           </div>
         </div>
 
         {/* Countdown */}
-        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 mb-8 sm:mb-12">
+        <div className="flex flex-row-reverse flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
           <CountdownUnit value={timeLeft.days} label="ימים" />
           <CountdownUnit value={timeLeft.hours} label="שעות" />
           <CountdownUnit value={timeLeft.minutes} label="דקות" />
@@ -113,49 +112,49 @@ export default function IschiaCountdown() {
         </div>
 
         {/* Flight info card */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-4 sm:p-6 md:p-8 max-w-lg w-full mx-4 border border-white/20 shadow-2xl">
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-3 sm:p-4 md:p-5 max-w-md w-full mx-4 border border-white/20 shadow-2xl">
+          <div className="flex items-center justify-between mb-3">
             <div className="text-right">
-              <p className="text-white/60 text-xs sm:text-sm">יציאה</p>
-              <p className="text-white text-lg sm:text-2xl font-bold">תל אביב</p>
-              <p className="text-white/80 text-sm sm:text-base">TLV</p>
+              <p className="text-white/60 text-[10px] sm:text-xs">יציאה</p>
+              <p className="text-white text-base sm:text-lg font-bold">תל אביב</p>
+              <p className="text-white/80 text-xs sm:text-sm">TLV</p>
             </div>
-            <div className="flex-1 flex items-center justify-center px-2 sm:px-4">
+            <div className="flex-1 flex items-center justify-center px-2">
               <div className="h-[2px] flex-1 bg-white/30" />
-              <span className="text-2xl sm:text-3xl mx-2 sm:mx-3">✈️</span>
+              <span className="text-xl sm:text-2xl mx-2">✈️</span>
               <div className="h-[2px] flex-1 bg-white/30" />
             </div>
             <div className="text-left">
-              <p className="text-white/60 text-xs sm:text-sm">נחיתה</p>
-              <p className="text-white text-lg sm:text-2xl font-bold">נאפולי</p>
-              <p className="text-white/80 text-sm sm:text-base">NAP</p>
+              <p className="text-white/60 text-[10px] sm:text-xs">נחיתה</p>
+              <p className="text-white text-base sm:text-lg font-bold">נאפולי</p>
+              <p className="text-white/80 text-xs sm:text-sm">NAP</p>
             </div>
           </div>
           
-          <div className="border-t border-white/20 pt-4 sm:pt-6 grid grid-cols-2 gap-4">
+          <div className="border-t border-white/20 pt-3 grid grid-cols-4 gap-2 text-center">
             <div>
-              <p className="text-white/60 text-xs sm:text-sm">טיסה</p>
-              <p className="text-white font-semibold text-sm sm:text-base">LY5111</p>
-            </div>
-            <div className="text-left">
-              <p className="text-white/60 text-xs sm:text-sm">תאריך</p>
-              <p className="text-white font-semibold text-sm sm:text-base">08.07.2026</p>
+              <p className="text-white/60 text-[10px] sm:text-xs">טיסה</p>
+              <p className="text-white font-semibold text-xs sm:text-sm">LY5111</p>
             </div>
             <div>
-              <p className="text-white/60 text-xs sm:text-sm">המראה</p>
-              <p className="text-white font-semibold text-sm sm:text-base">14:55</p>
+              <p className="text-white/60 text-[10px] sm:text-xs">תאריך</p>
+              <p className="text-white font-semibold text-xs sm:text-sm">08.07.26</p>
             </div>
-            <div className="text-left">
-              <p className="text-white/60 text-xs sm:text-sm">נחיתה</p>
-              <p className="text-white font-semibold text-sm sm:text-base">17:10</p>
+            <div>
+              <p className="text-white/60 text-[10px] sm:text-xs">המראה</p>
+              <p className="text-white font-semibold text-xs sm:text-sm">14:55</p>
+            </div>
+            <div>
+              <p className="text-white/60 text-[10px] sm:text-xs">נחיתה</p>
+              <p className="text-white font-semibold text-xs sm:text-sm">17:10</p>
             </div>
           </div>
 
-          <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/20 text-center">
-            <p className="text-white/80 text-sm sm:text-base">
+          <div className="mt-3 pt-3 border-t border-white/20 text-center">
+            <p className="text-white/80 text-xs sm:text-sm">
               🌴 שבוע של שמש, ים ואיטליה 🍝
             </p>
-            <p className="text-white/60 text-xs sm:text-sm mt-1">
+            <p className="text-white/60 text-[10px] sm:text-xs mt-0.5">
               08.07 - 15.07.2026
             </p>
           </div>
