@@ -42,26 +42,42 @@ export default function Header() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-1 md:gap-4 flex-shrink-0">
+          <div className="flex items-center gap-0.5 md:gap-4 flex-shrink-0">
             <UserMenu />
+            {/* Mobile - Bags Icon */}
+            <Link 
+              href="/products" 
+              className="md:hidden p-1 hover:opacity-70 transition-opacity"
+              aria-label="תיקים"
+            >
+              <Package size={18} className="text-[#1a1a1a]" />
+            </Link>
+            {/* Mobile - Belts Icon */}
+            <Link 
+              href="/products?tab=belts" 
+              className="md:hidden p-1 hover:opacity-70 transition-opacity"
+              aria-label="חגורות"
+            >
+              <Circle size={18} className="text-[#1a1a1a]" />
+            </Link>
             <Link 
               href="/cart" 
-              className="relative p-1.5 md:p-2 hover:opacity-70 transition-opacity"
+              className="relative p-1 md:p-2 hover:opacity-70 transition-opacity"
             >
-              <ShoppingBag size={20} className="md:w-[22px] md:h-[22px] text-[#1a1a1a]" />
+              <ShoppingBag size={18} className="md:w-[22px] md:h-[22px] text-[#1a1a1a]" />
               {mounted && itemCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-[#1a1a1a] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-light">
+                <span className="absolute -top-0.5 -right-0.5 bg-[#1a1a1a] text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-light">
                   {itemCount}
                 </span>
               )}
             </Link>
             
             <button
-              className="md:hidden p-1.5"
+              className="md:hidden p-1"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="תפריט"
             >
-              <Menu size={20} />
+              <Menu size={18} />
             </button>
           </div>
         </div>

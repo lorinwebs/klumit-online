@@ -16,10 +16,10 @@ const cormorant = Cormorant_Garamond({
 
 export const metadata: Metadata = {
   title: 'קלומית - תיקים יוקרתיים',
-  description: 'ייבואן בלעדי בישראל לתיקי Rentao Angi ו-CARLINO GROUP היישר מאיטליה',
+  description: 'ייבואן בלעדי בישראל לתיקי RENTAO ANGI ו-CARLINO GROUP היישר מאיטליה',
   openGraph: {
     title: 'קלומית - תיקים יוקרתיים',
-    description: 'ייבואן בלעדי בישראל לתיקי Rentao Angi ו-CARLINO GROUP היישר מאיטליה',
+    description: 'ייבואן בלעדי בישראל לתיקי RENTAO ANGI ו-CARLINO GROUP היישר מאיטליה',
     locale: 'he_IL',
     type: 'website',
     siteName: 'Klumit',
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'קלומית - תיקים יוקרתיים',
-    description: 'ייבואן בלעדי בישראל לתיקי Rentao Angi ו-CARLINO GROUP היישר מאיטליה',
+    description: 'ייבואן בלעדי בישראל לתיקי RENTAO ANGI ו-CARLINO GROUP היישר מאיטליה',
   },
 };
 
