@@ -37,9 +37,7 @@ export default function CompleteProfilePage() {
 
       // בדוק אם המשתמש כבר מילא פרטים
       // אם יש first_name ו-last_name, המשתמש כבר נרשם - מעבר לדף הבית
-      const hasProfile = 
-        (session.user.user_metadata?.first_name && session.user.user_metadata?.last_name) ||
-        session.user.email;
+      const hasProfile = session.user.user_metadata?.first_name && session.user.user_metadata?.last_name;
       
       if (hasProfile) {
         // המשתמש כבר נרשם - מעבר לדף הבית

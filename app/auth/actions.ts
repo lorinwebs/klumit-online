@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { shopifyAdminClient } from '@/lib/shopify-admin';
 import { GraphQLClient } from 'graphql-request';
 import { syncCustomerToShopify } from '@/lib/sync-customer';
+import { notifyNewUser } from '@/lib/telegram';
 
 const FIND_CUSTOMER_BY_PHONE_QUERY = `
   query getCustomers($query: String!) {
@@ -143,6 +144,17 @@ export async function verifyOtpServer(prevState: any, formData: FormData) {
     }
 
     const user = data.user;
+    
+    // בדוק אם זה משתמש חדש (נוצר בדקה האחרונה)
+    const isNewUser = user?.created_at && 
+      (Date.now() - new Date(user.created_at).getTime()) < 60000;
+    
+    // שלח הודעת טלגרם על משתמש חדש
+    if (isNewUser && user && phone) {
+      notifyNewUser(phone, user.id).catch(err => 
+        console.error('Failed to send Telegram notification:', err)
+      );
+    }
     
     // סנכרן עם Shopify מיד אחרי האימות - יוצר יוזר בשופיפי עם placeholder email מהטלפון
     if (user && phone) {

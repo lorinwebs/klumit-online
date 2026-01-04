@@ -49,3 +49,5 @@ CREATE POLICY "Users can insert their own sync data"
 לאחר יצירת הטבלה, נסה להתחבר שוב - השגיאה אמורה להיעלם.
 
 
+
+
