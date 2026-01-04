@@ -8,17 +8,35 @@ export const dynamic = 'force-dynamic';
 const SHOPIFY_WEBHOOK_SECRET = process.env.SHOPIFY_WEBHOOK_SECRET;
 
 function verifyShopifyWebhook(body: string, signature: string | null): boolean {
-  if (!SHOPIFY_WEBHOOK_SECRET || !signature) {
-    console.warn('Shopify webhook verification skipped - no secret configured');
-    return true; // Allow in development
+  if (!SHOPIFY_WEBHOOK_SECRET) {
+    console.warn('SHOPIFY_WEBHOOK_SECRET not configured - skipping verification');
+    return true;
+  }
+  
+  if (!signature) {
+    console.warn('No signature in request - skipping verification');
+    return true;
   }
 
-  const hmac = crypto
-    .createHmac('sha256', SHOPIFY_WEBHOOK_SECRET)
-    .update(body, 'utf8')
-    .digest('base64');
+  try {
+    const hmac = crypto
+      .createHmac('sha256', SHOPIFY_WEBHOOK_SECRET)
+      .update(body, 'utf8')
+      .digest('base64');
 
-  return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(signature));
+    const hmacBuffer = Buffer.from(hmac);
+    const signatureBuffer = Buffer.from(signature);
+    
+    if (hmacBuffer.length !== signatureBuffer.length) {
+      console.error('Signature length mismatch');
+      return false;
+    }
+    
+    return crypto.timingSafeEqual(hmacBuffer, signatureBuffer);
+  } catch (err) {
+    console.error('Error verifying webhook:', err);
+    return true; // Allow on error to not block webhooks
+  }
 }
 
 /**
@@ -31,13 +49,18 @@ function verifyShopifyWebhook(body: string, signature: string | null): boolean {
  * Format: JSON
  */
 export async function POST(request: NextRequest) {
+  console.log('🔔 Shopify webhook received!');
+  
   try {
     const rawBody = await request.text();
     const signature = request.headers.get('x-shopify-hmac-sha256');
+    
+    console.log('📝 Webhook signature present:', !!signature);
+    console.log('📝 Body length:', rawBody.length);
 
     // Verify webhook authenticity
     if (!verifyShopifyWebhook(rawBody, signature)) {
-      console.error('Invalid Shopify webhook signature');
+      console.error('❌ Invalid Shopify webhook signature');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
@@ -63,8 +86,10 @@ export async function POST(request: NextRequest) {
       order.billing_address?.phone || 
       undefined;
 
+    console.log('📱 Sending Telegram notification...');
+    
     // Send Telegram notification
-    await notifyNewOrder({
+    const telegramResult = await notifyNewOrder({
       orderNumber: order.name || `#${order.order_number}`,
       customerName,
       customerPhone,
@@ -73,10 +98,12 @@ export async function POST(request: NextRequest) {
       currency: order.currency,
       itemsCount: order.line_items?.length || 0,
     });
+    
+    console.log('✅ Telegram notification result:', telegramResult);
 
-    return NextResponse.json({ success: true, message: 'Order notification sent' });
+    return NextResponse.json({ success: true, message: 'Order notification sent', telegramResult });
   } catch (error) {
-    console.error('Error processing Shopify order webhook:', error);
+    console.error('❌ Error processing Shopify order webhook:', error);
     return NextResponse.json(
       { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

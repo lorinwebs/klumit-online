@@ -11,12 +11,17 @@ interface TelegramMessage {
 }
 
 export async function sendTelegramMessage(text: string): Promise<boolean> {
+  console.log('📤 sendTelegramMessage called');
+  console.log('🔑 Token exists:', !!TELEGRAM_BOT_TOKEN);
+  console.log('🆔 Chat ID exists:', !!TELEGRAM_CHAT_ID);
+  
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-    console.warn('Telegram not configured - missing TELEGRAM_BOT_TOKEN_KLUMIT or TELEGRAM_CHAT_ID_KLUMIT');
+    console.warn('❌ Telegram not configured - missing TELEGRAM_BOT_TOKEN_KLUMIT or TELEGRAM_CHAT_ID_KLUMIT');
     return false;
   }
 
   try {
+    console.log('📡 Calling Telegram API...');
     const response = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
       {
@@ -30,15 +35,18 @@ export async function sendTelegramMessage(text: string): Promise<boolean> {
       }
     );
 
+    console.log('📡 Telegram API response status:', response.status);
+
     if (!response.ok) {
       const error = await response.json();
-      console.error('Telegram API error:', error);
+      console.error('❌ Telegram API error:', error);
       return false;
     }
 
+    console.log('✅ Telegram message sent successfully');
     return true;
   } catch (error) {
-    console.error('Failed to send Telegram message:', error);
+    console.error('❌ Failed to send Telegram message:', error);
     return false;
   }
 }
