@@ -20,6 +20,30 @@ export async function syncCustomerToShopify(
 ) {
   console.log('🔄 syncCustomerToShopify: Starting', { userId, phone, customerData });
   
+  // בדוק throttle - אם כבר נקרא לאחרונה, דלג
+  const lastSync = syncThrottleCache.get(userId);
+  if (lastSync && Date.now() - lastSync < SYNC_THROTTLE_MS) {
+    console.log('⏸️ syncCustomerToShopify: Throttled, skipping', { 
+      userId, 
+      msSinceLastSync: Date.now() - lastSync 
+    });
+    return null;
+  }
+  
+  // בדוק אם יש כישלון אחרון (throttle מ-Shopify)
+  const lastFailed = failedSyncCache.get(userId);
+  if (lastFailed && Date.now() - lastFailed < FAILED_SYNC_COOLDOWN) {
+    console.log('⏸️ syncCustomerToShopify: In cooldown after throttle error', { 
+      userId, 
+      msSinceFailure: Date.now() - lastFailed,
+      cooldownRemaining: FAILED_SYNC_COOLDOWN - (Date.now() - lastFailed)
+    });
+    return null;
+  }
+  
+  // עדכן את ה-throttle cache
+  syncThrottleCache.set(userId, Date.now());
+  
   try {
     let shopifyCustomerId: string | null = null;
 
@@ -167,21 +191,33 @@ export async function syncCustomerToShopify(
       });
 
       try {
-        const result = await shopifyClient.request<{
-          customerCreate: {
-            customer: { id: string } | null;
-            customerUserErrors: Array<{ field: string[]; message: string; code?: string }>;
-          };
-        }>(CREATE_CUSTOMER_MUTATION, {
-          input: {
-            email: userEmail,
-            phone: formattedPhone,
-            password: randomPassword,
-            firstName: firstName || undefined,
-            lastName: lastName || undefined,
-            acceptsMarketing: false,
-          },
-        });
+        // נסה ליצור עם exponential backoff
+        const result = await withRetry(async () => {
+          const res = await shopifyClient.request<{
+            customerCreate: {
+              customer: { id: string } | null;
+              customerUserErrors: Array<{ field: string[]; message: string; code?: string }>;
+            };
+          }>(CREATE_CUSTOMER_MUTATION, {
+            input: {
+              email: userEmail,
+              phone: formattedPhone,
+              password: randomPassword,
+              firstName: firstName || undefined,
+              lastName: lastName || undefined,
+              acceptsMarketing: false,
+            },
+          });
+          
+          // אם יש שגיאת throttle, זרוק כדי לאפשר retry
+          if (res.customerCreate.customerUserErrors?.some(e => 
+            e.code === 'THROTTLED' || e.message?.includes('Limit exceeded')
+          )) {
+            throw new Error('THROTTLED: ' + res.customerCreate.customerUserErrors[0].message);
+          }
+          
+          return res;
+        }, 3, 1000); // 3 ניסיונות, מתחיל מ-1 שנייה
 
         console.log('📦 syncCustomerToShopify: Create customer result', { 
           customer: result.customerCreate.customer,
@@ -195,12 +231,36 @@ export async function syncCustomerToShopify(
           console.warn('⚠️ syncCustomerToShopify: Customer creation error', { errorCode, errorMessage });
           
           if (errorCode === 'TAKEN' || errorMessage.includes('already exists') || errorMessage.includes('taken')) {
-            // אם הלקוח כבר קיים, ננסה למצוא אותו שוב (אולי נוצר בינתיים)
-            // נחזור null וננסה שוב בפעם הבאה
-            console.log('⚠️ syncCustomerToShopify: Customer already exists, returning null');
-            return null;
+            // הלקוח כבר קיים - נחפש אותו לפי email ב-Admin API
+            console.log('🔍 syncCustomerToShopify: Customer exists, searching by email');
+            if (shopifyAdminClient) {
+              try {
+                const searchResult = await shopifyAdminClient.request<{
+                  customers: { edges: Array<{ node: { id: string } }> };
+                }>(`
+                  query getCustomers($query: String!) {
+                    customers(first: 1, query: $query) {
+                      edges { node { id } }
+                    }
+                  }
+                `, { query: `email:"${userEmail}"` });
+                
+                console.log('🔍 syncCustomerToShopify: Email search result', { 
+                  query: `email:"${userEmail}"`,
+                  edges: searchResult.customers.edges,
+                });
+                if (searchResult.customers.edges[0]?.node.id) {
+                  shopifyCustomerId = searchResult.customers.edges[0].node.id;
+                  console.log('✅ syncCustomerToShopify: Found existing customer by email', { shopifyCustomerId });
+                }
+              } catch (searchErr) {
+                console.error('❌ syncCustomerToShopify: Failed to search by email', searchErr);
+              }
+            }
+            if (!shopifyCustomerId) return null;
           } else if (errorCode === 'THROTTLED' || errorMessage.includes('Limit exceeded')) {
-            console.log('⚠️ syncCustomerToShopify: Throttled, returning null');
+            console.log('⚠️ syncCustomerToShopify: Throttled after retries, setting cooldown');
+            failedSyncCache.set(userId, Date.now());
             return null;
           }
         } else if (result.customerCreate.customer) {
@@ -212,8 +272,10 @@ export async function syncCustomerToShopify(
           error: error.message,
           stack: error.stack,
         });
-        // בדוק אם זו שגיאת throttling
+        // בדוק אם זו שגיאת throttling (אחרי כל ה-retries)
         if (error.message?.includes('Limit exceeded') || error.message?.includes('THROTTLED')) {
+          console.log('⚠️ syncCustomerToShopify: Throttle error after retries, setting cooldown');
+          failedSyncCache.set(userId, Date.now());
           return null;
         }
       }
@@ -272,6 +334,44 @@ export async function syncCustomerToShopify(
 // Cache ל-Shopify Customer ID כדי למנוע קריאות מיותרות ל-DB
 const customerIdCache = new Map<string, { id: string | null; timestamp: number }>();
 const CACHE_TTL = 60000; // 60 שניות
+
+// Throttle cache - למניעת קריאות חוזרות ל-syncCustomerToShopify
+const syncThrottleCache = new Map<string, number>();
+const SYNC_THROTTLE_MS = 30000; // 30 שניות בין ניסיונות סינכרון לאותו משתמש
+
+// Failed sync cache - למניעת ניסיונות חוזרים אחרי שגיאת throttle
+const failedSyncCache = new Map<string, number>();
+const FAILED_SYNC_COOLDOWN = 300000; // 5 דקות המתנה אחרי שגיאת throttle
+
+// Exponential backoff helper
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      
+      // רק על THROTTLED נעשה retry
+      if (!error.message?.includes('THROTTLED') && !error.message?.includes('Limit exceeded')) {
+        throw error;
+      }
+      
+      if (attempt < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(2, attempt); // 1s, 2s, 4s
+        console.log(`⏳ Retry ${attempt + 1}/${maxRetries} after ${delay}ms`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError;
+}
 
 /**
  * מקבל את ה-Shopify Customer ID של משתמש
@@ -397,8 +497,12 @@ export async function getShopifyCustomerId(userId: string, useCache: boolean = t
 export function clearCustomerIdCache(userId?: string): void {
   if (userId) {
     customerIdCache.delete(userId);
+    syncThrottleCache.delete(userId);
+    failedSyncCache.delete(userId);
   } else {
     customerIdCache.clear();
+    syncThrottleCache.clear();
+    failedSyncCache.clear();
   }
 }
 

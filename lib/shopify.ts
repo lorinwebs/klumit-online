@@ -25,6 +25,45 @@ const storeDomain = domain.includes('.myshopify.com')
 
 // Shopify credentials check - will fail gracefully if missing
 
+/**
+ * Creates a Shopify Storefront client with Buyer-IP header for server-side use
+ * This helps Shopify understand requests come from different buyers, reducing rate limits
+ */
+export function createServerShopifyClient(buyerIp?: string | null) {
+  const headers: Record<string, string> = {
+    'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
+    'Content-Type': 'application/json',
+  };
+  
+  if (buyerIp) {
+    headers['Shopify-Storefront-Buyer-IP'] = buyerIp;
+  }
+  
+  return new GraphQLClient(
+    `https://${storeDomain}/api/2024-07/graphql.json`,
+    {
+      headers,
+      fetch: (url, options) => 
+        fetch(url, { 
+          ...options as RequestInit, 
+          cache: 'no-store',
+          next: { revalidate: 0 }
+        } as RequestInit)
+    }
+  );
+}
+
+/**
+ * Extract buyer IP from request headers (for use in API routes)
+ */
+export function getBuyerIpFromHeaders(headers: Headers): string | null {
+  const forwarded = headers.get('x-forwarded-for');
+  if (forwarded) {
+    return forwarded.split(',')[0]?.trim() || null;
+  }
+  return headers.get('x-real-ip') || null;
+}
+
 export const shopifyClient = new GraphQLClient(
   `https://${storeDomain}/api/2024-07/graphql.json`,
   {

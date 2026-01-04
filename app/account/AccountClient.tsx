@@ -376,26 +376,44 @@ export default function AccountClient({
                   <div className="text-right flex-1">
                     {!editing ? (
                       <>
-                        <h2 className="text-xl font-light luxury-font mb-1">
-                          {user.user_metadata?.first_name && user.user_metadata?.last_name
-                            ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
-                            : user.user_metadata?.first_name
-                            ? user.user_metadata.first_name
-                            : user.phone || 'משתמש'}
-                        </h2>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-light text-gray-600">
-                            {user.email || user.user_metadata?.email || 'אין אימייל'}
-                          </p>
-                          {user.email && !user.email_confirmed_at && (
-                            <span className="text-xs font-light text-orange-600">
-                              (ממתין לאימות)
-                            </span>
-                          )}
-                          {user.email && user.email_confirmed_at && (
-                            <Check size={14} className="text-green-600" />
-                          )}
-                        </div>
+                        {user.user_metadata?.first_name ? (
+                          <>
+                            <h2 className="text-xl font-light luxury-font mb-1">
+                              {user.user_metadata?.first_name && user.user_metadata?.last_name
+                                ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
+                                : user.user_metadata.first_name}
+                            </h2>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-light text-gray-600">
+                                {user.email || user.user_metadata?.email || 'אין אימייל'}
+                              </p>
+                              {user.email && !user.email_confirmed_at && (
+                                <span className="text-xs font-light text-orange-600">
+                                  (ממתין לאימות)
+                                </span>
+                              )}
+                              {user.email && user.email_confirmed_at && (
+                                <Check size={14} className="text-green-600" />
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="space-y-2">
+                            <h2 className="text-xl font-light luxury-font mb-1 text-gray-400">
+                              {user.phone || 'משתמש חדש'}
+                            </h2>
+                            <button
+                              onClick={() => setEditing(true)}
+                              className="text-sm font-light text-[#1a1a1a] hover:text-[#4a4a4a] underline underline-offset-2 flex items-center gap-1"
+                            >
+                              <Edit2 size={14} />
+                              השלם את הפרופיל שלך
+                            </button>
+                            <p className="text-xs font-light text-gray-500">
+                              הוסף שם, אימייל וכתובת משלוח
+                            </p>
+                          </div>
+                        )}
                       </>
                     ) : (
                       <form onSubmit={handleSave} className="space-y-4">
@@ -671,7 +689,7 @@ export default function AccountClient({
                     )}
                   </div>
                 </div>
-                {!editing && (
+                {!editing && user.user_metadata?.first_name && (
                   <button
                     onClick={() => setEditing(true)}
                     className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -690,7 +708,7 @@ export default function AccountClient({
                       {user.phone || 'לא צוין'}
                     </span>
                   </div>
-                  {(user.user_metadata?.shipping_address || user.user_metadata?.shipping_city || user.user_metadata?.shipping_zip_code) && (
+                  {(user.user_metadata?.shipping_address || user.user_metadata?.shipping_city || user.user_metadata?.shipping_zip_code) ? (
                     <div className="space-y-2 pt-2">
                       <div className="flex items-start gap-3 text-right">
                         <MapPin size={20} className="text-gray-400 mt-0.5" />
@@ -709,6 +727,21 @@ export default function AccountClient({
                         </div>
                       </div>
                     </div>
+                  ) : user.user_metadata?.first_name && (
+                    <button
+                      onClick={() => setEditing(true)}
+                      className="flex items-start gap-3 text-right w-full group"
+                    >
+                      <MapPin size={20} className="text-gray-300 mt-0.5 group-hover:text-gray-400 transition-colors" />
+                      <div className="flex-1">
+                        <div className="text-sm font-light text-gray-400 group-hover:text-gray-600 transition-colors">
+                          הוסף כתובת משלוח
+                        </div>
+                        <div className="text-xs font-light text-gray-300 group-hover:text-gray-400 transition-colors">
+                          לחץ כאן להוספת כתובת
+                        </div>
+                      </div>
+                    </button>
                   )}
                   {shopifyCustomerId && (
                     <div className="flex items-center gap-3 text-right">
