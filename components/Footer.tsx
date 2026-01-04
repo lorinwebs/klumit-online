@@ -11,11 +11,10 @@ export default function Footer() {
               קלומית
             </h3>
             <p className="text-xs md:text-sm font-light text-gray-600 leading-relaxed mb-3 md:mb-6">
-              תיקים יוקרתיים בעיצוב איטלקי
+              יבואן בלעדי של תיקים יוקרתיים היישר מאיטליה
             </p>
             <div className="text-xs font-light text-gray-500 tracking-luxury hidden md:block">
-              יבוא ישיר מאיטליה<br />
-              עור איטלקי איכותי
+              RENTAO ANGI • CARLINO GROUP
             </div>
           </div>
           
