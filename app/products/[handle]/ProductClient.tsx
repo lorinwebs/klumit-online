@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { useCartStore } from '@/store/cartStore';
-import { Heart, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Heart, ChevronLeft, ChevronRight, X, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import Toast from '@/components/Toast';
 import ProductCard from '@/components/ProductCard';
@@ -476,6 +476,16 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     }
   };
 
+  // Share to WhatsApp
+  const handleShareWhatsApp = () => {
+    const productUrl = typeof window !== 'undefined' 
+      ? window.location.href 
+      : `https://www.klumit-online.co.il/products/${product.handle}`;
+    const text = `${product.title} - ₪${price}\n${productUrl}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   // פורמט מחיר פרימיום
   const formatPrice = (amount: string) => {
     const num = parseFloat(amount);
@@ -861,6 +871,13 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                       <Heart size={18} />
                       שמור למועדפים
                     </button>
+                    <button 
+                      onClick={handleShareWhatsApp}
+                      className="w-full border border-green-600 text-green-600 py-3 px-6 text-sm tracking-luxury uppercase font-light hover:bg-green-600 hover:text-white transition-luxury flex items-center justify-center gap-2"
+                    >
+                      <Share2 size={18} />
+                      שתף בוואטסאפ
+                    </button>
                   </div>
                 </div>
               </div>
@@ -991,6 +1008,13 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                   <button className="w-full border border-[#1a1a1a] text-[#1a1a1a] py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury flex items-center justify-center gap-2">
                     <Heart size={18} />
                     שמור למועדפים
+                  </button>
+                  <button 
+                    onClick={handleShareWhatsApp}
+                    className="w-full border border-green-600 text-green-600 py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-green-600 hover:text-white transition-luxury flex items-center justify-center gap-2"
+                  >
+                    <Share2 size={18} />
+                    שתף בוואטסאפ
                   </button>
                 </div>
 

@@ -16,7 +16,19 @@ const cormorant = Cormorant_Garamond({
 
 export const metadata: Metadata = {
   title: 'קלומית - תיקים יוקרתיים',
-  description: 'תיקים יוקרתיים בעיצוב איטלקי',
+  description: 'ייבואן בלעדי בישראל לתיקי Rentao Angi ו-CARLINO GROUP היישר מאיטליה',
+  openGraph: {
+    title: 'קלומית - תיקים יוקרתיים',
+    description: 'ייבואן בלעדי בישראל לתיקי Rentao Angi ו-CARLINO GROUP היישר מאיטליה',
+    locale: 'he_IL',
+    type: 'website',
+    siteName: 'Klumit',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'קלומית - תיקים יוקרתיים',
+    description: 'ייבואן בלעדי בישראל לתיקי Rentao Angi ו-CARLINO GROUP היישר מאיטליה',
+  },
 };
 
 export default function RootLayout({

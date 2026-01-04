@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 @layer base {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  
   body {
     @apply bg-[#fdfcfb] text-[#1a1a1a];
     direction: rtl;

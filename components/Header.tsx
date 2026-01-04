@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingBag, Menu, Package, CircleDot, Info } from 'lucide-react';
+import { ShoppingBag, Menu } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useState, useEffect } from 'react';
 import UserMenu from './UserMenu';
@@ -20,10 +20,10 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-black/10">
-      <nav className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="text-2xl luxury-font font-light tracking-luxury text-[#1a1a1a]">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-black/10 overflow-x-hidden">
+      <nav className="container mx-auto px-2 md:px-4 py-3 md:py-4 max-w-full">
+        <div className="flex items-center justify-between w-full">
+          <Link href="/" className="text-xl md:text-2xl luxury-font font-light tracking-luxury text-[#1a1a1a] flex-shrink-0">
             Klumit
           </Link>
           
@@ -42,37 +42,13 @@ export default function Header() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1 md:gap-4 flex-shrink-0">
             <UserMenu />
-            {/* Mobile - Belts Icon */}
-            <Link 
-              href="/products?tab=belts" 
-              className="md:hidden p-2 hover:opacity-70 transition-opacity"
-              aria-label="חגורות"
-            >
-              <CircleDot size={24} className="text-[#1a1a1a]" />
-            </Link>
-            {/* Mobile - Products Icon */}
-            <Link 
-              href="/products" 
-              className="md:hidden p-2 hover:opacity-70 transition-opacity"
-              aria-label="תיקים"
-            >
-              <Package size={24} className="text-[#1a1a1a]" />
-            </Link>
-            {/* Mobile - About Icon */}
-            <Link 
-              href="/about" 
-              className="md:hidden p-2 hover:opacity-70 transition-opacity"
-              aria-label="אודות"
-            >
-              <Info size={24} className="text-[#1a1a1a]" />
-            </Link>
             <Link 
               href="/cart" 
-              className="relative p-2 hover:opacity-70 transition-opacity"
+              className="relative p-1.5 md:p-2 hover:opacity-70 transition-opacity"
             >
-              <ShoppingBag size={24} className="text-[#1a1a1a]" />
+              <ShoppingBag size={20} className="md:w-[22px] md:h-[22px] text-[#1a1a1a]" />
               {mounted && itemCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 bg-[#1a1a1a] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-light">
                   {itemCount}
@@ -81,10 +57,11 @@ export default function Header() {
             </Link>
             
             <button
-              className="md:hidden p-2"
+              className="md:hidden p-1.5"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="תפריט"
             >
-              <Menu size={24} />
+              <Menu size={20} />
             </button>
           </div>
         </div>
