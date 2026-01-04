@@ -19,6 +19,12 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
   const [error, setError] = useState('');
   const [e164Phone, setE164Phone] = useState(''); // שמור את המספר המנורמל ב-E.164
 
+  // פונקציה לניקוי מספר טלפון - רק ספרות
+  const cleanPhoneInput = (value: string): string => {
+    // אפשר + בהתחלה, אחרת רק ספרות
+    return value.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
+  };
+
   useEffect(() => {
     if (!isOpen) {
       // Reset form when modal closes
@@ -77,7 +83,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     
     // בדוק ולידציה לפני שליחה
     if (!validatePhoneNumber(phone)) {
-      setError('מספר טלפון לא תקין. אנא הכנס מספר ישראלי תקין (למשל: 050-123-4567)');
+      setError('מספר טלפון לא תקין. אנא הכנס מספר ישראלי תקין (למשל: 0501234567)');
       return;
     }
     
@@ -89,7 +95,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       
       // בדיקה נוספת אחרי עיצוב
       if (!formattedPhone.match(/^\+9725\d{8}$/)) {
-        setError('מספר טלפון לא תקין. אנא הכנס מספר ישראלי תקין (למשל: 050-123-4567)');
+        setError('מספר טלפון לא תקין. אנא הכנס מספר ישראלי תקין (למשל: 0501234567)');
         setLoading(false);
         return;
       }
@@ -224,9 +230,9 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
                 <input
                   type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(cleanPhoneInput(e.target.value))}
                   className="w-full px-4 py-3 pr-12 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
-                  placeholder="050-123-4567"
+                  placeholder="0501234567"
                   required
                 />
               </div>

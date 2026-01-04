@@ -16,6 +16,12 @@ export default function LoginPage() {
   const [localError, setLocalError] = useState('');
   const [isPending, startTransition] = useTransition();
 
+  // פונקציה לניקוי מספר טלפון - רק ספרות
+  const cleanPhoneInput = (value: string): string => {
+    // אפשר + בהתחלה, אחרת רק ספרות
+    return value.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
+  };
+
   // נרמול מספר טלפון ישראלי
   const normalizePhone = (raw: string): string => {
     const digits = raw.replace(/\D/g, '');
@@ -95,8 +101,8 @@ export default function LoginPage() {
                   <input
                     type="tel"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="050-123-4567"
+                    onChange={(e) => setPhone(cleanPhoneInput(e.target.value))}
+                    placeholder="0501234567"
                     className="w-full pr-10 pl-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                     required
                   />

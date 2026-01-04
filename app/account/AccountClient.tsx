@@ -526,7 +526,7 @@ export default function AccountClient({
                               value={formData.phone}
                               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                               className="w-full pr-10 pl-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
-                              placeholder="050-123-4567"
+                              placeholder="0501234567"
                             />
                           </div>
                         </div>
