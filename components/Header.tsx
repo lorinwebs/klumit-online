@@ -90,18 +90,18 @@ export default function Header() {
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-luxury-gold/20">
-            <div className="flex flex-col gap-4 pt-4">
-              <Link href="/" className="hover:text-luxury-gold transition-colors">
+          <div className="md:hidden mt-4 pb-4 border-t border-black/10">
+            <div className="flex flex-col gap-4 pt-4 text-right pr-4">
+              <Link href="/" className="hover:opacity-70 transition-opacity text-base" onClick={() => setMobileMenuOpen(false)}>
                 בית
               </Link>
-              <Link href="/products" className="hover:text-luxury-gold transition-colors">
+              <Link href="/products" className="hover:opacity-70 transition-opacity text-base" onClick={() => setMobileMenuOpen(false)}>
                 תיקים
               </Link>
-              <Link href="/products?tab=belts" className="hover:text-luxury-gold transition-colors">
+              <Link href="/products?tab=belts" className="hover:opacity-70 transition-opacity text-base" onClick={() => setMobileMenuOpen(false)}>
                 חגורות
               </Link>
-              <Link href="/about" className="hover:text-luxury-gold transition-colors">
+              <Link href="/about" className="hover:opacity-70 transition-opacity text-base" onClick={() => setMobileMenuOpen(false)}>
                 אודות
               </Link>
             </div>
