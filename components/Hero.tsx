@@ -45,7 +45,7 @@ export default function Hero() {
               transition={{ delay: 0.4, duration: 0.8 }}
               className="text-base md:text-lg mb-12 font-light max-w-md md:max-w-none mx-auto md:mx-0 leading-relaxed"
             >
-              קולקציית חורף 2025 - עור איטלקי בעבודת יד
+              קולקציית חורף 2025 - עור איטלקי איכותי
             </motion.p>
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
