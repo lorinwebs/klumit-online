@@ -59,7 +59,9 @@ export async function POST(request: NextRequest) {
     console.log('📝 Body length:', rawBody.length);
 
     // Verify webhook authenticity
-    if (!verifyShopifyWebhook(rawBody, signature)) {
+    const isValid = verifyShopifyWebhook(rawBody, signature);
+    console.log('🔐 Signature valid:', isValid);
+    if (!isValid) {
       console.error('❌ Invalid Shopify webhook signature');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }

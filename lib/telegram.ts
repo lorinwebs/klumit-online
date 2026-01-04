@@ -2,7 +2,8 @@
 // Bot: @Klumitonline_bot
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN_KLUMIT;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID_KLUMIT; // Your personal/group chat ID
+// Multiple chat IDs separated by comma
+const TELEGRAM_CHAT_IDS = process.env.TELEGRAM_CHAT_ID_KLUMIT?.split(',').map(id => id.trim()) || [];
 
 interface TelegramMessage {
   chat_id: string;
@@ -13,38 +14,44 @@ interface TelegramMessage {
 export async function sendTelegramMessage(text: string): Promise<boolean> {
   console.log('📤 sendTelegramMessage called');
   console.log('🔑 Token exists:', !!TELEGRAM_BOT_TOKEN);
-  console.log('🆔 Chat ID exists:', !!TELEGRAM_CHAT_ID);
+  console.log('🆔 Chat IDs:', TELEGRAM_CHAT_IDS.length);
   
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+  if (!TELEGRAM_BOT_TOKEN || TELEGRAM_CHAT_IDS.length === 0) {
     console.warn('❌ Telegram not configured - missing TELEGRAM_BOT_TOKEN_KLUMIT or TELEGRAM_CHAT_ID_KLUMIT');
     return false;
   }
 
   try {
     console.log('📡 Calling Telegram API...');
-    const response = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text,
-          parse_mode: 'HTML',
-        } as TelegramMessage),
-      }
+    
+    // Send to all chat IDs
+    const results = await Promise.all(
+      TELEGRAM_CHAT_IDS.map(async (chatId) => {
+        const response = await fetch(
+          `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text,
+              parse_mode: 'HTML',
+            } as TelegramMessage),
+          }
+        );
+        
+        if (!response.ok) {
+          const error = await response.json();
+          console.error(`❌ Telegram API error for chat ${chatId}:`, error);
+          return false;
+        }
+        return true;
+      })
     );
 
-    console.log('📡 Telegram API response status:', response.status);
-
-    if (!response.ok) {
-      const error = await response.json();
-      console.error('❌ Telegram API error:', error);
-      return false;
-    }
-
-    console.log('✅ Telegram message sent successfully');
-    return true;
+    const allSent = results.every(r => r);
+    console.log('✅ Telegram messages sent:', results.filter(r => r).length, '/', TELEGRAM_CHAT_IDS.length);
+    return allSent;
   } catch (error) {
     console.error('❌ Failed to send Telegram message:', error);
     return false;
