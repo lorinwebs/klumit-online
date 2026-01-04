@@ -14,6 +14,20 @@ const FIND_CUSTOMER_QUERY = `
   }
 `;
 
+const CREATE_CUSTOMER_MUTATION = `
+  mutation customerCreate($input: CustomerInput!) {
+    customerCreate(input: $input) {
+      customer {
+        id
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
 export async function POST(request: NextRequest) {
   try {
     const { userId, phone, email } = await request.json();
@@ -102,7 +116,32 @@ export async function POST(request: NextRequest) {
       } catch {}
     }
 
-    // שמור ל-Supabase אם מצאנו
+    let source = 'shopify';
+
+    // שלב 3: אם לא מצאנו - צור לקוח חדש
+    if (!shopifyCustomerId && normalizedPhone) {
+      try {
+        const generatedEmail = `phone-${normalizedPhone}@klumit.local`;
+        const result = await shopifyAdminClient.request<{
+          customerCreate: {
+            customer: { id: string } | null;
+            userErrors: Array<{ field: string[]; message: string }>;
+          };
+        }>(CREATE_CUSTOMER_MUTATION, {
+          input: {
+            phone: `+${normalizedPhone}`,
+            email: generatedEmail,
+          },
+        });
+
+        if (result.customerCreate.customer?.id) {
+          shopifyCustomerId = result.customerCreate.customer.id;
+          source = 'created';
+        }
+      } catch {}
+    }
+
+    // שמור ל-Supabase אם מצאנו/יצרנו
     if (shopifyCustomerId) {
       await supabase
         .from('user_shopify_sync')
@@ -117,7 +156,7 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json({ 
         customerId: shopifyCustomerId, 
-        source: 'shopify',
+        source,
       });
     }
 
