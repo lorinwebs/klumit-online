@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { syncCustomerToShopify } from '@/lib/sync-customer';
 import { Phone, X } from 'lucide-react';
 
 interface LoginModalProps {
@@ -159,19 +158,6 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       if (error) throw error;
 
       if (data.user) {
-        // סנכרן עם Shopify ברקע (לא חוסם את ההתחברות)
-        syncCustomerToShopify(
-          data.user.id, 
-          phoneToVerify,
-          {
-            email: data.user.email || data.user.user_metadata?.email || undefined,
-            firstName: data.user.user_metadata?.first_name || undefined,
-            lastName: data.user.user_metadata?.last_name || undefined,
-          }
-        ).catch((syncError) => {
-          console.error('Error syncing to Shopify:', syncError);
-        });
-        
         // קריאה ל-onSuccess אם קיים
         if (onSuccess) {
           onSuccess();

@@ -116,31 +116,8 @@ async function saveCartIdToMetafieldsImpl(cartId: string | null): Promise<void> 
     }
 
     // קבל Shopify Customer ID (עם cache כדי למנוע קריאות מיותרות)
-    const { getShopifyCustomerId, syncCustomerToShopify } = await import('@/lib/sync-customer');
-    let shopifyCustomerId = await getShopifyCustomerId(session.user.id, true);
-    
-    // אם אין Shopify Customer ID, ננסה ליצור customer אוטומטית
-    // רק אם המשתמש מחובר והסשן תקף
-    if (!shopifyCustomerId) {
-      const phone = session.user.phone || session.user.user_metadata?.phone;
-      const email = session.user.email || session.user.user_metadata?.email;
-      
-      if (phone) {
-        try {
-          shopifyCustomerId = await syncCustomerToShopify(
-            session.user.id,
-            phone,
-            {
-              email: email || undefined,
-              firstName: session.user.user_metadata?.first_name || undefined,
-              lastName: session.user.user_metadata?.last_name || undefined,
-            }
-          );
-        } catch (err) {
-          // שקט - לא נדפיס שגיאה כאן כי זה לא קריטי
-        }
-      }
-    }
+    const { getShopifyCustomerId } = await import('@/lib/sync-customer');
+    const shopifyCustomerId = await getShopifyCustomerId(session.user.id, true);
     
     if (shopifyCustomerId) {
       console.log('💾 saveCartIdToMetafieldsImpl: Saving cart ID to metafields', {
@@ -770,56 +747,35 @@ export async function findCartByBuyerIdentity(
       const { getShopifyCustomerId } = await import('@/lib/sync-customer');
       let shopifyCustomerId = await getShopifyCustomerId(session.user.id, true);
       
-      console.log('🔍 findCartByBuyerIdentity: Shopify Customer ID', {
+      console.log('🔍 findCartByBuyerIdentity: Shopify Customer ID from Supabase', {
         userId: session.user.id,
         shopifyCustomerId,
       });
       
-      // אם אין Shopify Customer ID, ננסה לסנכרן את המשתמש
-      if (!shopifyCustomerId && (buyerIdentity.email || buyerIdentity.phone)) {
-        console.log('🔄 findCartByBuyerIdentity: Trying to sync customer to Shopify', {
-          userId: session.user.id,
-          email: buyerIdentity.email,
-          phone: buyerIdentity.phone,
-        });
-        
+      // אם לא מצאנו ב-Supabase, נחפש ב-Shopify
+      if (!shopifyCustomerId) {
+        console.log('🔍 findCartByBuyerIdentity: Not in Supabase, searching Shopify...');
         try {
-          const { syncCustomerToShopify } = await import('@/lib/sync-customer');
-          const phone = buyerIdentity.phone || session.user.phone || '';
-          
-          console.log('🔄 findCartByBuyerIdentity: Calling syncCustomerToShopify', {
-            userId: session.user.id,
-            phone,
-            email: buyerIdentity.email,
-          });
-          
-          const syncedCustomerId = await syncCustomerToShopify(session.user.id, phone, {
-            email: buyerIdentity.email,
-          });
-          
-          console.log('🔄 findCartByBuyerIdentity: syncCustomerToShopify returned', {
-            syncedCustomerId,
-            type: typeof syncedCustomerId,
-          });
-          
-          if (syncedCustomerId) {
-            console.log('✅ findCartByBuyerIdentity: Successfully synced customer', {
+          const response = await fetch('/api/shopify/find-customer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
               userId: session.user.id,
-              shopifyCustomerId: syncedCustomerId,
-            });
-            // עדכן את המשתנה המקומי
-            shopifyCustomerId = syncedCustomerId;
-          } else {
-            console.warn('⚠️ findCartByBuyerIdentity: syncCustomerToShopify returned null/undefined', {
-              userId: session.user.id,
-            });
+              phone: buyerIdentity.phone || session.user.phone,
+              email: buyerIdentity.email || session.user.email,
+            }),
+            credentials: 'include',
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('🔍 findCartByBuyerIdentity: find-customer result', data);
+            if (data.customerId) {
+              shopifyCustomerId = data.customerId;
+            }
           }
-        } catch (syncErr: any) {
-          console.error('❌ findCartByBuyerIdentity: Failed to sync customer', {
-            error: syncErr?.message || syncErr,
-            stack: syncErr?.stack,
-            userId: session.user.id,
-          });
+        } catch (err) {
+          console.error('❌ findCartByBuyerIdentity: find-customer failed', err);
         }
       }
       

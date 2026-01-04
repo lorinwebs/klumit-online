@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase, type User } from '@/lib/supabase';
-import { getShopifyCustomerId, syncCustomerToShopify, clearCustomerIdCache } from '@/lib/sync-customer';
+import { getShopifyCustomerId, clearCustomerIdCache } from '@/lib/sync-customer';
 import { findShopifyCustomerByPhone, saveShopifyCustomerId, verifyEmailOtpServer } from '@/app/auth/actions';
 import { logProfileChanges, getClientInfo } from '@/lib/profile-changes';
 import { useRouter } from 'next/navigation';
@@ -71,24 +71,51 @@ export default function AccountClient({
 
   const [originalFormData, setOriginalFormData] = useState(formData);
 
-  // טען Shopify Customer ID ברקע רק פעם אחת אם אין
-  // לא ננסה ליצור יוזר חדש - זה רק דרך כפתור "חבר עכשיו"
+  // טען Shopify Customer ID ברקע - קודם מ-Supabase, אם אין - חפש ב-Shopify
   useEffect(() => {
     // אם יש כבר initialShopifyCustomerId, לא צריך לטעון שוב
     if (initialShopifyCustomerId) {
       return;
     }
     
-    // אם אין shopifyCustomerId, נבדוק פעם אחת מה-DB
-    if (!shopifyCustomerId && user) {
-      getShopifyCustomerId(user.id, false) // false = לא להשתמש ב-cache
-        .then((customerId) => {
-          if (customerId) {
-            setShopifyCustomerId(customerId);
+    const loadShopifyCustomerId = async () => {
+      if (!user) return;
+      
+      // שלב 1: בדוק ב-Supabase
+      let customerId = await getShopifyCustomerId(user.id, false);
+      
+      if (customerId) {
+        setShopifyCustomerId(customerId);
+        return;
+      }
+      
+      // שלב 2: אם אין ב-Supabase, חפש ב-Shopify
+      console.log('🔍 AccountClient: Not in Supabase, searching Shopify...');
+      try {
+        const response = await fetch('/api/shopify/find-customer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            phone: user.phone || user.user_metadata?.phone,
+            email: user.email || user.user_metadata?.email,
+          }),
+          credentials: 'include',
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('🔍 AccountClient: find-customer result', data);
+          if (data.customerId) {
+            setShopifyCustomerId(data.customerId);
           }
-        })
-        .catch(() => {});
-    }
+        }
+      } catch (err) {
+        console.error('❌ AccountClient: find-customer failed', err);
+      }
+    };
+    
+    loadShopifyCustomerId();
   }, []); // ריק - רק פעם אחת בטעינה הראשונית
 
   // טען הזמנות אם אין
@@ -251,21 +278,6 @@ export default function AccountClient({
       }
 
       if (!emailChanged) {
-        syncCustomerToShopify(
-          user.id,
-          formData.phone || user.phone || '',
-          {
-            email: formData.email || undefined,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            address: formData.shippingAddress || undefined,
-            city: formData.shippingCity || undefined,
-            zipCode: formData.shippingZipCode || undefined,
-          }
-        ).catch(() => {});
-      }
-
-      if (!emailChanged) {
         setEditing(false);
       }
     } catch (err) {
@@ -309,23 +321,7 @@ export default function AccountClient({
                           // שלב 1: חפש לקוח קיים ב-Shopify (Server Action)
                           let customerId = await findShopifyCustomerByPhone(phone);
                           
-                          // שלב 2: אם לא מצאנו, ננסה ליצור חדש (client-side)
-                          if (!customerId) {
-                            customerId = await syncCustomerToShopify(
-                              user.id,
-                              phone,
-                              {
-                                email: user.email || user.user_metadata?.email || undefined,
-                                firstName: user.user_metadata?.first_name || undefined,
-                                lastName: user.user_metadata?.last_name || undefined,
-                                address: user.user_metadata?.shipping_address || undefined,
-                                city: user.user_metadata?.shipping_city || undefined,
-                                zipCode: user.user_metadata?.shipping_zip_code || undefined,
-                              }
-                            );
-                          }
-                          
-                          // שלב 3: אם יש Shopify Customer ID, שמור ב-DB (Server Action)
+                          // שלב 2: אם יש Shopify Customer ID, שמור ב-DB (Server Action)
                           if (customerId) {
                             const saved = await saveShopifyCustomerId(user.id, customerId, phone);
                             if (saved) {

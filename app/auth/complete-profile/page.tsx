@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase, type User } from '@/lib/supabase';
-import { syncCustomerToShopify } from '@/lib/sync-customer';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -163,21 +162,6 @@ export default function CompleteProfilePage() {
       const { error: updateError } = await supabase.auth.updateUser(updateData);
 
       if (updateError) throw updateError;
-
-      // סנכרן עם Shopify (עם כל הפרטים)
-      try {
-        await syncCustomerToShopify(
-          user.id, 
-          user.phone || '', 
-          {
-            email: formData.email || undefined,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-          }
-        );
-      } catch (syncError) {
-        // לא נזרוק שגיאה - זה לא קריטי
-      }
 
       // מעבר לדף הבית
       router.push('/');
