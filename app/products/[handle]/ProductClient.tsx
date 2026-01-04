@@ -876,7 +876,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                       className="w-full border border-green-600 text-green-600 py-3 px-6 text-sm tracking-luxury uppercase font-light hover:bg-green-600 hover:text-white transition-luxury flex items-center justify-center gap-2"
                     >
                       <Share2 size={18} />
-                      שתף בוואטסאפ
+                      SHARE IN WHATSAPP
                     </button>
                   </div>
                 </div>
@@ -1014,7 +1014,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     className="w-full border border-green-600 text-green-600 py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-green-600 hover:text-white transition-luxury flex items-center justify-center gap-2"
                   >
                     <Share2 size={18} />
-                    שתף בוואטסאפ
+                    SHARE IN WHATSAPP
                   </button>
                 </div>
 

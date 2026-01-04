@@ -1,5 +1,14 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'משלוחים - קלומית',
+  description: 'מידע על משלוחים בקלומית. משלוח חינם להזמנות מעל 500₪, משלוח עד הבית תוך 2-5 ימי עסקים.',
+  alternates: {
+    canonical: 'https://www.klumit-online.co.il/shipping',
+  },
+};
 
 export default function ShippingPage() {
   return (

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { shopifyClient, PRODUCT_QUERY, PRODUCTS_QUERY } from '@/lib/shopify';
@@ -52,6 +53,46 @@ interface PageProps {
   params: Promise<{
     handle: string;
   }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { handle } = await params;
+  
+  try {
+    const productData = await shopifyClient.request<{ product: Product }>(
+      PRODUCT_QUERY,
+      { handle }
+    );
+    
+    if (!productData.product) {
+      return {
+        title: 'מוצר לא נמצא',
+      };
+    }
+    
+    const product = productData.product;
+    const price = parseFloat(product.priceRange.minVariantPrice.amount).toFixed(0);
+    const image = product.images.edges[0]?.node.url;
+    
+    return {
+      title: product.title,
+      description: product.description?.slice(0, 160) || `${product.title} - תיק יוקרתי מאיטליה. מחיר: ₪${price}. משלוח חינם מעל 500₪.`,
+      alternates: {
+        canonical: `https://www.klumit-online.co.il/products/${handle}`,
+      },
+      openGraph: {
+        title: `${product.title} | קלומית`,
+        description: product.description?.slice(0, 160) || `${product.title} - תיק יוקרתי מאיטליה`,
+        type: 'website',
+        url: `https://www.klumit-online.co.il/products/${handle}`,
+        images: image ? [{ url: image, alt: product.title }] : [],
+      },
+    };
+  } catch {
+    return {
+      title: 'מוצר',
+    };
+  }
 }
 
 export default async function ProductPage({ params }: PageProps) {

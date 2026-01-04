@@ -1,6 +1,15 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Image from 'next/image';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'אודות קלומית - יבואן תיקים יוקרתיים מאיטליה',
+  description: 'קלומית - יבואן בלעדי בישראל של תיקי RENTAO ANGI ו-CARLINO GROUP. למעלה מ-40 שנה של ניסיון בייבוא תיקים יוקרתיים מאיטליה.',
+  alternates: {
+    canonical: 'https://www.klumit-online.co.il/about',
+  },
+};
 
 export default function AboutPage() {
   return (
