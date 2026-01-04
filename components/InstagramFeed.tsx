@@ -54,12 +54,12 @@ export default function InstagramFeed() {
         </div>
 
         {/* Mobile - Horizontal scroll */}
-        <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
-          <div className="flex gap-3" style={{ width: 'max-content' }}>
+        <div className="md:hidden overflow-x-auto scrollbar-hide pb-4" style={{ marginLeft: '-1rem', marginRight: '-1rem', paddingLeft: '1rem', paddingRight: '1rem' }}>
+          <div className="flex" style={{ gap: '16px' }}>
             {INSTAGRAM_POSTS.map((postUrl, index) => (
               <div 
                 key={index} 
-                className="w-[280px] flex-shrink-0"
+                style={{ width: '280px', flexShrink: 0 }}
               >
                 <blockquote
                   className="instagram-media"
@@ -79,6 +79,8 @@ export default function InstagramFeed() {
                 />
               </div>
             ))}
+            {/* Extra padding at end */}
+            <div style={{ width: '1px', flexShrink: 0 }} />
           </div>
         </div>
         
