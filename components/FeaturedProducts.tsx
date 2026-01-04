@@ -167,6 +167,9 @@ export default function FeaturedProducts() {
     target: containerRef,
     offset: ['start start', 'end end']
   });
+  
+  // Scroll indicator opacity - fades out at the very end (98%)
+  const scrollIndicatorOpacity = useTransform(scrollYProgress, [0.9, 0.98], [1, 0]);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -248,11 +251,12 @@ export default function FeaturedProducts() {
           ))}
         </div>
 
-        {/* Scroll Indicator */}
+        {/* Scroll Indicator - fades out after scrolling 15% */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
+          style={{ opacity: scrollIndicatorOpacity }}
           className="fixed bottom-8 left-1/2 -translate-x-1/2 z-20 hidden md:block"
         >
           <motion.div
