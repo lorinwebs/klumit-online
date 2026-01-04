@@ -12,8 +12,8 @@ const INSTAGRAM_POSTS = [
 
 export default function InstagramFeed() {
   useEffect(() => {
-    // Load Instagram embed script only on desktop
-    if (window.innerWidth >= 768) {
+    // Load Instagram embed script only for desktop
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
       const script = document.createElement('script');
       script.src = 'https://www.instagram.com/embed.js';
       script.async = true;
@@ -38,33 +38,59 @@ export default function InstagramFeed() {
     <section className="py-12 md:py-24 bg-[#fdfcfb]">
       <div className="max-w-7xl mx-auto px-4">
         
-        {/* Mobile - Minimal Design */}
+        {/* Mobile - Clean minimal grid */}
         <div className="md:hidden">
-          <a 
-            href="https://www.instagram.com/klomit/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block text-center py-8 border border-gray-200 rounded-lg bg-white hover:border-[#E1306C]/30 transition-colors"
-          >
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#F77737] mb-4">
-              <Instagram size={28} className="text-white" />
-            </div>
-            <p className="text-lg font-light luxury-font text-[#1a1a1a] mb-1">
-              @klomit
-            </p>
-            <p className="text-sm text-gray-500 font-light mb-4">
+          <div className="text-center mb-6">
+            <a 
+              href="https://www.instagram.com/klomit/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 group"
+            >
+              <Instagram size={22} className="text-[#E1306C]" />
+              <span className="text-lg font-light luxury-font text-[#1a1a1a]">
+                @klomit
+              </span>
+            </a>
+          </div>
+          
+          {/* 3 Square thumbnails */}
+          <div className="grid grid-cols-3 gap-1">
+            {INSTAGRAM_POSTS.map((postUrl, index) => (
+              <a
+                key={index}
+                href={postUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-[#833AB4]/10 via-[#E1306C]/10 to-[#F77737]/10 group-hover:from-[#833AB4]/20 group-hover:via-[#E1306C]/20 group-hover:to-[#F77737]/20 transition-all" />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Instagram size={24} className="text-[#E1306C]" />
+                </div>
+                <div className="absolute bottom-1 right-1">
+                  <Instagram size={14} className="text-white/70" />
+                </div>
+              </a>
+            ))}
+          </div>
+          
+          <div className="text-center mt-4">
+            <a
+              href="https://www.instagram.com/klomit/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-[#E1306C] text-sm font-light"
+            >
               עקבו אחרינו באינסטגרם
-            </p>
-            <span className="inline-flex items-center gap-2 text-[#E1306C] text-sm font-light">
-              לפרופיל
               <svg className="w-4 h-4 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
               </svg>
-            </span>
-          </a>
+            </a>
+          </div>
         </div>
 
-        {/* Desktop - Full Embeds */}
+        {/* Desktop - Full embeds */}
         <div className="hidden md:block">
           <div className="text-center mb-12">
             <a 
@@ -126,4 +152,3 @@ export default function InstagramFeed() {
     </section>
   );
 }
-
