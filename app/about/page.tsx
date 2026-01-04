@@ -130,7 +130,7 @@ export default function AboutPage() {
                   נבחרת מותגים
                 </h3>
                 <p className="text-sm md:text-base font-light text-gray-600 leading-relaxed">
-                  ייצוג בלעדי של בתי אופנה איטלקיים מובילים כמו <span className="font-medium text-amber-700">Renato Angi</span> ו-<span className="font-medium text-amber-700">Carlino Group</span>.
+                  ייצוג בלעדי של בתי אופנה איטלקיים מובילים כמו <span className="font-medium text-amber-700 uppercase">RENATO ANGI</span> ו-<span className="font-medium text-amber-700 uppercase">CARLINO GROUP</span>.
                 </p>
               </div>
               <div className="text-right space-y-3 border-t border-gray-200 pt-6">

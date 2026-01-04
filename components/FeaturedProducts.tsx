@@ -98,8 +98,6 @@ function FeaturedProductItem({ product, index, totalProducts, scrollYProgress }:
               אין תמונה
             </div>
           )}
-          {/* Decorative overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
         </motion.div>
 
         {/* Product Info */}
