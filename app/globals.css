@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Font - Ellinia */
+@font-face {
+  font-family: 'Ellinia';
+  src: url('/elliniaclm-light-webfont.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   html, body {
     overflow-x: hidden;
@@ -16,7 +25,7 @@
   }
   
   h1, h2, h3, .luxury-font {
-    font-family: var(--font-cormorant), serif;
+    font-family: 'Ellinia', var(--font-cormorant), serif;
     font-weight: 300;
     letter-spacing: 0.02em;
   }
