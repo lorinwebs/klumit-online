@@ -1,0 +1,202 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
+const TARGET_DATE = new Date('2026-07-08T14:55:00');
+
+interface TimeLeft {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+}
+
+function calculateTimeLeft(): TimeLeft {
+  const difference = TARGET_DATE.getTime() - new Date().getTime();
+  
+  if (difference <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+  }
+
+  return {
+    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor((difference / 1000 / 60) % 60),
+    seconds: Math.floor((difference / 1000) % 60),
+  };
+}
+
+function CountdownUnit({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 md:p-8 min-w-[70px] sm:min-w-[100px] md:min-w-[140px] border border-white/20 shadow-2xl">
+          <span className="text-4xl sm:text-6xl md:text-8xl font-black text-white tabular-nums block text-center">
+            {String(value).padStart(2, '0')}
+          </span>
+        </div>
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-4 bg-black/20 blur-xl rounded-full" />
+      </div>
+      <span className="text-white/80 text-sm sm:text-base md:text-xl mt-3 sm:mt-4 font-medium tracking-wider uppercase">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+export default function IschiaCountdown() {
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setTimeLeft(calculateTimeLeft());
+    
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-cyan-800 to-teal-600 flex items-center justify-center">
+        <div className="animate-pulse text-white text-2xl">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen relative overflow-hidden" dir="rtl">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-cyan-700 to-teal-500 animate-gradient" />
+      
+      {/* Animated waves */}
+      <div className="absolute bottom-0 left-0 right-0 h-64 overflow-hidden">
+        <svg className="absolute bottom-0 w-[200%] animate-wave" viewBox="0 0 1440 320" preserveAspectRatio="none">
+          <path fill="rgba(255,255,255,0.1)" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
+        </svg>
+        <svg className="absolute bottom-0 w-[200%] animate-wave-slow" style={{ animationDelay: '-2s' }} viewBox="0 0 1440 320" preserveAspectRatio="none">
+          <path fill="rgba(255,255,255,0.05)" d="M0,64L48,80C96,96,192,128,288,128C384,128,480,96,576,90.7C672,85,768,107,864,144C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
+        </svg>
+      </div>
+
+      {/* Floating elements */}
+      <div className="absolute top-20 left-10 text-6xl sm:text-8xl animate-float opacity-30">🏝️</div>
+      <div className="absolute top-40 right-20 text-5xl sm:text-7xl animate-float-delayed opacity-30">✈️</div>
+      <div className="absolute bottom-40 left-20 text-4xl sm:text-6xl animate-float opacity-20">🌊</div>
+      <div className="absolute top-1/3 right-10 text-5xl sm:text-6xl animate-float-slow opacity-25">☀️</div>
+
+      {/* Content */}
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-white mb-2 sm:mb-4 tracking-tight">
+            משפחת חייט
+          </h1>
+          <div className="flex items-center justify-center gap-2 sm:gap-4 text-white/90">
+            <span className="text-4xl sm:text-6xl">🇮🇹</span>
+            <h2 className="text-xl sm:text-3xl md:text-4xl font-bold">
+              טסים לאיסקיה!
+            </h2>
+            <span className="text-4xl sm:text-6xl">🌋</span>
+          </div>
+        </div>
+
+        {/* Countdown */}
+        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 mb-8 sm:mb-12">
+          <CountdownUnit value={timeLeft.days} label="ימים" />
+          <CountdownUnit value={timeLeft.hours} label="שעות" />
+          <CountdownUnit value={timeLeft.minutes} label="דקות" />
+          <CountdownUnit value={timeLeft.seconds} label="שניות" />
+        </div>
+
+        {/* Flight info card */}
+        <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-4 sm:p-6 md:p-8 max-w-lg w-full mx-4 border border-white/20 shadow-2xl">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="text-right">
+              <p className="text-white/60 text-xs sm:text-sm">יציאה</p>
+              <p className="text-white text-lg sm:text-2xl font-bold">תל אביב</p>
+              <p className="text-white/80 text-sm sm:text-base">TLV</p>
+            </div>
+            <div className="flex-1 flex items-center justify-center px-2 sm:px-4">
+              <div className="h-[2px] flex-1 bg-white/30" />
+              <span className="text-2xl sm:text-3xl mx-2 sm:mx-3">✈️</span>
+              <div className="h-[2px] flex-1 bg-white/30" />
+            </div>
+            <div className="text-left">
+              <p className="text-white/60 text-xs sm:text-sm">נחיתה</p>
+              <p className="text-white text-lg sm:text-2xl font-bold">נאפולי</p>
+              <p className="text-white/80 text-sm sm:text-base">NAP</p>
+            </div>
+          </div>
+          
+          <div className="border-t border-white/20 pt-4 sm:pt-6 grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-white/60 text-xs sm:text-sm">טיסה</p>
+              <p className="text-white font-semibold text-sm sm:text-base">LY5111</p>
+            </div>
+            <div className="text-left">
+              <p className="text-white/60 text-xs sm:text-sm">תאריך</p>
+              <p className="text-white font-semibold text-sm sm:text-base">08.07.2026</p>
+            </div>
+            <div>
+              <p className="text-white/60 text-xs sm:text-sm">המראה</p>
+              <p className="text-white font-semibold text-sm sm:text-base">14:55</p>
+            </div>
+            <div className="text-left">
+              <p className="text-white/60 text-xs sm:text-sm">נחיתה</p>
+              <p className="text-white font-semibold text-sm sm:text-base">17:10</p>
+            </div>
+          </div>
+
+          <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/20 text-center">
+            <p className="text-white/80 text-sm sm:text-base">
+              🌴 שבוע של שמש, ים ואיטליה 🍝
+            </p>
+            <p className="text-white/60 text-xs sm:text-sm mt-1">
+              08.07 - 15.07.2026
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes gradient {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        .animate-gradient {
+          background-size: 200% 200%;
+          animation: gradient 15s ease infinite;
+        }
+        @keyframes wave {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-wave {
+          animation: wave 20s linear infinite;
+        }
+        .animate-wave-slow {
+          animation: wave 30s linear infinite;
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(5deg); }
+        }
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+          animation: float 6s ease-in-out infinite;
+          animation-delay: -2s;
+        }
+        .animate-float-slow {
+          animation: float 8s ease-in-out infinite;
+        }
+      `}</style>
+    </div>
+  );
+}
+
