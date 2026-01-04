@@ -14,8 +14,8 @@ export default function Footer() {
               תיקים יוקרתיים בעיצוב איטלקי
             </p>
             <div className="text-xs font-light text-gray-500 tracking-luxury hidden md:block">
-              עור איטלקי איכותי<br />
-              תפירה ידנית
+              יבוא ישיר מאיטליה<br />
+              עור איטלקי איכותי
             </div>
           </div>
           

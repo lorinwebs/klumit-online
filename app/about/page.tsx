@@ -18,7 +18,7 @@ export default function AboutPage() {
                 אודות קלומית (Klumit)
               </h1>
               <p className="text-base md:text-lg font-light text-gray-600 leading-relaxed max-w-2xl mx-auto">
-                מורשת של אומנות, מסורת איטלקית ואיכות ללא פשרות.
+                יבואנים בלעדיים של תיקים יוקרתיים היישר מאיטליה
               </p>
             </div>
           </div>
@@ -65,7 +65,7 @@ export default function AboutPage() {
               <div className="text-right space-y-4">
                 <div className="space-y-3 text-base font-light text-gray-700 leading-relaxed">
                   <p>
-                    אנו מתמחים ביצירת קולקציות יוקרתיות שמשלבות בין איכות בלתי מתפשרת, עיצוב אלגנטי וקלאסי, ופונקציונליות מושלמת. כל תיק מיוצר בקפידה עם תשומת לב לפרטים הקטנים ביותר, תוך שימוש בעור איטלקי משובח ותפירה ידנית מדויקת.
+                    כיבואנים הבלעדיים בישראל של מותגי RENTAO ANGI ו-CARLINO GROUP, אנו מביאים אליכם את מיטב האומנות האיטלקית – תיקים יוקרתיים המגיעים היישר מאיטליה. כל פריט משלב עיצוב אלגנטי וקלאסי, עור איטלקי משובח ואיכות ללא פשרות.
                   </p>
                 </div>
               </div>
