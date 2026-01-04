@@ -108,7 +108,7 @@
   display: block;
   font-size: 0.875rem !important;
   font-weight: 300 !important;
-  font-family: 'Assistant', sans-serif !important;
+  font-family: 'Ellinia', var(--font-cormorant), serif !important;
   letter-spacing: 0.15em !important;
   text-transform: uppercase !important;
   margin-bottom: 0.75rem !important;
