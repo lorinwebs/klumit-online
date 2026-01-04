@@ -53,35 +53,30 @@ export default function InstagramFeed() {
           </p>
         </div>
 
-        {/* Mobile - Horizontal scroll */}
-        <div className="md:hidden overflow-x-auto scrollbar-hide pb-4" style={{ marginLeft: '-1rem', marginRight: '-1rem', paddingLeft: '1rem', paddingRight: '1rem' }}>
-          <div className="flex" style={{ gap: '16px' }}>
-            {INSTAGRAM_POSTS.map((postUrl, index) => (
-              <div 
-                key={index} 
-                style={{ width: '280px', flexShrink: 0 }}
-              >
-                <blockquote
-                  className="instagram-media"
-                  data-instgrm-permalink={postUrl}
-                  data-instgrm-version="14"
-                  style={{
-                    background: '#FFF',
-                    border: '1px solid #dbdbdb',
-                    borderRadius: '4px',
-                    boxShadow: 'none',
-                    margin: '0',
-                    maxWidth: '280px',
-                    minWidth: '280px',
-                    padding: 0,
-                    width: '280px',
-                  }}
-                />
-              </div>
-            ))}
-            {/* Extra padding at end */}
-            <div style={{ width: '1px', flexShrink: 0 }} />
-          </div>
+        {/* Mobile - Vertical stack (one post at a time) */}
+        <div className="md:hidden flex flex-col items-center gap-4">
+          {INSTAGRAM_POSTS.slice(0, 1).map((postUrl, index) => (
+            <div 
+              key={index} 
+              className="w-full max-w-[350px]"
+            >
+              <blockquote
+                className="instagram-media"
+                data-instgrm-permalink={postUrl}
+                data-instgrm-version="14"
+                style={{
+                  background: '#FFF',
+                  border: '1px solid #dbdbdb',
+                  borderRadius: '4px',
+                  boxShadow: 'none',
+                  margin: '0 auto',
+                  maxWidth: '350px',
+                  padding: 0,
+                  width: '100%',
+                }}
+              />
+            </div>
+          ))}
         </div>
         
         {/* Desktop - Grid */}
