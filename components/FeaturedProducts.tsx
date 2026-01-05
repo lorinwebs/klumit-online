@@ -45,6 +45,15 @@ interface FeaturedProductItemProps {
 }
 
 function FeaturedProductItem({ product, index, totalProducts, scrollYProgress }: FeaturedProductItemProps) {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const productScrollProgress = useTransform(
     scrollYProgress,
     [
@@ -54,8 +63,8 @@ function FeaturedProductItem({ product, index, totalProducts, scrollYProgress }:
     [0, 1]
   );
 
-  const imageY = useTransform(productScrollProgress, [0, 1], [100, -100]);
-  const textY = useTransform(productScrollProgress, [0, 1], [-50, 50]);
+  const imageY = useTransform(productScrollProgress, [0, 1], isMobile ? [0, 0] : [100, -100]);
+  const textY = useTransform(productScrollProgress, [0, 1], isMobile ? [0, 0] : [-50, 50]);
 
   const firstVariant = product.variants.edges[0]?.node;
   const firstImage = product.images.edges[0]?.node;
@@ -70,7 +79,7 @@ function FeaturedProductItem({ product, index, totalProducts, scrollYProgress }:
 
   return (
     <motion.div
-      className="relative min-h-[80vh] md:min-h-[90vh] flex items-center"
+      className="relative min-h-[500px] md:min-h-[90vh] flex items-center"
     >
       <div className={`w-full grid md:grid-cols-2 gap-8 md:gap-16 items-center ${
         index % 2 === 0 ? '' : 'md:grid-flow-col-dense'

@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default function Hero() {
   return (
-    <section className="relative w-full h-[70vh] md:h-[85vh] overflow-hidden">
+    <section className="relative w-full h-[70vh] md:h-[85vh] min-h-[400px] landscape:min-h-[100svh] overflow-hidden">
       {/* Full-width Background Image */}
       <Image
         src="/coverimage.jpeg"

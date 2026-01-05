@@ -303,3 +303,11 @@ textarea:focus-visible,
   max-width: 100% !important;
 }
 
+/* Fix for landscape mobile - prevent content cut-off */
+@media (orientation: landscape) and (max-height: 500px) {
+  html, body {
+    overflow-y: auto;
+    height: auto;
+  }
+}
+

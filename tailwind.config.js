@@ -18,6 +18,9 @@ module.exports = {
         sans: ['var(--font-assistant)', 'Assistant', 'system-ui', 'sans-serif'],
         serif: ['Cormorant Garamond', 'serif'],
       },
+      screens: {
+        'landscape': { 'raw': '(orientation: landscape) and (max-height: 500px)' },
+      },
     },
   },
   plugins: [],
