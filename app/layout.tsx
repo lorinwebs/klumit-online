@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Assistant, Cormorant_Garamond } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/react';
 import './globals.css';
 
 const assistant = Assistant({ 
@@ -168,6 +169,7 @@ export default function RootLayout({
           דלג לתוכן הראשי
         </a>
         {children}
+        <Analytics />
       </body>
     </html>
   );
