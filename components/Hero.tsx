@@ -49,9 +49,9 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="text-base md:text-lg mb-10 font-light opacity-90"
+            className="text-lg md:text-xl lg:text-2xl mb-10 font-light opacity-90"
           >
-            יבואנים בלעדיים של <strong>RENATO ANGI VENEZIA</strong> ו-<strong>CARLINO GROUP VENEZIA</strong>
+            יבואנים בלעדיים של <strong>Renato Angi Venezia</strong> ו-<strong>Carlino Group</strong>
           </motion.p>
           <motion.div 
             initial={{ opacity: 0, y: 20 }}

@@ -16,7 +16,7 @@ export default function Footer() {
               יבואן בלעדי של תיקים יוקרתיים היישר מאיטליה
             </p>
             <div className="text-xs font-light text-gray-500 tracking-luxury hidden md:block mb-4">
-              RENTAO ANGI • CARLINO GROUP
+              Renato Angi Venezia • Carlino Group
             </div>
             <a 
               href="https://www.instagram.com/klomit/" 
