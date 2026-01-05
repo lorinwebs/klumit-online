@@ -42,24 +42,25 @@ export default function Header() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-1 md:gap-4 flex-shrink-0">
+          <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
             {/* Mobile - Bags & Belts text links */}
             <Link 
               href="/products" 
-              className="md:hidden text-[11px] tracking-wide hover:opacity-70 transition-opacity text-[#1a1a1a]"
+              className="md:hidden text-[11px] tracking-wide hover:opacity-70 transition-opacity text-[#1a1a1a] flex items-center h-[18px]"
             >
               תיקים
             </Link>
+            <span className="md:hidden w-px h-3 bg-gray-300" />
             <Link 
               href="/products?tab=belts" 
-              className="md:hidden text-[11px] tracking-wide hover:opacity-70 transition-opacity text-[#1a1a1a]"
+              className="md:hidden text-[11px] tracking-wide hover:opacity-70 transition-opacity text-[#1a1a1a] flex items-center h-[18px]"
             >
               חגורות
             </Link>
             <UserMenu />
             <Link 
               href="/cart" 
-              className="relative p-1 md:p-2 hover:opacity-70 transition-opacity"
+              className="relative p-1 md:p-2 hover:opacity-70 transition-opacity flex items-center"
               aria-label={`סל קניות${mounted && itemCount > 0 ? ` (${itemCount} פריטים)` : ''}`}
             >
               <ShoppingBag size={18} className="md:w-[22px] md:h-[22px] text-[#1a1a1a]" aria-hidden="true" />
@@ -71,7 +72,7 @@ export default function Header() {
             </Link>
             
             <button
-              className="md:hidden p-1"
+              className="md:hidden p-1 flex items-center"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label={mobileMenuOpen ? 'סגור תפריט' : 'פתח תפריט'}
               aria-expanded={mobileMenuOpen}
