@@ -51,7 +51,7 @@ export default function Hero() {
             transition={{ delay: 0.5, duration: 0.8 }}
             className="text-base md:text-lg mb-10 font-light opacity-90"
           >
-            יבואנים בלעדיים של RENATO ANGI VENEZIA ו-CARLINO GROUP
+            יבואנים בלעדיים של RENATO ANGI VENEZIA ו-CARLINO GROUP VENEZIA
           </motion.p>
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
