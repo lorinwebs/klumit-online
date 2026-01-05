@@ -143,6 +143,8 @@ function FeaturedProductItem({ product, index, totalProducts, scrollYProgress }:
 export default function FeaturedProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+  const [showDebug, setShowDebug] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -204,13 +206,22 @@ export default function FeaturedProducts() {
         
         // Add cache-busting query parameter
         const cacheBuster = `_cb=${Date.now()}`;
+        setDebugLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] Fetching with cacheBuster: ${cacheBuster}`]);
+        
         const data = await shopifyClient.request<{
           products: { edges: Array<{ node: Product }> };
         }>(PRODUCTS_QUERY_NOCACHE + `# ${cacheBuster}`, {
           first: 50,
         });
-        // Take only first 4-5 products
+        
+        // Log what we got from Shopify
         const allProducts = data.products.edges.map((edge) => edge.node);
+        setDebugLog(prev => [
+          ...prev, 
+          `[${new Date().toLocaleTimeString()}] Got ${allProducts.length} products:`,
+          ...allProducts.slice(0, 5).map((p, i) => `  ${i+1}. "${p.title}" (updated: ${p.updatedAt})`)
+        ]);
+        
         setProducts(allProducts.slice(0, 5));
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -248,6 +259,20 @@ export default function FeaturedProducts() {
 
   return (
     <section ref={containerRef} className="w-full bg-white pt-20 md:pt-32 pb-10 md:pb-16 relative overflow-hidden">
+      {/* DEBUG OVERLAY */}
+      {showDebug && (
+        <div className="fixed top-20 left-2 right-2 md:left-auto md:right-4 md:w-96 bg-black/90 text-green-400 p-3 rounded-lg z-[9999] max-h-[50vh] overflow-y-auto text-xs font-mono">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-white font-bold">🔍 DEBUG LOG</span>
+            <button onClick={() => setShowDebug(false)} className="text-red-400 text-lg">✕</button>
+          </div>
+          {debugLog.map((log, i) => (
+            <div key={i} className="py-0.5 border-b border-green-900/30">{log}</div>
+          ))}
+          {debugLog.length === 0 && <div className="text-gray-500">Loading...</div>}
+        </div>
+      )}
+      
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <motion.div

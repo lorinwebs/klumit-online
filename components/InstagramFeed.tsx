@@ -1,7 +1,7 @@
 'use client';
 
 import { Instagram } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const INSTAGRAM_POSTS = [
   'https://www.instagram.com/p/DSuvqk2DFsU/',
@@ -11,23 +11,6 @@ const INSTAGRAM_POSTS = [
 
 export default function InstagramFeed() {
   const [active, setActive] = useState(0);
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
-
-  const handleSwipe = () => {
-    const diff = touchStartX.current - touchEndX.current;
-    const minSwipeDistance = 50;
-
-    if (Math.abs(diff) > minSwipeDistance) {
-      if (diff > 0) {
-        // Swiped left - next (RTL: previous visually)
-        setActive((prev) => (prev < INSTAGRAM_POSTS.length - 1 ? prev + 1 : prev));
-      } else {
-        // Swiped right - previous (RTL: next visually)
-        setActive((prev) => (prev > 0 ? prev - 1 : prev));
-      }
-    }
-  };
 
   const processEmbeds = () => {
     if ((window as any).instgrm?.Embeds) {
@@ -80,13 +63,20 @@ export default function InstagramFeed() {
 
         {/* Mobile - Single post with navigation */}
         <div className="md:hidden">
-          <div
-            className="relative mx-auto"
-            style={{ maxWidth: '350px' }}
-            onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
-            onTouchEnd={(e) => { touchEndX.current = e.changedTouches[0].clientX; handleSwipe(); }}
-          >
-            {INSTAGRAM_POSTS.map((postUrl, index) => (
+          <div className="flex items-center justify-center gap-2">
+            {/* Right arrow (RTL) */}
+            <button
+              onClick={() => setActive((prev) => (prev > 0 ? prev - 1 : INSTAGRAM_POSTS.length - 1))}
+              className="p-3 text-gray-500 active:text-black"
+              aria-label="Previous post"
+            >
+              <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10 6l8 10-8 10" />
+              </svg>
+            </button>
+
+            <div className="relative" style={{ maxWidth: '300px', width: '100%' }}>
+              {INSTAGRAM_POSTS.map((postUrl, index) => (
               <div
                 key={index}
                 className={`${active === index ? 'block' : 'hidden'}`}
@@ -101,13 +91,25 @@ export default function InstagramFeed() {
                     borderRadius: '4px',
                     boxShadow: 'none',
                     margin: '0 auto',
-                    maxWidth: '350px',
+                    maxWidth: '300px',
                     padding: 0,
                     width: '100%',
                   }}
                 />
               </div>
             ))}
+            </div>
+
+            {/* Left arrow (RTL) */}
+            <button
+              onClick={() => setActive((prev) => (prev < INSTAGRAM_POSTS.length - 1 ? prev + 1 : 0))}
+              className="p-3 text-gray-500 active:text-black"
+              aria-label="Next post"
+            >
+              <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6l-8 10 8 10" />
+              </svg>
+            </button>
           </div>
 
           {/* Dots */}
