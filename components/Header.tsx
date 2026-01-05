@@ -85,9 +85,6 @@ export default function Header() {
         {mobileMenuOpen && (
           <nav id="mobile-menu" className="md:hidden mt-4 pb-4 border-t border-black/10" aria-label="תפריט ניווט ראשי">
             <div className="flex flex-col gap-4 pt-4 text-right pr-4">
-              <Link href="/" className="hover:opacity-70 transition-opacity text-base" onClick={() => setMobileMenuOpen(false)}>
-                בית
-              </Link>
               <Link href="/products" className="hover:opacity-70 transition-opacity text-base" onClick={() => setMobileMenuOpen(false)}>
                 תיקים
               </Link>
