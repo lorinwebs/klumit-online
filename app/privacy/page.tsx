@@ -3,18 +3,21 @@ import Footer from '@/components/Footer';
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
+    <div className="min-h-screen flex flex-col bg-[#fdfcfb]" dir="rtl">
       <Header />
       <main id="main-content" className="flex-grow max-w-4xl mx-auto px-4 py-20" role="main">
-        <h1 className="text-4xl md:text-5xl font-light luxury-font mb-12 text-right">
+        <h1 className="text-4xl md:text-5xl font-light luxury-font mb-4 text-right">
           מדיניות פרטיות
         </h1>
+        <p className="text-sm text-gray-500 mb-12 text-right">
+          עדכון אחרון: {new Date().toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })}
+        </p>
         
         <div className="prose prose-lg max-w-none text-right space-y-8">
           <section>
             <h2 className="text-2xl font-light luxury-font mb-4">הקדמה</h2>
             <p className="font-light leading-relaxed text-gray-700">
-              קלומית מתחייבת להגן על הפרטיות שלכם. מדיניות פרטיות זו מסבירה כיצד אנו אוספים, משתמשים, מגנים ומחש�ים את המידע האישי שלכם בעת שימוש באתר שלנו.
+              קלומית מתחייבת להגן על הפרטיות שלכם. מדיניות פרטיות זו מסבירה כיצד אנו אוספים, משתמשים, מגנים ומשתפים את המידע האישי שלכם בעת שימוש באתר שלנו.
             </p>
           </section>
 
@@ -30,7 +33,7 @@ export default function PrivacyPage() {
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span><strong>מידע תשלום:</strong> פרטי תשלום מועברים דרך Grow-il המאובטחים ומאובטחים</span>
+                <span><strong>מידע תשלום:</strong> פרטי תשלום מועברים דרך Grow-il המאובטחים</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
@@ -163,13 +166,13 @@ export default function PrivacyPage() {
                   כתובת: גאולה 45, תל אביב יפו 6330447
                 </p>
                 <p>
-                  טלפון: <a href="tel:+97235178502" className="hover:text-[#1a1a1a] transition-colors">03-5178502</a>
+                  טלפון: <a href="tel:+97235178502" className="hover:text-[#1a1a1a] transition-colors" aria-label="טלפון: 03-5178502">03-5178502</a>
                 </p>
                 <p>
                   פקס: 03-5106781
                 </p>
                 <p>
-                  אימייל: <a href="mailto:klumitltd@gmail.com" className="hover:text-[#1a1a1a] transition-colors">klumitltd@gmail.com</a>
+                  אימייל: <a href="mailto:klumitltd@gmail.com" className="hover:text-[#1a1a1a] transition-colors" aria-label="אימייל: klumitltd@gmail.com">klumitltd@gmail.com</a>
                 </p>
               </div>
             </div>

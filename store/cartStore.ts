@@ -130,7 +130,6 @@ export const useCartStore = create<CartStore>()((set, get) => {
       
       const isLoggedIn = !!session?.user;
       let targetCartId: string | null = null;
-      console.log('[CartStore] loadFromShopify - isLoggedIn:', isLoggedIn);
       
       // לוגיקת מציאת Cart ID
       if (isLoggedIn) {
@@ -138,10 +137,8 @@ export const useCartStore = create<CartStore>()((set, get) => {
           email: session.user.email || session.user.user_metadata?.email,
           phone: session.user.phone || session.user.user_metadata?.phone,
         };
-        console.log('[CartStore] Looking for cart with buyerIdentity:', buyerIdentity);
         // תמיד מחפשים לפי buyerIdentity אם המשתמש מחובר
         targetCartId = await findCartByBuyerIdentity(buyerIdentity);
-        console.log('[CartStore] findCartByBuyerIdentity returned:', targetCartId);
         if (targetCartId) {
           // לא נשמור שוב ל-metafields כי זה כבר נמצא ב-metafields (אחרת לא היינו מוצאים אותו)
           // נשמור רק ב-localStorage כדי שנוכל לטעון אותה מחדש
@@ -387,11 +384,9 @@ export const useCartStore = create<CartStore>()((set, get) => {
       }
       
       const newCartId = await syncCartToShopify(newItems, cartId, buyerIdentity);
-      console.log('[CartStore] syncCartToShopify returned:', newCartId);
       
       // עדכון ה-Cart ID שחזר - תמיד שומרים את ה-cartId ב-localStorage וב-metafields
       const finalCartId = newCartId || cartId;
-      console.log('[CartStore] finalCartId:', finalCartId, '(newCartId:', newCartId, ', cartId:', cartId, ')');
       
       if (finalCartId) {
         if (finalCartId !== stateCartId) {
@@ -399,16 +394,14 @@ export const useCartStore = create<CartStore>()((set, get) => {
         }
         // תמיד שומרים את ה-cartId ב-localStorage, גם אם הוא לא השתנה
         saveCartIdToLocalStorage(finalCartId);
-        console.log('[CartStore] Saved to localStorage:', finalCartId);
         
         // שמירה ל-Supabase אם מחובר - תמיד שומרים גם אם זה לא השתנה
         const { supabase } = await import('@/lib/supabase');
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          saveCartIdToMetafields(finalCartId, true).catch((e) => console.error('[CartStore] metafields save error:', e));
+          saveCartIdToMetafields(finalCartId, true).catch(() => {});
         }
-      } else {
-        console.warn('[CartStore] No finalCartId to save!');
+      }
       }
       
       // טעינה מחדש מהשרת כדי לקבל את המצב האמיתי (כולל מלאי ותיקון כמות אם חרגה)

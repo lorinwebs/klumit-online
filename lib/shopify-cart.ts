@@ -443,30 +443,21 @@ async function syncCartToShopifyImpl(
           cartInput.buyerIdentity = validBuyerIdentity;
         }
 
-        console.log('[Cart] Creating new cart with', lines.length, 'items');
         const createResponse = await shopifyClient.request(CREATE_CART_MUTATION, { cartInput }) as any;
         const newCartId = createResponse.cartCreate?.cart?.id;
         const userErrors = createResponse.cartCreate?.userErrors;
-        
-        if (userErrors?.length > 0) {
-          console.error('[Cart] Cart creation errors:', userErrors);
-        }
 
         if (newCartId) {
-          console.log('[Cart] New cart created:', newCartId);
           try {
             const { supabase } = await import('@/lib/supabase');
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
               // שמירה מיידית ב-metafields כדי שדפדפנים אחרים ימצאו אותה
               await saveCartIdToMetafields(newCartId, true);
-              console.log('[Cart] Saved to metafields');
             }
           } catch(e) {
-            console.error('[Cart] Failed to save to metafields:', e);
+            // ignore
           }
-        } else {
-          console.error('[Cart] Failed to create cart - no ID returned');
         }
         return newCartId;
       }
@@ -858,15 +849,12 @@ export async function findCartByBuyerIdentity(
 
   // אם המשתמש לא מחובר, או שלא מצאנו ב-metafields, נבדוק ב-localStorage
   const savedCartId = localStorage.getItem('klumit-cart-id');
-  console.log('[findCartByBuyerIdentity] Checking localStorage, found:', savedCartId);
   
   if (savedCartId) {
     try {
       const response = await shopifyClient.request(GET_CART_QUERY, {
         id: savedCartId,
       }) as { cart?: { id?: string; buyerIdentity?: { email?: string; phone?: string } } };
-
-      console.log('[findCartByBuyerIdentity] Cart from Shopify:', response.cart?.id ? 'found' : 'not found');
       
       if (response.cart?.id) {
         const cartBuyerIdentity = response.cart.buyerIdentity;
@@ -875,7 +863,6 @@ export async function findCartByBuyerIdentity(
         
         // אם העגלה קיימת אבל ה-buyerIdentity לא תואם, נעדכן אותה
         if (!emailMatch || !phoneMatch) {
-          console.log('[findCartByBuyerIdentity] Updating buyerIdentity on cart');
           try {
             await shopifyClient.request(UPDATE_CART_BUYER_IDENTITY_MUTATION, {
               cartId: savedCartId,
@@ -885,19 +872,16 @@ export async function findCartByBuyerIdentity(
               },
             });
           } catch (updateErr) {
-            console.error('[findCartByBuyerIdentity] Failed to update buyerIdentity:', updateErr);
+            // ignore
           }
         }
         
-        console.log('[findCartByBuyerIdentity] Returning cart from localStorage:', response.cart.id);
         return response.cart.id;
       }
     } catch (err) {
-      console.error('[findCartByBuyerIdentity] Error loading cart from localStorage:', err);
+      // ignore
     }
   }
-
-  console.log('[findCartByBuyerIdentity] No cart found, returning null');
   return null;
 }
 
