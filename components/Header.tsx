@@ -42,8 +42,7 @@ export default function Header() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-0.5 md:gap-4 flex-shrink-0">
-            <UserMenu />
+          <div className="flex items-center gap-1 md:gap-4 flex-shrink-0">
             {/* Mobile - Bags & Belts text links */}
             <Link 
               href="/products" 
@@ -57,6 +56,7 @@ export default function Header() {
             >
               חגורות
             </Link>
+            <UserMenu />
             <Link 
               href="/cart" 
               className="relative p-1 md:p-2 hover:opacity-70 transition-opacity"
