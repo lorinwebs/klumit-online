@@ -38,16 +38,19 @@ export default function AddressAutocomplete({
     let apartment = '';
     let floor = '';
 
+    let streetNumber = '';
+    let streetName = '';
+
     // חלץ פרטים מהכתובת
     place.address_components.forEach((component) => {
       const types = component.types;
 
       // כתובת - רחוב ומספר בית
       if (types.includes('street_number')) {
-        address = component.long_name + (address ? ' ' + address : '');
+        streetNumber = component.long_name;
       }
       if (types.includes('route')) {
-        address = address ? address + ' ' + component.long_name : component.long_name;
+        streetName = component.long_name;
       }
 
       // עיר
@@ -69,6 +72,15 @@ export default function AddressAutocomplete({
         apartment = component.long_name;
       }
     });
+
+    // בעברית: שם הרחוב ואז המספר
+    if (streetName && streetNumber) {
+      address = streetName + ' ' + streetNumber;
+    } else if (streetName) {
+      address = streetName;
+    } else if (streetNumber) {
+      address = streetNumber;
+    }
 
     // נסה לחלץ דירה וקומה מה-formatted_address
     if (!apartment && place.formatted_address) {

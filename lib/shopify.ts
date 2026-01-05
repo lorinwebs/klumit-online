@@ -327,28 +327,18 @@ export const UPDATE_CART_LINES_MUTATION = `
   }
 `;
 
-export const UPDATE_CART_DELIVERY_ADDRESS_MUTATION = `
-  mutation cartDeliveryAddressUpdate($cartId: ID!, $deliveryAddress: MailingAddressInput!) {
-    cartDeliveryAddressUpdate(cartId: $cartId, deliveryAddress: $deliveryAddress) {
+// New mutation for adding delivery addresses (replaces deprecated deliveryAddressPreferences)
+export const CART_DELIVERY_ADDRESSES_ADD_MUTATION = `
+  mutation cartDeliveryAddressesAdd($cartId: ID!, $addresses: [CartSelectableAddressInput!]!) {
+    cartDeliveryAddressesAdd(cartId: $cartId, addresses: $addresses) {
       cart {
         id
         checkoutUrl
-        deliveryGroups {
-          deliveryAddress {
-            address1
-            address2
-            city
-            zip
-            countryCodeV2
-            firstName
-            lastName
-            phone
-          }
-        }
       }
       userErrors {
         field
         message
+        code
       }
     }
   }
@@ -363,6 +353,18 @@ export const UPDATE_CART_BUYER_IDENTITY_MUTATION = `
         buyerIdentity {
           email
           phone
+          deliveryAddressPreferences {
+            ... on MailingAddress {
+              address1
+              address2
+              city
+              zip
+              country
+              firstName
+              lastName
+              phone
+            }
+          }
         }
       }
       userErrors {

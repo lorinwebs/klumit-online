@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase, type User } from '@/lib/supabase';
 import { getShopifyCustomerId, clearCustomerIdCache } from '@/lib/sync-customer';
-import { findShopifyCustomerByPhone, saveShopifyCustomerId, verifyEmailOtpServer } from '@/app/auth/actions';
+import { findShopifyCustomerByPhone, saveShopifyCustomerId, verifyEmailOtpServer, updateUserProfile } from '@/app/auth/actions';
 import { logProfileChanges, getClientInfo } from '@/lib/profile-changes';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
@@ -135,6 +135,46 @@ export default function AccountClient({
     }
   }, [user, orders.length]);
 
+  // חיפוש מיקוד אוטומטי לפי כתובת ועיר
+  const lookupZipCode = async (address: string, city: string) => {
+    if (!address || !city) return;
+    
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) return;
+    
+    try {
+      const query = encodeURIComponent(`${address}, ${city}, Israel`);
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${apiKey}&language=he&region=il`
+      );
+      const data = await response.json();
+      
+      if (data.results?.[0]?.address_components) {
+        const postalCode = data.results[0].address_components.find(
+          (c: any) => c.types.includes('postal_code')
+        );
+        if (postalCode?.long_name && !formData.shippingZipCode) {
+          setFormData(prev => ({ ...prev, shippingZipCode: postalCode.long_name }));
+        }
+      }
+    } catch (err) {
+      // ignore
+    }
+  };
+
+  // קרא ל-lookup כשמשתנה כתובת או עיר (רק במצב עריכה)
+  useEffect(() => {
+    if (!editing) return;
+    
+    const timer = setTimeout(() => {
+      if (formData.shippingAddress && formData.shippingCity && !formData.shippingZipCode) {
+        lookupZipCode(formData.shippingAddress, formData.shippingCity);
+      }
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [formData.shippingAddress, formData.shippingCity, editing]);
+
   const handleLogout = async () => {
     try {
       // נקה גם בצד הלקוח
@@ -151,39 +191,54 @@ export default function AccountClient({
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // ולידציה של טלפון ישראלי
+    if (formData.phone) {
+      const cleanPhone = formData.phone.replace(/[\s\-]/g, '');
+      if (!/^(\+972|972|0)\d{8,9}$/.test(cleanPhone)) {
+        setError('מספר טלפון לא תקין');
+        return;
+      }
+    }
+
+    // ולידציה של מיקוד ישראלי (7 ספרות)
+    if (formData.shippingZipCode) {
+      const cleanZip = formData.shippingZipCode.replace(/\D/g, '');
+      if (cleanZip.length !== 7) {
+        setError('מיקוד לא תקין - מיקוד ישראלי צריך להכיל 7 ספרות');
+        return;
+      }
+    }
+
     setSaving(true);
 
     try {
-      console.log('🔄 handleSave: Starting save...');
-      
       if (!user) {
         throw new Error('משתמש לא מחובר');
       }
-      
-      console.log('👤 handleSave: User exists:', user.id);
 
-      // נסה לרענן את ה-session לפני העדכון
-      console.log('🔑 handleSave: Refreshing session...');
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-      console.log('🔑 handleSave: Refresh result:', { 
-        hasSession: !!refreshData?.session, 
-        error: refreshError?.message 
+      // השתמש ב-Server Action לעדכון (עובד עם cookies)
+      const result = await updateUserProfile({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        shippingAddress: formData.shippingAddress,
+        shippingCity: formData.shippingCity,
+        shippingZipCode: formData.shippingZipCode,
+        shippingApartment: formData.shippingApartment,
+        shippingFloor: formData.shippingFloor,
+        shippingNotes: formData.shippingNotes,
       });
 
-      const updateData: {
-        data: {
-          first_name: string;
-          last_name: string;
-          email?: string;
-          email_verified?: boolean;
-          pending_email?: string;
-          phone?: string;
-          shipping_address?: string;
-          shipping_city?: string;
-          shipping_zip_code?: string;
-        } & Record<string, any>;
-      } = {
-        data: {
+      if (!result.success) {
+        throw new Error(result.error || 'שגיאה בעדכון הפרופיל');
+      }
+
+      // עדכן את ה-user state עם הנתונים החדשים
+      setUser({
+        ...user,
+        user_metadata: {
+          ...user.user_metadata,
           first_name: formData.firstName,
           last_name: formData.lastName,
           phone: formData.phone,
@@ -194,54 +249,7 @@ export default function AccountClient({
           shipping_floor: formData.shippingFloor,
           shipping_notes: formData.shippingNotes,
         },
-      };
-
-      const hasVerifiedEmail = user.email && user.email_confirmed_at;
-      const emailChanged = formData.email && formData.email !== (user.email || user.user_metadata?.email);
-      
-      if (formData.email) {
-        if (emailChanged && !hasVerifiedEmail) {
-          updateData.data.pending_email = formData.email;
-          updateData.data.email_verified = false;
-          
-          // שלח קוד OTP לאימייל (ללא קישור)
-          const { error: otpError } = await supabase.auth.signInWithOtp({
-            email: formData.email,
-            options: {
-              shouldCreateUser: false,
-            },
-          });
-
-          if (otpError) {
-            const { error: resendError } = await supabase.auth.resend({
-              type: 'signup',
-              email: formData.email,
-            });
-
-            if (resendError && !resendError.message.includes('Signups not allowed')) {
-              throw resendError;
-            }
-          }
-          
-          setEmailVerificationSent(true);
-        } else if (!emailChanged) {
-          if (hasVerifiedEmail) {
-            updateData.data.email = user.email;
-          } else {
-            updateData.data.email = formData.email;
-          }
-        }
-      }
-
-      console.log('📝 handleSave: Calling updateUser with:', updateData);
-      const { error: updateError, data } = await supabase.auth.updateUser(updateData);
-      console.log('📝 handleSave: updateUser result:', { error: updateError?.message, hasUser: !!data?.user });
-
-      if (updateError) throw updateError;
-
-      if (data.user) {
-        setUser(data.user);
-      }
+      });
 
       if (originalFormData) {
         const clientInfo = getClientInfo();
@@ -289,9 +297,7 @@ export default function AccountClient({
         }
       }
 
-      if (!emailChanged) {
-        setEditing(false);
-      }
+      setEditing(false);
     } catch (err: any) {
       // בדוק אם זו שגיאת אותנטיקציה
       const errorMessage = err?.message || '';
@@ -556,11 +562,26 @@ export default function AccountClient({
                             <input
                               type="tel"
                               value={formData.phone}
-                              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                              className="w-full pr-10 pl-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                              onChange={(e) => {
+                                let value = e.target.value;
+                                if (value.startsWith('+')) {
+                                  value = '+' + value.slice(1).replace(/[^\d]/g, '');
+                                } else {
+                                  value = value.replace(/[^\d]/g, '');
+                                }
+                                setFormData({ ...formData, phone: value });
+                              }}
+                              className={`w-full pr-10 pl-4 py-2 border bg-white font-light text-sm focus:outline-none transition-luxury text-right ${
+                                formData.phone && !/^(\+972|972|0)\d{8,9}$/.test(formData.phone.replace(/[\s\-]/g, ''))
+                                  ? 'border-red-300 focus:border-red-500'
+                                  : 'border-gray-200 focus:border-[#1a1a1a]'
+                              }`}
                               placeholder="0501234567"
                             />
                           </div>
+                          {formData.phone && !/^(\+972|972|0)\d{8,9}$/.test(formData.phone.replace(/[\s\-]/g, '')) && (
+                            <p className="text-xs text-red-500 mt-1 text-right">מספר טלפון לא תקין</p>
+                          )}
                         </div>
                         
                         {/* Shipping Address Section */}
@@ -609,10 +630,20 @@ export default function AccountClient({
                                 <input
                                   type="text"
                                   value={formData.shippingZipCode}
-                                  onChange={(e) => setFormData({ ...formData, shippingZipCode: e.target.value })}
-                                  className="w-full px-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
-                                  placeholder="מיקוד"
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/\D/g, '').slice(0, 7);
+                                    setFormData({ ...formData, shippingZipCode: value });
+                                  }}
+                                  className={`w-full px-4 py-2 border bg-white font-light text-sm focus:outline-none transition-luxury text-right ${
+                                    formData.shippingZipCode && formData.shippingZipCode.length > 0 && formData.shippingZipCode.length !== 7
+                                      ? 'border-red-300 focus:border-red-500'
+                                      : 'border-gray-200 focus:border-[#1a1a1a]'
+                                  }`}
+                                  placeholder="7 ספרות"
                                 />
+                                {formData.shippingZipCode && formData.shippingZipCode.length > 0 && formData.shippingZipCode.length !== 7 && (
+                                  <p className="text-xs text-red-500 mt-1 text-right">מיקוד צריך להכיל 7 ספרות</p>
+                                )}
                               </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">

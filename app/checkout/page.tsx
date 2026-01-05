@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useCartStore } from '@/store/cartStore';
-import { shopifyClient, CREATE_CART_MUTATION, ADD_TO_CART_MUTATION, UPDATE_CART_DELIVERY_ADDRESS_MUTATION, UPDATE_CART_BUYER_IDENTITY_MUTATION, UPDATE_CART_DISCOUNT_CODES_MUTATION } from '@/lib/shopify';
+import { shopifyClient, CREATE_CART_MUTATION, ADD_TO_CART_MUTATION, UPDATE_CART_BUYER_IDENTITY_MUTATION, UPDATE_CART_DISCOUNT_CODES_MUTATION, CART_DELIVERY_ADDRESSES_ADD_MUTATION } from '@/lib/shopify';
 import { supabase } from '@/lib/supabase';
 import { saveOrderAddress } from '@/lib/order-addresses';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
@@ -148,6 +148,44 @@ export default function CheckoutPage() {
   const formatPrice = (amount: number) => {
     return Math.round(amount).toLocaleString('he-IL');
   };
+
+  // חיפוש מיקוד אוטומטי לפי כתובת ועיר
+  const lookupZipCode = async (address: string, city: string) => {
+    if (!address || !city) return;
+    
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) return;
+    
+    try {
+      const query = encodeURIComponent(`${address}, ${city}, Israel`);
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${apiKey}&language=he&region=il`
+      );
+      const data = await response.json();
+      
+      if (data.results?.[0]?.address_components) {
+        const postalCode = data.results[0].address_components.find(
+          (c: any) => c.types.includes('postal_code')
+        );
+        if (postalCode?.long_name && !formData.zipCode) {
+          setFormData(prev => ({ ...prev, zipCode: postalCode.long_name }));
+        }
+      }
+    } catch (err) {
+      // ignore - מיקוד לא קריטי
+    }
+  };
+
+  // קרא ל-lookup כשמשתנה כתובת או עיר
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.address && formData.city && !formData.zipCode) {
+        lookupZipCode(formData.address, formData.city);
+      }
+    }, 1000); // debounce 1 שנייה
+    
+    return () => clearTimeout(timer);
+  }, [formData.address, formData.city]);
 
   const getTotal = useMemo(() => {
     // אם יש לנו מחיר סופי מ-Shopify (אחרי הנחה ומסים), זה הערך הכי מדויק
@@ -359,6 +397,21 @@ export default function CheckoutPage() {
       return;
     }
 
+    // ולידציה של מיקוד ישראלי (7 ספרות)
+    const cleanZip = formData.zipCode.replace(/\D/g, '');
+    if (cleanZip.length !== 7) {
+      setError('מיקוד לא תקין - מיקוד ישראלי צריך להכיל 7 ספרות');
+      return;
+    }
+
+    // ולידציה של טלפון ישראלי
+    const cleanPhone = formData.phone.replace(/[\s\-\(\)]/g, '');
+    const phoneDigits = cleanPhone.replace(/\D/g, '');
+    if (phoneDigits.length < 9 || phoneDigits.length > 12) {
+      setError('מספר טלפון לא תקין');
+      return;
+    }
+
     setError(null);
     setLoading(true);
 
@@ -381,16 +434,22 @@ export default function CheckoutPage() {
           ].filter(Boolean).join(', ');
 
           // פורמט טלפון קריטי - חייב להתחיל ב-+972
-          const formattedPhone = formData.phone.startsWith('+') 
-            ? formData.phone 
-            : formData.phone.startsWith('0')
-            ? `+972${formData.phone.substring(1)}`
-            : `+972${formData.phone}`;
+          const formatPhoneNumber = (phone: string): string => {
+            // הסר רווחים ומקפים
+            const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+            // אם כבר מתחיל ב-+972
+            if (cleaned.startsWith('+972')) return cleaned;
+            // אם מתחיל ב-972 (בלי +)
+            if (cleaned.startsWith('972')) return `+${cleaned}`;
+            // אם מתחיל ב-0
+            if (cleaned.startsWith('0')) return `+972${cleaned.substring(1)}`;
+            // אחרת - הוסף +972
+            return `+972${cleaned}`;
+          };
+          const formattedPhone = formatPhoneNumber(formData.phone);
 
           try {
-            // יצירת העגלה עם כל הפריטים
-            // הכתובת תועדכן מיד אחרי יצירת העגלה
-            // אם יש קופון שנשמר ב-state, נחיל אותו כבר ביצירת העגלה
+            // יצירת העגלה עם פרטי הלקוח (בלי כתובת - תתווסף אחרי)
           const createCartResponse = await shopifyClient.request(CREATE_CART_MUTATION, {
             cartInput: {
                 lines: items.map(item => ({
@@ -400,6 +459,7 @@ export default function CheckoutPage() {
                 buyerIdentity: {
                   email: formData.email,
                   phone: formattedPhone,
+                  countryCode: 'IL',
                 },
                 discountCodes: appliedDiscountCode ? [appliedDiscountCode] : [],
               },
@@ -417,44 +477,46 @@ export default function CheckoutPage() {
             if (!currentCartId) {
               throw new Error('לא ניתן ליצור עגלה - Shopify לא החזיר מזהה עגלה');
             }
-            // ה-cart ID יתעדכן אוטומטית כשטוענים את העגלה
-            await loadFromShopify();
             
-            // עדכן את כתובת המשלוח מיד אחרי יצירת העגלה
-            // זה מבטיח שהפרטים (שם, כתובת) יעברו ל-Checkout
+            // Add delivery address to the new cart
             try {
-              const deliveryAddressResponse = await shopifyClient.request(
-                UPDATE_CART_DELIVERY_ADDRESS_MUTATION,
-                {
-                  cartId: currentCartId,
-                  deliveryAddress: {
-                    address1: formData.address,
-                    address2: address2 || undefined,
-                    city: formData.city,
-                    zip: formData.zipCode,
-                    country: 'IL',
-                    firstName: formData.firstName,
-                    lastName: formData.lastName,
-                    phone: formattedPhone,
+              const addressResponse = await shopifyClient.request(CART_DELIVERY_ADDRESSES_ADD_MUTATION, {
+                cartId: currentCartId,
+                addresses: [{
+                  address: {
+                    deliveryAddress: {
+                      firstName: formData.firstName,
+                      lastName: formData.lastName,
+                      address1: formData.address,
+                      address2: address2 || undefined,
+                      city: formData.city,
+                      zip: formData.zipCode,
+                      countryCode: 'IL',
+                      phone: formattedPhone,
+                    },
                   },
-                }
-              ) as {
-                cartDeliveryAddressUpdate?: {
+                  selected: true,
+                }],
+              }) as {
+                cartDeliveryAddressesAdd?: {
                   cart?: { checkoutUrl?: string };
-                  userErrors?: Array<{ field: string[]; message: string }>;
+                  userErrors?: Array<{ field: string[]; message: string; code?: string }>;
                 };
               };
-
-              if (!(deliveryAddressResponse.cartDeliveryAddressUpdate?.userErrors && 
-                  deliveryAddressResponse.cartDeliveryAddressUpdate.userErrors.length > 0)) {
-                // עדכן את checkoutUrl אם קיבלנו אחד חדש
-                if (deliveryAddressResponse.cartDeliveryAddressUpdate?.cart?.checkoutUrl) {
-                  checkoutUrl = deliveryAddressResponse.cartDeliveryAddressUpdate.cart.checkoutUrl;
-                }
+              
+              if (addressResponse.cartDeliveryAddressesAdd?.userErrors?.length) {
+                console.error('Address add errors:', addressResponse.cartDeliveryAddressesAdd.userErrors);
+              }
+              
+              if (addressResponse.cartDeliveryAddressesAdd?.cart?.checkoutUrl) {
+                checkoutUrl = addressResponse.cartDeliveryAddressesAdd.cart.checkoutUrl;
               }
             } catch (addressError: any) {
-              // לא נזרוק שגיאה - נמשיך גם אם עדכון הכתובת נכשל
+              console.error('Failed to add delivery address:', addressError);
             }
+            
+            // ה-cart ID יתעדכן אוטומטית כשטוענים את העגלה
+            await loadFromShopify();
             
             // אם יש קופון שהוחל, החל אותו על העגלה החדשה
             if (appliedDiscountCode) {
@@ -552,14 +614,132 @@ export default function CheckoutPage() {
         }
       }
 
-      // Get Shopify Checkout URL if we don't have it yet
-      if (currentCartId && !checkoutUrl) {
+      // Always update buyer identity and delivery address before checkout
+      // This ensures the form data is used, not old cart data
+      const address2 = [
+        formData.apartment ? `דירה ${formData.apartment}` : '',
+        formData.floor ? `קומה ${formData.floor}` : '',
+        formData.notes ? formData.notes : ''
+      ].filter(Boolean).join(', ');
+
+      // פורמט טלפון - E.164
+      const formatPhoneNumber = (phone: string): string => {
+        const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+        if (cleaned.startsWith('+972')) return cleaned;
+        if (cleaned.startsWith('972')) return `+${cleaned}`;
+        if (cleaned.startsWith('0')) return `+972${cleaned.substring(1)}`;
+        return `+972${cleaned}`;
+      };
+      const formattedPhone = formatPhoneNumber(formData.phone);
+
+      if (currentCartId) {
+        // Step 1: Update buyer identity (email, phone, country)
+        try {
+          const identityResponse = await shopifyClient.request(UPDATE_CART_BUYER_IDENTITY_MUTATION, {
+            cartId: currentCartId,
+            buyerIdentity: {
+              email: formData.email,
+              phone: formattedPhone,
+              countryCode: 'IL',
+            },
+          }) as {
+            cartBuyerIdentityUpdate?: {
+              cart?: { checkoutUrl?: string };
+              userErrors?: Array<{ field: string[]; message: string }>;
+            };
+          };
+          
+          if (identityResponse.cartBuyerIdentityUpdate?.userErrors?.length) {
+            console.error('Buyer identity errors:', identityResponse.cartBuyerIdentityUpdate.userErrors);
+          }
+          
+          if (identityResponse.cartBuyerIdentityUpdate?.cart?.checkoutUrl) {
+            checkoutUrl = identityResponse.cartBuyerIdentityUpdate.cart.checkoutUrl;
+          }
+        } catch (identityError: any) {
+          console.error('Failed to update buyer identity:', identityError);
+        }
+
+        // Step 2: Add delivery address using new mutation (2025-01+)
+        try {
+          const addressResponse = await shopifyClient.request(CART_DELIVERY_ADDRESSES_ADD_MUTATION, {
+            cartId: currentCartId,
+            addresses: [{
+              address: {
+                deliveryAddress: {
+                  firstName: formData.firstName,
+                  lastName: formData.lastName,
+                  address1: formData.address,
+                  address2: address2 || undefined,
+                  city: formData.city,
+                  zip: formData.zipCode,
+                  countryCode: 'IL',
+                  phone: formattedPhone,
+                },
+              },
+              selected: true,
+            }],
+          }) as {
+            cartDeliveryAddressesAdd?: {
+              cart?: { checkoutUrl?: string };
+              userErrors?: Array<{ field: string[]; message: string; code?: string }>;
+            };
+          };
+          
+          console.log('Address add response:', JSON.stringify(addressResponse, null, 2));
+          
+          if (addressResponse.cartDeliveryAddressesAdd?.userErrors?.length) {
+            console.error('Address errors:', addressResponse.cartDeliveryAddressesAdd.userErrors);
+          }
+          
+          if (addressResponse.cartDeliveryAddressesAdd?.cart?.checkoutUrl) {
+            checkoutUrl = addressResponse.cartDeliveryAddressesAdd.cart.checkoutUrl;
+          }
+        } catch (addressError: any) {
+          console.error('Failed to add delivery address:', addressError);
+        }
+
+        // Step 3: Apply discount code if exists
+        if (appliedDiscountCode) {
+          try {
+            await shopifyClient.request(
+              UPDATE_CART_DISCOUNT_CODES_MUTATION,
+              {
+                cartId: currentCartId,
+                discountCodes: [appliedDiscountCode],
+              }
+            );
+          } catch (discountError) {
+            // Continue even if this fails
+          }
+        }
+      }
+
+      // Fetch cart to verify identity was updated
+      if (currentCartId) {
         try {
           const checkoutResponse = await shopifyClient.request(
             `query getCart($id: ID!) {
               cart(id: $id) {
                 id
                 checkoutUrl
+                buyerIdentity {
+                  email
+                  phone
+                }
+                lines(first: 100) {
+                  edges {
+                    node {
+                      id
+                      quantity
+                      merchandise {
+                        ... on ProductVariant {
+                          id
+                        }
+                      }
+                    }
+                  }
+                }
               }
             }`,
             { id: currentCartId }
@@ -567,11 +747,73 @@ export default function CheckoutPage() {
             cart?: { 
               id: string;
               checkoutUrl?: string;
+              buyerIdentity?: { email?: string; phone?: string };
+              lines?: { edges?: Array<{ node?: { id?: string; quantity?: number; merchandise?: { id?: string } } }> };
             } 
           };
-          checkoutUrl = checkoutResponse.cart?.checkoutUrl || null;
+          
+          // Verify identity was updated - if still anonymous, create fresh cart
+          const cartEmail = checkoutResponse.cart?.buyerIdentity?.email;
+          if (cartEmail && (cartEmail.includes('anonymous') || cartEmail.includes('example.com'))) {
+            console.warn('Cart still has anonymous email, creating fresh cart');
+            
+            // Create new cart with proper identity
+            const freshCartResponse = await shopifyClient.request(CREATE_CART_MUTATION, {
+              cartInput: {
+                lines: items.map(item => ({
+                  merchandiseId: item.variantId,
+                  quantity: item.quantity,
+                })),
+                buyerIdentity: {
+                  email: formData.email,
+                  phone: formattedPhone,
+                  countryCode: 'IL',
+                },
+                discountCodes: appliedDiscountCode ? [appliedDiscountCode] : [],
+              },
+            }) as { cartCreate?: { cart?: { id?: string; checkoutUrl?: string }; userErrors?: Array<{ field: string[]; message: string }> } };
+            
+            if (freshCartResponse.cartCreate?.cart?.id) {
+              currentCartId = freshCartResponse.cartCreate.cart.id;
+              checkoutUrl = freshCartResponse.cartCreate.cart.checkoutUrl || null;
+              
+              // Add delivery address to fresh cart
+              try {
+                const addressResponse = await shopifyClient.request(CART_DELIVERY_ADDRESSES_ADD_MUTATION, {
+                  cartId: currentCartId,
+                  addresses: [{
+                    address: {
+                      deliveryAddress: {
+                        firstName: formData.firstName,
+                        lastName: formData.lastName,
+                        address1: formData.address,
+                        address2: address2 || undefined,
+                        city: formData.city,
+                        zip: formData.zipCode,
+                        countryCode: 'IL',
+                        phone: formattedPhone,
+                      },
+                    },
+                    selected: true,
+                  }],
+                }) as {
+                  cartDeliveryAddressesAdd?: {
+                    cart?: { checkoutUrl?: string };
+                    userErrors?: Array<{ field: string[]; message: string; code?: string }>;
+                  };
+                };
+                
+                if (addressResponse.cartDeliveryAddressesAdd?.cart?.checkoutUrl) {
+                  checkoutUrl = addressResponse.cartDeliveryAddressesAdd.cart.checkoutUrl;
+                }
+              } catch (addressError: any) {
+                console.error('Failed to add address to fresh cart:', addressError);
+              }
+            }
+          } else {
+            checkoutUrl = checkoutResponse.cart?.checkoutUrl || checkoutUrl;
+          }
         } catch (shopifyError: any) {
-          // אם יש שגיאת 400, זה יכול להיות שהעגלה לא קיימת או שיש בעיה אחרת
           if (shopifyError.response?.status === 400 || shopifyError.message?.includes('400')) {
             throw new Error('שגיאה ב-Shopify: לא ניתן לקבל את קישור התשלום. אנא נסה שוב.');
           }
@@ -728,11 +970,27 @@ export default function CheckoutPage() {
                   <input
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                    onChange={(e) => {
+                      // הסר תווים לא רלוונטיים, שמור + בהתחלה
+                      let value = e.target.value;
+                      if (value.startsWith('+')) {
+                        value = '+' + value.slice(1).replace(/[^\d]/g, '');
+                      } else {
+                        value = value.replace(/[^\d]/g, '');
+                      }
+                      setFormData({ ...formData, phone: value });
+                    }}
+                    className={`w-full px-3 py-2 border bg-white font-light text-sm focus:outline-none transition-luxury text-right ${
+                      formData.phone && !/^(\+972|972|0)\d{8,9}$/.test(formData.phone.replace(/[\s\-]/g, ''))
+                        ? 'border-red-300 focus:border-red-500'
+                        : 'border-gray-200 focus:border-[#1a1a1a]'
+                    }`}
                     placeholder="0501234567"
                     required
                   />
+                  {formData.phone && !/^(\+972|972|0)\d{8,9}$/.test(formData.phone.replace(/[\s\-]/g, '')) && (
+                    <p className="text-xs text-red-500 mt-1 text-right">מספר טלפון לא תקין</p>
+                  )}
                 </div>
               </div>
 
@@ -782,10 +1040,22 @@ export default function CheckoutPage() {
                     <input
                       type="text"
                       value={formData.zipCode}
-                      onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                      onChange={(e) => {
+                        // רק ספרות, מקסימום 7
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 7);
+                        setFormData({ ...formData, zipCode: value });
+                      }}
+                      className={`w-full px-3 py-2 border bg-white font-light text-sm focus:outline-none transition-luxury text-right ${
+                        formData.zipCode && formData.zipCode.length > 0 && formData.zipCode.length !== 7
+                          ? 'border-red-300 focus:border-red-500'
+                          : 'border-gray-200 focus:border-[#1a1a1a]'
+                      }`}
+                      placeholder="7 ספרות"
                       required
                     />
+                    {formData.zipCode && formData.zipCode.length > 0 && formData.zipCode.length !== 7 && (
+                      <p className="text-xs text-red-500 mt-1 text-right">מיקוד צריך להכיל 7 ספרות</p>
+                    )}
                   </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-3 mt-3">

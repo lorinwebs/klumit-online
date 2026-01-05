@@ -8,6 +8,7 @@ const nextConfig = {
         hostname: 'cdn.shopify.com',
       },
     ],
+    qualities: [75, 90],
   },
   // Allow loading Google Maps API
   async headers() {

@@ -175,6 +175,142 @@ export async function verifyOtpServer(prevState: any, formData: FormData) {
   }
 }
 
+const UPDATE_CUSTOMER_MUTATION = `
+  mutation customerUpdate($input: CustomerInput!) {
+    customerUpdate(input: $input) {
+      customer {
+        id
+        firstName
+        lastName
+        email
+        phone
+        defaultAddress {
+          id
+          address1
+          address2
+          city
+          zip
+          country
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+/**
+ * Server Action: עדכון פרופיל משתמש (Supabase + Shopify)
+ */
+export async function updateUserProfile(data: {
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  shippingAddress?: string;
+  shippingCity?: string;
+  shippingZipCode?: string;
+  shippingApartment?: string;
+  shippingFloor?: string;
+  shippingNotes?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    
+    // 1. עדכן ב-Supabase
+    const { data: userData, error } = await supabase.auth.updateUser({
+      data: {
+        first_name: data.firstName,
+        last_name: data.lastName,
+        phone: data.phone,
+        shipping_address: data.shippingAddress,
+        shipping_city: data.shippingCity,
+        shipping_zip_code: data.shippingZipCode,
+        shipping_apartment: data.shippingApartment,
+        shipping_floor: data.shippingFloor,
+        shipping_notes: data.shippingNotes,
+      },
+    });
+
+    if (error) {
+      console.error('❌ updateUserProfile Supabase error:', error);
+      return { success: false, error: error.message };
+    }
+
+    // 2. עדכן ב-Shopify (אם יש חיבור)
+    if (shopifyAdminClient && userData?.user) {
+      try {
+        // קבל את ה-Shopify Customer ID
+        const { data: syncData } = await supabase
+          .from('user_shopify_sync')
+          .select('shopify_customer_id')
+          .eq('user_id', userData.user.id)
+          .maybeSingle();
+
+        if (syncData?.shopify_customer_id) {
+          // בנה את address2 מדירה, קומה והערות
+          const address2Parts = [
+            data.shippingApartment ? `דירה ${data.shippingApartment}` : '',
+            data.shippingFloor ? `קומה ${data.shippingFloor}` : '',
+            data.shippingNotes || ''
+          ].filter(Boolean);
+          const address2 = address2Parts.join(', ') || undefined;
+
+          // נרמל טלפון לפורמט E.164
+          let formattedPhone = data.phone;
+          if (data.phone && !data.phone.startsWith('+')) {
+            const digitsOnly = data.phone.replace(/\D/g, '');
+            if (digitsOnly.startsWith('972')) {
+              formattedPhone = `+${digitsOnly}`;
+            } else if (digitsOnly.startsWith('0')) {
+              formattedPhone = `+972${digitsOnly.slice(1)}`;
+            } else {
+              formattedPhone = `+972${digitsOnly}`;
+            }
+          }
+
+          // עדכן את הלקוח ב-Shopify
+          const result = await shopifyAdminClient.request<{
+            customerUpdate: {
+              customer: { id: string } | null;
+              userErrors: Array<{ field: string[]; message: string }>;
+            };
+          }>(UPDATE_CUSTOMER_MUTATION, {
+            input: {
+              id: syncData.shopify_customer_id,
+              firstName: data.firstName,
+              lastName: data.lastName,
+              phone: formattedPhone,
+              addresses: data.shippingAddress ? [{
+                address1: data.shippingAddress,
+                address2,
+                city: data.shippingCity,
+                zip: data.shippingZipCode,
+                country: 'IL',
+              }] : undefined,
+            },
+          });
+
+          if (result.customerUpdate.userErrors.length > 0) {
+            const errors = result.customerUpdate.userErrors.map(e => e.message).join(', ');
+            console.warn('⚠️ Shopify customer update errors:', errors);
+            // לא נכשיל את כל הפעולה - Supabase כבר עודכן
+          }
+        }
+      } catch (shopifyError: any) {
+        console.warn('⚠️ Could not update Shopify customer:', shopifyError.message);
+        // לא נכשיל את כל הפעולה - Supabase כבר עודכן
+      }
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('❌ updateUserProfile exception:', err);
+    return { success: false, error: err?.message || 'שגיאה בעדכון הפרופיל' };
+  }
+}
+
 export async function verifyEmailOtpServer(prevState: any, formData: FormData) {
   const email = formData.get('email') as string;
   const token = formData.get('token') as string;

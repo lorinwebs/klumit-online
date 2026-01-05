@@ -31,6 +31,7 @@ interface CartStore {
 }
 
 const CART_ID_STORAGE_KEY = 'klumit-cart-id';
+const CART_ITEMS_STORAGE_KEY = 'klumit-cart-items';
 
 // משתנים גלובליים לניהול מצב מחוץ ל-Store (מונע Race Conditions)
 let isLoadingFromShopify = false;
@@ -51,9 +52,40 @@ function getCartIdFromLocalStorage(): string | null {
   return localStorage.getItem(CART_ID_STORAGE_KEY);
 }
 
-export const useCartStore = create<CartStore>()((set, get) => ({
-  items: [],
-  cartId: null,
+// שמירת פריטי העגלה ב-localStorage לטעינה מהירה
+function saveCartItemsToLocalStorage(items: CartItem[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(CART_ITEMS_STORAGE_KEY, JSON.stringify(items));
+  } catch (e) {
+    // ignore - localStorage might be full
+  }
+}
+
+function getCartItemsFromLocalStorage(): CartItem[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const items = localStorage.getItem(CART_ITEMS_STORAGE_KEY);
+    return items ? JSON.parse(items) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// טעינה ראשונית מ-localStorage
+const initialItems = typeof window !== 'undefined' ? getCartItemsFromLocalStorage() : [];
+const initialCartId = typeof window !== 'undefined' ? getCartIdFromLocalStorage() : null;
+
+export const useCartStore = create<CartStore>()((set, get) => {
+  // Helper שמעדכן גם את ה-state וגם את localStorage
+  const setItems = (items: CartItem[]) => {
+    set({ items });
+    saveCartItemsToLocalStorage(items);
+  };
+  
+  return {
+  items: initialItems,
+  cartId: initialCartId,
   isLoading: false,
   isUpdating: false,
   
@@ -98,6 +130,7 @@ export const useCartStore = create<CartStore>()((set, get) => ({
       
       const isLoggedIn = !!session?.user;
       let targetCartId: string | null = null;
+      console.log('[CartStore] loadFromShopify - isLoggedIn:', isLoggedIn);
       
       // לוגיקת מציאת Cart ID
       if (isLoggedIn) {
@@ -105,42 +138,55 @@ export const useCartStore = create<CartStore>()((set, get) => ({
           email: session.user.email || session.user.user_metadata?.email,
           phone: session.user.phone || session.user.user_metadata?.phone,
         };
+        console.log('[CartStore] Looking for cart with buyerIdentity:', buyerIdentity);
         // תמיד מחפשים לפי buyerIdentity אם המשתמש מחובר
         targetCartId = await findCartByBuyerIdentity(buyerIdentity);
+        console.log('[CartStore] findCartByBuyerIdentity returned:', targetCartId);
         if (targetCartId) {
           // לא נשמור שוב ל-metafields כי זה כבר נמצא ב-metafields (אחרת לא היינו מוצאים אותו)
           // נשמור רק ב-localStorage כדי שנוכל לטעון אותה מחדש
           saveCartIdToLocalStorage(targetCartId);
         } else {
           // אם לא מצאנו לפי buyerIdentity, נבדוק ב-localStorage
-          // אבל רק אם העגלה ב-localStorage שייכת למשתמש הזה (יש לה buyerIdentity תואם)
           const localStorageCartId = getCartIdFromLocalStorage();
           if (localStorageCartId) {
             try {
-              // נבדוק אם העגלה ב-localStorage שייכת למשתמש הזה
-              const cartResponse = await (await import('@/lib/shopify')).shopifyClient.request(
-                (await import('@/lib/shopify')).GET_CART_QUERY,
+              // נבדוק אם העגלה ב-localStorage קיימת
+              const { shopifyClient, GET_CART_QUERY, UPDATE_CART_BUYER_IDENTITY_MUTATION } = await import('@/lib/shopify');
+              const cartResponse = await shopifyClient.request(
+                GET_CART_QUERY,
                 { id: localStorageCartId }
               ) as { cart?: { id?: string; buyerIdentity?: { email?: string; phone?: string } } };
               
               if (cartResponse.cart?.id) {
-                const cartBuyerIdentity = cartResponse.cart.buyerIdentity;
-                const emailMatch = !buyerIdentity.email || cartBuyerIdentity?.email === buyerIdentity.email;
-                const phoneMatch = !buyerIdentity.phone || cartBuyerIdentity?.phone === buyerIdentity.phone;
+                // העגלה קיימת - נשתמש בה ונעדכן את ה-buyerIdentity אם צריך
+                targetCartId = localStorageCartId;
                 
-                // רק אם העגלה תואמת את ה-buyerIdentity, נשתמש בה
-                if (emailMatch && phoneMatch) {
-                  targetCartId = localStorageCartId;
-                  // נעדכן את ה-metafields עם העגלה הזו - שמירה מיידית
-                  saveCartIdToMetafields(targetCartId, true).catch(() => {});
-                } else {
-                  // אם העגלה לא תואמת, נמחק אותה מ-localStorage ונשתמש בעגלה מ-metafields בלבד
-                  saveCartIdToLocalStorage(null);
+                const cartBuyerIdentity = cartResponse.cart.buyerIdentity;
+                const needsUpdate = 
+                  (buyerIdentity.email && cartBuyerIdentity?.email !== buyerIdentity.email) ||
+                  (buyerIdentity.phone && cartBuyerIdentity?.phone !== buyerIdentity.phone);
+                
+                // עדכן את ה-buyerIdentity של העגלה אם צריך
+                if (needsUpdate) {
+                  try {
+                    await shopifyClient.request(UPDATE_CART_BUYER_IDENTITY_MUTATION, {
+                      cartId: localStorageCartId,
+                      buyerIdentity: {
+                        email: buyerIdentity.email,
+                        phone: buyerIdentity.phone,
+                      },
+                    });
+                  } catch (updateErr) {
+                    // לא קריטי - נמשיך בכל מקרה
+                  }
                 }
+                
+                // נעדכן את ה-metafields עם העגלה הזו - שמירה מיידית
+                saveCartIdToMetafields(targetCartId, true).catch(() => {});
               }
             } catch (err) {
-              // אם יש שגיאה, נמחק את העגלה מ-localStorage
-              saveCartIdToLocalStorage(null);
+              // אם יש שגיאה בטעינת העגלה, לא נמחק - ננסה שוב בפעם הבאה
             }
           }
         }
@@ -169,11 +215,8 @@ export const useCartStore = create<CartStore>()((set, get) => ({
             return item;
           });
           
-          set({ 
-            items: correctedItems, 
-            cartId: targetCartId,
-            isLoading: false 
-          });
+          setItems(correctedItems);
+          set({ cartId: targetCartId, isLoading: false });
           // תמיד שומרים את ה-cartId ב-localStorage כשטוענים את העגלה
           saveCartIdToLocalStorage(targetCartId);
           // שמירה מיידית ב-metafields כדי שדפדפנים אחרים ימצאו אותה
@@ -218,9 +261,8 @@ export const useCartStore = create<CartStore>()((set, get) => ({
   },
   
   addItem: async (item) => {
-    // בדיקת מלאי לפני הוספה
-    const { items } = get();
-    const existingItem = items.find((i) => i.variantId === item.variantId);
+    // בדיקת מלאי לפני הוספה - קריאה טרייה של ה-state
+    const existingItem = get().items.find((i) => i.variantId === item.variantId);
     const currentQuantity = existingItem?.quantity || 0;
     const newQuantity = currentQuantity + 1;
     
@@ -293,7 +335,23 @@ export const useCartStore = create<CartStore>()((set, get) => ({
     }
     
     // 2. עדכון אופטימי (מיידי ל-UI)
-    const newItems = [...items];
+    // חשוב: לקרוא את ה-state מחדש כדי לקבל את הערך העדכני (במקרה של לחיצות מהירות)
+    const freshItems = get().items;
+    const freshExistingItem = freshItems.find((i) => i.variantId === item.variantId);
+    const freshCurrentQuantity = freshExistingItem?.quantity || 0;
+    const freshNewQuantity = freshCurrentQuantity + 1;
+    
+    // בדיקת מלאי נוספת עם ה-state הטרי (במקרה של לחיצות מהירות)
+    const quantityAvailableCheck = item.quantityAvailable;
+    if (quantityAvailableCheck !== undefined && quantityAvailableCheck !== null) {
+      if (freshNewQuantity > quantityAvailableCheck) {
+        updateInProgress = false;
+        set({ isUpdating: false });
+        return;
+      }
+    }
+    
+    const newItems = [...freshItems];
     const existingItemIndex = newItems.findIndex((i) => i.variantId === item.variantId);
     
     if (existingItemIndex >= 0) {
@@ -310,7 +368,7 @@ export const useCartStore = create<CartStore>()((set, get) => ({
       newItems.push({ ...item, quantity: 1, id: item.variantId }); 
     }
     
-    set({ items: newItems });
+    setItems(newItems);
     
     // 3. שליחה לשרת - אם המשתמש מחובר, נשלח גם buyerIdentity
     try {
@@ -329,22 +387,28 @@ export const useCartStore = create<CartStore>()((set, get) => ({
       }
       
       const newCartId = await syncCartToShopify(newItems, cartId, buyerIdentity);
+      console.log('[CartStore] syncCartToShopify returned:', newCartId);
       
       // עדכון ה-Cart ID שחזר - תמיד שומרים את ה-cartId ב-localStorage וב-metafields
       const finalCartId = newCartId || cartId;
+      console.log('[CartStore] finalCartId:', finalCartId, '(newCartId:', newCartId, ', cartId:', cartId, ')');
+      
       if (finalCartId) {
         if (finalCartId !== stateCartId) {
           set({ cartId: finalCartId });
         }
         // תמיד שומרים את ה-cartId ב-localStorage, גם אם הוא לא השתנה
         saveCartIdToLocalStorage(finalCartId);
+        console.log('[CartStore] Saved to localStorage:', finalCartId);
         
         // שמירה ל-Supabase אם מחובר - תמיד שומרים גם אם זה לא השתנה
         const { supabase } = await import('@/lib/supabase');
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          saveCartIdToMetafields(finalCartId, true).catch(() => {});
+          saveCartIdToMetafields(finalCartId, true).catch((e) => console.error('[CartStore] metafields save error:', e));
         }
+      } else {
+        console.warn('[CartStore] No finalCartId to save!');
       }
       
       // טעינה מחדש מהשרת כדי לקבל את המצב האמיתי (כולל מלאי ותיקון כמות אם חרגה)
@@ -355,20 +419,21 @@ export const useCartStore = create<CartStore>()((set, get) => ({
         await new Promise(resolve => setTimeout(resolve, 200));
         
         const loadedItems = await loadCartFromShopify(newCartId || cartId!);
-        if (loadedItems) {
+        // רק נעדכן אם קיבלנו פריטים מהשרת - לא נדרוס עם מערך ריק
+        if (loadedItems && loadedItems.length > 0) {
           // אם Shopify תיקן את הכמות, נשתמש בערך שלו
           const updatedItem = loadedItems.find(i => i.variantId === item.variantId);
           if (updatedItem && updatedItem.quantity !== newQuantity) {
           }
           
           // תמיד נשתמש בנתונים מ-Shopify כי זה המצב האמיתי
-          // אבל נוודא שיש את כל הפריטים שהוספנו
-          set({ items: loadedItems });
+          setItems(loadedItems);
         }
+        // אם קיבלנו מערך ריק - נשאיר את העדכון האופטימי (newItems)
       }
     } catch (err) {
       // במקרה שגיאה, נחזיר את המצב הקודם
-      set({ items });
+      setItems(freshItems);
       updateInProgress = false;
       set({ isUpdating: false });
     } finally {
@@ -432,7 +497,7 @@ export const useCartStore = create<CartStore>()((set, get) => ({
     const newItems = items.filter((i) => i.variantId !== variantId);
     
     // עדכון הסטייט המקומי
-    set({ items: newItems });
+    setItems(newItems);
     
     // טיפול במקרה שהעגלה התרוקנה לגמרי
     if (newItems.length === 0) {
@@ -548,7 +613,7 @@ export const useCartStore = create<CartStore>()((set, get) => ({
       i.variantId === variantId ? { ...i, quantity } : i
     );
     
-    set({ items: newItems });
+    setItems(newItems);
     
     try {
       // אם המשתמש מחובר, נשלח גם buyerIdentity
@@ -585,12 +650,14 @@ export const useCartStore = create<CartStore>()((set, get) => ({
       updateInProgress = false; // חייבים לסיים לפני loadFromShopify
       if (newCartId || cartId) {
         const loadedItems = await loadCartFromShopify(newCartId || cartId!);
-        if (loadedItems) {
+        // רק נעדכן אם קיבלנו פריטים מהשרת - לא נדרוס עם מערך ריק
+        if (loadedItems && loadedItems.length > 0) {
           // בדיקה נוספת: אם Shopify תיקן את הכמות, נשתמש בערך שלו
           const updatedItem = loadedItems.find(i => i.variantId === variantId);
           if (updatedItem && updatedItem.quantity !== quantity) {
           }
-          set({ items: loadedItems, cartId: newCartId || cartId });
+          setItems(loadedItems);
+          set({ cartId: newCartId || cartId });
           // תמיד שומרים את ה-cartId ב-localStorage כשטוענים את העגלה
           if (newCartId || cartId) {
             saveCartIdToLocalStorage(newCartId || cartId);
@@ -599,14 +666,15 @@ export const useCartStore = create<CartStore>()((set, get) => ({
       }
     } catch (err) {
       // במקרה שגיאה, נחזיר את המצב הקודם
-      set({ items });
+      setItems(items);
       updateInProgress = false;
     }
   },
   
   clearCart: () => {
     // עדכון מקומי
-    set({ items: [], cartId: null });
+    setItems([]);
+    set({ cartId: null });
     saveCartIdToLocalStorage(null);
     
     // אם רוצים לנקות גם בשרת (אופציונלי אך מומלץ)
@@ -626,4 +694,4 @@ export const useCartStore = create<CartStore>()((set, get) => ({
   getItemCount: () => {
     return get().items.reduce((count, item) => count + item.quantity, 0);
   },
-}));
+}});
