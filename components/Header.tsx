@@ -70,6 +70,8 @@ export default function Header() {
             className="md:hidden flex items-center justify-center w-8 h-8 shrink-0"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? 'סגור תפריט' : 'פתח תפריט'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-menu"
           >
             <Menu size={22} aria-hidden="true" />
           </button>
@@ -100,6 +102,7 @@ export default function Header() {
         <nav 
             id="mobile-menu" 
             className="md:hidden border-t border-black/10 bg-white absolute w-full left-0 top-full h-[calc(100dvh-100%)] z-50 overflow-y-auto pb-20"
+            aria-label="תפריט נייד"
         >
           <div className="flex flex-col gap-6 pt-8 text-center px-6">
             <Link href="/products" className="text-lg tracking-widest uppercase hover:opacity-70 border-b border-gray-50 pb-4" onClick={() => setMobileMenuOpen(false)}>

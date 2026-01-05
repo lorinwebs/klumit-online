@@ -885,8 +885,8 @@ export default function CheckoutPage() {
       <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
         <Header />
         <main className="flex-grow max-w-4xl mx-auto px-4 py-12 md:py-20 w-full">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a1a1a] mx-auto"></div>
+          <div className="text-center" role="status" aria-live="polite">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1a1a1a] mx-auto" aria-hidden="true"></div>
             <p className="text-sm font-light text-gray-600 mt-4">טוען פרטים...</p>
           </div>
         </main>

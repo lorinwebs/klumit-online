@@ -99,8 +99,8 @@ export default function UserMenu() {
         className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6 min-w-[24px] shrink-0"
         aria-label="התחברות"
       >
-        <UserIcon size={22} className={`text-[#1a1a1a] ${loading ? 'opacity-50' : ''}`} />
-        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gray-400 rounded-full border border-white" />
+        <UserIcon size={22} className={`text-[#1a1a1a] ${loading ? 'opacity-50' : ''}`} aria-hidden="true" />
+        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gray-400 rounded-full border border-white" aria-hidden="true" />
       </Link>
     );
   }
@@ -111,8 +111,8 @@ export default function UserMenu() {
       className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6 min-w-[24px] shrink-0"
       aria-label="החשבון שלי"
     >
-      <UserIcon size={22} className="text-[#1a1a1a]" />
-      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />
+      <UserIcon size={22} className="text-[#1a1a1a]" aria-hidden="true" />
+      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" aria-hidden="true" />
     </Link>
   );
 }
