@@ -28,15 +28,14 @@ export default function Header() {
           </Link>
           
           <nav className="hidden md:flex items-center gap-8" aria-label="תפריט ניווט ראשי">
-            <Link href="/" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
-              בית
-            </Link>
             <Link href="/products" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
               תיקים
             </Link>
+            <span className="w-px h-4 bg-gray-300" />
             <Link href="/products?tab=belts" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
               חגורות
             </Link>
+            <span className="w-px h-4 bg-gray-300" />
             <Link href="/about" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
               אודות
             </Link>
