@@ -268,18 +268,7 @@ export default function FeaturedProducts() {
           </p>
         </motion.div>
 
-        {/* Products with Vertical Scroll Animation */}
-        <div className="space-y-32 md:space-y-48">
-          {products.map((product, index) => (
-            <FeaturedProductItem
-              key={product.id}
-              product={product}
-              index={index}
-              totalProducts={products.length}
-              scrollYProgress={scrollYProgress}
-            />
-          ))}
-        </div>
+
 
         {/* All Collection Button - Centered */}
         <motion.div

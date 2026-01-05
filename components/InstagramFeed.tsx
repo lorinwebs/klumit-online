@@ -80,7 +80,12 @@ export default function InstagramFeed() {
 
         {/* Mobile - Single post with navigation */}
         <div className="md:hidden">
-          <div className="relative mx-auto" style={{ maxWidth: '350px' }}>
+          <div
+            className="relative mx-auto"
+            style={{ maxWidth: '350px' }}
+            onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+            onTouchEnd={(e) => { touchEndX.current = e.changedTouches[0].clientX; handleSwipe(); }}
+          >
             {INSTAGRAM_POSTS.map((postUrl, index) => (
               <div
                 key={index}
