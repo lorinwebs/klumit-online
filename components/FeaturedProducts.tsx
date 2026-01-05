@@ -128,23 +128,12 @@ function FeaturedProductItem({ product, index, totalProducts, scrollYProgress }:
             />
           )}
           
-          <div className="flex flex-col gap-4">
-            <Link
-              href={`/products/${product.handle}`}
-              className="inline-block border border-[#1a1a1a] text-[#1a1a1a] px-8 md:px-10 py-3 md:py-4 text-xs md:text-sm tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury text-center w-fit"
-            >
-              צפה בפרטים
-            </Link>
-
-            {index === totalProducts - 1 && (
-              <Link
-                href="/products"
-                className="inline-block border border-gray-300 text-gray-600 px-8 md:px-10 py-3 md:py-4 text-xs md:text-sm tracking-luxury uppercase font-light hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-luxury text-center w-fit"
-              >
-                כל הקולקציה
-              </Link>
-            )}
-          </div>
+          <Link
+            href={`/products/${product.handle}`}
+            className="inline-block border border-[#1a1a1a] text-[#1a1a1a] px-8 md:px-10 py-3 md:py-4 text-xs md:text-sm tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury text-center w-fit"
+          >
+            צפה בפרטים
+          </Link>
         </motion.div>
       </div>
     </motion.div>
@@ -209,7 +198,7 @@ export default function FeaturedProducts() {
   }
 
   return (
-    <section ref={containerRef} className="w-full bg-white py-20 md:py-32 relative overflow-hidden">
+    <section ref={containerRef} className="w-full bg-white pt-20 md:pt-32 pb-10 md:pb-16 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <motion.div
@@ -242,6 +231,22 @@ export default function FeaturedProducts() {
             />
           ))}
         </div>
+
+        {/* All Collection Button - Centered */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mt-24 md:mt-32"
+        >
+          <Link
+            href="/products"
+            className="inline-block border border-[#1a1a1a] text-[#1a1a1a] px-10 md:px-14 py-4 md:py-5 text-sm md:text-base tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury"
+          >
+            כל הקולקציה
+          </Link>
+        </motion.div>
 
         {/* Scroll Indicator - fades out after scrolling 15% */}
         <motion.div
