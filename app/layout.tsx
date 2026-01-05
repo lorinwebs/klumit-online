@@ -19,6 +19,9 @@ const siteUrl = 'https://www.klumit-online.co.il';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  icons: {
+    icon: '/favicon.svg',
+  },
   title: {
     default: 'קלומית - תיקים יוקרתיים מאיטליה | Klumit',
     template: '%s | קלומית - Klumit',

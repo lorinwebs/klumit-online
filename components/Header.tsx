@@ -76,6 +76,16 @@ export default function Header() {
         </div>
       </nav>
 
+      {/* --- באנר השקה --- */}
+      <a 
+        href="https://www.instagram.com/klomit/" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="w-full bg-black text-white text-center py-2 text-xs md:text-sm tracking-wide block hover:bg-gray-900 transition-colors"
+      >
+        🎉 לרגל השקת האתר - קופון מחכה לכם בדף האינסטגרם שלנו!
+      </a>
+
       {/* --- שורה תחתונה למובייל בלבד (פס קטגוריות) --- */}
       {/* תיקון קריטי לאייפון:
           1. h-10: קבעתי גובה סופי וקבוע (40px) במקום padding.
