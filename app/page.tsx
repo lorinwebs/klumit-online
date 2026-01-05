@@ -4,10 +4,6 @@ import Hero from '@/components/Hero';
 import FeaturedProducts from '@/components/FeaturedProducts';
 import InstagramFeed from '@/components/InstagramFeed';
 
-// מונע cache של הדף - תמיד יטען מחדש
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">

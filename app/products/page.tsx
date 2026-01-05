@@ -89,11 +89,10 @@ function ProductsContent() {
     <>
       {/* Products Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto" role="status" aria-label="טוען מוצרים">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="bg-gray-200 animate-pulse aspect-[4/5]" aria-hidden="true" />
+            <div key={i} className="bg-gray-200 animate-pulse aspect-[4/5]" />
           ))}
-          <span className="sr-only">טוען מוצרים...</span>
         </div>
       ) : products.length === 0 ? (
         <div className="max-w-7xl mx-auto text-center py-20">

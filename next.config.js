@@ -14,19 +14,6 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, must-revalidate',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-        ],
-      },
-      {
         source: '/:path*',
         headers: [
           {

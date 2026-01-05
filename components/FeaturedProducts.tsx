@@ -12,7 +12,6 @@ interface Product {
   handle: string;
   description?: string;
   descriptionHtml?: string;
-  updatedAt?: string;
   priceRange: {
     minVariantPrice: {
       amount: string;
@@ -144,8 +143,6 @@ function FeaturedProductItem({ product, index, totalProducts, scrollYProgress }:
 export default function FeaturedProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [debugLog, setDebugLog] = useState<string[]>([]);
-  const [showDebug, setShowDebug] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -158,71 +155,13 @@ export default function FeaturedProducts() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        // Query with sortKey and timestamp to bypass cache
-        const PRODUCTS_QUERY_NOCACHE = `
-          query getProducts($first: Int!) {
-            products(first: $first, sortKey: UPDATED_AT, reverse: true) {
-              edges {
-                node {
-                  id
-                  title
-                  handle
-                  description
-                  descriptionHtml
-                  productType
-                  updatedAt
-                  priceRange {
-                    minVariantPrice {
-                      amount
-                      currencyCode
-                    }
-                  }
-                  images(first: 5) {
-                    edges {
-                      node {
-                        url
-                        altText
-                      }
-                    }
-                  }
-                  variants(first: 10) {
-                    edges {
-                      node {
-                        id
-                        title
-                        price {
-                          amount
-                          currencyCode
-                        }
-                        availableForSale
-                        quantityAvailable
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        `;
-        
-        // Add cache-busting query parameter
-        const cacheBuster = `_cb=${Date.now()}`;
-        setDebugLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] Fetching with cacheBuster: ${cacheBuster}`]);
-        
         const data = await shopifyClient.request<{
           products: { edges: Array<{ node: Product }> };
-        }>(PRODUCTS_QUERY_NOCACHE + `# ${cacheBuster}`, {
+        }>(PRODUCTS_QUERY, {
           first: 50,
         });
-        
-        // Log what we got from Shopify
+        // Take only first 4-5 products
         const allProducts = data.products.edges.map((edge) => edge.node);
-        setDebugLog(prev => [
-          ...prev, 
-          `[${new Date().toLocaleTimeString()}] Got ${allProducts.length} products:`,
-          ...allProducts.slice(0, 5).map((p, i) => `  ${i+1}. "${p.title}" (updated: ${(p as any).updatedAt || 'N/A'})`)
-        ]);
-        
         setProducts(allProducts.slice(0, 5));
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -260,20 +199,6 @@ export default function FeaturedProducts() {
 
   return (
     <section ref={containerRef} className="w-full bg-white pt-20 md:pt-32 pb-10 md:pb-16 relative overflow-hidden">
-      {/* DEBUG OVERLAY */}
-      {showDebug && (
-        <div className="fixed top-20 left-2 right-2 md:left-auto md:right-4 md:w-96 bg-black/90 text-green-400 p-3 rounded-lg z-[9999] max-h-[50vh] overflow-y-auto text-xs font-mono">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-white font-bold">🔍 DEBUG LOG</span>
-            <button onClick={() => setShowDebug(false)} className="text-red-400 text-lg">✕</button>
-          </div>
-          {debugLog.map((log, i) => (
-            <div key={i} className="py-0.5 border-b border-green-900/30">{log}</div>
-          ))}
-          {debugLog.length === 0 && <div className="text-gray-500">Loading...</div>}
-        </div>
-      )}
-      
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <motion.div
@@ -298,7 +223,7 @@ export default function FeaturedProducts() {
         <div className="space-y-32 md:space-y-48">
           {products.map((product, index) => (
             <FeaturedProductItem
-              key={`x-${product.id}`}
+              key={product.id}
               product={product}
               index={index}
               totalProducts={products.length}
