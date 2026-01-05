@@ -202,9 +202,11 @@ export default function FeaturedProducts() {
           }
         `;
         
+        // Add cache-busting query parameter
+        const cacheBuster = `_cb=${Date.now()}`;
         const data = await shopifyClient.request<{
           products: { edges: Array<{ node: Product }> };
-        }>(PRODUCTS_QUERY_NOCACHE, {
+        }>(PRODUCTS_QUERY_NOCACHE + `# ${cacheBuster}`, {
           first: 50,
         });
         // Take only first 4-5 products

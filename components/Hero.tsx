@@ -35,7 +35,7 @@ export default function Hero() {
             transition={{ delay: 0.2, duration: 0.8 }}
             className="text-3xl md:text-5xl lg:text-6xl mb-4 font-light tracking-luxury leading-tight luxury-font"
           >
-            קלומית
+            קלומית 
           </motion.h1>
           
           {/* Mobile Layout */}
