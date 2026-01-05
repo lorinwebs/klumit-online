@@ -16,6 +16,7 @@
     "@shopify/hydrogen-react": "^2024.1.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.39.0",
+    "@vercel/analytics": "^1.6.1",
     "framer-motion": "^10.16.5",
     "graphql": "^16.8.1",
     "graphql-request": "^6.1.0",
