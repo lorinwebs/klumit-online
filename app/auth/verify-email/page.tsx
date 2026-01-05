@@ -107,7 +107,7 @@ function VerifyEmailContent() {
             });
 
             if (updateError) {
-              console.error('Error updating email:', updateError);
+              // ignore
             }
           } else if (session.user.user_metadata?.email && session.user.user_metadata.email !== session.user.email) {
             // אם יש אימייל ב-user_metadata שעדיין לא עודכן ב-user.email, עדכן אותו

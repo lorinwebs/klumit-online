@@ -112,7 +112,6 @@ export async function POST(request: NextRequest) {
 
     if (result.customerUpdate.userErrors.length > 0) {
       const errors = result.customerUpdate.userErrors.map(e => e.message).join(', ');
-      console.error('Shopify customer update errors:', errors);
       return NextResponse.json({ error: errors }, { status: 400 });
     }
 
@@ -122,7 +121,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Error updating Shopify customer:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

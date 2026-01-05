@@ -76,7 +76,7 @@ function ProductsContent() {
         });
         setProducts(data.products.edges.map((edge) => edge.node));
       } catch (error) {
-        console.error('Error fetching products:', error);
+        // ignore
       } finally {
         setLoading(false);
       }

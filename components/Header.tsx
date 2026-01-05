@@ -57,10 +57,10 @@ export default function Header() {
           <Link 
             href="/cart" 
             className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-8 h-8 shrink-0"
-            aria-label={itemCount > 0 ? `סל קניות (${itemCount} פריטים)` : 'סל קניות'}
+            aria-label={mounted && itemCount > 0 ? `סל קניות (${itemCount} פריטים)` : 'סל קניות'}
           >
             <ShoppingBag size={22} className="text-[#1a1a1a]" aria-hidden="true" />
-            {itemCount > 0 && (
+            {mounted && itemCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-[#1a1a1a] text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-light" aria-hidden="true">
                 {itemCount}
               </span>

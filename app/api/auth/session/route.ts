@@ -17,7 +17,6 @@ export async function GET() {
       user
     });
   } catch (error) {
-    console.error('Error getting user from cookies:', error);
     return NextResponse.json({ session: null, user: null }, { status: 500 });
   }
 }

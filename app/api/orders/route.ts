@@ -86,7 +86,6 @@ export async function GET(request: NextRequest) {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session?.user) {
-        console.error('❌ Session error:', sessionError);
         return NextResponse.json(
           { error: 'לא מחובר', details: 'Auth session missing!' },
           { status: 401 }
@@ -167,11 +166,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ orders });
   } catch (error: any) {
-    console.error('❌ Error fetching user orders:', error);
-    
     // אם יש שגיאות על PII, נחזיר רשימה ריקה
     if (error.response?.errors?.some((e: any) => e.extensions?.code === 'ACCESS_DENIED')) {
-      console.warn('⚠️ Access denied for PII - returning empty orders list');
       return NextResponse.json({ orders: [] });
     }
     

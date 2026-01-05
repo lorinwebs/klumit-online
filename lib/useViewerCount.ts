@@ -7,16 +7,16 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 const CHANNEL_NAME = 'presence:klumit-ecom';
 const PRESENCE_TIMEOUT = 15000; // 15 seconds - אם מישהו לא עדכן במשך 15 שניות, הוא לא נספר
 
-// קבלת או יצירת session ID ייחודי לכל טאב
+// קבלת או יצירת session ID ייחודי לכל משתמש (משותף לכל הטאבים)
 function getSessionId(): string {
   if (typeof window === 'undefined') return '';
   
   const storageKey = 'klumit-viewer-session';
-  let sessionId = sessionStorage.getItem(storageKey);
+  let sessionId = localStorage.getItem(storageKey);
   
   if (!sessionId) {
     sessionId = crypto.randomUUID();
-    sessionStorage.setItem(storageKey, sessionId);
+    localStorage.setItem(storageKey, sessionId);
   }
   
   return sessionId;

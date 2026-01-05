@@ -176,7 +176,7 @@ export default function FeaturedProducts() {
         const allProducts = data.products.edges.map((edge) => edge.node);
         setProducts(allProducts.slice(0, 5));
       } catch (error) {
-        console.error('Error fetching products:', error);
+        // ignore
       } finally {
         setLoading(false);
       }

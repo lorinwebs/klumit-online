@@ -182,7 +182,7 @@ export default function AccountClient({
       // נקה גם בצד השרת (עוגיות)
       await fetch('/api/auth/logout', { method: 'POST' });
     } catch (error) {
-      console.error('Logout error:', error);
+      // ignore
     }
     router.push('/');
     router.refresh();

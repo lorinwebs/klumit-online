@@ -69,13 +69,11 @@ interface Order {
 async function getOrdersByCustomerId(shopifyCustomerId: string): Promise<Order[]> {
   const adminApiToken = process.env.SHOPIFY_ADMIN_API_TOKEN;
   if (!adminApiToken) {
-    console.warn('⚠️ Shopify Admin API Token not found');
     return [];
   }
 
   const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN;
   if (!domain) {
-    console.warn('⚠️ Shopify Store Domain not found');
     return [];
   }
 
@@ -121,13 +119,11 @@ async function getOrdersByCustomerId(shopifyCustomerId: string): Promise<Order[]
 async function getOrdersByEmail(email: string): Promise<Order[]> {
   const adminApiToken = process.env.SHOPIFY_ADMIN_API_TOKEN;
   if (!adminApiToken) {
-    console.warn('⚠️ Shopify Admin API Token not found');
     return [];
   }
 
   const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN;
   if (!domain) {
-    console.warn('⚠️ Shopify Store Domain not found');
     return [];
   }
 

@@ -150,9 +150,7 @@ export async function verifyOtpServer(prevState: any, formData: FormData) {
     
     // שלח הודעת טלגרם על משתמש חדש
     if (isNewUser && user && phone) {
-      notifyNewUser(phone, user.id).catch(err => 
-        console.error('Failed to send Telegram notification:', err)
-      );
+      notifyNewUser(phone, user.id).catch(() => {});
     }
     
     // סנכרון Shopify Customer הוסר - נעשה בנפרד
@@ -234,7 +232,6 @@ export async function updateUserProfile(data: {
     });
 
     if (error) {
-      console.error('❌ updateUserProfile Supabase error:', error);
       return { success: false, error: error.message };
     }
 
@@ -293,20 +290,16 @@ export async function updateUserProfile(data: {
           });
 
           if (result.customerUpdate.userErrors.length > 0) {
-            const errors = result.customerUpdate.userErrors.map(e => e.message).join(', ');
-            console.warn('⚠️ Shopify customer update errors:', errors);
             // לא נכשיל את כל הפעולה - Supabase כבר עודכן
           }
         }
       } catch (shopifyError: any) {
-        console.warn('⚠️ Could not update Shopify customer:', shopifyError.message);
         // לא נכשיל את כל הפעולה - Supabase כבר עודכן
       }
     }
 
     return { success: true };
   } catch (err: any) {
-    console.error('❌ updateUserProfile exception:', err);
     return { success: false, error: err?.message || 'שגיאה בעדכון הפרופיל' };
   }
 }

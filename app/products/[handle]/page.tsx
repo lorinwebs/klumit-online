@@ -121,7 +121,6 @@ export default async function ProductPage({ params }: PageProps) {
       // Filter out current product
       relatedProducts = allProducts.filter((p) => p.id !== productData.product.id);
     } catch (error) {
-      console.error('Error fetching related products:', error);
       // Continue without related products
     }
 
@@ -133,7 +132,6 @@ export default async function ProductPage({ params }: PageProps) {
       </div>
     );
   } catch (error) {
-    console.error('Error fetching product:', error);
     notFound();
   }
 }

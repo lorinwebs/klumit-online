@@ -505,14 +505,14 @@ export default function CheckoutPage() {
               };
               
               if (addressResponse.cartDeliveryAddressesAdd?.userErrors?.length) {
-                console.error('Address add errors:', addressResponse.cartDeliveryAddressesAdd.userErrors);
+                // ignore errors
               }
               
               if (addressResponse.cartDeliveryAddressesAdd?.cart?.checkoutUrl) {
                 checkoutUrl = addressResponse.cartDeliveryAddressesAdd.cart.checkoutUrl;
               }
             } catch (addressError: any) {
-              console.error('Failed to add delivery address:', addressError);
+              // ignore
             }
             
             // ה-cart ID יתעדכן אוטומטית כשטוענים את העגלה
@@ -650,14 +650,14 @@ export default function CheckoutPage() {
           };
           
           if (identityResponse.cartBuyerIdentityUpdate?.userErrors?.length) {
-            console.error('Buyer identity errors:', identityResponse.cartBuyerIdentityUpdate.userErrors);
+            // ignore errors
           }
           
           if (identityResponse.cartBuyerIdentityUpdate?.cart?.checkoutUrl) {
             checkoutUrl = identityResponse.cartBuyerIdentityUpdate.cart.checkoutUrl;
           }
         } catch (identityError: any) {
-          console.error('Failed to update buyer identity:', identityError);
+          // ignore
         }
 
         // Step 2: Add delivery address using new mutation (2025-01+)
@@ -686,17 +686,15 @@ export default function CheckoutPage() {
             };
           };
           
-          console.log('Address add response:', JSON.stringify(addressResponse, null, 2));
-          
           if (addressResponse.cartDeliveryAddressesAdd?.userErrors?.length) {
-            console.error('Address errors:', addressResponse.cartDeliveryAddressesAdd.userErrors);
+            // ignore errors
           }
           
           if (addressResponse.cartDeliveryAddressesAdd?.cart?.checkoutUrl) {
             checkoutUrl = addressResponse.cartDeliveryAddressesAdd.cart.checkoutUrl;
           }
         } catch (addressError: any) {
-          console.error('Failed to add delivery address:', addressError);
+          // ignore
         }
 
         // Step 3: Apply discount code if exists
@@ -755,7 +753,6 @@ export default function CheckoutPage() {
           // Verify identity was updated - if still anonymous, create fresh cart
           const cartEmail = checkoutResponse.cart?.buyerIdentity?.email;
           if (cartEmail && (cartEmail.includes('anonymous') || cartEmail.includes('example.com'))) {
-            console.warn('Cart still has anonymous email, creating fresh cart');
             
             // Create new cart with proper identity
             const freshCartResponse = await shopifyClient.request(CREATE_CART_MUTATION, {
@@ -807,7 +804,7 @@ export default function CheckoutPage() {
                   checkoutUrl = addressResponse.cartDeliveryAddressesAdd.cart.checkoutUrl;
                 }
               } catch (addressError: any) {
-                console.error('Failed to add address to fresh cart:', addressError);
+                // ignore
               }
             }
           } else {

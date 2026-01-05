@@ -130,7 +130,7 @@ export default function AddressAutocomplete({
 
       setIsLoaded(true);
     } catch (error) {
-      console.error('שגיאה ביצירת Autocomplete:', error);
+      // ignore
     }
   }, [handlePlaceSelect]);
 
@@ -138,7 +138,6 @@ export default function AddressAutocomplete({
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     
     if (!apiKey) {
-      console.warn('Google Maps API key לא מוגדר');
       return;
     }
 
@@ -181,7 +180,7 @@ export default function AddressAutocomplete({
     };
     
     script.onerror = () => {
-      console.error('שגיאה בטעינת Google Maps API');
+      // ignore
     };
     
     document.head.appendChild(script);
