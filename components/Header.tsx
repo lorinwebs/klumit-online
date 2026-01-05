@@ -77,12 +77,12 @@ export default function Header() {
       </nav>
 
       {/* --- שורה תחתונה למובייל בלבד (פס קטגוריות) --- */}
-      <div className="md:hidden w-full flex items-center justify-center gap-4 py-2 border-t border-gray-100 bg-white">
-        <Link href="/products" className="text-xs font-medium tracking-widest uppercase text-[#1a1a1a] hover:opacity-70 whitespace-nowrap">
+      <div className="md:hidden w-full flex items-center justify-center gap-3 h-8 border-t border-gray-100 bg-white">
+        <Link href="/products" className="text-[11px] font-medium tracking-wider uppercase text-[#1a1a1a] hover:opacity-70 whitespace-nowrap leading-none">
           תיקים
         </Link>
-        <span className="w-px h-3 bg-gray-300 shrink-0" />
-        <Link href="/products?tab=belts" className="text-xs font-medium tracking-widest uppercase text-[#1a1a1a] hover:opacity-70 whitespace-nowrap">
+        <span className="w-px h-2.5 bg-gray-300 shrink-0" />
+        <Link href="/products?tab=belts" className="text-[11px] font-medium tracking-wider uppercase text-[#1a1a1a] hover:opacity-70 whitespace-nowrap leading-none">
           חגורות
         </Link>
       </div>
