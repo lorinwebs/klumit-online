@@ -12,6 +12,7 @@ interface Product {
   handle: string;
   description?: string;
   descriptionHtml?: string;
+  updatedAt?: string;
   priceRange: {
     minVariantPrice: {
       amount: string;
@@ -219,7 +220,7 @@ export default function FeaturedProducts() {
         setDebugLog(prev => [
           ...prev, 
           `[${new Date().toLocaleTimeString()}] Got ${allProducts.length} products:`,
-          ...allProducts.slice(0, 5).map((p, i) => `  ${i+1}. "${p.title}" (updated: ${p.updatedAt})`)
+          ...allProducts.slice(0, 5).map((p, i) => `  ${i+1}. "${p.title}" (updated: ${(p as any).updatedAt || 'N/A'})`)
         ]);
         
         setProducts(allProducts.slice(0, 5));
