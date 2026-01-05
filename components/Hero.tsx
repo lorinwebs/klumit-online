@@ -12,7 +12,7 @@ export default function Hero() {
         src="/cover.jpeg"
         alt="קלומית - מוצרי עור מאיטליה"
         fill
-        className="object-cover object-center"
+        className="object-cover"
         priority
         quality={90}
         sizes="100vw"
@@ -51,7 +51,7 @@ export default function Hero() {
             transition={{ delay: 0.5, duration: 0.8 }}
             className="text-base md:text-lg mb-10 font-light opacity-90"
           >
-            יבואנים בלעדיים של RENATO ANGI VENEZIA ו-CARLINO GROUP VENEZIA
+            יבואנים בלעדיים של <strong>RENATO ANGI VENEZIA</strong> ו-<strong>CARLINO GROUP VENEZIA</strong>
           </motion.p>
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
