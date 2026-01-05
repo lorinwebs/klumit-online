@@ -116,7 +116,7 @@ export default function InstagramFeed() {
               <div
                 key={index}
                 data-slide={index}
-                className="snap-center shrink-0 w-[85vw] max-w-[350px]"
+                className="snap-center shrink-0 w-[85vw] max-w-[350px] relative overflow-hidden"
               >
                 <blockquote
                   className="instagram-media"
@@ -132,6 +132,7 @@ export default function InstagramFeed() {
                     padding: 0,
                     width: '100%',
                     minHeight: 480,
+                    position: 'relative',
                   }}
                 />
               </div>

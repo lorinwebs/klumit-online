@@ -293,3 +293,13 @@ textarea:focus-visible,
   -webkit-overflow-scrolling: touch;
 }
 
+/* Fix Instagram embeds on Android */
+.instagram-media,
+.instagram-media-rendered,
+.instagram-media iframe {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
