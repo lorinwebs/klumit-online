@@ -96,11 +96,11 @@ export default function UserMenu() {
     return (
       <Link
         href="/auth/login"
-        className="relative p-1.5 md:p-2 hover:opacity-70 transition-opacity"
+        className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6"
         aria-label="התחברות"
       >
-        <UserIcon size={20} className={`md:w-[22px] md:h-[22px] text-[#1a1a1a] ${loading ? 'opacity-50' : ''}`} />
-        <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-gray-400 rounded-full border border-white" />
+        <UserIcon size={22} className={`text-[#1a1a1a] ${loading ? 'opacity-50' : ''}`} />
+        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gray-400 rounded-full border border-white" />
       </Link>
     );
   }
@@ -108,11 +108,11 @@ export default function UserMenu() {
   return (
     <Link
       href="/account"
-      className="relative p-1.5 md:p-2 hover:opacity-70 transition-opacity"
+      className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6"
       aria-label="החשבון שלי"
     >
-      <UserIcon size={20} className="md:w-[22px] md:h-[22px] text-[#1a1a1a]" />
-      <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />
+      <UserIcon size={22} className="text-[#1a1a1a]" />
+      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />
     </Link>
   );
 }

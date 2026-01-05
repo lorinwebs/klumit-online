@@ -45,15 +45,15 @@ export default function Header() {
         </nav>
 
         {/* צד שמאל - אייקונים */}
-        <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
+        <div className="flex items-center gap-4 md:gap-4 flex-shrink-0">
           <UserMenu />
           
           <Link 
             href="/cart" 
-            className="relative hover:opacity-70 transition-opacity flex items-center"
+            className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6"
             aria-label={`סל קניות${mounted && itemCount > 0 ? ` (${itemCount} פריטים)` : ''}`}
           >
-            <ShoppingBag size={20} className="md:w-[22px] md:h-[22px] text-[#1a1a1a]" aria-hidden="true" />
+            <ShoppingBag size={22} className="text-[#1a1a1a]" aria-hidden="true" />
             {mounted && itemCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-[#1a1a1a] text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-light" aria-hidden="true">
                 {itemCount}
@@ -62,7 +62,7 @@ export default function Header() {
           </Link>
           
           <button
-            className="md:hidden flex items-center justify-center p-1"
+            className="md:hidden flex items-center justify-center w-6 h-6"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? 'סגור תפריט' : 'פתח תפריט'}
           >
