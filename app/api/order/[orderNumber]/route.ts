@@ -102,10 +102,6 @@ export async function GET(
 ) {
   try {
     if (!shopifyAdminClient) {
-      console.error('❌ Shopify Admin API לא מוגדר');
-      console.error('נסה להגדיר ב-.env.local:');
-      console.error('  SHOPIFY_ADMIN_API_TOKEN=shpat_xxxxx');
-      console.error('  (לא NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN - זה לא יעבוד)');
       return NextResponse.json(
         { 
           error: 'Admin API לא מוגדר. נדרש SHOPIFY_ADMIN_API_TOKEN (מתחיל ב-shpat_) עם הרשאה read_orders',
@@ -115,30 +111,14 @@ export async function GET(
       );
     }
     
-    // בדיקה שהטוקן תקין
-    const token = process.env.SHOPIFY_ADMIN_API_TOKEN;
-    if (token && !token.startsWith('shpat_')) {
-      console.error('❌ Token לא נראה כמו Admin API token (חייב להתחיל ב-shpat_)');
-      console.error('Token מתחיל ב:', token.substring(0, 5));
-    } else if (token) {
-      console.log('✅ Admin API token נמצא ומתחיל ב-shpat_');
-    }
-
     const { orderNumber } = await params;
     
     // הסרת # אם קיים
     const cleanOrderNumber = orderNumber.replace('#', '').trim();
     
-    console.log('🔍 Searching for order:', cleanOrderNumber);
-    console.log('🔍 Domain:', process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN);
-    console.log('🔍 Token exists:', !!process.env.SHOPIFY_ADMIN_API_TOKEN);
-    console.log('🔍 Token starts with shpat_:', process.env.SHOPIFY_ADMIN_API_TOKEN?.startsWith('shpat_'));
-    
     // חיפוש הזמנה לפי מספר הזמנה
     // Shopify משתמש בפורמט: name:1001 או name:#1001
     const query = `name:${cleanOrderNumber}`;
-    
-    console.log('📝 Query:', query);
     
     try {
       const result = await shopifyAdminClient.request<{
@@ -192,27 +172,20 @@ export async function GET(
           };
         }>;
       };
-    }>(GET_ORDER_QUERY, { query });
-      
-      console.log('✅ Query successful, found orders:', result.orders.edges.length);
+      }>(GET_ORDER_QUERY, { query });
       
       const order = result.orders.edges[0]?.node;
 
       // Shopify מחזיר שגיאות על PII ב-Basic plan, אבל גם data עם null values
       // נשתמש ב-data אם קיים, גם אם יש שגיאות חלקיות
       if (order) {
-        console.log('✅ Order found:', order.name);
         // Shopify מחזיר data גם עם שגיאות - נשתמש בו
         return NextResponse.json({ order });
       }
 
       // אם אין order, ננסה עם #
-      console.error('❌ Order not found:', cleanOrderNumber);
-      console.error('Query result:', JSON.stringify(result, null, 2));
-      
       // נסה גם עם # לפני המספר
       const queryWithHash = `name:#${cleanOrderNumber}`;
-      console.log('🔄 Trying with hash:', queryWithHash);
       
       try {
         const resultWithHash = await shopifyAdminClient.request<{
@@ -256,11 +229,10 @@ export async function GET(
         
         const orderWithHash = resultWithHash.orders.edges[0]?.node;
         if (orderWithHash) {
-          console.log('✅ Order found with hash:', orderWithHash.name);
           return NextResponse.json({ order: orderWithHash });
         }
       } catch (hashError) {
-        console.error('Error with hash query:', hashError);
+        // ignore
       }
       
       return NextResponse.json(
@@ -275,15 +247,10 @@ export async function GET(
         { status: 404 }
       );
     } catch (queryError: any) {
-      console.error('❌ GraphQL Query Error:', queryError);
-      console.error('Error message:', queryError.message);
-      console.error('Error response:', queryError.response);
-      
       // Shopify מחזיר שגיאות על PII, אבל גם data
       // נבדוק אם יש data למרות השגיאות
       if (queryError.response?.data?.orders?.edges?.[0]?.node) {
         const order = queryError.response.data.orders.edges[0].node;
-        console.log('✅ Order found despite errors (PII restrictions):', order.name);
         return NextResponse.json({ order });
       }
       
@@ -291,14 +258,6 @@ export async function GET(
       throw queryError;
     }
   } catch (error: any) {
-    console.error('❌ Error fetching order:', error);
-    console.error('Error details:', {
-      message: error.message,
-      response: error.response,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-    });
-    
     // אם זו שגיאת 401/403, זה אומר שה-token לא תקין או אין הרשאות
     if (error.response?.status === 401 || error.response?.status === 403) {
       return NextResponse.json(

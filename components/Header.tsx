@@ -20,8 +20,8 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-black/10 overflow-x-hidden">
-      <nav className="container mx-auto px-2 md:px-4 py-3 md:py-4 max-w-full">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-black/10 w-full max-w-[100vw] overflow-x-hidden">
+      <nav className="w-full px-3 md:px-6 py-3 md:py-4">
         <div className="flex items-center justify-between w-full">
           <Link href="/" className="text-xl md:text-2xl luxury-font font-light tracking-luxury text-[#1a1a1a] flex-shrink-0">
             Klumit

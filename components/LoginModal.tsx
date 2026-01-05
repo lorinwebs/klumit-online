@@ -101,7 +101,6 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       
       // שמור את המספר המנורמל ב-state לשימוש באימות
       setE164Phone(formattedPhone);
-      console.log('🟢 LoginModal handleSendCode: Normalized phone', { original: phone, normalized: formattedPhone });
       
       // הוסף timeout ל-signInWithOtp
       const sendPromise = supabase.auth.signInWithOtp({
@@ -123,7 +122,6 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       
       setStep('verify');
     } catch (err) {
-      console.error('❌ LoginModal handleSendCode: Error', err);
       if (err instanceof Error && err.message.includes('Timeout')) {
         setError('שליחת הקוד לוקחת יותר מדי זמן. אנא נסה שוב');
       } else {
@@ -142,12 +140,6 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     try {
       // השתמש במספר המנורמל שנשמר בשליחה, או ננרמל מחדש
       const phoneToVerify = e164Phone || normalizeILPhone(phone);
-      console.log('🟡 LoginModal handleVerifyCode: Calling verifyOtp', { 
-        originalPhone: phone, 
-        e164Phone, 
-        phoneToVerify, 
-        codeLength: code.length 
-      });
       
       const { data, error } = await supabase.auth.verifyOtp({
         phone: phoneToVerify,
@@ -167,7 +159,6 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         onClose();
       }
     } catch (err) {
-      console.error('❌ LoginModal handleVerifyCode: Error', err);
       let errorMessage = 'קוד שגוי';
       if (err instanceof Error) {
         if (err.message.includes('expired')) {

@@ -29,7 +29,6 @@ function verifyShopifyWebhook(body: string, signature: string | null): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('🔔 Shopify webhook received!');
   try {
     const rawBody = await request.text();
     const signature = request.headers.get('x-shopify-hmac-sha256');
@@ -40,13 +39,6 @@ export async function POST(request: NextRequest) {
     }
 
     const order = JSON.parse(rawBody);
-
-    console.log('📦 Shopify Order Webhook received:', {
-      id: order.id,
-      name: order.name,
-      email: order.email,
-      total_price: order.total_price,
-    });
 
     const customerName = order.customer
       ? `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim()

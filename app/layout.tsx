@@ -163,7 +163,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${assistant.variable} ${cormorant.variable} font-sans`}>
+      <body className={`${assistant.variable} ${cormorant.variable} font-sans overflow-x-hidden`}>
         {children}
       </body>
     </html>

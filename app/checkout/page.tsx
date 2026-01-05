@@ -104,13 +104,11 @@ export default function CheckoutPage() {
             } else {
               setUser(null);
             }
-          } catch (fallbackErr) {
-            console.error('Error in fallback session check:', fallbackErr);
-            setUser(null);
-          }
+        } catch (fallbackErr) {
+          setUser(null);
+        }
         }
       } catch (err) {
-        console.error('Error loading profile data:', err);
         setUser(null);
       } finally {
         setLoadingProfile(false);
@@ -194,7 +192,6 @@ export default function CheckoutPage() {
       }
 
       try {
-        console.log('🛒 Creating cart to apply discount code...');
         const createCartResponse = await shopifyClient.request(CREATE_CART_MUTATION, {
           cartInput: {
             lines: items.map(item => ({
@@ -220,9 +217,7 @@ export default function CheckoutPage() {
 
         // ה-cart ID יתעדכן אוטומטית כשטוענים את העגלה
         await loadFromShopify();
-        console.log('✅ Cart created for discount application:', currentCartId);
       } catch (err) {
-        console.error('Error creating cart:', err);
         setError('שגיאה ביצירת עגלה. אנא נסי שוב.');
         setApplyingDiscount(false);
         return;
@@ -280,15 +275,6 @@ export default function CheckoutPage() {
           const discount = subtotalAmount - totalAmount;
           setDiscountAmount(discount);
           setError(null);
-          console.log('✅ Discount applied:', {
-            code: discountCodeInfo.code,
-            discountAmount: discount,
-            subtotal: subtotalAmount,
-            total: totalAmount,
-            cartTotal: totalAmount,
-            cartSubtotal: subtotalAmount,
-            discountAllocations: cart.discountAllocations
-          });
         } else {
           setError('קוד קופון לא תקין או לא ניתן לשימוש');
           setAppliedDiscountCode(null);
@@ -298,7 +284,6 @@ export default function CheckoutPage() {
         }
       }
     } catch (err) {
-      console.error('Error applying discount code:', err);
       setError('שגיאה בבדיקת קוד הקופון. אנא נסי שוב.');
       setAppliedDiscountCode(null);
       setDiscountAmount(0);
@@ -355,7 +340,6 @@ export default function CheckoutPage() {
       setCartSubtotal(null);
       setError(null);
     } catch (err) {
-      console.error('Error removing discount code:', err);
       setError('שגיאה בהסרת קוד הקופון. אנא נסי שוב.');
     } finally {
       setApplyingDiscount(false);
@@ -377,11 +361,6 @@ export default function CheckoutPage() {
 
     setError(null);
     setLoading(true);
-
-    console.log('🚀 ========== CHECKOUT START ==========');
-    console.log('📦 Items:', items);
-    console.log('📋 Form Data:', formData);
-    console.log('🛒 Current Cart ID:', cartId);
 
       try {
         let currentCartId = cartId;
@@ -408,18 +387,6 @@ export default function CheckoutPage() {
             ? `+972${formData.phone.substring(1)}`
             : `+972${formData.phone}`;
 
-          console.log('🛒 Creating cart with all items and address:', {
-            itemsCount: items.length,
-            email: formData.email,
-            phone: formattedPhone,
-            address: formData.address,
-            city: formData.city,
-            zipCode: formData.zipCode,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            address2: address2 || '(empty)',
-          });
-
           try {
             // יצירת העגלה עם כל הפריטים
             // הכתובת תועדכן מיד אחרי יצירת העגלה
@@ -438,40 +405,23 @@ export default function CheckoutPage() {
               },
             }) as { cartCreate?: { cart?: { id?: string; checkoutUrl?: string }; userErrors?: Array<{ field: string[]; message: string }> } };
 
-            console.log('✅ Cart creation response:', createCartResponse);
-            console.log('📦 Cart ID:', createCartResponse.cartCreate?.cart?.id);
-            console.log('🔗 Checkout URL:', createCartResponse.cartCreate?.cart?.checkoutUrl);
-
             // בדוק אם יש שגיאות
             if (createCartResponse.cartCreate?.userErrors && createCartResponse.cartCreate.userErrors.length > 0) {
               const errors = createCartResponse.cartCreate.userErrors.map(e => e.message).join(', ');
-              console.error('❌ Shopify cart creation errors:', errors);
-              console.error('Error details:', createCartResponse.cartCreate.userErrors);
               throw new Error(`שגיאה ביצירת עגלה: ${errors}`);
             }
 
           currentCartId = createCartResponse.cartCreate?.cart?.id || null;
             checkoutUrl = createCartResponse.cartCreate?.cart?.checkoutUrl || null;
             
-            console.log('📊 Cart Creation Summary:', {
-              cartId: currentCartId,
-              checkoutUrl: checkoutUrl,
-              hasCart: !!createCartResponse.cartCreate?.cart,
-              hasErrors: !!createCartResponse.cartCreate?.userErrors?.length,
-            });
-            
             if (!currentCartId) {
-              console.error('❌ No cart ID in response:', createCartResponse);
               throw new Error('לא ניתן ליצור עגלה - Shopify לא החזיר מזהה עגלה');
             }
-
-            console.log('✅ Cart created successfully:', currentCartId);
             // ה-cart ID יתעדכן אוטומטית כשטוענים את העגלה
             await loadFromShopify();
             
             // עדכן את כתובת המשלוח מיד אחרי יצירת העגלה
             // זה מבטיח שהפרטים (שם, כתובת) יעברו ל-Checkout
-            console.log('📍 Updating delivery address immediately after cart creation...');
             try {
               const deliveryAddressResponse = await shopifyClient.request(
                 UPDATE_CART_DELIVERY_ADDRESS_MUTATION,
@@ -495,30 +445,19 @@ export default function CheckoutPage() {
                 };
               };
 
-              console.log('✅ Delivery address update response:', deliveryAddressResponse);
-
-              if (deliveryAddressResponse.cartDeliveryAddressUpdate?.userErrors && 
-                  deliveryAddressResponse.cartDeliveryAddressUpdate.userErrors.length > 0) {
-                const errors = deliveryAddressResponse.cartDeliveryAddressUpdate.userErrors.map(e => e.message).join(', ');
-                console.error('❌ Delivery address update errors:', errors);
-                console.error('Error details:', deliveryAddressResponse.cartDeliveryAddressUpdate.userErrors);
-              } else {
-                console.log('✅ Delivery address updated successfully');
+              if (!(deliveryAddressResponse.cartDeliveryAddressUpdate?.userErrors && 
+                  deliveryAddressResponse.cartDeliveryAddressUpdate.userErrors.length > 0)) {
                 // עדכן את checkoutUrl אם קיבלנו אחד חדש
                 if (deliveryAddressResponse.cartDeliveryAddressUpdate?.cart?.checkoutUrl) {
                   checkoutUrl = deliveryAddressResponse.cartDeliveryAddressUpdate.cart.checkoutUrl;
-                  console.log('🔗 Updated checkout URL from delivery address update:', checkoutUrl);
                 }
               }
             } catch (addressError: any) {
-              console.warn('⚠️ Could not update delivery address immediately:', addressError);
-              console.warn('Address error details:', addressError.message);
               // לא נזרוק שגיאה - נמשיך גם אם עדכון הכתובת נכשל
             }
             
             // אם יש קופון שהוחל, החל אותו על העגלה החדשה
             if (appliedDiscountCode) {
-              console.log('🎟️ Applying discount code to new cart:', appliedDiscountCode);
               try {
                 const discountResponse = await shopifyClient.request(
                   UPDATE_CART_DISCOUNT_CODES_MUTATION,
@@ -554,25 +493,12 @@ export default function CheckoutPage() {
                   // חישוב ההנחה המדויק כפי ש-Shopify רואה אותו
                   const discount = subtotalAmount - totalAmount;
                   setDiscountAmount(discount);
-                  console.log('✅ Discount code applied to new cart:', {
-                    discountAmount: discount,
-                    subtotal: subtotalAmount,
-                    total: totalAmount,
-                    cartSubtotal: subtotalAmount,
-                    cartTotal: totalAmount,
-                    discountAllocations: cart.discountAllocations
-                  });
                 }
               } catch (discountError) {
-                console.warn('⚠️ Could not apply discount code to new cart:', discountError);
                 // לא נזרוק שגיאה - נמשיך גם אם הקופון לא הוחל
               }
             }
           } catch (shopifyError: any) {
-            console.error('❌ Shopify API error:', shopifyError);
-            if (shopifyError.response) {
-              console.error('Shopify response:', shopifyError.response);
-            }
             if (shopifyError.message) {
               throw new Error(`שגיאה ב-Shopify: ${shopifyError.message}`);
             }
@@ -586,6 +512,7 @@ export default function CheckoutPage() {
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
+            // שמור ב-Supabase user_metadata
             await supabase.auth.updateUser({
               data: {
                 shipping_address: formData.address,
@@ -597,15 +524,36 @@ export default function CheckoutPage() {
                 phone: formData.phone,
               },
             });
+            
+            // שמור גם ב-Shopify Customer
+            try {
+              await fetch('/api/shopify/update-customer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  firstName: formData.firstName,
+                  lastName: formData.lastName,
+                  email: formData.email,
+                  phone: formData.phone,
+                  address: formData.address,
+                  city: formData.city,
+                  zipCode: formData.zipCode,
+                  apartment: formData.apartment,
+                  floor: formData.floor,
+                  notes: formData.notes,
+                }),
+              });
+            } catch (shopifyErr) {
+              // ignore
+            }
           }
         } catch (err) {
-          console.warn('Could not save address to profile:', err);
+          // ignore
         }
       }
 
       // Get Shopify Checkout URL if we don't have it yet
       if (currentCartId && !checkoutUrl) {
-        console.log('🔍 Fetching checkout URL from Shopify...');
         try {
           const checkoutResponse = await shopifyClient.request(
             `query getCart($id: ID!) {
@@ -621,16 +569,8 @@ export default function CheckoutPage() {
               checkoutUrl?: string;
             } 
           };
-          console.log('✅ Checkout URL response:', checkoutResponse);
           checkoutUrl = checkoutResponse.cart?.checkoutUrl || null;
-          console.log('🔗 Retrieved checkout URL:', checkoutUrl);
         } catch (shopifyError: any) {
-          console.error('❌ Error getting checkout URL from Shopify:', shopifyError);
-          console.error('Error details:', {
-            message: shopifyError.message,
-            response: shopifyError.response,
-            status: shopifyError.response?.status,
-          });
           // אם יש שגיאת 400, זה יכול להיות שהעגלה לא קיימת או שיש בעיה אחרת
           if (shopifyError.response?.status === 400 || shopifyError.message?.includes('400')) {
             throw new Error('שגיאה ב-Shopify: לא ניתן לקבל את קישור התשלום. אנא נסה שוב.');
@@ -642,17 +582,12 @@ export default function CheckoutPage() {
       // שמור כתובת משלוח לקנייה ספציפית ב-Supabase
       if (currentCartId) {
         const orderReference = `cart-${currentCartId.replace('gid://shopify/Cart/', '')}`;
-        console.log('💾 Saving order address to DB...');
-        console.log('📝 Order Reference:', orderReference);
         
         try {
           const { data: { session } } = await supabase.auth.getSession();
-          console.log('👤 Session:', session ? 'Exists' : 'None');
-          console.log('👤 User ID:', session?.user?.id);
           
           if (session?.user) {
             try {
-              console.log('💾 Attempting to save order address...');
               await saveOrderAddress({
                 user_id: session.user.id,
                 order_reference: orderReference,
@@ -667,64 +602,33 @@ export default function CheckoutPage() {
                 floor: formData.floor,
                 notes: formData.notes,
               });
-              console.log('✅ Order address saved successfully');
             } catch (dbError: any) {
-              console.error('❌ Error saving order address to DB:', dbError);
-              console.error('DB Error details:', {
-                message: dbError.message,
-                code: dbError.code,
-                details: dbError.details,
-                hint: dbError.hint,
-              });
               // לא נזרוק שגיאה - נמשיך גם אם השמירה נכשלה
-              if (dbError.message && !dbError.message.includes('does not exist')) {
-                console.warn('⚠️ DB error details:', dbError.message);
-              }
             }
-          } else {
-            console.warn('⚠️ No user session - skipping order address save');
           }
         } catch (err) {
           // אם הטבלה לא קיימת, זה בסדר - נמשיך
-          console.warn('⚠️ Could not save order address:', err);
         }
       }
 
       // Redirect to Shopify Checkout
-      console.log('✅ ========== CHECKOUT SUCCESS ==========');
-      console.log('🛒 Final Cart ID:', currentCartId);
-      console.log('🔗 Checkout URL:', checkoutUrl);
-      console.log('📦 Items Count:', items.length);
-      
       if (checkoutUrl) {
         // בדוק אם ה-URL מפנה לדף סיסמה
         if (checkoutUrl.includes('/password') || checkoutUrl.includes('/en/password')) {
-          console.error('❌ Checkout URL points to password page - store is password protected');
           throw new Error('החנות מוגנת בסיסמה. אנא הסר את ההגנה ב-Shopify Admin → Settings → Store availability');
         }
         
-        console.log('🔄 Redirecting to Shopify Checkout...');
-        console.log('🎯 Checkout URL:', checkoutUrl);
-        
-        // Delay redirect to allow reading console logs
+        // Redirect
         setTimeout(() => {
-          console.log('🚀 Redirecting now to:', checkoutUrl);
           window.location.href = checkoutUrl;
-        }, 5000); // 5 seconds delay
+        }, 500);
         return; // חשוב: אל תמשיך אחרי redirect
       } else if (currentCartId) {
-        console.error('❌ No checkout URL but cart exists');
         throw new Error('לא ניתן לקבל את קישור התשלום מ-Shopify');
       } else {
-        console.error('❌ No cart ID');
         throw new Error('לא ניתן ליצור עגלה - אין מזהה עגלה');
       }
     } catch (err) {
-      console.error('❌ ========== CHECKOUT ERROR ==========');
-      console.error('Error type:', err instanceof Error ? err.constructor.name : typeof err);
-      console.error('Error message:', err instanceof Error ? err.message : String(err));
-      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack');
-      console.error('Full error:', err);
       setError(err instanceof Error ? err.message : 'שגיאה ביצירת קישור תשלום. נסה שוב מאוחר יותר.');
       setLoading(false);
     }
@@ -750,12 +654,12 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#fdfcfb] overflow-hidden">
+    <div className="min-h-screen md:h-screen flex flex-col bg-[#fdfcfb] md:overflow-hidden">
       <Header />
-      <main className="flex-1 overflow-hidden">
-        <div className="h-full max-w-7xl mx-auto px-4 md:px-6 py-2 md:py-3">
-          <div className="h-full flex flex-col">
-            <div className="flex items-center justify-between mb-2 md:mb-3">
+      <main className="flex-1 md:overflow-hidden overflow-y-auto">
+        <div className="md:h-full max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-3">
+          <div className="md:h-full flex flex-col">
+            <div className="flex items-center justify-between mb-4 md:mb-3">
               <h1 className="text-lg md:text-xl font-light luxury-font text-right">
                 תשלום
               </h1>
@@ -770,9 +674,9 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            <div className="grid md:grid-cols-5 gap-3 md:gap-4 flex-1 min-h-0 overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-4 md:flex-1 md:min-h-0 md:overflow-hidden">
           {/* Checkout Form */}
-          <div className="md:col-span-3 overflow-y-auto pr-2">
+          <div className="md:col-span-3 md:overflow-y-auto md:pr-2">
             <form onSubmit={handleSubmit} className="space-y-3">
               {/* Personal Information */}
               <div className="bg-white border border-gray-200 p-4">
@@ -951,7 +855,7 @@ export default function CheckoutPage() {
 
           {/* Order Summary */}
           <div className="md:col-span-2">
-            <div className="bg-white border border-gray-200 p-5 md:p-6 h-full flex flex-col">
+            <div className="bg-white border border-gray-200 p-5 md:p-6 md:h-full flex flex-col">
               <h2 className="text-lg md:text-xl font-light luxury-font mb-4 text-right">
                 סיכום הזמנה
               </h2>

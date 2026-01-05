@@ -98,7 +98,6 @@ async function saveCartIdToMetafieldsImpl(cartId: string | null): Promise<void> 
   try {
     // בדיקה: אם זה אותו cartId שכבר נשמר, לא נשמור שוב
     if (cartId && cartId === lastSavedCartId) {
-      console.log('⏭️ saveCartIdToMetafieldsImpl: Skipping - cartId already saved', { cartId });
       return;
     }
     
@@ -120,12 +119,6 @@ async function saveCartIdToMetafieldsImpl(cartId: string | null): Promise<void> 
     const shopifyCustomerId = await getShopifyCustomerId(session.user.id, true);
     
     if (shopifyCustomerId) {
-      console.log('💾 saveCartIdToMetafieldsImpl: Saving cart ID to metafields', {
-        shopifyCustomerId,
-        cartId,
-        userId: session.user.id,
-      });
-      
       // שמור cart ID ב-metafields
       const response = await fetch('/api/cart/save-cart-id', {
         method: 'POST',
@@ -139,23 +132,7 @@ async function saveCartIdToMetafieldsImpl(cartId: string | null): Promise<void> 
       if (response.ok) {
         // נזכור את ה-cartId שנשמר כדי למנוע שמירה כפולה
         lastSavedCartId = cartId;
-        console.log('✅ saveCartIdToMetafieldsImpl: Successfully saved cart ID to metafields', {
-          shopifyCustomerId,
-          cartId,
-        });
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('❌ saveCartIdToMetafieldsImpl: Failed to save cart ID to metafields', {
-          shopifyCustomerId,
-          cartId,
-          error: errorData,
-          status: response.status,
-        });
       }
-    } else {
-      console.warn('⚠️ saveCartIdToMetafieldsImpl: No shopifyCustomerId, cannot save to metafields', {
-        userId: session.user.id,
-      });
     }
   } catch (err) {
     // שקט - לא נדפיס שגיאה כאן כי זה לא קריטי
@@ -698,8 +675,6 @@ export async function loadCartFromShopify(cartId: string): Promise<CartItem[] | 
 export async function findCartByBuyerIdentity(
   buyerIdentity: { email?: string; phone?: string }
 ): Promise<string | null> {
-  console.log('🚀 findCartByBuyerIdentity: CALLED', { buyerIdentity, isWindow: typeof window !== 'undefined' });
-  
   if (typeof window === 'undefined') return null;
 
   // קודם נבדוק אם המשתמש מחובר - אם כן, נבדוק קודם ב-metafields
@@ -716,27 +691,14 @@ export async function findCartByBuyerIdentity(
       session = data?.session || (data?.user ? { user: data.user } : null);
       isLoggedIn = !!session?.user;
     }
-    console.log('🔍 findCartByBuyerIdentity: Initial login check (from API)', {
-      isLoggedIn,
-      hasSession: !!session,
-      hasUser: !!session?.user,
-      userId: session?.user?.id,
-    });
   } catch (err) {
-    console.error('❌ findCartByBuyerIdentity: Error checking session from API', err);
     // Fallback to supabase.auth.getSession
     try {
       const { supabase } = await import('@/lib/supabase');
       const { data } = await supabase.auth.getSession();
       session = data?.session;
       isLoggedIn = !!session?.user;
-      console.log('🔍 findCartByBuyerIdentity: Fallback login check (from Supabase)', {
-        isLoggedIn,
-        hasSession: !!session,
-        hasUser: !!session?.user,
-      });
     } catch (fallbackErr) {
-      console.error('❌ findCartByBuyerIdentity: Error in fallback session check', fallbackErr);
       return null;
     }
   }
@@ -747,14 +709,8 @@ export async function findCartByBuyerIdentity(
       const { getShopifyCustomerId } = await import('@/lib/sync-customer');
       let shopifyCustomerId = await getShopifyCustomerId(session.user.id, true);
       
-      console.log('🔍 findCartByBuyerIdentity: Shopify Customer ID from Supabase', {
-        userId: session.user.id,
-        shopifyCustomerId,
-      });
-      
       // אם לא מצאנו ב-Supabase, נחפש ב-Shopify
       if (!shopifyCustomerId) {
-        console.log('🔍 findCartByBuyerIdentity: Not in Supabase, searching Shopify...');
         try {
           const response = await fetch('/api/shopify/find-customer', {
             method: 'POST',
@@ -769,23 +725,17 @@ export async function findCartByBuyerIdentity(
           
           if (response.ok) {
             const data = await response.json();
-            console.log('🔍 findCartByBuyerIdentity: find-customer result', data);
             if (data.customerId) {
               shopifyCustomerId = data.customerId;
             }
           }
         } catch (err) {
-          console.error('❌ findCartByBuyerIdentity: find-customer failed', err);
+          // ignore
         }
       }
       
       if (shopifyCustomerId) {
             const currentShopifyCustomerId = shopifyCustomerId; // שמור את הערך כדי שיהיה זמין בכל ה-scope
-            console.log('🔍 findCartByBuyerIdentity: Looking for cart in metafields', {
-              shopifyCustomerId: currentShopifyCustomerId,
-              buyerIdentity,
-              userId: session.user.id,
-            });
             
             try {
               const response = await fetch(`/api/cart/save-cart-id?customerId=${encodeURIComponent(currentShopifyCustomerId)}`, {
@@ -796,12 +746,6 @@ export async function findCartByBuyerIdentity(
                 let data: any;
                 try {
                   data = await response.json();
-                  console.log('📦 findCartByBuyerIdentity: Metafields response', {
-                    shopifyCustomerId: currentShopifyCustomerId,
-                    cartIdFromMetafields: data.cartId,
-                    buyerIdentity,
-                    responseStatus: response.status,
-                  });
 
                   if (data.cartId) {
                     try {
@@ -871,71 +815,25 @@ export async function findCartByBuyerIdentity(
                     }
                     
                     // נחזיר את העגלה בכל מקרה אם היא קיימת ב-metafields
-                    console.log('✅ findCartByBuyerIdentity: Found cart in metafields', {
-                      cartId: cartResponse.cart.id,
-                      cartBuyerIdentity,
-                      requestedBuyerIdentity: buyerIdentity,
-                      emailMatch,
-                      phoneMatch,
-                    });
                     return cartResponse.cart.id;
                   }
                     } catch (err) {
-                      console.error('❌ findCartByBuyerIdentity: Error checking cart from metafields', {
-                        cartId: data.cartId,
-                        error: err,
-                      });
+                      // ignore
                     }
-                  } else {
-                    console.log('⚠️ findCartByBuyerIdentity: No cartId in metafields response', {
-                      shopifyCustomerId: currentShopifyCustomerId,
-                      data,
-                    });
                   }
                 } catch (jsonError: any) {
-                  console.error('❌ findCartByBuyerIdentity: Failed to parse metafields response', {
-                    shopifyCustomerId: currentShopifyCustomerId,
-                    status: response.status,
-                    error: jsonError?.message || jsonError,
-                  });
                   // נמשיך לבדוק ב-localStorage במקרה של שגיאה
                 }
               } else {
-                let errorData: any = null;
-                try {
-                  errorData = await response.json().catch(() => null);
-                } catch (e) {
-                  // ignore
-                }
-                
-                console.error('❌ findCartByBuyerIdentity: Failed to fetch metafields', {
-                  shopifyCustomerId: currentShopifyCustomerId,
-                  status: response.status,
-                  statusText: response.statusText,
-                  error: errorData,
-                  url: `/api/cart/save-cart-id?customerId=${encodeURIComponent(currentShopifyCustomerId)}`,
-                });
                 // נמשיך לבדוק ב-localStorage במקרה של שגיאה
               }
             } catch (fetchError: any) {
-              console.error('❌ findCartByBuyerIdentity: Failed to fetch metafields (network error)', {
-                shopifyCustomerId: currentShopifyCustomerId,
-                error: fetchError?.message || fetchError,
-                stack: fetchError?.stack,
-                url: `/api/cart/save-cart-id?customerId=${encodeURIComponent(currentShopifyCustomerId)}`,
-              });
               // נמשיך לבדוק ב-localStorage במקרה של שגיאה
             }
-      } else {
-        console.warn('⚠️ findCartByBuyerIdentity: No shopifyCustomerId', {
-          userId: session.user.id,
-        });
       }
     } catch (err) {
-      console.error('❌ findCartByBuyerIdentity: Error in logged-in branch', err);
+      // ignore
     }
-  } else {
-    console.log('⚠️ findCartByBuyerIdentity: User not logged in, skipping metafields check');
   }
 
   // אם המשתמש לא מחובר, או שלא מצאנו ב-metafields, נבדוק ב-localStorage

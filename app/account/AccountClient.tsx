@@ -90,7 +90,6 @@ export default function AccountClient({
       }
       
       // שלב 2: אם אין ב-Supabase, חפש ב-Shopify
-      console.log('🔍 AccountClient: Not in Supabase, searching Shopify...');
       try {
         const response = await fetch('/api/shopify/find-customer', {
           method: 'POST',
@@ -105,13 +104,12 @@ export default function AccountClient({
         
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 AccountClient: find-customer result', data);
           if (data.customerId) {
             setShopifyCustomerId(data.customerId);
           }
         }
       } catch (err) {
-        console.error('❌ AccountClient: find-customer failed', err);
+        // ignore
       }
     };
     
@@ -156,9 +154,21 @@ export default function AccountClient({
     setSaving(true);
 
     try {
+      console.log('🔄 handleSave: Starting save...');
+      
       if (!user) {
         throw new Error('משתמש לא מחובר');
       }
+      
+      console.log('👤 handleSave: User exists:', user.id);
+
+      // נסה לרענן את ה-session לפני העדכון
+      console.log('🔑 handleSave: Refreshing session...');
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      console.log('🔑 handleSave: Refresh result:', { 
+        hasSession: !!refreshData?.session, 
+        error: refreshError?.message 
+      });
 
       const updateData: {
         data: {
@@ -223,7 +233,9 @@ export default function AccountClient({
         }
       }
 
+      console.log('📝 handleSave: Calling updateUser with:', updateData);
       const { error: updateError, data } = await supabase.auth.updateUser(updateData);
+      console.log('📝 handleSave: updateUser result:', { error: updateError?.message, hasUser: !!data?.user });
 
       if (updateError) throw updateError;
 
@@ -280,8 +292,14 @@ export default function AccountClient({
       if (!emailChanged) {
         setEditing(false);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'שגיאה בשמירת הפרטים');
+    } catch (err: any) {
+      // בדוק אם זו שגיאת אותנטיקציה
+      const errorMessage = err?.message || '';
+      if (errorMessage.includes('session') || errorMessage.includes('JWT') || errorMessage.includes('token') || errorMessage.includes('Auth')) {
+        setError('פג תוקף ההתחברות. אנא רענן את הדף או התחבר מחדש.');
+      } else {
+        setError(err instanceof Error ? err.message : 'שגיאה בשמירת הפרטים');
+      }
       setEmailVerificationSent(false);
     } finally {
       setSaving(false);

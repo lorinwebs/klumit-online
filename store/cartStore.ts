@@ -90,7 +90,6 @@ export const useCartStore = create<CartStore>()((set, get) => ({
           session = data?.session || (data?.user ? { user: data.user } : null);
         }
       } catch (err) {
-        console.error('❌ loadFromShopify: Failed to fetch session from API', err);
         // Fallback to supabase.auth.getSession
         const { supabase } = await import('@/lib/supabase');
         const { data } = await supabase.auth.getSession();
@@ -100,14 +99,6 @@ export const useCartStore = create<CartStore>()((set, get) => ({
       const isLoggedIn = !!session?.user;
       let targetCartId: string | null = null;
       
-      console.log('🚀 loadFromShopify: Session check', {
-        isLoggedIn,
-        hasSession: !!session,
-        hasUser: !!session?.user,
-        userId: session?.user?.id,
-        email: session?.user?.email,
-      });
-      
       // לוגיקת מציאת Cart ID
       if (isLoggedIn) {
         const buyerIdentity = {
@@ -115,9 +106,7 @@ export const useCartStore = create<CartStore>()((set, get) => ({
           phone: session.user.phone || session.user.user_metadata?.phone,
         };
         // תמיד מחפשים לפי buyerIdentity אם המשתמש מחובר
-        console.log('🔍 loadFromShopify: About to call findCartByBuyerIdentity', { buyerIdentity, userId: session.user.id });
         targetCartId = await findCartByBuyerIdentity(buyerIdentity);
-        console.log('🔍 loadFromShopify: findCartByBuyerIdentity returned', { targetCartId });
         if (targetCartId) {
           // לא נשמור שוב ל-metafields כי זה כבר נמצא ב-metafields (אחרת לא היינו מוצאים אותו)
           // נשמור רק ב-localStorage כדי שנוכל לטעון אותה מחדש

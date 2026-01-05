@@ -59,7 +59,6 @@ export default function LoginPage() {
       if (error) throw error;
       setStep('verify');
     } catch (err: any) {
-      console.error(err);
       setLocalError(err?.message || 'שגיאה בשליחת קוד');
     } finally {
       setLoading(false);
@@ -129,35 +128,19 @@ export default function LoginPage() {
           ) : (
             <form 
               action={async (formData: FormData) => {
-                console.log('🟡 LoginPage: Form submitted', { 
-                  hasFormData: !!formData,
-                  token: formData.get('token'),
-                  phone: formData.get('phone')
-                });
                 setLocalError('');
                 startTransition(async () => {
                   try {
-                    console.log('🟡 LoginPage: Calling verifyOtpServer...');
                     const result = await verifyOtpServer(null, formData);
-                    console.log('🟡 LoginPage: verifyOtpServer returned', { hasResult: !!result, hasError: !!result?.error });
                     if (result?.error) {
-                      console.log('🔴 LoginPage: Server Action returned error', result.error);
                       setLocalError(result.error);
                     }
                   } catch (err: any) {
-                    console.log('🟡 LoginPage: Exception in form action', { 
-                      errorMessage: err?.message,
-                      errorDigest: err?.digest,
-                      isRedirect: err?.digest?.includes('NEXT_REDIRECT') || err?.message?.includes('NEXT_REDIRECT')
-                    });
                     // redirect זורק שגיאה ב-Next.js - זה תקין
                     const errorMessage = err?.message || '';
                     const errorDigest = err?.digest || '';
                     if (errorMessage && !errorMessage.includes('NEXT_REDIRECT') && !errorDigest.includes('NEXT_REDIRECT')) {
-                      console.log('🔴 LoginPage: Unexpected error (not redirect)', err);
                       setLocalError('שגיאה באימות הקוד');
-                    } else {
-                      console.log('✅ LoginPage: Redirect error (expected)');
                     }
                   }
                 });

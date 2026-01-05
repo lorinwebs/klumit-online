@@ -36,17 +36,9 @@ export async function POST(request: NextRequest) {
     const paymentStatus = body.status || body.payment_status || 'unknown';
     const orderReference = body.reference || body.order_id || body.order_number;
 
-    console.log('Grow Webhook received:', {
-      eventType,
-      paymentStatus,
-      orderReference,
-      body,
-    });
-
     // אם התשלום הצליח, עדכן את ההזמנה ב-Shopify
     if (paymentStatus === 'paid' || paymentStatus === 'completed' || eventType === 'payment.completed') {
       if (!orderReference) {
-        console.error('No order reference in webhook');
         return NextResponse.json(
           { error: 'Missing order reference' },
           { status: 400 }
@@ -59,10 +51,7 @@ export async function POST(request: NextRequest) {
           tags: ['Paid via Grow', 'Payment Completed'],
           note: `תשלום אושר דרך Grow-il ב-${new Date().toLocaleString('he-IL')}`,
         });
-
-        console.log(`Order ${orderReference} updated successfully`);
       } catch (error) {
-        console.error('Error updating Shopify order:', error);
         // לא נזרוק שגיאה - נחזיר 200 כדי ש-Grow לא ינסה שוב
         return NextResponse.json({
           success: true,
@@ -78,7 +67,6 @@ export async function POST(request: NextRequest) {
       message: 'Webhook processed successfully',
     });
   } catch (error) {
-    console.error('Error processing webhook:', error);
     return NextResponse.json(
       {
         error: 'Internal server error',

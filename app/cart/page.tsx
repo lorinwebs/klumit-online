@@ -31,65 +31,6 @@ export default function CartPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // לוג Cart ID והסיבה - רק אחרי שהעגלה נטענה
-  useEffect(() => {
-    // לא נדפיס לוג בזמן טעינה
-    if (isLoading) {
-      return;
-    }
-    
-    const logCartInfo = async () => {
-      try {
-        // משתמשים ב-API route כדי לבדוק את הסשן מהקוקיז (אמין יותר)
-        const response = await fetch('/api/auth/session', { 
-          credentials: 'include',
-          cache: 'no-store'
-        });
-        const data = response.ok ? await response.json() : null;
-        const isLoggedIn = !!(data?.user || data?.session?.user);
-        
-        let reason = '';
-        if (isLoggedIn) {
-          const localStorageCartId = typeof window !== 'undefined' ? localStorage.getItem('klumit-cart-id') : null;
-          if (cartId) {
-            if (localStorageCartId === cartId) {
-              reason = 'מצאנו עגלה ב-metafields של המשתמש המחובר';
-            } else {
-              reason = 'עגלה מ-metafields (לא תואמת ל-localStorage)';
-            }
-          } else {
-            reason = 'אין עגלה - המשתמש מחובר אבל לא נמצאה עגלה ב-metafields';
-          }
-        } else {
-          const localStorageCartId = typeof window !== 'undefined' ? localStorage.getItem('klumit-cart-id') : null;
-          if (cartId) {
-            if (localStorageCartId === cartId) {
-              reason = 'עגלה מ-localStorage (משתמש לא מחובר)';
-            } else {
-              reason = 'עגלה קיימת אבל לא תואמת ל-localStorage';
-            }
-          } else {
-            reason = 'אין עגלה - משתמש לא מחובר ואין עגלה ב-localStorage';
-          }
-        }
-        
-        console.log('🛒 CART INFO:', {
-          cartId: cartId || 'null',
-          reason,
-          isLoggedIn,
-          itemsCount: items.length,
-        });
-      } catch (err) {
-        console.log('🛒 CART INFO:', {
-          cartId: cartId || 'null',
-          reason: 'שגיאה בבדיקת מידע',
-          itemsCount: items.length,
-        });
-      }
-    };
-    
-    logCartInfo();
-  }, [cartId, items.length, isLoading]);
 
   // פורמט מחיר פרימיום
   const formatPrice = (amount: number) => {
