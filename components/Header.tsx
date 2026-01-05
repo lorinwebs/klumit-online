@@ -31,8 +31,8 @@ export default function Header() {
           Klumit
         </Link>
         
-        {/* מרכז - תפריט דסקטופ */}
-        <nav className="hidden md:flex items-center justify-center gap-8" aria-label="תפריט ניווט ראשי">
+        {/* מרכז - תפריט דסקטופ (בעמודה 2, במובייל הוא לא קיים אבל העמודה נשארת) */}
+        <nav className="hidden md:flex col-start-2 items-center justify-center gap-8" aria-label="תפריט ניווט ראשי">
           <Link href="/products" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity whitespace-nowrap">
             תיקים
           </Link>
@@ -45,13 +45,12 @@ export default function Header() {
             אודות
           </Link>
         </nav>
-        
-        {/* מרכז ריק במובייל */}
-        <div className="md:hidden" />
 
         {/* שמאל - אייקונים */}
-        <div className="flex items-center gap-5 shrink-0">
-          <UserMenu />
+        <div className="flex items-center gap-5 shrink-0 justify-self-end">
+          <div className="shrink-0">
+            <UserMenu />
+          </div>
           
           <Link 
             href="/cart" 
