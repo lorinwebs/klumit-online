@@ -19,38 +19,43 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-black/10 w-full max-w-[100vw] overflow-x-hidden shadow-sm">
-      
-      {/* --- שורה עליונה: לוגו ואייקונים --- */}
-      <nav className="w-full px-4 py-3 md:px-6 md:py-4 flex items-center justify-between">
+    <header 
+      className="sticky top-0 z-50 bg-white border-b border-black/10 w-full shadow-sm supports-[backdrop-filter]:bg-white/95 supports-[backdrop-filter]:backdrop-blur-sm"
+      dir="rtl"
+    >
+      {/* --- שורה עליונה: Grid 3 עמודות --- */}
+      <nav className="w-full px-4 py-3 md:px-6 md:py-4 grid grid-cols-[auto_1fr_auto] items-center gap-4">
         
-        {/* לוגו */}
-        <Link href="/" className="text-2xl luxury-font font-light tracking-luxury text-[#1a1a1a] flex-shrink-0 z-10">
+        {/* ימין - לוגו */}
+        <Link href="/" className="text-2xl luxury-font font-light tracking-luxury text-[#1a1a1a] shrink-0">
           Klumit
         </Link>
         
-        {/* תפריט דסקטופ (מוסתר במובייל) */}
-        <nav className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2" aria-label="תפריט ניווט ראשי">
-          <Link href="/products" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
+        {/* מרכז - תפריט דסקטופ */}
+        <nav className="hidden md:flex items-center justify-center gap-8" aria-label="תפריט ניווט ראשי">
+          <Link href="/products" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity whitespace-nowrap">
             תיקים
           </Link>
-          <span className="w-px h-4 bg-gray-300" />
-          <Link href="/products?tab=belts" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
+          <span className="w-px h-4 bg-gray-300 shrink-0" />
+          <Link href="/products?tab=belts" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity whitespace-nowrap">
             חגורות
           </Link>
-          <span className="w-px h-4 bg-gray-300" />
-          <Link href="/about" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
+          <span className="w-px h-4 bg-gray-300 shrink-0" />
+          <Link href="/about" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity whitespace-nowrap">
             אודות
           </Link>
         </nav>
+        
+        {/* מרכז ריק במובייל */}
+        <div className="md:hidden" />
 
-        {/* צד שמאל - אייקונים */}
-        <div className="flex items-center gap-4 md:gap-4 flex-shrink-0">
+        {/* שמאל - אייקונים */}
+        <div className="flex items-center gap-5 shrink-0">
           <UserMenu />
           
           <Link 
             href="/cart" 
-            className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6"
+            className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6 min-w-[24px] shrink-0"
             aria-label={`סל קניות${mounted && itemCount > 0 ? ` (${itemCount} פריטים)` : ''}`}
           >
             <ShoppingBag size={22} className="text-[#1a1a1a]" aria-hidden="true" />
@@ -62,7 +67,7 @@ export default function Header() {
           </Link>
           
           <button
-            className="md:hidden flex items-center justify-center w-6 h-6"
+            className="md:hidden flex items-center justify-center w-6 h-6 min-w-[24px] shrink-0"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? 'סגור תפריט' : 'פתח תפריט'}
           >
@@ -73,18 +78,18 @@ export default function Header() {
 
       {/* --- שורה תחתונה למובייל בלבד (פס קטגוריות) --- */}
       <div className="md:hidden w-full flex items-center justify-center gap-6 py-2 border-t border-gray-100 bg-white">
-          <Link href="/products" className="text-xs font-medium tracking-widest uppercase text-[#1a1a1a] hover:opacity-70">
-            תיקים
-          </Link>
-          <span className="w-px h-3 bg-gray-300" />
-          <Link href="/products?tab=belts" className="text-xs font-medium tracking-widest uppercase text-[#1a1a1a] hover:opacity-70">
-            חגורות
-          </Link>
+        <Link href="/products" className="text-xs font-medium tracking-widest uppercase text-[#1a1a1a] hover:opacity-70 whitespace-nowrap">
+          תיקים
+        </Link>
+        <span className="w-px h-3 bg-gray-300 shrink-0" />
+        <Link href="/products?tab=belts" className="text-xs font-medium tracking-widest uppercase text-[#1a1a1a] hover:opacity-70 whitespace-nowrap">
+          חגורות
+        </Link>
       </div>
 
       {/* --- תפריט המבורגר נפתח --- */}
       {mobileMenuOpen && (
-        <nav id="mobile-menu" className="md:hidden border-t border-black/10 bg-white absolute w-full left-0 top-full h-screen">
+        <nav id="mobile-menu" className="md:hidden border-t border-black/10 bg-white absolute w-full left-0 top-full h-screen z-50">
           <div className="flex flex-col gap-6 pt-8 text-center px-6">
             <Link href="/products" className="text-lg tracking-widest uppercase hover:opacity-70 border-b border-gray-50 pb-4" onClick={() => setMobileMenuOpen(false)}>
               כל התיקים

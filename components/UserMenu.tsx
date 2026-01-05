@@ -96,7 +96,7 @@ export default function UserMenu() {
     return (
       <Link
         href="/auth/login"
-        className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6"
+        className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6 min-w-[24px] shrink-0"
         aria-label="התחברות"
       >
         <UserIcon size={22} className={`text-[#1a1a1a] ${loading ? 'opacity-50' : ''}`} />
@@ -108,7 +108,7 @@ export default function UserMenu() {
   return (
     <Link
       href="/account"
-      className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6"
+      className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6 min-w-[24px] shrink-0"
       aria-label="החשבון שלי"
     >
       <UserIcon size={22} className="text-[#1a1a1a]" />
