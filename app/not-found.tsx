@@ -6,7 +6,7 @@ export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
-      <main className="flex-grow flex items-center justify-center px-4">
+      <main id="main-content" className="flex-grow flex items-center justify-center px-4" role="main">
         <div className="text-center max-w-md">
           <h1 className="text-8xl md:text-9xl font-light luxury-font text-[#1a1a1a] mb-4">
             404

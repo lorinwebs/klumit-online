@@ -315,7 +315,7 @@ export default function AccountClient({
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
-      <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+      <main id="main-content" className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16" role="main">
         <div className="mb-12 lg:mb-16">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">

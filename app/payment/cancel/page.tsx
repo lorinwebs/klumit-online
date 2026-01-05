@@ -22,7 +22,7 @@ function PaymentCancelContent() {
     return (
       <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
         <Header />
-        <main className="flex-grow max-w-md mx-auto px-4 py-20 w-full">
+        <main id="main-content" className="flex-grow max-w-md mx-auto px-4 py-20 w-full" role="main">
           <div className="bg-white border border-gray-200 p-8 md:p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1a1a1a]"></div>
@@ -40,7 +40,7 @@ function PaymentCancelContent() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
-      <main className="flex-grow max-w-md mx-auto px-4 py-20 w-full">
+      <main id="main-content" className="flex-grow max-w-md mx-auto px-4 py-20 w-full" role="main">
         <div className="bg-white border border-gray-200 p-8 md:p-12 text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <X size={32} className="text-red-600" />
@@ -89,7 +89,7 @@ export default function PaymentCancelPage() {
     <Suspense fallback={
       <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
         <Header />
-        <main className="flex-grow max-w-md mx-auto px-4 py-20 w-full">
+        <main id="main-content" className="flex-grow max-w-md mx-auto px-4 py-20 w-full" role="main">
           <div className="bg-white border border-gray-200 p-8 md:p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1a1a1a]"></div>

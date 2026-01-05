@@ -48,10 +48,13 @@ function FeaturedProductItem({ product, index, totalProducts, scrollYProgress }:
   const [isMobile, setIsMobile] = useState(false);
   
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    // Use matchMedia for better performance (no forced reflow)
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    setIsMobile(mediaQuery.matches);
+    
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
   const productScrollProgress = useTransform(
@@ -101,7 +104,7 @@ function FeaturedProductItem({ product, index, totalProducts, scrollYProgress }:
               priority={index === 0}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm font-light">
+            <div className="w-full h-full flex items-center justify-center text-gray-600 text-sm font-light">
               אין תמונה
             </div>
           )}
@@ -115,7 +118,7 @@ function FeaturedProductItem({ product, index, totalProducts, scrollYProgress }:
           }`}
         >
           <div className="mb-6">
-            <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light">
+            <span className="text-xs uppercase tracking-[0.3em] text-gray-600 font-light">
               {String(index + 1).padStart(2, '0')}
             </span>
           </div>
@@ -217,7 +220,7 @@ export default function FeaturedProducts() {
           transition={{ duration: 0.8 }}
           className="text-center mb-20 md:mb-32"
         >
-          <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light mb-4 block">
+          <span className="text-xs uppercase tracking-[0.3em] text-gray-600 font-light mb-4 block">
             Featured Collection
           </span>
           <h2 className="text-4xl md:text-6xl font-light luxury-font text-[#1a1a1a] mb-4">
@@ -268,7 +271,7 @@ export default function FeaturedProducts() {
           <motion.div
             animate={{ y: [0, 10, 0] }}
             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            className="flex flex-col items-center gap-2 text-gray-400"
+            className="flex flex-col items-center gap-2 text-gray-600"
           >
             <span className="text-xs uppercase tracking-widest font-light">גלול</span>
             <div className="w-px h-8 bg-gray-300" />

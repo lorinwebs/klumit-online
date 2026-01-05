@@ -176,7 +176,7 @@ export default function CompleteProfilePage() {
     return (
       <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
         <Header />
-        <main className="flex-grow max-w-md mx-auto px-4 py-20 w-full">
+        <main id="main-content" className="flex-grow max-w-md mx-auto px-4 py-20 w-full" role="main">
           <div className="animate-pulse">
             <div className="bg-gray-200 h-12 w-64 mb-8" />
             <div className="bg-gray-200 h-32 w-full" />
@@ -194,7 +194,7 @@ export default function CompleteProfilePage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
-      <main className="flex-grow max-w-md mx-auto px-4 py-20 w-full">
+      <main id="main-content" className="flex-grow max-w-md mx-auto px-4 py-20 w-full" role="main">
         <div className="bg-white border border-gray-200 p-8 md:p-12">
           <h1 className="text-3xl md:text-4xl font-light luxury-font mb-2 text-right">
             השלם את הפרטים

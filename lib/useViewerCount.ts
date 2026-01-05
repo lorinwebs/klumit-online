@@ -10,24 +10,32 @@ export function useViewerCount() {
   const [viewerCount, setViewerCount] = useState(0);
 
   useEffect(() => {
-    let channel: RealtimeChannel;
+    let channel: RealtimeChannel | null = null;
 
     const setupPresence = async () => {
-      channel = supabase.channel(CHANNEL_NAME, {
-        config: { presence: { key: crypto.randomUUID() } },
-      });
-
-      channel
-        .on('presence', { event: 'sync' }, () => {
-          const state = channel.presenceState();
-          const count = Object.keys(state).length;
-          setViewerCount(count);
-        })
-        .subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await channel.track({ online_at: new Date().toISOString() });
-          }
+      try {
+        channel = supabase.channel(CHANNEL_NAME, {
+          config: { presence: { key: crypto.randomUUID() } },
         });
+
+        channel
+          .on('presence', { event: 'sync' }, () => {
+            const state = channel!.presenceState();
+            const count = Object.keys(state).length;
+            setViewerCount(count);
+          })
+          .subscribe(async (status, err) => {
+            if (err) {
+              // Silently fail - don't spam console
+              return;
+            }
+            if (status === 'SUBSCRIBED') {
+              await channel!.track({ online_at: new Date().toISOString() });
+            }
+          });
+      } catch {
+        // Supabase connection failed - silently ignore
+      }
     };
 
     setupPresence();

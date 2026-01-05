@@ -24,7 +24,7 @@ function PaymentSuccessContent() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
-      <main className="flex-grow container mx-auto px-4 py-12">
+      <main id="main-content" className="flex-grow container mx-auto px-4 py-12" role="main">
         <div className="max-w-md mx-auto text-center">
           <div className="mb-8">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">

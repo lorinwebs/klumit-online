@@ -7,12 +7,16 @@ const assistant = Assistant({
   subsets: ['latin', 'latin-ext', 'hebrew'],
   weight: ['200', '300', '400', '500', '600', '700'],
   variable: '--font-assistant',
+  display: 'swap',
+  preload: true,
 });
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600'],
   variable: '--font-cormorant',
+  display: 'swap',
+  preload: true,
 });
 
 const siteUrl = 'https://www.klumit-online.co.il';
@@ -162,6 +166,19 @@ export default function RootLayout({
   return (
     <html lang="he" dir="rtl">
       <head>
+        {/* Preload LCP image for faster discovery */}
+        <link
+          rel="preload"
+          href="/coverimage.jpeg"
+          as="image"
+          type="image/jpeg"
+          fetchPriority="high"
+        />
+        {/* Preconnect to external domains */}
+        <link rel="preconnect" href="https://cdn.shopify.com" />
+        <link rel="dns-prefetch" href="https://cdn.shopify.com" />
+        <link rel="preconnect" href="https://www.instagram.com" />
+        <link rel="dns-prefetch" href="https://www.instagram.com" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

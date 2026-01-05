@@ -5,7 +5,7 @@ export default function ReturnsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
-      <main className="flex-grow max-w-4xl mx-auto px-4 py-20">
+      <main id="main-content" className="flex-grow max-w-4xl mx-auto px-4 py-20" role="main">
         <h1 className="text-4xl md:text-5xl font-light luxury-font mb-8 text-right">
           מדיניות החזרות והחלפות
         </h1>

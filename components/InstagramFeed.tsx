@@ -1,7 +1,7 @@
 'use client';
 
 import { Instagram } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 const INSTAGRAM_POSTS = [
   'https://www.instagram.com/p/DSuvqk2DFsU/',
@@ -11,18 +11,48 @@ const INSTAGRAM_POSTS = [
 
 export default function InstagramFeed() {
   const [active, setActive] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
 
   const processEmbeds = () => {
     if ((window as any).instgrm?.Embeds) {
       (window as any).instgrm.Embeds.process();
+      // Add title to Instagram iframes for accessibility
+      setTimeout(() => {
+        document.querySelectorAll('iframe.instagram-media-rendered').forEach((iframe, i) => {
+          if (!iframe.getAttribute('title')) {
+            iframe.setAttribute('title', `Instagram post ${i + 1}`);
+          }
+        });
+      }, 1000);
     }
   };
 
+  // Lazy load: detect when section enters viewport
   useEffect(() => {
-    // Load Instagram embed script (only once)
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' } // Load slightly before visible
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Load Instagram embed script only when visible
+  useEffect(() => {
+    if (!isVisible) return;
+
     const existing = document.querySelector('script[src="https://www.instagram.com/embed.js"]');
     if (existing) {
-      // script already on page
       processEmbeds();
       return;
     }
@@ -33,17 +63,17 @@ export default function InstagramFeed() {
     document.body.appendChild(script);
 
     script.onload = () => processEmbeds();
-  }, []);
+  }, [isVisible]);
 
   // Re-process embeds when active slide changes
   useEffect(() => {
-    // Small delay to let DOM update
+    if (!isVisible) return;
     const timeout = setTimeout(() => processEmbeds(), 100);
     return () => clearTimeout(timeout);
-  }, [active]);
+  }, [active, isVisible]);
 
   return (
-    <section className="py-12 md:py-24 bg-[#fdfcfb]">
+    <section ref={sectionRef} className="py-12 md:py-24 bg-[#fdfcfb]">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-6 md:mb-12">

@@ -69,7 +69,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
-      <main className="flex-grow max-w-md mx-auto px-4 py-20 w-full">
+      <main id="main-content" className="flex-grow max-w-md mx-auto px-4 py-20 w-full" role="main">
         <Link
           href="/"
           className="flex items-center gap-2 text-sm font-light text-gray-600 hover:text-[#1a1a1a] mb-8 transition-colors"

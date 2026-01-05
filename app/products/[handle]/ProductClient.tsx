@@ -548,7 +548,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
 
   return (
     <>
-      <main className="flex-grow max-w-[1400px] mx-auto px-4 pt-0 pb-16 md:py-20 w-full overflow-x-hidden">
+      <main id="main-content" className="flex-grow max-w-[1400px] mx-auto px-4 pt-0 pb-16 md:py-20 w-full overflow-x-hidden" role="main">
         <div className="grid grid-cols-12 gap-6 md:gap-8">
           {/* Left Side - Thumbnail Images (Desktop only) */}
           <div className="hidden md:block col-span-2 order-3">

@@ -44,7 +44,19 @@ textarea:focus-visible,
 /* High contrast focus for dark backgrounds */
 .dark a:focus-visible,
 .dark button:focus-visible,
-[class*="bg-[#1a1a1a]"]:focus-visible {
+[class*="bg-[#1a1a1a]"]:focus-visible,
+[class*="bg-black"]:focus-visible,
+/* Elements inside dark containers */
+[class*="bg-black"] a:focus-visible,
+[class*="bg-black"] button:focus-visible,
+[class*="bg-[#1a1a1a]"] a:focus-visible,
+[class*="bg-[#1a1a1a]"] button:focus-visible,
+/* Hero section - links over dark overlay */
+section:has([class*="bg-black"]) a:focus-visible,
+/* Explicit dark context utility */
+.focus-light a:focus-visible,
+.focus-light button:focus-visible,
+.focus-light:focus-visible {
   outline-color: white !important;
 }
 
