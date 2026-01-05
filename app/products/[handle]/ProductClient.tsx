@@ -66,8 +66,6 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const [stockMessage, setStockMessage] = useState('');
   const [showFloatingCart, setShowFloatingCart] = useState(false);
   const [relatedProducts] = useState<Product[]>(initialRelatedProducts);
-  const [maxImageHeight, setMaxImageHeight] = useState<number>(0);
-  const [hasOverflow, setHasOverflow] = useState<boolean>(false);
   const addItem = useCartStore((state) => state.addItem);
   const items = useCartStore((state) => state.items);
   const imageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -241,61 +239,6 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       }
     }
   }, [selectedVariant, currentVariant, filteredImages]);
-
-  // Calculate max image height for viewport and check for overflow
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const calculateMaxHeight = () => {
-      let maxHeight = 0;
-      filteredImages.forEach(({ node }) => {
-        const imageElement = imageRefs.current[node.url];
-        if (imageElement) {
-          const height = imageElement.offsetHeight;
-          if (height > maxHeight) {
-            maxHeight = height;
-          }
-        }
-      });
-      if (maxHeight > 0) {
-        setMaxImageHeight(maxHeight);
-      }
-    };
-
-    const checkOverflow = () => {
-      if (scrollContainerRef.current) {
-        const container = scrollContainerRef.current;
-        const hasOverflowContent = container.scrollHeight > container.clientHeight;
-        setHasOverflow(hasOverflowContent);
-      }
-    };
-
-    // Wait for images to load and recalculate
-    const timers: NodeJS.Timeout[] = [];
-    filteredImages.forEach((_, index) => {
-      const timer = setTimeout(() => {
-        calculateMaxHeight();
-        checkOverflow();
-      }, 200 * (index + 1));
-      timers.push(timer);
-    });
-
-    // Recalculate on window resize
-    window.addEventListener('resize', () => {
-      calculateMaxHeight();
-      checkOverflow();
-    });
-    
-    // Initial check
-    setTimeout(() => {
-      checkOverflow();
-    }, 500);
-    
-    return () => {
-      timers.forEach(timer => clearTimeout(timer));
-      window.removeEventListener('resize', calculateMaxHeight);
-    };
-  }, [product, filteredImages]);
 
   // Use Intersection Observer instead of scroll listener for better performance
   useEffect(() => {
@@ -590,7 +533,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
 
           {/* Center - Main Image (Scrollable on Desktop, Carousel on Mobile) */}
           <div className="col-span-12 md:col-span-6 order-1 md:order-2">
-            <div className="md:sticky md:top-20">
+            <div className="md:sticky md:top-32">
               {/* Mobile - Image Gallery */}
               <div className="md:hidden mb-1">
                 {/* Navigation Arrows - Outside image */}
@@ -696,11 +639,8 @@ export default function ProductClient({ product, relatedProducts: initialRelated
               {/* Desktop - Scrollable images */}
               <div 
                 ref={scrollContainerRef}
-                className={`hidden md:block overflow-y-auto transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''} ${hasOverflow ? '' : 'scrollbar-hide'}`}
-                style={{ 
-                  maxHeight: maxImageHeight > 0 ? `${maxImageHeight}px` : 'calc(100vh - 120px)',
-                  height: maxImageHeight > 0 ? `${maxImageHeight}px` : 'calc(100vh - 120px)'
-                }}
+                className={`hidden md:block overflow-y-auto transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''} scrollbar-hide`}
+                style={{ height: 'calc(100vh - 120px)' }}
               >
                 <div className="space-y-4" style={{ width: '100%' }}>
                   {filteredImages.map(({ node }) => (
@@ -714,7 +654,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                         imageRefs.current[node.url] = el;
                       }}
                       className="relative w-full bg-[#fdfcfb] overflow-hidden"
-                      style={{ flexShrink: 0 }}
+                      style={{ height: 'calc(100vh - 140px)' }}
                     >
                       <Image
                         src={node.url}
@@ -723,20 +663,6 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                         className="object-contain"
                         priority={selectedImage === node.url}
                         sizes="(max-width: 768px) 100vw, 50vw"
-                        onLoadingComplete={(img) => {
-                          // Calculate natural aspect ratio and set container height
-                          const container = img.closest('div[class*="relative"]') as HTMLElement;
-                          if (container && img.naturalWidth && img.naturalHeight) {
-                            const containerWidth = container.offsetWidth || (container.parentElement?.clientWidth ?? 600);
-                            const aspectRatio = img.naturalHeight / img.naturalWidth;
-                            const calculatedHeight = containerWidth * aspectRatio;
-                            container.style.height = `${calculatedHeight}px`;
-                            container.style.minHeight = `${calculatedHeight}px`;
-                            
-                            // Update max height for viewport (only for the tallest image)
-                            setMaxImageHeight((prev) => Math.max(prev, calculatedHeight));
-                          }
-                        }}
                       />
                     </div>
                   ))}
@@ -747,7 +673,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
 
           {/* Right Side - Product Info (Fixed, No Scroll) */}
           <div className="col-span-12 md:col-span-4 order-3 md:order-1">
-            <div className="md:sticky md:top-20">
+            <div className="md:sticky md:top-32">
               {/* Mobile - Sticky Price & CTA Section */}
               <div className="md:hidden sticky top-0 bg-[#fdfcfb] z-10 pb-3 border-b border-gray-200 mb-4 -mt-2 w-full">
                 <div className="text-right space-y-3 pt-2 w-full">
