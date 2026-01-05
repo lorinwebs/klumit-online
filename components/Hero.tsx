@@ -9,7 +9,7 @@ export default function Hero() {
     <section className="relative w-full h-[70vh] md:h-[85vh] overflow-hidden">
       {/* Full-width Background Image */}
       <Image
-        src="/cover.jpeg"
+        src="/coverimage.jpeg"
         alt="קלומית - מוצרי עור מאיטליה"
         fill
         className="object-cover"
