@@ -46,7 +46,7 @@ export default function Hero() {
               transition={{ delay: 0.4, duration: 0.8 }}
               className="text-lg font-light leading-relaxed"
             >
-              יבואי תיקים
+              יבואני תיקים ארנקים וחגורות מאיטליה
             </motion.p>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
