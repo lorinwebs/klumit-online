@@ -166,6 +166,8 @@ export default function RootLayout({
   return (
     <html lang="he" dir="rtl">
       <head>
+        {/* Permissions Policy - allow unload for Supabase Realtime */}
+        <meta httpEquiv="Permissions-Policy" content="unload=*" />
         {/* Preload LCP image for faster discovery */}
         <link
           rel="preload"
