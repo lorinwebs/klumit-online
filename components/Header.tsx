@@ -8,86 +8,117 @@ import UserMenu from './UserMenu';
 
 export default function Header() {
   const itemCount = useCartStore((state) => state.getItemCount());
+  const loadFromShopify = useCartStore((state) => state.loadFromShopify);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    loadFromShopify().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-black/10">
-      <nav className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="text-2xl luxury-font font-light tracking-luxury text-[#1a1a1a]">
-            Klumit
-          </Link>
-          
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="/products" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
-              תיקים
-            </Link>
-            <span className="w-px h-4 bg-gray-300"></span>
-            <Link href="/products?tab=belts" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
-              חגורות
-            </Link>
-            <span className="w-px h-4 bg-gray-300"></span>
-            <Link href="/about" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
-              אודות
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <UserMenu />
-            <Link 
-              href="/cart" 
-              className="relative p-2 hover:opacity-70 transition-opacity"
-            >
-              <ShoppingBag size={24} className="text-[#1a1a1a]" />
-              {mounted && itemCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-[#1a1a1a] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-light">
-                  {itemCount}
-                </span>
-              )}
-            </Link>
-            
-            <button
-              className="md:hidden p-2"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              <Menu size={24} />
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile category row */}
-        <div className="md:hidden flex items-center justify-center gap-4 pt-3 border-t border-black/5 mt-3">
-          <Link href="/products" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
+    <header 
+      className="sticky top-0 z-50 bg-white border-b border-black/10 w-full shadow-sm supports-[backdrop-filter]:bg-white/95 supports-[backdrop-filter]:backdrop-blur-sm antialiased"
+      dir="rtl"
+    >
+      {/* --- שורה עליונה: Grid 3 עמודות --- */}
+      <nav className="w-full px-4 py-3 md:px-6 md:py-4 grid grid-cols-[auto_1fr_auto] items-center gap-4 h-14 md:h-auto">
+        
+        {/* ימין - לוגו */}
+        <Link href="/" className="flex items-center h-full text-2xl luxury-font font-light tracking-luxury text-[#1a1a1a] shrink-0">
+          Klumit
+        </Link>
+        
+        {/* מרכז - תפריט דסקטופ */}
+        <nav className="hidden md:flex items-center justify-center gap-8 h-full" aria-label="תפריט ניווט ראשי">
+          <Link href="/products" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity whitespace-nowrap">
             תיקים
           </Link>
-          <span className="w-px h-4 bg-gray-300"></span>
-          <Link href="/products?tab=belts" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
+          <span className="w-px h-4 bg-gray-300 shrink-0" />
+          <Link href="/products?tab=belts" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity whitespace-nowrap">
             חגורות
           </Link>
-        </div>
+          <span className="w-px h-4 bg-gray-300 shrink-0" />
+          <Link href="/about" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity whitespace-nowrap">
+            אודות
+          </Link>
+        </nav>
+        
+        {/* מרכז ריק במובייל */}
+        <div className="md:hidden" />
 
-        {mobileMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-luxury-gold/20">
-            <div className="flex flex-col gap-4 pt-4">
-              <Link href="/products" className="hover:text-luxury-gold transition-colors">
-                תיקים
-              </Link>
-              <Link href="/products?tab=belts" className="hover:text-luxury-gold transition-colors">
-                חגורות
-              </Link>
-              <Link href="/about" className="hover:text-luxury-gold transition-colors">
-                אודות
-              </Link>
-            </div>
-          </div>
-        )}
+        {/* שמאל - אייקונים */}
+        <div className="flex items-center gap-4 shrink-0 h-full">
+          <UserMenu />
+          
+          <Link 
+            href="/cart" 
+            className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-8 h-8 shrink-0"
+            aria-label={`סל קניות${mounted && itemCount > 0 ? ` (${itemCount} פריטים)` : ''}`}
+          >
+            <ShoppingBag size={22} className="text-[#1a1a1a]" aria-hidden="true" />
+            {mounted && itemCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-[#1a1a1a] text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-light" aria-hidden="true">
+                {itemCount}
+              </span>
+            )}
+          </Link>
+          
+          <button
+            className="md:hidden flex items-center justify-center w-8 h-8 shrink-0"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? 'סגור תפריט' : 'פתח תפריט'}
+          >
+            <Menu size={22} aria-hidden="true" />
+          </button>
+        </div>
       </nav>
+
+      {/* --- שורה תחתונה למובייל בלבד (פס קטגוריות) --- */}
+      {/* תיקון קריטי לאייפון:
+          1. h-10: קבעתי גובה סופי וקבוע (40px) במקום padding.
+          2. לקישורים הוספתי 'flex items-center h-full': זה מכריח את הטקסט להתמרכז בתוך הגובה הזה,
+             לא משנה איך ספארי מחשב את גובה הפונט.
+      */}
+      <div className="md:hidden w-full flex items-center justify-center gap-5 h-10 border-t border-gray-100 bg-white">
+        <Link 
+            href="/products" 
+            className="flex items-center h-full text-xs font-medium tracking-wide uppercase text-[#1a1a1a] hover:opacity-70"
+        >
+            תיקים
+        </Link>
+        
+        <span className="w-px h-3 bg-gray-300 block" />
+        
+        <Link 
+            href="/products?tab=belts" 
+            className="flex items-center h-full text-xs font-medium tracking-wide uppercase text-[#1a1a1a] hover:opacity-70"
+        >
+            חגורות
+        </Link>
+      </div>
+
+      {/* --- תפריט המבורגר נפתח --- */}
+      {mobileMenuOpen && (
+        <nav 
+            id="mobile-menu" 
+            className="md:hidden border-t border-black/10 bg-white absolute w-full left-0 top-full h-[calc(100dvh-100%)] z-50 overflow-y-auto pb-20"
+        >
+          <div className="flex flex-col gap-6 pt-8 text-center px-6">
+            <Link href="/products" className="text-lg tracking-widest uppercase hover:opacity-70 border-b border-gray-50 pb-4" onClick={() => setMobileMenuOpen(false)}>
+              כל התיקים
+            </Link>
+            <Link href="/products?tab=belts" className="text-lg tracking-widest uppercase hover:opacity-70 border-b border-gray-50 pb-4" onClick={() => setMobileMenuOpen(false)}>
+              חגורות
+            </Link>
+            <Link href="/about" className="text-lg tracking-widest uppercase hover:opacity-70 border-b border-gray-50 pb-4" onClick={() => setMobileMenuOpen(false)}>
+              אודות המותג
+            </Link>
+          </div>
+        </nav>
+      )}
     </header>
   );
 }
-

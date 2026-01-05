@@ -229,7 +229,7 @@ export default function FeaturedProducts() {
         </motion.div>
 
         {/* Products with Vertical Scroll Animation */}
-        <div className="space-y-32 md:space-y-48">
+        <div className="space-y-16 md:space-y-48">
           {products.map((product, index) => (
             <FeaturedProductItem
               key={product.id}
