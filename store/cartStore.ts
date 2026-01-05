@@ -402,7 +402,6 @@ export const useCartStore = create<CartStore>()((set, get) => {
           saveCartIdToMetafields(finalCartId, true).catch(() => {});
         }
       }
-      }
       
       // טעינה מחדש מהשרת כדי לקבל את המצב האמיתי (כולל מלאי ותיקון כמות אם חרגה)
       // אבל רק אם יש cart ID - לא נדרוס את הפריטים החדשים אם אין cart ID
