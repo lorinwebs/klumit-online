@@ -56,7 +56,6 @@ function FeaturedProductItem({ product, index, totalProducts, scrollYProgress }:
 
   const imageY = useTransform(productScrollProgress, [0, 1], [100, -100]);
   const textY = useTransform(productScrollProgress, [0, 1], [-50, 50]);
-  const opacity = useTransform(productScrollProgress, [0, 0.3, 0.7, 1], [0.3, 1, 1, 0.3]);
 
   const firstVariant = product.variants.edges[0]?.node;
   const firstImage = product.images.edges[0]?.node;
@@ -71,10 +70,9 @@ function FeaturedProductItem({ product, index, totalProducts, scrollYProgress }:
 
   return (
     <motion.div
-      style={{ opacity }}
       className="relative min-h-[80vh] md:min-h-[90vh] flex items-center"
     >
-      <div className={`w-full grid md:grid-cols-2 gap-4 md:gap-8 items-start ${
+      <div className={`w-full grid md:grid-cols-2 gap-8 md:gap-16 items-center ${
         index % 2 === 0 ? '' : 'md:grid-flow-col-dense'
       }`}>
         {/* Image */}
@@ -103,54 +101,50 @@ function FeaturedProductItem({ product, index, totalProducts, scrollYProgress }:
         {/* Product Info */}
         <motion.div
           style={{ y: textY }}
-          className={`text-right ${
+          className={`text-right flex flex-col justify-center h-full px-4 md:px-12 ${
             index % 2 === 0 ? 'md:order-2' : 'md:order-1'
           }`}
         >
-          <div className="mb-2">
+          <div className="mb-6">
             <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light">
               {String(index + 1).padStart(2, '0')}
             </span>
           </div>
           
-          {/* Name, Price, Button in one row */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6">
-            <div className="flex-1">
-              <h3 className="text-2xl md:text-4xl font-light luxury-font leading-tight text-[#1a1a1a] mb-2">
-                {product.title}
-              </h3>
-              <p className="text-xl md:text-2xl font-light text-[#1a1a1a]">
-                ₪{price}
-              </p>
-            </div>
-            
-            <Link
-              href={`/products/${product.handle}`}
-              className="inline-block border border-[#1a1a1a] text-[#1a1a1a] px-6 md:px-8 py-2 md:py-3 text-xs md:text-sm tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury text-center whitespace-nowrap"
-            >
-              צפה בפרטים
-            </Link>
-          </div>
+          <h3 className="text-3xl md:text-5xl lg:text-6xl font-light luxury-font leading-tight text-[#1a1a1a] mb-4">
+            {product.title}
+          </h3>
+          
+          <p className="text-2xl md:text-3xl font-light text-[#1a1a1a] mb-8">
+            ₪{price}
+          </p>
 
           {(product.descriptionHtml || product.description) && (
             <div 
-              className="text-sm md:text-base font-light leading-relaxed text-gray-600 line-clamp-2 mt-4"
+              className="text-base md:text-lg lg:text-xl font-light leading-loose text-gray-500 mb-10 max-w-lg luxury-font"
               dangerouslySetInnerHTML={{ 
-                __html: (product.descriptionHtml || product.description || '').substring(0, 150) + '...' 
+                __html: (product.descriptionHtml || product.description || '').substring(0, 250) + '...' 
               }}
             />
           )}
+          
+          <div className="flex flex-col gap-4">
+            <Link
+              href={`/products/${product.handle}`}
+              className="inline-block border border-[#1a1a1a] text-[#1a1a1a] px-8 md:px-10 py-3 md:py-4 text-xs md:text-sm tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury text-center w-fit"
+            >
+              צפה בפרטים
+            </Link>
 
-          {index === totalProducts - 1 && (
-            <div className="mt-6">
+            {index === totalProducts - 1 && (
               <Link
                 href="/products"
-                className="inline-block border border-gray-300 text-gray-600 px-6 md:px-8 py-2 md:py-3 text-xs md:text-sm tracking-luxury uppercase font-light hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-luxury text-center"
+                className="inline-block border border-gray-300 text-gray-600 px-8 md:px-10 py-3 md:py-4 text-xs md:text-sm tracking-luxury uppercase font-light hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-luxury text-center w-fit"
               >
                 כל הקולקציה
               </Link>
-            </div>
-          )}
+            )}
+          </div>
         </motion.div>
       </div>
     </motion.div>
