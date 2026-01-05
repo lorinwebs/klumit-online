@@ -20,7 +20,7 @@ export default function Header() {
 
   return (
     <header 
-      className="sticky top-0 z-50 bg-white border-b border-black/10 w-full shadow-sm supports-[backdrop-filter]:bg-white/95 supports-[backdrop-filter]:backdrop-blur-sm antialiased"
+      className="sticky top-0 z-50 bg-white w-full"
       dir="rtl"
     >
       {/* --- שורה עליונה: Grid 3 עמודות --- */}
@@ -81,7 +81,7 @@ export default function Header() {
         href="https://www.instagram.com/klomit/" 
         target="_blank" 
         rel="noopener noreferrer"
-        className="w-full bg-black text-white text-center py-2 text-xs md:text-sm tracking-wide block hover:bg-gray-900 transition-colors"
+        className="w-full bg-black text-white flex items-center justify-center h-10 md:h-auto md:py-2 text-xs md:text-sm tracking-wide hover:bg-gray-900 transition-colors"
       >
         🎉 לרגל השקת האתר - קופון מחכה לכם בדף האינסטגרם שלנו!
       </a>
