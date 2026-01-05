@@ -43,7 +43,7 @@ export default function Hero() {
             transition={{ delay: 0.4, duration: 0.8 }}
             className="text-lg md:text-xl lg:text-2xl mb-3 font-light leading-relaxed"
           >
-            יבואני מוצרי עור מאיטליה משנת 1984
+            יבואני תיקים ארנקים וחגורות מאיטליה - משנת 1984
           </motion.p>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -51,7 +51,7 @@ export default function Hero() {
             transition={{ delay: 0.5, duration: 0.8 }}
             className="text-base md:text-lg mb-10 font-light opacity-90"
           >
-            יבואנים בלעדיים של Renato Angi Venezia ו-Carlino Group
+            יבואנים בלעדיים של RENATO ANGI VENEZIA ו-CARLINO GROUP
           </motion.p>
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
