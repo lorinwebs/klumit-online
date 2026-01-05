@@ -15,7 +15,7 @@ export default function Footer() {
             <p className="text-xs md:text-sm font-light text-gray-600 leading-relaxed mb-3 md:mb-6">
               יבואן בלעדי של תיקים יוקרתיים היישר מאיטליה
             </p>
-            <div className="text-xs font-light text-gray-500 tracking-luxury hidden md:block mb-4">
+            <div className="text-xs font-light text-gray-500 tracking-luxury mb-4">
               Renato Angi Venezia • Carlino Group
             </div>
             <a 
