@@ -178,45 +178,55 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" 
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="login-modal-title"
+    >
       <div 
         className="bg-white w-full max-w-md mx-4 p-8 relative" 
         onClick={(e) => e.stopPropagation()}
         dir="rtl"
+        role="document"
       >
         <button
           onClick={onClose}
           className="absolute top-4 left-4 text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label="סגור"
+          aria-label="סגור חלון התחברות"
         >
-          <X size={24} />
+          <X size={24} aria-hidden="true" />
         </button>
 
-        <h2 className="text-2xl md:text-3xl font-light luxury-font mb-6 text-right">
+        <h2 id="login-modal-title" className="text-2xl md:text-3xl font-light luxury-font mb-6 text-right">
           התחברות
         </h2>
 
         {step === 'phone' ? (
           <form onSubmit={handleSendCode} className="space-y-6">
             <div>
-              <label className="block text-sm font-light mb-2 text-right text-gray-600">
+              <label htmlFor="phone-input" className="block text-sm font-light mb-2 text-right text-gray-600">
                 מספר טלפון *
               </label>
               <div className="relative">
-                <Phone className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <Phone className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} aria-hidden="true" />
                 <input
+                  id="phone-input"
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(cleanPhoneInput(e.target.value))}
                   className="w-full px-4 py-3 pr-12 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                   placeholder="0501234567"
                   required
+                  autoComplete="tel"
+                  aria-describedby={error ? 'phone-error' : undefined}
                 />
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm font-light text-right">
+              <div id="phone-error" role="alert" className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm font-light text-right">
                 {error}
               </div>
             )}
@@ -232,25 +242,29 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         ) : (
           <form onSubmit={handleVerifyCode} className="space-y-6">
             <div>
-              <p className="text-sm font-light text-gray-600 mb-4 text-right">
+              <p className="text-sm font-light text-gray-600 mb-4 text-right" aria-live="polite">
                 נשלח קוד אימות למספר {phone}
               </p>
-              <label className="block text-sm font-light mb-2 text-right text-gray-600">
+              <label htmlFor="code-input" className="block text-sm font-light mb-2 text-right text-gray-600">
                 קוד אימות *
               </label>
               <input
+                id="code-input"
                 type="text"
+                inputMode="numeric"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 className="w-full px-4 py-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-center text-2xl tracking-widest"
                 placeholder="000000"
                 maxLength={6}
                 required
+                autoComplete="one-time-code"
+                aria-describedby={error ? 'verify-error' : undefined}
               />
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm font-light text-right">
+              <div id="verify-error" role="alert" className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm font-light text-right">
                 {error}
               </div>
             )}

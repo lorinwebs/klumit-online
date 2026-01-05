@@ -97,9 +97,9 @@ export default function CartPage() {
     return (
       <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
         <Header />
-        <main className="flex-grow max-w-4xl mx-auto px-4 py-20">
+        <main id="main-content" className="flex-grow max-w-4xl mx-auto px-4 py-20" role="main">
           <div className="text-center">
-            <ShoppingBag size={48} className="mx-auto text-gray-300 mb-6" />
+            <ShoppingBag size={48} className="mx-auto text-gray-300 mb-6" aria-hidden="true" />
             <h1 className="text-3xl md:text-4xl font-light luxury-font mb-4 text-[#1a1a1a]">
               העגלה שלך ריקה
             </h1>
@@ -122,7 +122,7 @@ export default function CartPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
-      <main className="flex-grow w-full">
+      <main id="main-content" className="flex-grow w-full" role="main">
         <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24 py-8 md:py-12">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-light luxury-font mb-8 md:mb-10 text-right">
             עגלת קניות
@@ -189,9 +189,9 @@ export default function CartPage() {
                           <button
                             onClick={() => updateQuantity(item.variantId, item.quantity - 1).catch(() => {})}
                             className="p-1.5 md:p-2 hover:bg-gray-50 transition-colors"
-                            aria-label="הפחת כמות"
+                            aria-label={`הפחת כמות של ${item.title}`}
                           >
-                            <Minus size={12} className="text-gray-600" />
+                            <Minus size={12} className="text-gray-600" aria-hidden="true" />
                           </button>
                           <span className="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-light min-w-[2.5rem] md:min-w-[3rem] text-center">
                             {item.quantity}
@@ -210,12 +210,9 @@ export default function CartPage() {
                                 ? 'opacity-30 cursor-not-allowed'
                                 : 'hover:bg-gray-50'
                             }`}
-                            aria-label="הוסף כמות"
-                            title={item.quantityAvailable !== undefined && item.quantity >= item.quantityAvailable 
-                              ? `מקסימום ${item.quantityAvailable} יחידות במלאי` 
-                              : undefined}
+                            aria-label={`הוסף כמות של ${item.title}`}
                           >
-                            <Plus size={12} className="text-gray-600" />
+                            <Plus size={12} className="text-gray-600" aria-hidden="true" />
                           </button>
                         </div>
                         {/* Inventory Notice - מתחת לכפתורי כמות */}
@@ -236,9 +233,9 @@ export default function CartPage() {
                     <button
                       onClick={() => removeItem(item.variantId).catch(() => {})}
                       className="text-gray-400 hover:text-[#1a1a1a] transition-colors p-1.5 flex-shrink-0 self-start mt-0.5"
-                      aria-label="הסר מהעגלה"
+                      aria-label={`הסר ${item.title} מהעגלה`}
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={18} aria-hidden="true" />
                     </button>
                   </div>
                 </div>

@@ -129,7 +129,7 @@ export default function ProductsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
-      <main className="flex-grow w-full px-4 py-12 md:py-16">
+      <main id="main-content" className="flex-grow w-full px-4 py-12 md:py-16" role="main">
         <Suspense fallback={
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
             {[...Array(8)].map((_, i) => (

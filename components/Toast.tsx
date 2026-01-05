@@ -23,9 +23,11 @@ export default function Toast({ show, message, showViewCart = true, type = 'succ
           exit={{ opacity: 0, y: -10, scale: 0.95 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
           className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50"
+          role="alert"
+          aria-live="polite"
         >
           <div className={`${isWarning ? 'bg-amber-600' : 'bg-[#1a1a1a]'} text-white px-6 py-4 rounded-sm shadow-lg flex items-center gap-4 min-w-[280px]`}>
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0" aria-hidden="true">
               {isWarning ? (
                 <AlertCircle size={18} className="text-white" />
               ) : (

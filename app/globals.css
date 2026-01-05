@@ -2,6 +2,94 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== ACCESSIBILITY ===== */
+
+/* Skip to main content link */
+.skip-to-main {
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a1a;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  z-index: 9999;
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: top 0.3s;
+}
+
+.skip-to-main:focus {
+  top: 10px;
+}
+
+/* Focus indicators - WCAG 2.4.7 */
+:focus-visible {
+  outline: 2px solid #1a1a1a !important;
+  outline-offset: 2px !important;
+}
+
+/* Focus ring for interactive elements */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #1a1a1a !important;
+  outline-offset: 2px !important;
+}
+
+/* High contrast focus for dark backgrounds */
+.dark a:focus-visible,
+.dark button:focus-visible,
+[class*="bg-[#1a1a1a]"]:focus-visible {
+  outline-color: white !important;
+}
+
+/* Remove default focus outline only when focus-visible is supported */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Screen reader only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Ensure minimum touch target size - WCAG 2.5.5 */
+@media (pointer: coarse) {
+  button,
+  a,
+  input[type="checkbox"],
+  input[type="radio"],
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Reduced motion - WCAG 2.3.3 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Custom Font - Ellinia */
 @font-face {
   font-family: 'Ellinia';

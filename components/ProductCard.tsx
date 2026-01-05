@@ -97,12 +97,12 @@ export default function ProductCard({
               </div>
             )}
             {onSale && (
-              <div className="absolute top-3 right-3 bg-[#1a1a1a]/90 text-white px-2 py-1 text-[10px] tracking-luxury uppercase font-light">
+              <div className="absolute top-3 right-3 bg-[#1a1a1a]/90 text-white px-2 py-1 text-[10px] tracking-luxury uppercase font-light" aria-label="מוצר במבצע">
                 מבצע
               </div>
             )}
             {!available && (
-              <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+              <div className="absolute inset-0 bg-white/80 flex items-center justify-center" aria-label="מוצר אזל מהמלאי">
                 <span className="text-gray-600 font-light tracking-luxury uppercase text-xs">אזל מהמלאי</span>
               </div>
             )}
@@ -111,7 +111,7 @@ export default function ProductCard({
                 onClick={handleAddToCart}
                 disabled={!available || isMaxStock}
                 className="w-full py-2 text-[10px] tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury disabled:opacity-50 disabled:cursor-not-allowed"
-                title={isMaxStock ? `מקסימום ${quantityAvailable} יחידות במלאי` : undefined}
+                aria-label={isMaxStock ? `מקסימום ${quantityAvailable} יחידות במלאי` : `הוסף ${title} לסל הקניות`}
               >
                 {isMaxStock ? 'מקסימום במלאי' : 'הוספה לסל'}
               </button>

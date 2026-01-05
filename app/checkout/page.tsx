@@ -898,7 +898,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen md:h-screen flex flex-col bg-[#fdfcfb] md:overflow-hidden">
       <Header />
-      <main className="flex-1 md:overflow-hidden overflow-y-auto">
+      <main id="main-content" className="flex-1 md:overflow-hidden overflow-y-auto" role="main">
         <div className="md:h-full max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-3">
           <div className="md:h-full flex flex-col">
             <div className="flex items-center justify-between mb-4 md:mb-3">
@@ -927,47 +927,54 @@ export default function CheckoutPage() {
                 </h2>
                 <div className="grid md:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                    <label htmlFor="firstName" className="block text-xs font-light mb-1 text-right text-gray-600">
                       שם פרטי *
                     </label>
                     <input
+                      id="firstName"
                       type="text"
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                       required
+                      autoComplete="given-name"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                    <label htmlFor="lastName" className="block text-xs font-light mb-1 text-right text-gray-600">
                       שם משפחה *
                     </label>
                     <input
+                      id="lastName"
                       type="text"
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                       required
+                      autoComplete="family-name"
                     />
                   </div>
                 </div>
                 <div className="mt-3">
-                  <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                  <label htmlFor="email" className="block text-xs font-light mb-1 text-right text-gray-600">
                     אימייל *
                   </label>
                   <input
+                    id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                     required
+                    autoComplete="email"
                   />
                 </div>
                 <div className="mt-3">
-                  <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                  <label htmlFor="phone" className="block text-xs font-light mb-1 text-right text-gray-600">
                     טלפון *
                   </label>
                   <input
+                    id="phone"
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => {
@@ -987,9 +994,11 @@ export default function CheckoutPage() {
                     }`}
                     placeholder="0501234567"
                     required
+                    autoComplete="tel"
+                    aria-describedby={formData.phone && !/^(\+972|972|0)\d{8,9}$/.test(formData.phone.replace(/[\s\-]/g, '')) ? 'phone-error-checkout' : undefined}
                   />
                   {formData.phone && !/^(\+972|972|0)\d{8,9}$/.test(formData.phone.replace(/[\s\-]/g, '')) && (
-                    <p className="text-xs text-red-500 mt-1 text-right">מספר טלפון לא תקין</p>
+                    <p id="phone-error-checkout" className="text-xs text-red-500 mt-1 text-right" role="alert">מספר טלפון לא תקין</p>
                   )}
                 </div>
               </div>
@@ -1022,23 +1031,27 @@ export default function CheckoutPage() {
                 </div>
                 <div className="grid md:grid-cols-2 gap-3 mt-3">
                   <div>
-                    <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                    <label htmlFor="city" className="block text-xs font-light mb-1 text-right text-gray-600">
                       עיר *
                     </label>
                     <input
+                      id="city"
                       type="text"
                       value={formData.city}
                       onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                       required
+                      autoComplete="address-level2"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                    <label htmlFor="zipCode" className="block text-xs font-light mb-1 text-right text-gray-600">
                       מיקוד *
                     </label>
                     <input
+                      id="zipCode"
                       type="text"
+                      inputMode="numeric"
                       value={formData.zipCode}
                       onChange={(e) => {
                         // רק ספרות, מקסימום 7
@@ -1052,18 +1065,21 @@ export default function CheckoutPage() {
                       }`}
                       placeholder="7 ספרות"
                       required
+                      autoComplete="postal-code"
+                      aria-describedby={formData.zipCode && formData.zipCode.length > 0 && formData.zipCode.length !== 7 ? 'zip-error' : undefined}
                     />
                     {formData.zipCode && formData.zipCode.length > 0 && formData.zipCode.length !== 7 && (
-                      <p className="text-xs text-red-500 mt-1 text-right">מיקוד צריך להכיל 7 ספרות</p>
+                      <p id="zip-error" className="text-xs text-red-500 mt-1 text-right" role="alert">מיקוד צריך להכיל 7 ספרות</p>
                     )}
                   </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-3 mt-3">
                   <div>
-                    <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                    <label htmlFor="apartment" className="block text-xs font-light mb-1 text-right text-gray-600">
                       דירה
                     </label>
                     <input
+                      id="apartment"
                       type="text"
                       value={formData.apartment}
                       onChange={(e) => setFormData({ ...formData, apartment: e.target.value })}
@@ -1072,10 +1088,11 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                    <label htmlFor="floor" className="block text-xs font-light mb-1 text-right text-gray-600">
                       קומה
                     </label>
                     <input
+                      id="floor"
                       type="text"
                       value={formData.floor}
                       onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
@@ -1085,10 +1102,11 @@ export default function CheckoutPage() {
                   </div>
                 </div>
                 <div className="mt-3">
-                  <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                  <label htmlFor="notes" className="block text-xs font-light mb-1 text-right text-gray-600">
                     הערות (קוד ללובי, הוראות משלוח וכו&apos;)
                   </label>
                   <textarea
+                    id="notes"
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right resize-none"
@@ -1116,7 +1134,7 @@ export default function CheckoutPage() {
 
 
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm font-light text-right">
+                <div role="alert" className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm font-light text-right">
                   {error}
                 </div>
               )}

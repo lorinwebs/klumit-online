@@ -164,6 +164,9 @@ export default function RootLayout({
         />
       </head>
       <body className={`${assistant.variable} ${cormorant.variable} font-sans overflow-x-hidden`}>
+        <a href="#main-content" className="skip-to-main">
+          דלג לתוכן הראשי
+        </a>
         {children}
       </body>
     </html>

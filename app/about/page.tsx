@@ -15,7 +15,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
-      <main className="flex-grow">
+      <main id="main-content" className="flex-grow" role="main">
         {/* Hero Section */}
         <section className="relative py-12 border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4">

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Instagram } from 'lucide-react';
+import { ViewerCount } from './ViewerCount';
 
 export default function Footer() {
   return (
@@ -26,6 +27,7 @@ export default function Footer() {
             >
               <Instagram size={20} />
             </a>
+            <ViewerCount />
           </div>
           
           {/* Navigation */}
@@ -121,6 +123,9 @@ export default function Footer() {
               </Link>
               <Link href="/privacy" className="hover:text-[#1a1a1a] transition-colors">
                 פרטיות
+              </Link>
+              <Link href="/accessibility" className="hover:text-[#1a1a1a] transition-colors">
+                נגישות
               </Link>
             </div>
           </div>

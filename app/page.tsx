@@ -8,7 +8,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow">
+      <main id="main-content" className="flex-grow" role="main">
         <Hero />
         <FeaturedProducts />
         <InstagramFeed />

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingBag, Menu, Package, Circle } from 'lucide-react';
+import { ShoppingBag, Menu } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useState, useEffect } from 'react';
 import UserMenu from './UserMenu';
@@ -27,7 +27,7 @@ export default function Header() {
             Klumit
           </Link>
           
-          <div className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-8" aria-label="תפריט ניווט ראשי">
             <Link href="/" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
               בית
             </Link>
@@ -40,33 +40,31 @@ export default function Header() {
             <Link href="/about" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity">
               אודות
             </Link>
-          </div>
+          </nav>
 
           <div className="flex items-center gap-0.5 md:gap-4 flex-shrink-0">
             <UserMenu />
-            {/* Mobile - Bags Icon */}
+            {/* Mobile - Bags & Belts text links */}
             <Link 
               href="/products" 
-              className="md:hidden p-1 hover:opacity-70 transition-opacity"
-              aria-label="תיקים"
+              className="md:hidden text-[11px] tracking-wide hover:opacity-70 transition-opacity text-[#1a1a1a]"
             >
-              <Package size={18} className="text-[#1a1a1a]" />
+              תיקים
             </Link>
-            {/* Mobile - Belts Icon */}
             <Link 
               href="/products?tab=belts" 
-              className="md:hidden p-1 hover:opacity-70 transition-opacity"
-              aria-label="חגורות"
+              className="md:hidden text-[11px] tracking-wide hover:opacity-70 transition-opacity text-[#1a1a1a]"
             >
-              <Circle size={18} className="text-[#1a1a1a]" />
+              חגורות
             </Link>
             <Link 
               href="/cart" 
               className="relative p-1 md:p-2 hover:opacity-70 transition-opacity"
+              aria-label={`סל קניות${mounted && itemCount > 0 ? ` (${itemCount} פריטים)` : ''}`}
             >
-              <ShoppingBag size={18} className="md:w-[22px] md:h-[22px] text-[#1a1a1a]" />
+              <ShoppingBag size={18} className="md:w-[22px] md:h-[22px] text-[#1a1a1a]" aria-hidden="true" />
               {mounted && itemCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-[#1a1a1a] text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-light">
+                <span className="absolute -top-0.5 -right-0.5 bg-[#1a1a1a] text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center font-light" aria-hidden="true">
                   {itemCount}
                 </span>
               )}
@@ -75,15 +73,17 @@ export default function Header() {
             <button
               className="md:hidden p-1"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="תפריט"
+              aria-label={mobileMenuOpen ? 'סגור תפריט' : 'פתח תפריט'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu"
             >
-              <Menu size={18} />
+              <Menu size={18} aria-hidden="true" />
             </button>
           </div>
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-black/10">
+          <nav id="mobile-menu" className="md:hidden mt-4 pb-4 border-t border-black/10" aria-label="תפריט ניווט ראשי">
             <div className="flex flex-col gap-4 pt-4 text-right pr-4">
               <Link href="/" className="hover:opacity-70 transition-opacity text-base" onClick={() => setMobileMenuOpen(false)}>
                 בית
@@ -98,7 +98,7 @@ export default function Header() {
                 אודות
               </Link>
             </div>
-          </div>
+          </nav>
         )}
       </nav>
     </header>
