@@ -1,7 +1,7 @@
 'use client';
 
 import { Instagram } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const INSTAGRAM_POSTS = [
   'https://www.instagram.com/p/DSuvqk2DFsU/',
@@ -11,6 +11,23 @@ const INSTAGRAM_POSTS = [
 
 export default function InstagramFeed() {
   const [active, setActive] = useState(0);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
+  const handleSwipe = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(diff) > minSwipeDistance) {
+      if (diff > 0) {
+        // Swiped left - next (RTL: previous visually)
+        setActive((prev) => (prev < INSTAGRAM_POSTS.length - 1 ? prev + 1 : prev));
+      } else {
+        // Swiped right - previous (RTL: next visually)
+        setActive((prev) => (prev > 0 ? prev - 1 : prev));
+      }
+    }
+  };
 
   const processEmbeds = () => {
     if ((window as any).instgrm?.Embeds) {
