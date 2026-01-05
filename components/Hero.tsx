@@ -35,13 +35,51 @@ export default function Hero() {
             transition={{ delay: 0.2, duration: 0.8 }}
             className="text-3xl md:text-5xl lg:text-6xl mb-4 font-light tracking-luxury leading-tight luxury-font"
           >
-            קלומית בע״מ טסט
+            קלומית
           </motion.h1>
+          
+          {/* Mobile Layout */}
+          <div className="md:hidden">
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+              className="text-lg font-light leading-relaxed"
+            >
+              יבואי תיקים
+            </motion.p>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45, duration: 0.8 }}
+              className="text-lg font-light leading-relaxed mb-3"
+            >
+              משנת 1984
+            </motion.p>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+              className="text-base font-light opacity-90"
+            >
+              יבואנים בלעדיים של
+            </motion.p>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55, duration: 0.8 }}
+              className="text-lg font-light opacity-90 mb-10"
+            >
+              <strong>Renato Angi Venezia</strong> ו-<strong>Carlino Group</strong>
+            </motion.p>
+          </div>
+          
+          {/* Desktop Layout */}
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.8 }}
-            className="text-lg md:text-xl lg:text-2xl mb-3 font-light leading-relaxed"
+            className="hidden md:block text-xl lg:text-2xl mb-3 font-light leading-relaxed"
           >
             יבואני תיקים ארנקים וחגורות מאיטליה - משנת 1984
           </motion.p>
@@ -49,7 +87,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="text-lg md:text-xl lg:text-2xl mb-10 font-light opacity-90"
+            className="hidden md:block text-xl lg:text-2xl mb-10 font-light opacity-90"
           >
             יבואנים בלעדיים של <strong>Renato Angi Venezia</strong> ו-<strong>Carlino Group</strong>
           </motion.p>

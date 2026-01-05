@@ -155,9 +155,56 @@ export default function FeaturedProducts() {
   useEffect(() => {
     async function fetchProducts() {
       try {
+        // Query with sortKey and timestamp to bypass cache
+        const PRODUCTS_QUERY_NOCACHE = `
+          query getProducts($first: Int!) {
+            products(first: $first, sortKey: UPDATED_AT, reverse: true) {
+              edges {
+                node {
+                  id
+                  title
+                  handle
+                  description
+                  descriptionHtml
+                  productType
+                  updatedAt
+                  priceRange {
+                    minVariantPrice {
+                      amount
+                      currencyCode
+                    }
+                  }
+                  images(first: 5) {
+                    edges {
+                      node {
+                        url
+                        altText
+                      }
+                    }
+                  }
+                  variants(first: 10) {
+                    edges {
+                      node {
+                        id
+                        title
+                        price {
+                          amount
+                          currencyCode
+                        }
+                        availableForSale
+                        quantityAvailable
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        `;
+        
         const data = await shopifyClient.request<{
           products: { edges: Array<{ node: Product }> };
-        }>(PRODUCTS_QUERY, {
+        }>(PRODUCTS_QUERY_NOCACHE, {
           first: 50,
         });
         // Take only first 4-5 products

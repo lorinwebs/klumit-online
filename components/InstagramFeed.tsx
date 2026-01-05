@@ -1,7 +1,7 @@
 'use client';
 
 import { Instagram } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const INSTAGRAM_POSTS = [
   'https://www.instagram.com/p/DSuvqk2DFsU/',
@@ -10,7 +10,6 @@ const INSTAGRAM_POSTS = [
 ];
 
 export default function InstagramFeed() {
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [active, setActive] = useState(0);
 
   const processEmbeds = () => {
@@ -36,50 +35,12 @@ export default function InstagramFeed() {
     script.onload = () => processEmbeds();
   }, []);
 
-  // Track which slide is active (for dots)
+  // Re-process embeds when active slide changes
   useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-
-    let raf = 0;
-
-    const updateActive = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const slides = Array.from(el.querySelectorAll('[data-slide]')) as HTMLDivElement[];
-        const center = el.scrollLeft + el.clientWidth / 2;
-
-        let bestIndex = 0;
-        let bestDist = Infinity;
-
-        slides.forEach((s, i) => {
-          const slideCenter = s.offsetLeft + s.clientWidth / 2;
-          const dist = Math.abs(center - slideCenter);
-          if (dist < bestDist) {
-            bestDist = dist;
-            bestIndex = i;
-          }
-        });
-
-        setActive(bestIndex);
-      });
-    };
-
-    el.addEventListener('scroll', updateActive, { passive: true });
-    updateActive();
-
-    return () => {
-      el.removeEventListener('scroll', updateActive);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  const scrollToIndex = (i: number) => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const slide = el.querySelector(`[data-slide="${i}"]`) as HTMLElement | null;
-    slide?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  };
+    // Small delay to let DOM update
+    const timeout = setTimeout(() => processEmbeds(), 100);
+    return () => clearTimeout(timeout);
+  }, [active]);
 
   return (
     <section className="py-12 md:py-24 bg-[#fdfcfb]">
@@ -100,23 +61,13 @@ export default function InstagramFeed() {
           <p className="text-gray-500 font-light mt-1 md:mt-3 text-sm md:text-base">@klomit</p>
         </div>
 
-        {/* Mobile - Carousel (horizontal scroll + snap) */}
+        {/* Mobile - Single post with navigation */}
         <div className="md:hidden">
-          <div
-            ref={scrollerRef}
-            className="
-              flex gap-4 overflow-x-auto snap-x snap-mandatory
-              px-4 -mx-4 pb-3
-              scroll-smooth
-              touch-pan-x
-              scrollbar-hide
-            "
-          >
+          <div className="relative mx-auto" style={{ maxWidth: '350px' }}>
             {INSTAGRAM_POSTS.map((postUrl, index) => (
               <div
                 key={index}
-                data-slide={index}
-                className="snap-center shrink-0 w-[85vw] max-w-[350px] relative overflow-hidden"
+                className={`${active === index ? 'block' : 'hidden'}`}
               >
                 <blockquote
                   className="instagram-media"
@@ -127,12 +78,10 @@ export default function InstagramFeed() {
                     border: '1px solid #dbdbdb',
                     borderRadius: '4px',
                     boxShadow: 'none',
-                    margin: '0',
+                    margin: '0 auto',
                     maxWidth: '350px',
                     padding: 0,
                     width: '100%',
-                    minHeight: 480,
-                    position: 'relative',
                   }}
                 />
               </div>
@@ -140,11 +89,11 @@ export default function InstagramFeed() {
           </div>
 
           {/* Dots */}
-          <div className="mt-3 flex items-center justify-center gap-2">
+          <div className="mt-4 flex items-center justify-center gap-2">
             {INSTAGRAM_POSTS.map((_, i) => (
               <button
                 key={i}
-                onClick={() => scrollToIndex(i)}
+                onClick={() => setActive(i)}
                 aria-label={`Instagram post ${i + 1}`}
                 className={`h-2.5 w-2.5 rounded-full transition-opacity ${
                   active === i ? 'opacity-100 bg-black' : 'opacity-30 bg-black'
