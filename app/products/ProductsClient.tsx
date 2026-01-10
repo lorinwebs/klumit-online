@@ -124,7 +124,7 @@ export default function ProductsClient({
             </div>
           </div>
           {/* Desktop: Buttons */}
-          <div className="hidden md:flex items-center justify-center gap-4 flex-wrap">
+          <div className="hidden md:flex items-center justify-start gap-4 flex-wrap">
             <span className="text-sm font-medium text-gray-700">מותג:</span>
             <div className="flex items-center gap-3 flex-wrap">
               <button

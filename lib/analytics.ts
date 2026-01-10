@@ -26,29 +26,12 @@ export interface CartData {
   currency?: string;
 }
 
-// Initialize GA4 script
+// Initialize GA4 script (already loaded in layout.tsx, this is a fallback)
 export function initGA4(): void {
-  if (typeof window === 'undefined' || !GA_MEASUREMENT_ID) return;
+  if (typeof window === 'undefined') return;
   
-  // Don't initialize twice
-  if ((window as any).gtag) return;
-
-  // Add gtag script
-  const script = document.createElement('script');
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
-  script.async = true;
-  document.head.appendChild(script);
-
-  // Initialize dataLayer and gtag
-  (window as any).dataLayer = (window as any).dataLayer || [];
-  (window as any).gtag = function gtag() {
-    (window as any).dataLayer.push(arguments);
-  };
-  
-  (window as any).gtag('js', new Date());
-  (window as any).gtag('config', GA_MEASUREMENT_ID, {
-    send_page_view: false, // We'll send manually for SPA
-  });
+  // Script is already loaded in layout.tsx
+  // This function is kept for backwards compatibility
 }
 
 // Helper to send events

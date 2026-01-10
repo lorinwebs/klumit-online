@@ -168,6 +168,18 @@ export default function RootLayout({
   return (
     <html lang="he" dir="rtl">
       <head>
+        {/* Google Analytics */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-FZT27KSTMM" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-FZT27KSTMM', { send_page_view: false });
+            `,
+          }}
+        />
         {/* Permissions Policy - allow unload for Supabase Realtime */}
         <meta httpEquiv="Permissions-Policy" content="unload=*" />
         {/* Preload LCP image for faster discovery */}
