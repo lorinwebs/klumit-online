@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useState, Suspense, useMemo } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
@@ -41,48 +41,32 @@ interface Product {
 type TabType = 'bags' | 'belts' | 'wallets';
 
 function ProductsContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const tabParam = searchParams?.get('tab') as TabType | null;
-  const vendorParam = searchParams?.get('vendor');
-  const [activeTab, setActiveTab] = useState<TabType>(
-    tabParam === 'belts' ? 'belts' : tabParam === 'wallets' ? 'wallets' : 'bags'
-  );
-  const [selectedVendor, setSelectedVendor] = useState<string>(vendorParam || 'all');
+  
+  // Derive tab and vendor directly from URL
+  const activeTab = (searchParams?.get('tab') as TabType) || 'bags';
+  const selectedVendor = searchParams?.get('vendor') || 'all';
+
   const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [allVendors, setAllVendors] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Update tab from URL params
-    const currentTabParam = searchParams?.get('tab') as TabType | null;
-    const currentVendorParam = searchParams?.get('vendor');
-    if (currentTabParam === 'belts') {
-      setActiveTab('belts');
-    } else if (currentTabParam === 'wallets') {
-      setActiveTab('wallets');
-    } else {
-      setActiveTab('bags');
-    }
-    if (currentVendorParam) {
-      setSelectedVendor(currentVendorParam);
-    } else {
-      setSelectedVendor('all');
-    }
-  }, [searchParams]);
-
+  // Fetch products - only runs when tab changes
   useEffect(() => {
     async function fetchProducts() {
       setLoading(true);
       try {
-        // Build query filter based on active tab
         let queryFilter = '';
-        if (activeTab === 'bags') {
-          queryFilter = '(product_type:תיק OR product_type:bag OR product_type:תיקים OR product_type:bags)';
-        } else if (activeTab === 'belts') {
-          queryFilter = '(product_type:חגורות OR product_type:belt OR product_type:belts OR product_type:חגורה)';
-        } else if (activeTab === 'wallets') {
-          queryFilter = '(product_type:ארנק OR product_type:wallet OR product_type:ארנקים OR product_type:wallets)';
+        switch (activeTab) {
+          case 'bags':
+            queryFilter = '(product_type:תיק OR product_type:bag OR product_type:תיקים OR product_type:bags)';
+            break;
+          case 'belts':
+            queryFilter = '(product_type:חגורות OR product_type:belt OR product_type:belts OR product_type:חגורה)';
+            break;
+          case 'wallets':
+            queryFilter = '(product_type:ארנק OR product_type:wallet OR product_type:ארנקים OR product_type:wallets)';
+            break;
         }
 
         const data = await shopifyClient.request<{
@@ -91,18 +75,10 @@ function ProductsContent() {
           first: 50,
           query: queryFilter || undefined,
         });
-        const fetchedProducts = data.products.edges.map((edge) => edge.node);
-        setAllProducts(fetchedProducts);
         
-        // Extract unique vendors
-        const vendors = Array.from(new Set(
-          fetchedProducts
-            .map(p => p.vendor)
-            .filter((v): v is string => !!v)
-        )).sort();
-        setAllVendors(vendors);
+        setAllProducts(data.products.edges.map((edge) => edge.node));
       } catch (error) {
-        // ignore
+        console.error("Failed to fetch products", error);
       } finally {
         setLoading(false);
       }
@@ -111,25 +87,29 @@ function ProductsContent() {
     fetchProducts();
   }, [activeTab]);
 
-  // Filter products by vendor on client side (no re-fetch)
-  useEffect(() => {
-    if (selectedVendor === 'all') {
-      setProducts(allProducts);
-    } else {
-      setProducts(allProducts.filter(p => p.vendor === selectedVendor));
-    }
-  }, [selectedVendor, allProducts]);
+  // Derived state - computed at render time, no extra re-renders
+  const { filteredProducts, allVendors } = useMemo(() => {
+    const vendors = Array.from(new Set(
+      allProducts
+        .map(p => p.vendor)
+        .filter((v): v is string => !!v)
+    )).sort();
+
+    const filtered = selectedVendor === 'all' 
+      ? allProducts 
+      : allProducts.filter(p => p.vendor === selectedVendor);
+
+    return { filteredProducts: filtered, allVendors: vendors };
+  }, [allProducts, selectedVendor]);
 
   const handleVendorChange = (vendor: string) => {
-    setSelectedVendor(vendor);
     const params = new URLSearchParams(searchParams?.toString() || '');
     if (vendor === 'all') {
       params.delete('vendor');
     } else {
       params.set('vendor', vendor);
     }
-    // Use replaceState instead of pushState to avoid adding to history
-    window.history.replaceState({}, '', `?${params.toString()}`);
+    router.replace(`?${params.toString()}`, { scroll: false });
   };
 
   return (
@@ -201,16 +181,24 @@ function ProductsContent() {
       {loading ? (
         <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="bg-gray-200 animate-pulse aspect-[4/5]" />
+            <div key={`skeleton-${i}`} className="bg-gray-200 animate-pulse aspect-[4/5]" />
           ))}
         </div>
-      ) : products.length === 0 ? (
+      ) : filteredProducts.length === 0 ? (
         <div className="max-w-7xl mx-auto text-center py-20">
           <p className="text-gray-400 font-light text-lg">לא נמצאו מוצרים בקטגוריה זו</p>
+          {selectedVendor !== 'all' && (
+            <button 
+              onClick={() => handleVendorChange('all')}
+              className="mt-4 text-sm underline text-gray-600 hover:text-black"
+            >
+              נקה סינון
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
-          {products.map((product) => {
+          {filteredProducts.map((product) => {
             // Find first available variant, or fallback to first variant
             const availableVariant = product.variants.edges.find(
               (e) => e.node.availableForSale
@@ -249,11 +237,11 @@ export default function ProductsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
-      <main id="main-content" className="flex-grow w-full px-4 py-12 md:py-16" role="main">
+      <main id="main-content" className="flex-grow w-full px-4 py-4 md:py-16" role="main">
         <Suspense fallback={
           <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-gray-200 animate-pulse aspect-[4/5]" />
+              <div key={`suspense-${i}`} className="bg-gray-200 animate-pulse aspect-[4/5]" />
             ))}
           </div>
         }>
