@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { useCartStore } from '@/store/cartStore';
-import { Heart, ChevronLeft, ChevronRight, X, Share2 } from 'lucide-react';
+import { Heart, ChevronLeft, ChevronRight, X, Share2, Lock, Phone } from 'lucide-react';
 import Link from 'next/link';
 import Toast from '@/components/Toast';
 import ProductCard from '@/components/ProductCard';
@@ -825,8 +825,30 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                       className="w-full border border-green-600 text-green-600 py-3 px-6 text-sm tracking-luxury uppercase font-light hover:bg-green-600 hover:text-white transition-luxury flex items-center justify-center gap-2"
                     >
                       <Share2 size={18} />
-                      SHARE IN WHATSAPP
+                      שתפו בוואטסאפ
                     </button>
+                  </div>
+
+                  {/* Trust Badges */}
+                  <div className="pt-3 space-y-2 border-t border-gray-100">
+                    <div className="flex items-center justify-end gap-2 text-xs text-gray-600">
+                      <span className="flex gap-1">
+                        <svg viewBox="0 0 38 24" className="h-5 w-auto"><rect width="38" height="24" rx="3" fill="#1A1F71"/><path d="M15 17.5l1.5-9h2.4l-1.5 9H15zm6.7-8.8c-.5-.2-1.2-.4-2.2-.4-2.4 0-4.1 1.2-4.1 3 0 1.3 1.2 2 2.1 2.4.9.4 1.2.7 1.2 1.1 0 .6-.7.9-1.4.9-.9 0-1.4-.1-2.2-.5l-.3-.1-.3 1.9c.5.3 1.5.5 2.5.5 2.6 0 4.3-1.2 4.3-3.1 0-1-.6-1.8-2-2.4-.8-.4-1.3-.7-1.3-1.1 0-.4.4-.8 1.3-.8.7 0 1.3.1 1.7.3l.2.1.3-1.8zm6.5-.2h-1.9c-.6 0-1 .2-1.3.7l-3.6 8.3h2.5l.5-1.3h3.1l.3 1.3h2.2l-1.8-9zm-2.9 5.8l1-2.5.5 2.5h-1.5zM9.5 8.5L7.1 14l-.3-1.3c-.5-1.5-1.9-3.2-3.5-4l2.2 8.3h2.6l3.9-9H9.5z" fill="#fff"/><path d="M5.2 8.5H1l-.1.2c3.1.8 5.2 2.7 6 5l-.9-4.4c-.1-.5-.5-.7-1-.8" fill="#F9A533"/></svg>
+                        <svg viewBox="0 0 38 24" className="h-5 w-auto"><rect width="38" height="24" rx="3" fill="#000"/><circle cx="15" cy="12" r="7" fill="#EB001B"/><circle cx="23" cy="12" r="7" fill="#F79E1B"/><path d="M19 7a7 7 0 000 10 7 7 0 000-10z" fill="#FF5F00"/></svg>
+                      </span>
+                      <Lock size={12} />
+                      <span>תשלום מאובטח</span>
+                    </div>
+                    <a 
+                      href="https://wa.me/972542600177" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-end gap-2 text-xs text-gray-600 hover:text-green-600 transition-colors"
+                    >
+                      <Phone size={12} />
+                      <span>שירות לקוחות</span>
+                      <span className="text-green-600 underline">054-260-0177</span>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -963,8 +985,30 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     className="w-full border border-green-600 text-green-600 py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-green-600 hover:text-white transition-luxury flex items-center justify-center gap-2"
                   >
                     <Share2 size={18} />
-                    SHARE IN WHATSAPP
+                    שתפו בוואטסאפ
                   </button>
+
+                  {/* Trust Badges - Desktop */}
+                  <div className="pt-4 space-y-2 border-t border-gray-100">
+                    <div className="flex items-center justify-end gap-2 text-xs text-gray-600">
+                      <span className="flex gap-1">
+                        <svg viewBox="0 0 38 24" className="h-5 w-auto"><rect width="38" height="24" rx="3" fill="#1A1F71"/><path d="M15 17.5l1.5-9h2.4l-1.5 9H15zm6.7-8.8c-.5-.2-1.2-.4-2.2-.4-2.4 0-4.1 1.2-4.1 3 0 1.3 1.2 2 2.1 2.4.9.4 1.2.7 1.2 1.1 0 .6-.7.9-1.4.9-.9 0-1.4-.1-2.2-.5l-.3-.1-.3 1.9c.5.3 1.5.5 2.5.5 2.6 0 4.3-1.2 4.3-3.1 0-1-.6-1.8-2-2.4-.8-.4-1.3-.7-1.3-1.1 0-.4.4-.8 1.3-.8.7 0 1.3.1 1.7.3l.2.1.3-1.8zm6.5-.2h-1.9c-.6 0-1 .2-1.3.7l-3.6 8.3h2.5l.5-1.3h3.1l.3 1.3h2.2l-1.8-9zm-2.9 5.8l1-2.5.5 2.5h-1.5zM9.5 8.5L7.1 14l-.3-1.3c-.5-1.5-1.9-3.2-3.5-4l2.2 8.3h2.6l3.9-9H9.5z" fill="#fff"/><path d="M5.2 8.5H1l-.1.2c3.1.8 5.2 2.7 6 5l-.9-4.4c-.1-.5-.5-.7-1-.8" fill="#F9A533"/></svg>
+                        <svg viewBox="0 0 38 24" className="h-5 w-auto"><rect width="38" height="24" rx="3" fill="#000"/><circle cx="15" cy="12" r="7" fill="#EB001B"/><circle cx="23" cy="12" r="7" fill="#F79E1B"/><path d="M19 7a7 7 0 000 10 7 7 0 000-10z" fill="#FF5F00"/></svg>
+                      </span>
+                      <Lock size={12} />
+                      <span>תשלום מאובטח</span>
+                    </div>
+                    <a 
+                      href="https://wa.me/972542600177" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-end gap-2 text-xs text-gray-600 hover:text-green-600 transition-colors"
+                    >
+                      <Phone size={12} />
+                      <span>שירות לקוחות</span>
+                      <span className="text-green-600 underline">054-260-0177</span>
+                    </a>
+                  </div>
                 </div>
 
                 {/* Product Details */}
