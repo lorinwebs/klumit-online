@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default function Hero() {
   return (
-    <section className="relative w-full h-[70vh] md:h-[85vh] min-h-[400px] landscape:min-h-[100svh] overflow-hidden">
+    <section className="relative w-full h-[60vh] md:h-[65vh] min-h-[350px] landscape:min-h-[80svh] overflow-hidden">
       {/* Full-width Background Image - LCP element - Loaded first, outside LazyMotion */}
       <Image
         src="/coverimage.jpeg"
@@ -22,8 +22,8 @@ export default function Hero() {
         blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAMH/8QAIhAAAgEDBAMBAAAAAAAAAAAAAQIRAAMEBRIhMQYTQVH/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8A0G7c2I20AAeiImpUqD/9k="
       />
       
-      {/* Dark Overlay */}
-      <div className="absolute inset-0 bg-black/40" />
+      {/* Warm Light Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/10 to-black/25" />
       
       {/* Content - Wrapped in LazyMotion for animations only */}
       <LazyMotion features={domAnimation} strict>
@@ -103,7 +103,7 @@ export default function Hero() {
             >
               <Link
                 href="/products"
-                className="inline-block border border-white px-10 py-3 text-sm tracking-luxury hover:bg-white hover:text-[#1a1a1a] transition-luxury uppercase font-light"
+                className="inline-block bg-white text-[#1a1a1a] px-12 py-4 text-sm tracking-luxury hover:bg-[#c9a962] hover:text-white transition-luxury uppercase font-medium shadow-lg"
               >
                 לצפייה בקולקציה
               </Link>
