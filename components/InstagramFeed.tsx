@@ -73,7 +73,14 @@ export default function InstagramFeed() {
   }, [active, isVisible]);
 
   return (
-    <section ref={sectionRef} className="py-12 md:py-24 bg-[#fdfcfb]">
+    <section ref={sectionRef} className="py-8 md:py-12 bg-[#fdfcfb]">
+      {/* Divider */}
+      <div className="flex items-center justify-center mb-8 md:mb-12 px-8">
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+        <span className="px-6 text-xs tracking-[0.3em] uppercase text-gray-400">◆</span>
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+      </div>
+      
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-6 md:mb-12">
@@ -182,18 +189,6 @@ export default function InstagramFeed() {
           ))}
         </div>
 
-        {/* CTA Button */}
-        <div className="text-center mt-6 md:mt-10">
-          <a
-            href="https://www.instagram.com/klomit/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] text-white px-6 md:px-8 py-2.5 md:py-3 text-sm tracking-luxury uppercase font-light hover:opacity-90 transition-opacity rounded-sm"
-          >
-            <Instagram size={18} />
-            לפרופיל המלא
-          </a>
-        </div>
       </div>
     </section>
   );

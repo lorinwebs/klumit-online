@@ -32,7 +32,7 @@ const props = [
 
 export default function ValueProps() {
   return (
-    <section className="bg-[#FDFBF7] text-[#1a1a1a] py-4 md:py-6 md:-mt-20 relative z-20 md:shadow-lg border-t border-b border-gray-100">
+    <section className="bg-[#FDFBF7] text-[#1a1a1a] py-4 md:py-6 md:-mt-20 relative z-20 border-t border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4">
         {/* Mobile - Horizontal scroll with fade indicator */}
         <div className="md:hidden relative">

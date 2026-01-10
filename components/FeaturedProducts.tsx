@@ -91,7 +91,7 @@ function CategoryCarousel({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-100px' }}
       transition={{ duration: 0.8, delay }}
-      className="mb-12 md:mb-20"
+      className="mb-8 md:mb-12"
     >
       {/* Category Header */}
       <div className="flex justify-between items-end mb-8 md:mb-12 px-4 md:px-8">
@@ -289,15 +289,22 @@ export default function FeaturedProducts() {
   }
 
   return (
-    <section className="w-full bg-[#fdfcfb] pt-12 md:pt-20 pb-10">
+    <section className="w-full bg-[#fdfcfb] pt-8 md:pt-12 pb-6">
       <div className="max-w-[1800px] mx-auto">
+        {/* Divider */}
+        <div className="flex items-center justify-center mb-6 md:mb-10 px-8">
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+          <span className="px-6 text-xs tracking-[0.3em] uppercase text-gray-400">◆</span>
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+        </div>
+
         {/* Section Intro */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-10 md:mb-16 px-4"
+          className="text-center mb-6 md:mb-10 px-4"
         >
           <span className="text-xs tracking-[0.4em] uppercase text-[#9a8a78] mb-4 block">Made in Italy</span>
           <h2 className="text-4xl md:text-6xl lg:text-7xl font-light luxury-font text-[#1a1a1a]">הקולקציה</h2>
@@ -313,7 +320,7 @@ export default function FeaturedProducts() {
               delay={0} 
             />
             {(categories.wallets.length > 0 || categories.belts.length > 0) && (
-              <div className="flex items-center justify-center mb-12 md:mb-20 px-8">
+              <div className="flex items-center justify-center mb-8 md:mb-12 px-8">
                 <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
                 <span className="px-6 text-xs tracking-[0.3em] uppercase text-gray-400">◆</span>
                 <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
@@ -331,7 +338,7 @@ export default function FeaturedProducts() {
               delay={0.1} 
             />
             {categories.belts.length > 0 && (
-              <div className="flex items-center justify-center mb-12 md:mb-20 px-8">
+              <div className="flex items-center justify-center mb-8 md:mb-12 px-8">
                 <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
                 <span className="px-6 text-xs tracking-[0.3em] uppercase text-gray-400">◆</span>
                 <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
@@ -349,21 +356,6 @@ export default function FeaturedProducts() {
           />
         )}
 
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mt-8 md:mt-16 pb-16"
-        >
-          <Link
-            href="/products"
-            className="inline-block border border-[#1a1a1a] text-[#1a1a1a] px-12 md:px-16 py-4 text-sm tracking-[0.2em] uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-all duration-500"
-          >
-            כל המוצרים
-          </Link>
-        </motion.div>
       </div>
     </section>
   );
