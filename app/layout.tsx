@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Assistant, Cormorant_Garamond } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
+import { Suspense } from 'react';
+import AnalyticsProvider from '@/components/Analytics';
 import './globals.css';
 
 const assistant = Assistant({ 
@@ -190,7 +192,11 @@ export default function RootLayout({
         <a href="#main-content" className="skip-to-main">
           דלג לתוכן הראשי
         </a>
-        {children}
+        <Suspense fallback={null}>
+          <AnalyticsProvider>
+            {children}
+          </AnalyticsProvider>
+        </Suspense>
         <Analytics />
       </body>
     </html>

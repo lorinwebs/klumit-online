@@ -8,6 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import Toast from '@/components/Toast';
+import { trackViewCart, trackBeginCheckout } from '@/lib/analytics';
 
 export default function CartPage() {
   const {
@@ -30,6 +31,22 @@ export default function CartPage() {
     loadFromShopify().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Track cart view
+  useEffect(() => {
+    if (items.length > 0) {
+      trackViewCart({
+        items: items.map(item => ({
+          id: item.variantId,
+          name: item.title,
+          price: parseFloat(item.price),
+          quantity: item.quantity,
+        })),
+        totalValue: getTotal(),
+        currency: items[0]?.currencyCode || 'ILS',
+      });
+    }
+  }, [items.length]); // Track only when items count changes
 
 
   // פורמט מחיר פרימיום
@@ -273,6 +290,18 @@ export default function CartPage() {
                 <div className="space-y-2.5 md:space-y-3 pt-3 md:pt-4">
                   <Link
                     href="/checkout"
+                    onClick={() => {
+                      trackBeginCheckout({
+                        items: items.map(item => ({
+                          id: item.variantId,
+                          name: item.title,
+                          price: parseFloat(item.price),
+                          quantity: item.quantity,
+                        })),
+                        totalValue: getTotal(),
+                        currency: items[0]?.currencyCode || 'ILS',
+                      });
+                    }}
                     className="block w-full bg-[#1a1a1a] text-white py-3.5 md:py-4 px-6 text-xs md:text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury text-center"
                   >
                     המשך לתשלום

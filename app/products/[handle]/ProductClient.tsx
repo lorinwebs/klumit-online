@@ -7,6 +7,7 @@ import { Heart, ChevronLeft, ChevronRight, X, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import Toast from '@/components/Toast';
 import ProductCard from '@/components/ProductCard';
+import { trackProductViewed, trackAddToCart } from '@/lib/analytics';
 
 interface Product {
   id: string;
@@ -228,6 +229,16 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     }
   }, [product]);
 
+  // Track product view
+  useEffect(() => {
+    trackProductViewed({
+      id: product.id,
+      name: product.title,
+      price: parseFloat(product.priceRange.minVariantPrice.amount),
+      currency: product.priceRange.minVariantPrice.currencyCode,
+    });
+  }, [product.id, product.title, product.priceRange.minVariantPrice]);
+
   // Update image when variant changes
   useEffect(() => {
     if (currentVariant?.image?.url) {
@@ -401,6 +412,16 @@ export default function ProductClient({ product, relatedProducts: initialRelated
         color: currentColor || undefined,
         variantTitle: currentVariant.title,
         handle: product.handle,
+      });
+
+      // Track add to cart
+      trackAddToCart({
+        id: currentVariant.id,
+        name: product.title,
+        price: parseFloat(currentVariant.price.amount),
+        currency: currentVariant.price.currencyCode,
+        variant: currentVariant.title,
+        quantity: 1,
       });
       
       // Show toast
