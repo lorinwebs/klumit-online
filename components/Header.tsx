@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ShoppingBag, Menu } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useState, useEffect } from 'react';
+import { useSearchParams, usePathname } from 'next/navigation';
 import UserMenu from './UserMenu';
 
 export default function Header() {
@@ -11,6 +12,11 @@ export default function Header() {
   const loadFromShopify = useCartStore((state) => state.loadFromShopify);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  
+  const currentTab = searchParams?.get('tab') || 'bags';
+  const isProductsPage = pathname === '/products';
 
   useEffect(() => {
     setMounted(true);
@@ -34,19 +40,19 @@ export default function Header() {
         
         {/* מרכז - תפריט דסקטופ */}
         <nav className="hidden md:flex items-center justify-center gap-8 h-full" aria-label="תפריט ניווט ראשי">
-          <Link href="/products" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity whitespace-nowrap">
+          <Link href="/products?tab=bags" className={`text-sm tracking-luxury uppercase font-light transition-colors whitespace-nowrap ${isProductsPage && currentTab === 'bags' ? 'text-[#c9a962]' : 'text-[#1a1a1a] hover:opacity-70'}`}>
             תיקים
           </Link>
           <span className="w-px h-4 bg-gray-300 shrink-0" />
-          <Link href="/products?tab=belts" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity whitespace-nowrap">
+          <Link href="/products?tab=belts" className={`text-sm tracking-luxury uppercase font-light transition-colors whitespace-nowrap ${isProductsPage && currentTab === 'belts' ? 'text-[#c9a962]' : 'text-[#1a1a1a] hover:opacity-70'}`}>
             חגורות
           </Link>
           <span className="w-px h-4 bg-gray-300 shrink-0" />
-          <Link href="/products?tab=wallets" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity whitespace-nowrap">
+          <Link href="/products?tab=wallets" className={`text-sm tracking-luxury uppercase font-light transition-colors whitespace-nowrap ${isProductsPage && currentTab === 'wallets' ? 'text-[#c9a962]' : 'text-[#1a1a1a] hover:opacity-70'}`}>
             ארנקים
           </Link>
           <span className="w-px h-4 bg-gray-300 shrink-0" />
-          <Link href="/about" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity whitespace-nowrap">
+          <Link href="/about" className={`text-sm tracking-luxury uppercase font-light transition-colors whitespace-nowrap ${pathname === '/about' ? 'text-[#c9a962]' : 'text-[#1a1a1a] hover:opacity-70'}`}>
             אודות
           </Link>
         </nav>
@@ -99,8 +105,8 @@ export default function Header() {
       */}
       <div className="md:hidden w-full flex items-center justify-center gap-5 h-10 border-t border-gray-100 bg-white">
         <Link 
-            href="/products" 
-            className="flex items-center h-full text-xs font-medium tracking-wide uppercase text-[#1a1a1a] hover:opacity-70"
+            href="/products?tab=bags" 
+            className={`flex items-center h-full text-xs font-medium tracking-wide uppercase transition-colors ${isProductsPage && currentTab === 'bags' ? 'text-[#c9a962]' : 'text-[#1a1a1a] hover:opacity-70'}`}
         >
             תיקים
         </Link>
@@ -109,7 +115,7 @@ export default function Header() {
         
         <Link 
             href="/products?tab=belts" 
-            className="flex items-center h-full text-xs font-medium tracking-wide uppercase text-[#1a1a1a] hover:opacity-70"
+            className={`flex items-center h-full text-xs font-medium tracking-wide uppercase transition-colors ${isProductsPage && currentTab === 'belts' ? 'text-[#c9a962]' : 'text-[#1a1a1a] hover:opacity-70'}`}
         >
             חגורות
         </Link>
@@ -118,7 +124,7 @@ export default function Header() {
         
         <Link 
             href="/products?tab=wallets" 
-            className="flex items-center h-full text-xs font-medium tracking-wide uppercase text-[#1a1a1a] hover:opacity-70"
+            className={`flex items-center h-full text-xs font-medium tracking-wide uppercase transition-colors ${isProductsPage && currentTab === 'wallets' ? 'text-[#c9a962]' : 'text-[#1a1a1a] hover:opacity-70'}`}
         >
             ארנקים
         </Link>
@@ -131,17 +137,17 @@ export default function Header() {
             className="md:hidden border-t border-black/10 bg-white absolute w-full left-0 top-full h-[calc(100dvh-100%)] z-50 overflow-y-auto pb-20"
         >
           <div className="flex flex-col gap-6 pt-8 text-center px-6">
-            <Link href="/products" className="text-lg tracking-widest uppercase hover:opacity-70 border-b border-gray-50 pb-4" onClick={() => setMobileMenuOpen(false)}>
-              כל התיקים
+            <Link href="/products?tab=bags" className={`text-lg tracking-widest uppercase border-b border-gray-50 pb-4 ${isProductsPage && currentTab === 'bags' ? 'text-[#c9a962]' : 'text-[#1a1a1a] hover:opacity-70'}`} onClick={() => setMobileMenuOpen(false)}>
+              תיקים
             </Link>
-            <Link href="/products?tab=belts" className="text-lg tracking-widest uppercase hover:opacity-70 border-b border-gray-50 pb-4" onClick={() => setMobileMenuOpen(false)}>
+            <Link href="/products?tab=belts" className={`text-lg tracking-widest uppercase border-b border-gray-50 pb-4 ${isProductsPage && currentTab === 'belts' ? 'text-[#c9a962]' : 'text-[#1a1a1a] hover:opacity-70'}`} onClick={() => setMobileMenuOpen(false)}>
               חגורות
             </Link>
-            <Link href="/products?tab=wallets" className="text-lg tracking-widest uppercase hover:opacity-70 border-b border-gray-50 pb-4" onClick={() => setMobileMenuOpen(false)}>
+            <Link href="/products?tab=wallets" className={`text-lg tracking-widest uppercase border-b border-gray-50 pb-4 ${isProductsPage && currentTab === 'wallets' ? 'text-[#c9a962]' : 'text-[#1a1a1a] hover:opacity-70'}`} onClick={() => setMobileMenuOpen(false)}>
               ארנקים
             </Link>
-            <Link href="/about" className="text-lg tracking-widest uppercase hover:opacity-70 border-b border-gray-50 pb-4" onClick={() => setMobileMenuOpen(false)}>
-              אודות המותג
+            <Link href="/about" className={`text-lg tracking-widest uppercase border-b border-gray-50 pb-4 ${pathname === '/about' ? 'text-[#c9a962]' : 'text-[#1a1a1a] hover:opacity-70'}`} onClick={() => setMobileMenuOpen(false)}>
+              אודות
             </Link>
           </div>
         </nav>

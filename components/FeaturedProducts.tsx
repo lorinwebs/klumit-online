@@ -100,7 +100,7 @@ function CategoryCarousel({
           <h2 className="text-3xl md:text-5xl font-light luxury-font text-[#1a1a1a]">{title}</h2>
         </div>
         <Link 
-          href="/products" 
+          href="/products?tab=bags" 
           className="text-xs tracking-[0.2em] uppercase text-gray-500 hover:text-[#1a1a1a] transition-colors border-b border-transparent hover:border-gray-400 pb-1"
         >
           צפה בכל
@@ -312,39 +312,21 @@ export default function FeaturedProducts() {
 
         {/* Category Carousels */}
         {categories.bags.length > 0 && (
-          <>
-            <CategoryCarousel 
-              title="תיקים" 
-              subtitle="Bags" 
-              products={categories.bags} 
-              delay={0} 
-            />
-            {(categories.wallets.length > 0 || categories.belts.length > 0) && (
-              <div className="flex items-center justify-center mb-8 md:mb-12 px-8">
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
-                <span className="px-6 text-xs tracking-[0.3em] uppercase text-gray-400">◆</span>
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
-              </div>
-            )}
-          </>
+          <CategoryCarousel 
+            title="תיקים" 
+            subtitle="Bags" 
+            products={categories.bags} 
+            delay={0} 
+          />
         )}
         
         {categories.wallets.length > 0 && (
-          <>
-            <CategoryCarousel 
-              title="ארנקים" 
-              subtitle="Wallets" 
-              products={categories.wallets} 
-              delay={0.1} 
-            />
-            {categories.belts.length > 0 && (
-              <div className="flex items-center justify-center mb-8 md:mb-12 px-8">
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
-                <span className="px-6 text-xs tracking-[0.3em] uppercase text-gray-400">◆</span>
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
-              </div>
-            )}
-          </>
+          <CategoryCarousel 
+            title="ארנקים" 
+            subtitle="Wallets" 
+            products={categories.wallets} 
+            delay={0.1} 
+          />
         )}
         
         {categories.belts.length > 0 && (

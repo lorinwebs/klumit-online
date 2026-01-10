@@ -47,7 +47,7 @@ export default function Footer() {
                 </span>
                 <ul className="ml-6 mt-1 space-y-1">
                   <li>
-                    <Link href="/products" className="text-xs font-light text-[#C19A6B] hover:text-[#a17d4f] transition-colors">
+                    <Link href="/products?tab=bags" className="text-xs font-light text-[#C19A6B] hover:text-[#a17d4f] transition-colors">
                       תיקים
                     </Link>
                   </li>

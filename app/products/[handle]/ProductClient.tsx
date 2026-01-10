@@ -1051,7 +1051,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     הקולקציה המשלימה
                   </h2>
                 </div>
-                <Link href="/products" className="text-sm border-b border-[#1a1a1a] pb-1 hover:opacity-60 transition-opacity">
+                <Link href="/products?tab=bags" className="text-sm border-b border-[#1a1a1a] pb-1 hover:opacity-60 transition-opacity">
                   לכל המוצרים
                 </Link>
               </div>
