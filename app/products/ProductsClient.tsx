@@ -97,7 +97,7 @@ export default function ProductsClient({
         <div className="max-w-7xl mx-auto mb-6 md:mb-8 sticky top-[60px] z-10 bg-[#fdfcfb] py-2 md:static">
           {/* Mobile: Improved Scroll */}
           <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
-            <div className="flex items-center justify-start gap-2 min-w-max">
+            <div className="flex items-center justify-center gap-2 min-w-max">
               <button
                 onClick={() => handleVendorChange('all')}
                 className={`px-4 py-1.5 text-xs tracking-wider uppercase border transition-all duration-300 ${
@@ -124,7 +124,7 @@ export default function ProductsClient({
             </div>
           </div>
           {/* Desktop: Buttons */}
-          <div className="hidden md:flex items-center gap-4 flex-wrap">
+          <div className="hidden md:flex items-center justify-center gap-4 flex-wrap">
             <span className="text-sm font-medium text-gray-700">מותג:</span>
             <div className="flex items-center gap-3 flex-wrap">
               <button
