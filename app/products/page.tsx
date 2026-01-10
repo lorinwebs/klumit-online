@@ -136,8 +136,37 @@ function ProductsContent() {
     <div className="w-full">
       {/* Vendor Filter */}
       {!loading && allVendors.length > 0 && (
-        <div className="max-w-7xl mx-auto mb-8">
-          <div className="flex items-center gap-4 flex-wrap">
+        <div className="max-w-7xl mx-auto mb-4 md:mb-8">
+          {/* Mobile: Elegant horizontal scroll */}
+          <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
+            <div className="flex items-center gap-2 min-w-max">
+              <button
+                onClick={() => handleVendorChange('all')}
+                className={`px-4 py-1.5 text-xs tracking-wider uppercase border transition-all duration-300 ${
+                  selectedVendor === 'all'
+                    ? 'bg-[#1a1a1a] text-white border-[#1a1a1a]'
+                    : 'bg-transparent text-[#1a1a1a] border-[#1a1a1a]/20'
+                }`}
+              >
+                הכל
+              </button>
+              {allVendors.map((vendor) => (
+                <button
+                  key={vendor}
+                  onClick={() => handleVendorChange(vendor)}
+                  className={`px-4 py-1.5 text-xs tracking-wider uppercase border transition-all duration-300 whitespace-nowrap ${
+                    selectedVendor === vendor
+                      ? 'bg-[#1a1a1a] text-white border-[#1a1a1a]'
+                      : 'bg-transparent text-[#1a1a1a] border-[#1a1a1a]/20'
+                  }`}
+                >
+                  {vendor}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Desktop: Buttons */}
+          <div className="hidden md:flex items-center gap-4 flex-wrap">
             <span className="text-sm font-medium text-gray-700">מותג:</span>
             <div className="flex items-center gap-3 flex-wrap">
               <button
