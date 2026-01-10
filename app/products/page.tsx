@@ -44,7 +44,9 @@ function ProductsContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams?.get('tab') as TabType | null;
   const vendorParam = searchParams?.get('vendor');
-  const [activeTab, setActiveTab] = useState<TabType>(tabParam === 'belts' ? 'belts' : 'bags');
+  const [activeTab, setActiveTab] = useState<TabType>(
+    tabParam === 'belts' ? 'belts' : tabParam === 'wallets' ? 'wallets' : 'bags'
+  );
   const [selectedVendor, setSelectedVendor] = useState<string>(vendorParam || 'all');
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
