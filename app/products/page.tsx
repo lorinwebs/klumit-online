@@ -184,7 +184,7 @@ function ProductsContent() {
           {products.map((product) => {
             // Find first available variant, or fallback to first variant
             const availableVariant = product.variants.edges.find(
-              (e) => e.node.availableForSale && e.node.quantityAvailable > 0
+              (e) => e.node.availableForSale
             )?.node;
             const firstVariant = product.variants.edges[0]?.node;
             const selectedVariant = availableVariant || firstVariant;
@@ -192,7 +192,7 @@ function ProductsContent() {
             
             // Product is available if ANY variant is available
             const isAvailable = product.variants.edges.some(
-              (e) => e.node.availableForSale && e.node.quantityAvailable > 0
+              (e) => e.node.availableForSale
             );
             
             return (
