@@ -47,24 +47,31 @@ function CategoryCarousel({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   const checkScroll = () => {
     if (scrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      // RTL: scroll indicators are inverted
-      setCanScrollLeft(scrollLeft < scrollWidth - clientWidth - 10);
-      setCanScrollRight(scrollLeft > 10);
+      const maxScroll = scrollWidth - clientWidth;
+      // RTL: scrollLeft is negative or 0 at start, goes more negative as you scroll
+      const absScrollLeft = Math.abs(scrollLeft);
+      setCanScrollRight(absScrollLeft > 10);
+      setCanScrollLeft(absScrollLeft < maxScroll - 10);
     }
   };
 
   useEffect(() => {
-    checkScroll();
+    // Check scroll after a small delay to ensure DOM is ready
+    const timer = setTimeout(checkScroll, 100);
     const ref = scrollRef.current;
     if (ref) {
       ref.addEventListener('scroll', checkScroll);
-      return () => ref.removeEventListener('scroll', checkScroll);
+      return () => {
+        clearTimeout(timer);
+        ref.removeEventListener('scroll', checkScroll);
+      };
     }
+    return () => clearTimeout(timer);
   }, [products]);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -111,26 +118,26 @@ function CategoryCarousel({
       <div className="relative group">
         {/* Navigation Arrows */}
         <button
-          onClick={() => scroll('right')}
-          className={`absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 bg-white/90 backdrop-blur-sm border border-gray-200 flex items-center justify-center transition-all duration-300 ${
-            canScrollRight ? 'opacity-100 hover:bg-[#1a1a1a] hover:text-white hover:border-[#1a1a1a]' : 'opacity-0 pointer-events-none'
-          }`}
-          aria-label="הבא"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-        
-        <button
           onClick={() => scroll('left')}
-          className={`absolute left-16 md:left-20 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 bg-white/90 backdrop-blur-sm border border-gray-200 flex items-center justify-center transition-all duration-300 ${
+          className={`absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 bg-white/90 backdrop-blur-sm border border-gray-200 flex items-center justify-center transition-all duration-300 ${
             canScrollLeft ? 'opacity-100 hover:bg-[#1a1a1a] hover:text-white hover:border-[#1a1a1a]' : 'opacity-0 pointer-events-none'
           }`}
           aria-label="הקודם"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        
+        <button
+          onClick={() => scroll('right')}
+          className={`absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 bg-white/90 backdrop-blur-sm border border-gray-200 flex items-center justify-center transition-all duration-300 ${
+            canScrollRight ? 'opacity-100 hover:bg-[#1a1a1a] hover:text-white hover:border-[#1a1a1a]' : 'opacity-0 pointer-events-none'
+          }`}
+          aria-label="הבא"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
           </svg>
         </button>
 
