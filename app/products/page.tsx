@@ -182,8 +182,18 @@ function ProductsContent() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
           {products.map((product) => {
+            // Find first available variant, or fallback to first variant
+            const availableVariant = product.variants.edges.find(
+              (e) => e.node.availableForSale && e.node.quantityAvailable > 0
+            )?.node;
             const firstVariant = product.variants.edges[0]?.node;
+            const selectedVariant = availableVariant || firstVariant;
             const firstImage = product.images.edges[0]?.node;
+            
+            // Product is available if ANY variant is available
+            const isAvailable = product.variants.edges.some(
+              (e) => e.node.availableForSale && e.node.quantityAvailable > 0
+            );
             
             return (
               <ProductCard
@@ -194,9 +204,9 @@ function ProductsContent() {
                 price={product.priceRange.minVariantPrice.amount}
                 currencyCode={product.priceRange.minVariantPrice.currencyCode}
                 image={firstImage?.url}
-                variantId={firstVariant?.id || ''}
-                available={firstVariant?.availableForSale || false}
-                quantityAvailable={firstVariant?.quantityAvailable}
+                variantId={selectedVariant?.id || ''}
+                available={isAvailable}
+                quantityAvailable={selectedVariant?.quantityAvailable}
               />
             );
           })}
