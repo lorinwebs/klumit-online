@@ -170,7 +170,7 @@ function ProductsContent() {
       
       {/* Products Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
+        <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
           {[...Array(8)].map((_, i) => (
             <div key={i} className="bg-gray-200 animate-pulse aspect-[4/5]" />
           ))}
@@ -180,7 +180,7 @@ function ProductsContent() {
           <p className="text-gray-400 font-light text-lg">לא נמצאו מוצרים בקטגוריה זו</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
+        <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
           {products.map((product) => {
             // Find first available variant, or fallback to first variant
             const availableVariant = product.variants.edges.find(
@@ -222,7 +222,7 @@ export default function ProductsPage() {
       <Header />
       <main id="main-content" className="flex-grow w-full px-4 py-12 md:py-16" role="main">
         <Suspense fallback={
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
+          <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12 max-w-7xl mx-auto">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="bg-gray-200 animate-pulse aspect-[4/5]" />
             ))}
