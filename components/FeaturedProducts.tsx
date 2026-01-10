@@ -291,13 +291,6 @@ export default function FeaturedProducts() {
   return (
     <section className="w-full bg-[#fdfcfb] pt-8 md:pt-12 pb-6">
       <div className="max-w-[1800px] mx-auto">
-        {/* Divider */}
-        <div className="flex items-center justify-center mb-6 md:mb-10 px-8">
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
-          <span className="px-6 text-xs tracking-[0.3em] uppercase text-gray-400">◆</span>
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
-        </div>
-
         {/* Section Intro */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
