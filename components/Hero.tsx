@@ -33,6 +33,7 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: 'easeOut' }}
             className="text-center text-white px-4"
+            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8), 0 4px 12px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4)' }}
           >
             <m.h1 
               initial={{ opacity: 0, y: 20 }}
@@ -104,6 +105,7 @@ export default function Hero() {
               <Link
                 href="/products"
                 className="inline-block bg-white text-[#1a1a1a] px-12 py-4 text-sm tracking-luxury hover:bg-[#c9a962] hover:text-white transition-luxury uppercase font-medium shadow-lg"
+                style={{ textShadow: 'none' }}
               >
                 לצפייה בקולקציה
               </Link>

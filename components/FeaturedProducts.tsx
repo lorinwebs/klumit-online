@@ -306,7 +306,7 @@ export default function FeaturedProducts() {
           transition={{ duration: 0.6 }}
           className="text-center mb-6 md:mb-10 px-4"
         >
-          <span className="text-xs tracking-[0.4em] uppercase text-[#9a8a78] mb-4 block">Made in Italy</span>
+          <span className="text-xs tracking-[0.4em] uppercase text-[#c9a962] mb-4 block">Made in Italy</span>
           <h2 className="text-4xl md:text-6xl lg:text-7xl font-light luxury-font text-[#1a1a1a]">הקולקציה</h2>
         </motion.div>
 

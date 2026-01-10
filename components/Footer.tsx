@@ -15,7 +15,7 @@ export default function Footer() {
             <p className="text-xs md:text-sm font-light text-gray-600 leading-relaxed mb-3 md:mb-6">
               יבואן בלעדי של תיקים יוקרתיים היישר מאיטליה
             </p>
-            <div className="text-xs font-light text-gray-500 tracking-luxury mb-4">
+            <div className="text-xs font-light text-[#c9a962] tracking-luxury mb-4">
               Renato Angi Venezia • Carlino Group
             </div>
             <a 
@@ -42,8 +42,35 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/products" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
-                  תיקים
+                <span className="text-sm font-light text-gray-600">
+                  מוצרים
+                </span>
+                <ul className="ml-6 mt-1 space-y-1">
+                  <li>
+                    <Link href="/products" className="text-xs font-light text-[#C19A6B] hover:text-[#a17d4f] transition-colors">
+                      תיקים
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/products?tab=belts" className="text-xs font-light text-[#C19A6B] hover:text-[#a17d4f] transition-colors">
+                      חגורות
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/products?tab=wallets" className="text-xs font-light text-[#C19A6B] hover:text-[#a17d4f] transition-colors">
+                      ארנקים
+                    </Link>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <Link href="/cart" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
+                  עגלת קניות
+                </Link>
+              </li>
+              <li>
+                <Link href="/account" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
+                  החשבון שלי
                 </Link>
               </li>
               <li>
@@ -73,6 +100,16 @@ export default function Footer() {
               <li>
                 <Link href="/terms" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
                   תקנון
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
+                  מדיניות פרטיות
+                </Link>
+              </li>
+              <li>
+                <Link href="/accessibility" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
+                  נגישות
                 </Link>
               </li>
             </ul>
