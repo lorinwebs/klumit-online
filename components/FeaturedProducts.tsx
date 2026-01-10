@@ -185,11 +185,11 @@ function CategoryCarousel({
                 </div>
 
                 {/* Product Info - Minimal */}
-                <div className="text-right">
-                  <h3 className="text-lg md:text-xl font-light text-[#1a1a1a] mb-1 group-hover/card:text-gray-600 transition-colors">
+                <div className="space-y-1">
+                  <h3 className="text-lg md:text-xl font-light text-[#1a1a1a] text-left group-hover/card:text-gray-600 transition-colors">
                     {product.title}
                   </h3>
-                  <p className="text-base md:text-lg font-light text-gray-500">
+                  <p className="text-base md:text-lg font-light text-gray-500 text-right">
                     ₪{formatPrice(product.priceRange.minVariantPrice.amount)}
                   </p>
                 </div>
