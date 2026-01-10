@@ -92,6 +92,7 @@ export const PRODUCTS_QUERY = `
           description
           descriptionHtml
           productType
+          vendor
           priceRange {
             minVariantPrice {
               amount

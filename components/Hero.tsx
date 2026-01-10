@@ -6,26 +6,27 @@ import Link from 'next/link';
 
 export default function Hero() {
   return (
-    <LazyMotion features={domAnimation} strict>
-      <section className="relative w-full h-[70vh] md:h-[85vh] min-h-[400px] landscape:min-h-[100svh] overflow-hidden">
-        {/* Full-width Background Image - LCP element */}
-        <Image
-          src="/coverimage.jpeg"
-          alt="קלומית - מוצרי עור מאיטליה"
-          fill
-          className="object-cover"
-          priority
-          fetchPriority="high"
-          quality={85}
-          sizes="100vw"
-          placeholder="blur"
-          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAMH/8QAIhAAAgEDBAMBAAAAAAAAAAAAAQIRAAMEBRIhMQYTQVH/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8A0G7c2I20AAeiImpUqD/9k="
-        />
-        
-        {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-black/40" />
-        
-        {/* Content */}
+    <section className="relative w-full h-[70vh] md:h-[85vh] min-h-[400px] landscape:min-h-[100svh] overflow-hidden">
+      {/* Full-width Background Image - LCP element - Loaded first, outside LazyMotion */}
+      <Image
+        src="/coverimage.jpeg"
+        alt="קלומית - מוצרי עור מאיטליה"
+        fill
+        className="object-cover"
+        priority
+        fetchPriority="high"
+        quality={85}
+        sizes="100vw"
+        loading="eager"
+        placeholder="blur"
+        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAMH/8QAIhAAAgEDBAMBAAAAAAAAAAAAAQIRAAMEBRIhMQYTQVH/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8A0G7c2I20AAeiImpUqD/9k="
+      />
+      
+      {/* Dark Overlay */}
+      <div className="absolute inset-0 bg-black/40" />
+      
+      {/* Content - Wrapped in LazyMotion for animations only */}
+      <LazyMotion features={domAnimation} strict>
         <div className="absolute inset-0 flex items-center justify-center focus-light">
           <m.div
             initial={{ opacity: 0, y: 40 }}
@@ -109,7 +110,7 @@ export default function Hero() {
             </m.div>
           </m.div>
         </div>
-      </section>
-    </LazyMotion>
+      </LazyMotion>
+    </section>
   );
 }

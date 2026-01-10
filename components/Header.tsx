@@ -42,6 +42,10 @@ export default function Header() {
             חגורות
           </Link>
           <span className="w-px h-4 bg-gray-300 shrink-0" />
+          <Link href="/products?tab=wallets" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity whitespace-nowrap">
+            ארנקים
+          </Link>
+          <span className="w-px h-4 bg-gray-300 shrink-0" />
           <Link href="/about" className="text-sm tracking-luxury uppercase font-light hover:opacity-70 transition-opacity whitespace-nowrap">
             אודות
           </Link>
@@ -109,6 +113,15 @@ export default function Header() {
         >
             חגורות
         </Link>
+        
+        <span className="w-px h-3 bg-gray-300 block" />
+        
+        <Link 
+            href="/products?tab=wallets" 
+            className="flex items-center h-full text-xs font-medium tracking-wide uppercase text-[#1a1a1a] hover:opacity-70"
+        >
+            ארנקים
+        </Link>
       </div>
 
       {/* --- תפריט המבורגר נפתח --- */}
@@ -123,6 +136,9 @@ export default function Header() {
             </Link>
             <Link href="/products?tab=belts" className="text-lg tracking-widest uppercase hover:opacity-70 border-b border-gray-50 pb-4" onClick={() => setMobileMenuOpen(false)}>
               חגורות
+            </Link>
+            <Link href="/products?tab=wallets" className="text-lg tracking-widest uppercase hover:opacity-70 border-b border-gray-50 pb-4" onClick={() => setMobileMenuOpen(false)}>
+              ארנקים
             </Link>
             <Link href="/about" className="text-lg tracking-widest uppercase hover:opacity-70 border-b border-gray-50 pb-4" onClick={() => setMobileMenuOpen(false)}>
               אודות המותג
