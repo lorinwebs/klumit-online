@@ -169,7 +169,7 @@ export default function ProductsClient({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-8 max-w-7xl mx-auto">
           {filteredProducts.map((product) => {
             const availableVariant = product.variants.edges.find(
               (e) => e.node.availableForSale

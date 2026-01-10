@@ -85,7 +85,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
       <Header />
       <main id="main-content" className="flex-grow w-full px-4 py-4 md:py-16" role="main">
         <Suspense fallback={
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-8 max-w-7xl mx-auto">
+          <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-8 max-w-7xl mx-auto">
             {[...Array(8)].map((_, i) => (
               <div key={`suspense-${i}`} className="bg-gray-200 animate-pulse aspect-[4/5]" />
             ))}
