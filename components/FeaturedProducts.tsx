@@ -96,7 +96,7 @@ function CategoryCarousel({
       {/* Category Header */}
       <div className="flex justify-between items-end mb-8 md:mb-12 px-4 md:px-8">
         <div className="text-left">
-          <span className="block text-xs tracking-[0.3em] uppercase text-gray-400 mb-2">{subtitle}</span>
+          <span className="block text-xs tracking-[0.3em] uppercase text-[#c9a962] mb-2">{subtitle}</span>
           <h2 className="text-3xl md:text-5xl font-light luxury-font text-[#1a1a1a]">{title}</h2>
         </div>
         <Link 

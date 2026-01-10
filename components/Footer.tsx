@@ -45,20 +45,20 @@ export default function Footer() {
                 <span className="text-sm font-light text-gray-600">
                   מוצרים
                 </span>
-                <ul className="ml-6 mt-1 space-y-1">
+                <ul className="mr-4 mt-2 space-y-1">
                   <li>
-                    <Link href="/products?tab=bags" className="text-xs font-light text-[#C19A6B] hover:text-[#a17d4f] transition-colors">
-                      תיקים
+                    <Link href="/products?tab=bags" className="text-xs font-light text-[#C19A6B] hover:text-[#a17d4f] transition-colors flex items-center gap-1">
+                      <span className="text-[10px]">←</span> תיקים
                     </Link>
                   </li>
                   <li>
-                    <Link href="/products?tab=belts" className="text-xs font-light text-[#C19A6B] hover:text-[#a17d4f] transition-colors">
-                      חגורות
+                    <Link href="/products?tab=belts" className="text-xs font-light text-[#C19A6B] hover:text-[#a17d4f] transition-colors flex items-center gap-1">
+                      <span className="text-[10px]">←</span> חגורות
                     </Link>
                   </li>
                   <li>
-                    <Link href="/products?tab=wallets" className="text-xs font-light text-[#C19A6B] hover:text-[#a17d4f] transition-colors">
-                      ארנקים
+                    <Link href="/products?tab=wallets" className="text-xs font-light text-[#C19A6B] hover:text-[#a17d4f] transition-colors flex items-center gap-1">
+                      <span className="text-[10px]">←</span> ארנקים
                     </Link>
                   </li>
                 </ul>
