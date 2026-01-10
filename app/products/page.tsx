@@ -139,7 +139,7 @@ function ProductsContent() {
         <div className="max-w-7xl mx-auto mb-4 md:mb-8">
           {/* Mobile: Elegant horizontal scroll */}
           <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
-            <div className="flex items-center gap-2 min-w-max">
+            <div className="flex items-center justify-center gap-2 min-w-max">
               <button
                 onClick={() => handleVendorChange('all')}
                 className={`px-4 py-1.5 text-xs tracking-wider uppercase border transition-all duration-300 ${
