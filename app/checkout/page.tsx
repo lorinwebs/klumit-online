@@ -72,25 +72,22 @@ export default function CheckoutPage() {
         const { data: { user: currentUser }, error } = await supabase.auth.getUser();
           
         if (!error && currentUser) {
-            setUser(currentUser);
-            const currentEmail = currentUser.email || currentUser.user_metadata?.email || '';
-            
-            // טען פרטים מהפרופיל כ-default
-            setFormData({
-              firstName: currentUser.user_metadata?.first_name || '',
-              lastName: currentUser.user_metadata?.last_name || '',
-              email: currentEmail,
-              phone: currentUser.phone || currentUser.user_metadata?.phone || '',
-              address: currentUser.user_metadata?.shipping_address || '',
-              city: currentUser.user_metadata?.shipping_city || '',
-              zipCode: currentUser.user_metadata?.shipping_zip_code || '',
-              apartment: currentUser.user_metadata?.shipping_apartment || '',
-              floor: currentUser.user_metadata?.shipping_floor || '',
-              notes: currentUser.user_metadata?.shipping_notes || '',
-            });
-          } else {
-            setUser(null);
-          }
+          setUser(currentUser);
+          const currentEmail = currentUser.email || currentUser.user_metadata?.email || '';
+          
+          // טען פרטים מהפרופיל כ-default
+          setFormData({
+            firstName: currentUser.user_metadata?.first_name || '',
+            lastName: currentUser.user_metadata?.last_name || '',
+            email: currentEmail,
+            phone: currentUser.phone || currentUser.user_metadata?.phone || '',
+            address: currentUser.user_metadata?.shipping_address || '',
+            city: currentUser.user_metadata?.shipping_city || '',
+            zipCode: currentUser.user_metadata?.shipping_zip_code || '',
+            apartment: currentUser.user_metadata?.shipping_apartment || '',
+            floor: currentUser.user_metadata?.shipping_floor || '',
+            notes: currentUser.user_metadata?.shipping_notes || '',
+          });
         } else {
           // Fallback ל-supabase.auth.getSession
           try {
@@ -115,9 +112,9 @@ export default function CheckoutPage() {
             } else {
               setUser(null);
             }
-        } catch (fallbackErr) {
-          setUser(null);
-        }
+          } catch (fallbackErr) {
+            setUser(null);
+          }
         }
       } catch (err) {
         setUser(null);
