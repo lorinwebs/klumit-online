@@ -30,24 +30,29 @@ export async function POST(request: NextRequest) {
     if (update.message.reply_to_message) {
       const originalMsgId = update.message.reply_to_message.message_id.toString();
       
+      console.log('Received reply to telegram message_id:', originalMsgId);
+      
       // מציאת השיחה לפי ההודעה המקורית בטלגרם
+      // נשתמש ב-maybeSingle() במקום single() כדי לא לזרוק שגיאה אם לא נמצא
       const { data: originalDbMsg, error: findError } = await supabaseAdmin
         .from('klumit_chat_messages')
-        .select('conversation_id')
+        .select('conversation_id, id, message')
         .eq('telegram_message_id', originalMsgId)
-        .single();
+        .maybeSingle();
 
       if (findError) {
         console.error('Error finding original message:', findError);
       }
 
-      if (originalDbMsg) {
+      if (originalDbMsg && originalDbMsg.conversation_id) {
         // זו תשובה לשיחה קיימת!
         const conversationId = originalDbMsg.conversation_id;
+        console.log('Found conversation:', conversationId, 'for telegram_message_id:', originalMsgId);
         
         // קבלת שם של מי ענה
         const repliedByName = await getTelegramChatName(chatId) || 
                               update.message.from?.first_name || 
+                              update.message.from?.username ||
                               'Unknown';
 
         // שמירת התגובה ב-DB
@@ -66,16 +71,22 @@ export async function POST(request: NextRequest) {
 
         if (insertError) {
           console.error('Error saving reply message:', insertError);
+          return NextResponse.json({ ok: false, error: insertError.message }, { status: 500 });
         } else {
-          console.log('Reply message saved:', savedMessage?.id, 'for conversation:', conversationId);
+          console.log('Reply message saved successfully:', savedMessage?.id, 'for conversation:', conversationId);
           
           // שליחה ל-CHAT_ID השני עם אינדיקטור "נענה"
-          await sendChatReply({
-            conversationId,
-            message: messageText,
-            repliedByChatId: chatId,
-            repliedByName,
-          });
+          try {
+            await sendChatReply({
+              conversationId,
+              message: messageText,
+              repliedByChatId: chatId,
+              repliedByName,
+            });
+          } catch (sendError) {
+            console.error('Error sending chat reply:', sendError);
+            // לא נזרוק שגיאה - ההודעה כבר נשמרה ב-DB
+          }
 
           // Realtime broadcast (עדכון אוטומטי דרך Supabase Realtime)
           // זה יעבוד אוטומטית כי ההודעה נשמרה ב-DB
@@ -83,6 +94,71 @@ export async function POST(request: NextRequest) {
         }
       } else {
         console.log('Original message not found for telegram_message_id:', originalMsgId);
+        
+        // ננסה לחפש לפי ההודעה המקורית עצמה (reply_to_message.text)
+        // כדי למצוא את ה-conversation_id
+        if (update.message.reply_to_message?.text) {
+          const originalText = update.message.reply_to_message.text;
+          // נחפש הודעות מהמשתמש (from_user = true) עם הטקסט הזה
+          // ונקח את האחרונה (הכי קרובה)
+          const { data: textSearch } = await supabaseAdmin
+            .from('klumit_chat_messages')
+            .select('conversation_id, id, message, telegram_message_id')
+            .eq('from_user', true)
+            .ilike('message', `%${originalText.slice(0, 50)}%`) // חיפוש חלקי
+            .order('created_at', { ascending: false })
+            .limit(5);
+          
+          console.log('Text search result:', textSearch);
+          
+          if (textSearch && textSearch.length > 0) {
+            // נקח את השיחה האחרונה (הכי קרובה)
+            const foundConversation = textSearch[0];
+            if (foundConversation.conversation_id) {
+              const conversationId = foundConversation.conversation_id;
+              console.log('Found conversation by text:', conversationId);
+              
+              // קבלת שם של מי ענה
+              const repliedByName = await getTelegramChatName(chatId) || 
+                                    update.message.from?.first_name || 
+                                    update.message.from?.username ||
+                                    'Unknown';
+
+              // שמירת התגובה ב-DB
+              const { data: savedMessage, error: insertError } = await supabaseAdmin
+                .from('klumit_chat_messages')
+                .insert({
+                  conversation_id: conversationId,
+                  message: messageText,
+                  from_user: false,
+                  telegram_chat_id: chatId,
+                  replied_by_name: repliedByName,
+                  status: 'delivered_to_telegram',
+                })
+                .select()
+                .single();
+
+              if (insertError) {
+                console.error('Error saving reply message:', insertError);
+                return NextResponse.json({ ok: false, error: insertError.message }, { status: 500 });
+              } else {
+                console.log('Reply message saved successfully (by text search):', savedMessage?.id, 'for conversation:', conversationId);
+                
+                // שליחה ל-CHAT_ID השני עם אינדיקטור "נענה"
+                try {
+                  await sendChatReply({
+                    conversationId,
+                    message: messageText,
+                    repliedByChatId: chatId,
+                    repliedByName,
+                  });
+                } catch (sendError) {
+                  console.error('Error sending chat reply:', sendError);
+                }
+              }
+            }
+          }
+        }
       }
     } else if (messageText.startsWith('/reply ')) {
       // פקודה ישירה: /reply [uuid] [text]
