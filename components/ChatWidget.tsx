@@ -94,11 +94,11 @@ export default function ChatWidget() {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           onClick={toggleChat}
-          className="fixed right-6 bottom-6 z-[9999] bg-[#1a1a1a] text-white rounded-full px-6 py-2.5 shadow-lg hover:bg-[#2a2a2a] transition-colors flex items-center gap-2"
+          className="fixed right-6 bottom-6 z-[9999] bg-[#1a1a1a] text-white rounded-full px-3 py-3 md:px-6 md:py-2.5 shadow-lg hover:bg-[#2a2a2a] transition-colors flex items-center gap-2"
           aria-label="פתח צ'אט"
         >
           <MessageCircle size={20} />
-          <span className="text-sm font-medium whitespace-nowrap">דברו איתנו!</span>
+          <span className="hidden md:inline text-sm font-medium whitespace-nowrap">דברו איתנו!</span>
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
               {unreadCount > 9 ? '9+' : unreadCount}
