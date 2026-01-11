@@ -31,11 +31,15 @@ export async function POST(request: NextRequest) {
       const originalMsgId = update.message.reply_to_message.message_id.toString();
       
       // מציאת השיחה לפי ההודעה המקורית בטלגרם
-      const { data: originalDbMsg } = await supabaseAdmin
+      const { data: originalDbMsg, error: findError } = await supabaseAdmin
         .from('klumit_chat_messages')
         .select('conversation_id')
         .eq('telegram_message_id', originalMsgId)
         .single();
+
+      if (findError) {
+        console.error('Error finding original message:', findError);
+      }
 
       if (originalDbMsg) {
         // זו תשובה לשיחה קיימת!
@@ -47,7 +51,7 @@ export async function POST(request: NextRequest) {
                               'Unknown';
 
         // שמירת התגובה ב-DB
-        const { error: insertError } = await supabaseAdmin
+        const { data: savedMessage, error: insertError } = await supabaseAdmin
           .from('klumit_chat_messages')
           .insert({
             conversation_id: conversationId,
@@ -56,9 +60,15 @@ export async function POST(request: NextRequest) {
             telegram_chat_id: chatId,
             replied_by_name: repliedByName,
             status: 'delivered_to_telegram',
-          });
+          })
+          .select()
+          .single();
 
-        if (!insertError) {
+        if (insertError) {
+          console.error('Error saving reply message:', insertError);
+        } else {
+          console.log('Reply message saved:', savedMessage?.id, 'for conversation:', conversationId);
+          
           // שליחה ל-CHAT_ID השני עם אינדיקטור "נענה"
           await sendChatReply({
             conversationId,
@@ -69,7 +79,10 @@ export async function POST(request: NextRequest) {
 
           // Realtime broadcast (עדכון אוטומטי דרך Supabase Realtime)
           // זה יעבוד אוטומטית כי ההודעה נשמרה ב-DB
+          // למשתמשים אנונימיים - ה-polling יטען את ההודעה
         }
+      } else {
+        console.log('Original message not found for telegram_message_id:', originalMsgId);
       }
     } else if (messageText.startsWith('/reply ')) {
       // פקודה ישירה: /reply [uuid] [text]

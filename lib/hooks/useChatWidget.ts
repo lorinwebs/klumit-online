@@ -512,35 +512,134 @@ export function useChatWidget(): UseChatWidgetReturn {
     };
   }, [inputValue, conversationId, sessionId]);
 
-  // Subscription להודעות חדשות גם כשהצ'אט סגור
+  // Polling חכם עם recursive setTimeout (בטוח יותר מ-setInterval)
   useEffect(() => {
     if (!conversationId) return;
 
-    const notificationChannel = supabase
-      .channel(`chat-notifications:${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'klumit_chat_messages',
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        (payload) => {
-          const newMessage = payload.new as ChatMessage;
-          if (!newMessage.from_user && !isOpen) {
-            setUnreadCount((prev) => prev + 1);
+    let timeoutId: NodeJS.Timeout;
+    let isMounted = true;
+    let isFetching = false; // מניעת race conditions
+
+    const fetchMessages = async () => {
+      if (!isMounted || !conversationId || isFetching) return;
+      
+      // אם המשתמש מחובר והצ'אט סגור - אל תעשה polling (תסתמך על Realtime)
+      if (user && !isOpen) {
+        return;
+      }
+
+      isFetching = true;
+      
+      try {
+        const messagesUrl = user
+          ? `/api/chat/messages/${conversationId}`
+          : `/api/chat/messages/${conversationId}?session_id=${sessionId}`;
+        
+        if (messagesUrl.includes('undefined')) {
+          isFetching = false;
+          return;
+        }
+
+        const messagesRes = await fetch(messagesUrl);
+        
+        if (messagesRes.ok && isMounted) {
+          const messagesData = await messagesRes.json();
+          const fetchedMessages = messagesData.messages || [];
+          
+          // מיון ההודעות לפי תאריך
+          const sortedMessages = fetchedMessages.sort((a: ChatMessage, b: ChatMessage) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+          
+          // עדכון פשוט - השרת מחזיר את כל ההודעות, אז פשוט נחליף
+          setMessages((prev) => {
+            // בדיקה אם יש שינוי - רק אם האורך שונה או ה-ID האחרון שונה
+            const hasChanged = sortedMessages.length !== prev.length || 
+              sortedMessages[sortedMessages.length - 1]?.id !== prev[prev.length - 1]?.id;
+            
+            if (hasChanged) {
+              // עדכון unread count אם הצ'אט סגור (רק למשתמשים אנונימיים)
+              if (!isOpen && !user) {
+                const prevIds = new Set(prev.map(m => m.id));
+                const unread = sortedMessages.filter((m: ChatMessage) => 
+                  !m.from_user && !prevIds.has(m.id)
+                ).length;
+                
+                if (unread > 0) {
+                  // קריאה אסינכרונית כדי לא לחסום את ה-setState
+                  setTimeout(() => {
+                    setUnreadCount((count) => count + unread);
+                  }, 0);
+                }
+              }
+              
+              return sortedMessages;
+            }
+            
+            return prev; // אין שינוי - אל תעדכן
+          });
+        }
+      } catch (error) {
+        // ignore polling errors - נמשיך לנסות
+      } finally {
+        isFetching = false;
+        
+        // תזמן את הבקשה הבאה רק אחרי שהנוכחית הסתיימה (recursive setTimeout)
+        if (isMounted) {
+          // זמן המתנה דינמי:
+          // - משתמש אנונימי + צ'אט פתוח: 2 שניות
+          // - משתמש אנונימי + צ'אט סגור: 5 שניות (רק לבדיקת unread)
+          // - משתמש מחובר + צ'אט פתוח: 10 שניות (גיבוי ל-Realtime)
+          // - משתמש מחובר + צ'אט סגור: אין polling (Realtime בלבד)
+          const delay = !user 
+            ? (isOpen ? 2000 : 5000)
+            : (isOpen ? 10000 : 0);
+          
+          if (delay > 0) {
+            timeoutId = setTimeout(fetchMessages, delay);
           }
         }
-      )
-      .subscribe();
+      }
+    };
 
-    notificationChannelRef.current = notificationChannel;
+    // התחלה ראשונית
+    fetchMessages();
+
+    // אם המשתמש מחובר - נשתמש גם ב-Realtime (בנוסף ל-polling)
+    let notificationChannel: RealtimeChannel | null = null;
+    if (user) {
+      notificationChannel = supabase
+        .channel(`chat-notifications:${conversationId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'klumit_chat_messages',
+            filter: `conversation_id=eq.${conversationId}`,
+          },
+          (payload) => {
+            const newMessage = payload.new as ChatMessage;
+            if (!newMessage.from_user && !isOpen) {
+              setUnreadCount((prev) => prev + 1);
+            }
+          }
+        )
+        .subscribe();
+
+      notificationChannelRef.current = notificationChannel;
+    }
 
     return () => {
-      supabase.removeChannel(notificationChannel);
+      isMounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      if (notificationChannel) {
+        supabase.removeChannel(notificationChannel);
+      }
     };
-  }, [conversationId, isOpen]);
+  }, [conversationId, isOpen, user, sessionId]);
 
   // ניקוי בעת unmount
   useEffect(() => {
