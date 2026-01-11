@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useCartStore } from '@/store/cartStore';
 import { shopifyClient, CREATE_CART_MUTATION, ADD_TO_CART_MUTATION, UPDATE_CART_BUYER_IDENTITY_MUTATION, UPDATE_CART_DISCOUNT_CODES_MUTATION, CART_DELIVERY_ADDRESSES_ADD_MUTATION } from '@/lib/shopify';
 import { supabase } from '@/lib/supabase';
@@ -11,9 +11,10 @@ import Footer from '@/components/Footer';
 import LoginModal from '@/components/LoginModal';
 import Link from 'next/link';
 import { Check, User } from 'lucide-react';
+import { trackBeginCheckout } from '@/lib/analytics';
 
 export default function CheckoutPage() {
-  const { items, cartId, loadFromShopify } = useCartStore();
+  const { items, cartId, loadFromShopify, getTotal } = useCartStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -40,11 +41,28 @@ export default function CheckoutPage() {
     notes: '',
   });
 
+  const hasTrackedCheckout = useRef(false);
+
   useEffect(() => {
       if (items.length === 0) {
         window.location.href = '/cart';
         return;
       }
+
+    // Track begin checkout event (only once)
+    if (items.length > 0 && !hasTrackedCheckout.current) {
+      trackBeginCheckout({
+        items: items.map(item => ({
+          id: item.variantId,
+          name: item.title,
+          price: parseFloat(item.price),
+          quantity: item.quantity,
+        })),
+        totalValue: getTotal(),
+        currency: items[0]?.currencyCode || 'ILS',
+      });
+      hasTrackedCheckout.current = true;
+    }
 
     // טען פרטים מהפרופיל אם המשתמש מחובר
     async function loadProfileData() {

@@ -162,6 +162,34 @@ export function trackSearch(searchTerm: string): void {
 }
 
 /**
+ * First Visit - כשמשתמש ייחודי נכנס לאתר בפעם הראשונה
+ */
+export function trackFirstVisit(): void {
+  // בדוק אם זה ביקור ראשון
+  const hasVisited = typeof window !== 'undefined' && localStorage.getItem('ga_has_visited');
+  
+  if (!hasVisited) {
+    sendEvent('first_visit', {
+      engagement_time_msec: 0,
+    });
+    
+    // סמן שהמשתמש כבר ביקר
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ga_has_visited', 'true');
+    }
+  }
+}
+
+/**
+ * User Engagement - מעקב אחר משתמש ייחודי
+ */
+export function trackUserEngagement(): void {
+  sendEvent('user_engagement', {
+    engagement_time_msec: 1000, // זמן בסיסי
+  });
+}
+
+/**
  * Login / Sign Up
  */
 export function trackLogin(method?: string): void {

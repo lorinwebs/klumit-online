@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { initGA4, trackPageView } from '@/lib/analytics';
+import { initGA4, trackPageView, trackFirstVisit, trackUserEngagement } from '@/lib/analytics';
 
 /**
  * Analytics Provider Component
@@ -15,6 +15,10 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   // Initialize GA4 on mount
   useEffect(() => {
     initGA4();
+    // Track first visit for unique users
+    trackFirstVisit();
+    // Track user engagement
+    trackUserEngagement();
   }, []);
 
   // Track page views on route change
