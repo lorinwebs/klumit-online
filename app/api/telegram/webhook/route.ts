@@ -19,19 +19,36 @@ export async function POST(request: NextRequest) {
     }
 
     const update = await request.json();
+    console.log('=== Telegram webhook received ===', {
+      hasMessage: !!update.message,
+      hasCallbackQuery: !!update.callback_query,
+      callbackData: update.callback_query?.data,
+      messageText: update.message?.text,
+    });
+    
     const supabaseAdmin = createSupabaseAdminClient();
 
     // טיפול בלחיצה על inline keyboard buttons (קיצורים לתגובה מהירה)
     if (update.callback_query) {
+      console.log('=== Callback query received ===', {
+        callbackData: update.callback_query.data,
+        chatId: update.callback_query.message?.chat?.id,
+        messageId: update.callback_query.message?.message_id,
+      });
+      
       const callbackData = update.callback_query.data;
       const chatId = update.callback_query.message?.chat?.id?.toString();
       
       // פורמט חדש: qr:shortConvId:replyId (קיצור ל-64 בתים)
       if (callbackData?.startsWith('qr:')) {
         const parts = callbackData.split(':');
+        console.log('Parsing callback data:', { parts, length: parts.length });
+        
         if (parts.length >= 3) {
           const shortConvId = parts[1]; // 8 תווים ראשונים
           const replyId = parts[2]; // ID של התגובה המהירה
+          
+          console.log('Quick reply:', { shortConvId, replyId });
           
           // מיפוי של quick replies
           const quickRepliesMap: Record<string, string> = {
@@ -41,9 +58,11 @@ export async function POST(request: NextRequest) {
           const replyMessage = quickRepliesMap[replyId];
           
           if (!replyMessage) {
-            console.error('Unknown reply ID:', replyId);
+            console.error('Unknown reply ID:', replyId, 'Available:', Object.keys(quickRepliesMap));
             return NextResponse.json({ ok: true });
           }
+          
+          console.log('Looking for conversation with short ID:', shortConvId);
           
           // מציאת השיחה לפי ה-short ID (8 תווים ראשונים)
           // נשתמש ב-ilike עם pattern כדי למצוא UUID שמתחיל ב-short ID
@@ -53,12 +72,19 @@ export async function POST(request: NextRequest) {
             .ilike('id', `${shortConvId}%`)
             .limit(1);
           
+          console.log('Conversation search result:', { 
+            found: !!conversations && conversations.length > 0,
+            count: conversations?.length,
+            error: findError?.message,
+          });
+          
           if (findError || !conversations || conversations.length === 0) {
-            console.error('Conversation not found for short ID:', shortConvId);
+            console.error('Conversation not found for short ID:', shortConvId, 'Error:', findError);
             return NextResponse.json({ ok: true });
           }
           
           const conversationId = conversations[0].id;
+          console.log('Found conversation:', conversationId);
           
           // שמירת התגובה ב-DB
           const { data: savedMessage, error: insertError } = await supabaseAdmin
@@ -106,13 +132,24 @@ export async function POST(request: NextRequest) {
           
           // אישור לטלגרם שהלחיצה התקבלה
           const botToken = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT || '8562898707:AAGUimoO2VTbdvjgHr2nKOVFAY1WtbCRGhI';
-          await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              callback_query_id: update.callback_query.id,
-            }),
-          });
+          try {
+            const answerResponse = await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                callback_query_id: update.callback_query.id,
+              }),
+            });
+            const answerData = await answerResponse.json();
+            console.log('Callback query answered (qr:):', answerData);
+            if (!answerData.ok) {
+              console.error('Failed to answer callback query:', answerData);
+            }
+          } catch (answerError) {
+            console.error('Error answering callback query:', answerError);
+          }
+        } else {
+          console.error('Invalid callback data format - expected qr:shortConvId:replyId, got:', callbackData);
         }
         
         return NextResponse.json({ ok: true });
@@ -172,13 +209,22 @@ export async function POST(request: NextRequest) {
           
           // אישור לטלגרם שהלחיצה התקבלה
           const botToken = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT || '8562898707:AAGUimoO2VTbdvjgHr2nKOVFAY1WtbCRGhI';
-          await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              callback_query_id: update.callback_query.id,
-            }),
-          });
+          try {
+            const answerResponse = await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                callback_query_id: update.callback_query.id,
+              }),
+            });
+            const answerData = await answerResponse.json();
+            console.log('Callback query answered (quick_reply:):', answerData);
+            if (!answerData.ok) {
+              console.error('Failed to answer callback query:', answerData);
+            }
+          } catch (answerError) {
+            console.error('Error answering callback query:', answerError);
+          }
         }
         
         return NextResponse.json({ ok: true });

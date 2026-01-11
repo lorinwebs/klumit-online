@@ -582,6 +582,7 @@ export function useChatWidget(): UseChatWidgetReturn {
     let messagesChannel: RealtimeChannel | null = null;
     
     // ערוץ להודעות חדשות ועדכונים - Realtime בלבד (ללא polling)
+    console.log('Setting up Realtime subscription for conversation:', conversationId, 'user:', !!user);
     messagesChannel = supabase
       .channel(`chat-messages:${conversationId}`)
       .on(
@@ -593,6 +594,12 @@ export function useChatWidget(): UseChatWidgetReturn {
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
+          console.log('Realtime INSERT event received:', {
+            messageId: payload.new.id,
+            fromUser: payload.new.from_user,
+            message: payload.new.message?.substring(0, 50),
+            conversationId: payload.new.conversation_id,
+          });
           const newMessage = payload.new as ChatMessage;
           if (isMounted) {
             // אם ההודעה מהמשתמש - נחליף את ה-temp message במקום להוסיף חדשה
@@ -665,7 +672,9 @@ export function useChatWidget(): UseChatWidgetReturn {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime messages channel subscription status:', status);
+      });
 
     // ערוץ להתראות (כשהצ'אט סגור)
     notificationChannel = supabase
@@ -685,7 +694,9 @@ export function useChatWidget(): UseChatWidgetReturn {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime notifications channel subscription status:', status);
+      });
 
     notificationChannelRef.current = notificationChannel;
 
