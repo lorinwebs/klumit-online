@@ -7,7 +7,7 @@ import { sendChatMessage } from '@/lib/telegram-chat';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { conversation_id, message, session_id } = body;
+    let { conversation_id, message, session_id } = body;
 
     if (!conversation_id || !message) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -20,6 +20,8 @@ export async function POST(request: NextRequest) {
 
     // אימות שהשיחה שייכת למשתמש
     let conversation;
+    let shouldCreateNew = false;
+    
     if (user) {
       // נבדוק קודם לפי user_id
       let { data, error } = await supabaseAdmin
@@ -40,25 +42,35 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (sessionConv) {
-          // מיזוג השיחה - עדכון user_id
-          const { data: updatedConv, error: updateError } = await supabaseAdmin
-            .from('klumit_chat_conversations')
-            .update({ user_id: user.id })
-            .eq('id', conversation_id)
-            .select()
-            .single();
+          // בדיקה אם השיחה מחוקה
+          if (sessionConv.deleted_at) {
+            shouldCreateNew = true;
+          } else {
+            // מיזוג השיחה - עדכון user_id
+            const { data: updatedConv, error: updateError } = await supabaseAdmin
+              .from('klumit_chat_conversations')
+              .update({ user_id: user.id })
+              .eq('id', conversation_id)
+              .select()
+              .single();
 
-          if (updateError || !updatedConv) {
-            return NextResponse.json({ error: 'Failed to merge conversation' }, { status: 500 });
+            if (updateError || !updatedConv) {
+              return NextResponse.json({ error: 'Failed to merge conversation' }, { status: 500 });
+            }
+            conversation = updatedConv;
           }
-          conversation = updatedConv;
         } else {
-          return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+          shouldCreateNew = true;
         }
       } else if (error || !data) {
-        return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+        shouldCreateNew = true;
       } else {
-        conversation = data;
+        // בדיקה אם השיחה מחוקה
+        if (data.deleted_at) {
+          shouldCreateNew = true;
+        } else {
+          conversation = data;
+        }
       }
     } else if (session_id) {
       const { data, error } = await supabaseAdmin
@@ -69,11 +81,49 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error || !data) {
-        return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+        shouldCreateNew = true;
+      } else if (data.deleted_at) {
+        // השיחה מחוקה - צריך ליצור חדשה
+        shouldCreateNew = true;
+      } else {
+        conversation = data;
       }
-      conversation = data;
     } else {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // אם השיחה מחוקה או לא קיימת - יצירת שיחה חדשה
+    if (shouldCreateNew) {
+      const userEmail = user?.email || user?.user_metadata?.email;
+      const userName = user?.user_metadata?.first_name && user?.user_metadata?.last_name
+        ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
+        : user?.user_metadata?.first_name || user?.user_metadata?.name || null;
+      const userPhone = user?.phone || user?.user_metadata?.phone;
+
+      const insertData: any = {
+        session_id: session_id || crypto.randomUUID(),
+        user_name: userName || null,
+        user_phone: userPhone || null,
+        user_email: userEmail || null,
+        status: 'open',
+      };
+
+      if (user) {
+        insertData.user_id = user.id;
+      }
+
+      const { data: newConversation, error: createError } = await supabaseAdmin
+        .from('klumit_chat_conversations')
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (createError || !newConversation) {
+        return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 });
+      }
+
+      conversation = newConversation;
+      conversation_id = newConversation.id; // עדכון conversation_id לשיחה החדשה
     }
 
     // עדכון פרטי משתמש בשיחה אם משתמש מחובר
@@ -122,10 +172,13 @@ export async function POST(request: NextRequest) {
     }
 
     // עדכון deleted_at ל-null אם השיחה נמחקה - כדי שתצוף שוב
-    await supabaseAdmin
-      .from('klumit_chat_conversations')
-      .update({ deleted_at: null })
-      .eq('id', conversation_id);
+    // (רק אם לא יצרנו שיחה חדשה)
+    if (!shouldCreateNew) {
+      await supabaseAdmin
+        .from('klumit_chat_conversations')
+        .update({ deleted_at: null })
+        .eq('id', conversation_id);
+    }
 
     // שמירת הודעה ב-DB
     const { data: savedMessage, error: insertError } = await supabaseAdmin
@@ -172,6 +225,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: telegramResult.success,
       message_id: savedMessage.id,
+      conversation_id: conversation_id, // אם נוצרה שיחה חדשה, זה ה-ID החדש
       status: telegramResult.success ? 'delivered_to_telegram' : 'failed',
     });
   } catch (error: any) {

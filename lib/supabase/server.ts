@@ -14,9 +14,18 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
+            cookiesToSet.forEach(({ name, value, options }) => {
+              // הגדרת cookie expiry ארוך - 30 ימים (בשניות)
+              const cookieOptions = {
+                ...options,
+                maxAge: options?.maxAge || 60 * 60 * 24 * 30, // 30 ימים
+                httpOnly: options?.httpOnly ?? true,
+                secure: options?.secure ?? process.env.NODE_ENV === 'production',
+                sameSite: options?.sameSite ?? 'lax',
+                path: options?.path ?? '/',
+              };
+              cookieStore.set(name, value, cookieOptions);
+            });
           } catch {
             // The `setAll` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing

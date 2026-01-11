@@ -27,10 +27,20 @@ export async function proxy(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
+          // הגדרת cookie expiry ארוך - 30 ימים (בשניות)
+          const cookieOptions: CookieOptions = {
+            ...options,
+            maxAge: options.maxAge || 60 * 60 * 24 * 30, // 30 ימים
+            httpOnly: options.httpOnly ?? true,
+            secure: options.secure ?? process.env.NODE_ENV === 'production',
+            sameSite: options.sameSite ?? 'lax',
+            path: options.path ?? '/',
+          };
+          
           request.cookies.set({
             name,
             value,
-            ...options,
+            ...cookieOptions,
           });
           response = NextResponse.next({
             request: {
@@ -40,7 +50,7 @@ export async function proxy(request: NextRequest) {
           response.cookies.set({
             name,
             value,
-            ...options,
+            ...cookieOptions,
           });
         },
         remove(name: string, options: CookieOptions) {

@@ -52,7 +52,17 @@ export async function POST(request: NextRequest) {
           } else {
             console.log('Quick reply saved:', savedMessage?.id, 'for conversation:', conversationId);
             
-            // שליחה ל-CHAT_ID השני
+            // עדכון השיחה - סגירת needs_response
+            await supabaseAdmin
+              .from('klumit_chat_conversations')
+              .update({ 
+                needs_response: false,
+                status: 'open',
+                deleted_at: null, // אם השיחה הייתה מחוקה, נשחזר אותה
+              })
+              .eq('id', conversationId);
+            
+            // שליחה ל-CHAT_ID השני (אינדיקטור)
             try {
               await sendChatReply({
                 conversationId,
@@ -135,6 +145,16 @@ export async function POST(request: NextRequest) {
         } else {
           console.log('Reply message saved successfully:', savedMessage?.id, 'for conversation:', conversationId);
           
+          // עדכון השיחה - סגירת needs_response
+          await supabaseAdmin
+            .from('klumit_chat_conversations')
+            .update({ 
+              needs_response: false,
+              status: 'open',
+              deleted_at: null, // אם השיחה הייתה מחוקה, נשחזר אותה
+            })
+            .eq('id', conversationId);
+          
           // שליחה ל-CHAT_ID השני עם אינדיקטור "נענה"
           try {
             await sendChatReply({
@@ -200,6 +220,16 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ ok: false, error: insertError.message }, { status: 500 });
               } else {
                 console.log('Reply message saved successfully (by text search):', savedMessage?.id, 'for conversation:', conversationId);
+                
+                // עדכון השיחה - סגירת needs_response
+                await supabaseAdmin
+                  .from('klumit_chat_conversations')
+                  .update({ 
+                    needs_response: false,
+                    status: 'open',
+                    deleted_at: null, // אם השיחה הייתה מחוקה, נשחזר אותה
+                  })
+                  .eq('id', conversationId);
                 
                 // שליחה ל-CHAT_ID השני עם אינדיקטור "נענה"
                 try {

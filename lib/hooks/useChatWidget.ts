@@ -435,10 +435,15 @@ export function useChatWidget(): UseChatWidgetReturn {
       const data = await response.json();
 
       if (data.success) {
+        // אם נוצרה שיחה חדשה (כי השיחה הישנה הייתה מחוקה), עדכן את conversationId
+        if (data.conversation_id && data.conversation_id !== conversationId) {
+          setConversationId(data.conversation_id);
+        }
+        
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === tempMessage.id
-              ? { ...msg, id: data.message_id, status: data.status }
+              ? { ...msg, id: data.message_id, status: data.status, conversation_id: data.conversation_id || conversationId }
               : msg
           )
         );

@@ -28,12 +28,17 @@ export async function GET(
       // נבדוק אם השיחה שייכת למשתמש (עם Service Role כדי לעקוף RLS)
       const { data: conversation, error: convError } = await supabaseAdmin
         .from('klumit_chat_conversations')
-        .select('id, user_id, session_id')
+        .select('id, user_id, session_id, deleted_at')
         .eq('id', conversationId)
         .single();
 
       if (convError || !conversation) {
         return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+      }
+
+      // אם השיחה מחוקה - נחזיר רשימה ריקה (השיחה תיווצר מחדש כשישלחו הודעה)
+      if (conversation.deleted_at) {
+        return NextResponse.json({ messages: [] });
       }
 
       // בדיקה שהשיחה שייכת למשתמש (user_id) או עדיין משויכת ל-session_id (אם עדיין לא מוזגה)
@@ -98,7 +103,7 @@ export async function GET(
       // בדיקה שהשיחה קיימת (ללא session_id check קודם)
       const { data: anyConv, error: anyConvError } = await supabaseAdmin
         .from('klumit_chat_conversations')
-        .select('id, session_id')
+        .select('id, session_id, deleted_at')
         .eq('id', conversationId)
         .single();
 
@@ -107,6 +112,11 @@ export async function GET(
           error: 'Conversation not found',
           debug: { conversationId }
         }, { status: 404 });
+      }
+
+      // אם השיחה מחוקה - נחזיר רשימה ריקה (השיחה תיווצר מחדש כשישלחו הודעה)
+      if (anyConv.deleted_at) {
+        return NextResponse.json({ messages: [] });
       }
 
       const conversation = anyConv;
