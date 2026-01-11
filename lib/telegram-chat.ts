@@ -129,16 +129,15 @@ ${escapeHtml(data.message)}`;
     
     // יצירת inline keyboard
     // callback_data מוגבל ל-64 בתים ב-Telegram
-    // פורמט: quick_reply:conversationId:replyId
-    // conversationId הוא UUID (36 תווים), replyId הוא קצר (2-3 תווים)
+    // פורמט: qr:conversationId:replyId
+    // conversationId הוא UUID מלא (36 תווים), replyId הוא קצר (2-3 תווים)
+    // סה"כ: qr: (3) + UUID (36) + : (1) + replyId (2-3) = 42-43 תווים < 64 ✅
     const inlineKeyboard = quickReplies.map(reply => {
-      // קיצור conversationId ל-8 תווים ראשונים (מספיק לזיהוי ייחודי)
-      const shortConvId = data.conversationId.slice(0, 8);
-      const callbackData = `qr:${shortConvId}:${reply.id}`;
+      const callbackData = `qr:${data.conversationId}:${reply.id}`;
       
       // בדיקה שהאורך לא עולה על 64 בתים
       if (callbackData.length > 64) {
-        console.error('callback_data too long:', callbackData.length, 'bytes');
+        console.error('callback_data too long:', callbackData.length, 'bytes', callbackData);
       }
       
       return {

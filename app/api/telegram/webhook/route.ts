@@ -70,10 +70,10 @@ export async function POST(request: NextRequest) {
         console.log('Parsing callback data:', { parts, length: parts.length });
         
         if (parts.length >= 3) {
-          const shortConvId = parts[1]; // 8 תווים ראשונים
+          const conversationId = parts[1]; // UUID מלא (36 תווים)
           const replyId = parts[2]; // ID של התגובה המהירה
           
-          console.log('Quick reply:', { shortConvId, replyId });
+          console.log('Quick reply:', { conversationId, replyId });
           
           // מיפוי של quick replies
           const quickRepliesMap: Record<string, string> = {
@@ -87,54 +87,19 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ ok: true });
           }
           
-          console.log('Looking for conversation with short ID:', shortConvId);
-          
-          // מציאת השיחה לפי ה-short ID (8 תווים ראשונים)
-          // נמיר את ה-UUID ל-text כדי לחפש
-          const { data: conversations, error: findError } = await supabaseAdmin
+          // בדיקה שהשיחה קיימת (למקרה של UUID לא תקין)
+          const { data: conversation, error: findError } = await supabaseAdmin
             .from('klumit_chat_conversations')
             .select('id')
-            .ilike('id::text', `${shortConvId}%`)
-            .limit(1);
+            .eq('id', conversationId)
+            .single();
           
-          console.log('Conversation search result:', { 
-            found: !!conversations && conversations.length > 0,
-            count: conversations?.length,
-            conversations: conversations,
-            error: findError?.message,
-            errorCode: findError?.code,
-          });
-          
-          let conversationId: string | null = null;
-          
-          if (findError) {
-            console.error('Error finding conversation:', findError);
-            // ננסה גם עם ilike אם like נכשל
-            const { data: conversations2, error: findError2 } = await supabaseAdmin
-              .from('klumit_chat_conversations')
-              .select('id')
-              .ilike('id::text', `${shortConvId}%`)
-              .limit(1);
-            
-            if (findError2 || !conversations2 || conversations2.length === 0) {
-              console.error('Conversation not found for short ID (both methods failed):', shortConvId);
-              return NextResponse.json({ ok: true });
-            }
-            
-            conversationId = conversations2[0].id;
-            console.log('Found conversation (fallback method):', conversationId);
-          } else if (!conversations || conversations.length === 0) {
-            console.error('Conversation not found for short ID:', shortConvId);
-            return NextResponse.json({ ok: true });
-          } else {
-            conversationId = conversations[0].id;
-            console.log('Found conversation:', conversationId);
-          }
-          
-          if (!conversationId) {
-            console.error('No conversation ID found');
+          if (findError || !conversation) {
+            console.error('Conversation not found for ID:', conversationId, 'Error:', findError?.message);
             return NextResponse.json({ ok: true });
           }
+          
+          console.log('Found conversation:', conversationId);
           
           // שמירת התגובה ב-DB
           const { data: savedMessage, error: insertError } = await supabaseAdmin
