@@ -194,6 +194,15 @@ export default function ChatWidget() {
                                 ? 'text-green-500'
                                 : 'text-gray-400'
                             }`}
+                            title={
+                              msg.status === 'delivered_to_telegram'
+                                ? 'נמסר לטלגרם'
+                                : msg.status === 'sent_to_server'
+                                ? 'נשלח לשרת'
+                                : msg.status === 'failed'
+                                ? 'נכשל'
+                                : 'ממתין'
+                            }
                           >
                             {getStatusIcon(msg.status)}
                           </span>

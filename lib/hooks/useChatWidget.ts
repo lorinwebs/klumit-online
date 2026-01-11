@@ -13,6 +13,7 @@ export interface ChatMessage {
   from_user: boolean;
   replied_by_name?: string;
   status?: 'sent_to_server' | 'delivered_to_telegram' | 'failed';
+  telegram_message_id?: string;
   created_at: string;
 }
 
@@ -536,23 +537,15 @@ export function useChatWidget(): UseChatWidgetReturn {
     };
   }, [inputValue, conversationId, sessionId]);
 
-  // Polling חכם עם recursive setTimeout (בטוח יותר מ-setInterval)
+  // טעינת הודעות ראשונית + Realtime בלבד (ללא polling)
   useEffect(() => {
     if (!conversationId) return;
 
-    let timeoutId: NodeJS.Timeout;
     let isMounted = true;
-    let isFetching = false; // מניעת race conditions
 
-    const fetchMessages = async () => {
-      if (!isMounted || !conversationId || isFetching) return;
-      
-      // אם המשתמש מחובר והצ'אט סגור - אל תעשה polling (תסתמך על Realtime)
-      if (user && !isOpen) {
-        return;
-      }
-
-      isFetching = true;
+    // טעינת הודעות ראשונית (רק פעם אחת)
+    const loadInitialMessages = async () => {
+      if (!isMounted || !conversationId) return;
       
       try {
         const messagesUrl = user
@@ -560,7 +553,6 @@ export function useChatWidget(): UseChatWidgetReturn {
           : `/api/chat/messages/${conversationId}?session_id=${sessionId}`;
         
         if (messagesUrl.includes('undefined')) {
-          isFetching = false;
           return;
         }
 
@@ -575,92 +567,135 @@ export function useChatWidget(): UseChatWidgetReturn {
             new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
           );
           
-          // עדכון פשוט - השרת מחזיר את כל ההודעות, אז פשוט נחליף
-          setMessages((prev) => {
-            // בדיקה אם יש שינוי - רק אם האורך שונה או ה-ID האחרון שונה
-            const hasChanged = sortedMessages.length !== prev.length || 
-              sortedMessages[sortedMessages.length - 1]?.id !== prev[prev.length - 1]?.id;
-            
-            if (hasChanged) {
-              // עדכון unread count אם הצ'אט סגור (רק למשתמשים אנונימיים)
-              if (!isOpen && !user) {
-                const prevIds = new Set(prev.map(m => m.id));
-                const unread = sortedMessages.filter((m: ChatMessage) => 
-                  !m.from_user && !prevIds.has(m.id)
-                ).length;
-                
-                if (unread > 0) {
-                  // קריאה אסינכרונית כדי לא לחסום את ה-setState
-                  setTimeout(() => {
-                    setUnreadCount((count) => count + unread);
-                  }, 0);
-                }
-              }
-              
-              return sortedMessages;
-            }
-            
-            return prev; // אין שינוי - אל תעדכן
-          });
+          setMessages(sortedMessages);
         }
       } catch (error) {
-        // ignore polling errors - נמשיך לנסות
-      } finally {
-        isFetching = false;
-        
-        // תזמן את הבקשה הבאה רק אחרי שהנוכחית הסתיימה (recursive setTimeout)
-        if (isMounted) {
-          // זמן המתנה דינמי:
-          // - משתמש אנונימי + צ'אט פתוח: 2 שניות
-          // - משתמש אנונימי + צ'אט סגור: 5 שניות (רק לבדיקת unread)
-          // - משתמש מחובר + צ'אט פתוח: 10 שניות (גיבוי ל-Realtime)
-          // - משתמש מחובר + צ'אט סגור: אין polling (Realtime בלבד)
-          const delay = !user 
-            ? (isOpen ? 2000 : 5000)
-            : (isOpen ? 10000 : 0);
-          
-          if (delay > 0) {
-            timeoutId = setTimeout(fetchMessages, delay);
-          }
-        }
+        console.error('Error loading initial messages:', error);
       }
     };
 
-    // התחלה ראשונית
-    fetchMessages();
+    // טעינה ראשונית
+    loadInitialMessages();
 
-    // אם המשתמש מחובר - נשתמש גם ב-Realtime (בנוסף ל-polling)
+    // Realtime לכל המשתמשים (מחוברים ואנונימיים) - ללא polling
     let notificationChannel: RealtimeChannel | null = null;
-    if (user) {
-      notificationChannel = supabase
-        .channel(`chat-notifications:${conversationId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'klumit_chat_messages',
-            filter: `conversation_id=eq.${conversationId}`,
-          },
-          (payload) => {
-            const newMessage = payload.new as ChatMessage;
-            if (!newMessage.from_user && !isOpen) {
-              setUnreadCount((prev) => prev + 1);
+    let messagesChannel: RealtimeChannel | null = null;
+    
+    // ערוץ להודעות חדשות ועדכונים - Realtime בלבד (ללא polling)
+    messagesChannel = supabase
+      .channel(`chat-messages:${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'klumit_chat_messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as ChatMessage;
+          if (isMounted) {
+            // אם ההודעה מהמשתמש - נחליף את ה-temp message במקום להוסיף חדשה
+            if (newMessage.from_user) {
+              setMessages((prev) => {
+                // בדיקה אם ההודעה כבר קיימת (למניעת כפילויות)
+                const exists = prev.some((msg) => msg.id === newMessage.id);
+                if (exists) return prev;
+                
+                // מציאת ה-temp message עם אותו תוכן והחלפתה בהודעה האמיתית
+                const tempIndex = prev.findIndex((msg) => 
+                  msg.id.startsWith('temp-') && msg.message === newMessage.message
+                );
+                
+                if (tempIndex !== -1) {
+                  // החלפת ה-temp message בהודעה האמיתית
+                  const updated = [...prev];
+                  updated[tempIndex] = newMessage;
+                  return updated.sort((a, b) => 
+                    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                  );
+                }
+                
+                // אם אין temp message - הוספת ההודעה החדשה (מיון לפי תאריך)
+                return [...prev, newMessage].sort((a, b) => 
+                  new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                );
+              });
+            } else {
+              // הודעה מהמנהל/טלגרם - הוספה רגילה
+              setMessages((prev) => {
+                // בדיקה אם ההודעה כבר קיימת (למניעת כפילויות)
+                const exists = prev.some((msg) => msg.id === newMessage.id);
+                if (exists) return prev;
+                
+                // הוספת ההודעה החדשה (מיון לפי תאריך)
+                return [...prev, newMessage].sort((a, b) => 
+                  new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                );
+              });
+              
+              if (!isOpen) {
+                setUnreadCount((prev) => prev + 1);
+              }
             }
           }
-        )
-        .subscribe();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'klumit_chat_messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const updatedMessage = payload.new as ChatMessage;
+          if (isMounted) {
+            // עדכון ה-status של ההודעה הקיימת (רק אם זה הודעה מהמשתמש)
+            if (updatedMessage.from_user) {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === updatedMessage.id
+                    ? { ...msg, status: updatedMessage.status, telegram_message_id: updatedMessage.telegram_message_id }
+                    : msg
+                )
+              );
+            }
+          }
+        }
+      )
+      .subscribe();
 
-      notificationChannelRef.current = notificationChannel;
-    }
+    // ערוץ להתראות (כשהצ'אט סגור)
+    notificationChannel = supabase
+      .channel(`chat-notifications:${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'klumit_chat_messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as ChatMessage;
+          if (!newMessage.from_user && !isOpen && isMounted) {
+            setUnreadCount((prev) => prev + 1);
+          }
+        }
+      )
+      .subscribe();
+
+    notificationChannelRef.current = notificationChannel;
 
     return () => {
       isMounted = false;
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
       if (notificationChannel) {
         supabase.removeChannel(notificationChannel);
+      }
+      if (messagesChannel) {
+        supabase.removeChannel(messagesChannel);
       }
     };
   }, [conversationId, isOpen, user, sessionId]);
