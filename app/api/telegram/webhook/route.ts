@@ -5,12 +5,17 @@ import { sendChatReply, getTelegramChatName } from '@/lib/telegram-chat';
 // POST - Webhook מ-Telegram
 export async function POST(request: NextRequest) {
   try {
-    // אימות webhook (secret token)
+    // אימות webhook (secret token) - רק אם מוגדר
     const secretToken = request.headers.get('X-Telegram-Bot-Api-Secret-Token');
     const expectedToken = process.env.TELEGRAM_WEBHOOK_SECRET;
     
-    if (expectedToken && secretToken !== expectedToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // אם יש secret token מוגדר - נדרוש אותו
+    // אם אין - נמשיך בלי אימות (לצורך פיתוח/פרודקשן ללא secret)
+    if (expectedToken) {
+      if (!secretToken || secretToken !== expectedToken) {
+        console.error('Webhook authentication failed - missing or invalid secret token');
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     const update = await request.json();
