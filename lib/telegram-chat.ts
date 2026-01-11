@@ -18,6 +18,7 @@ interface TelegramChatMessage {
   text: string;
   parse_mode?: 'HTML' | 'Markdown' | 'MarkdownV2';
   reply_to_message_id?: number;
+  disable_web_page_preview?: boolean;
   reply_markup?: {
     inline_keyboard: Array<Array<{
       text: string;
@@ -53,24 +54,46 @@ export async function sendChatMessage(data: {
   }
 
   try {
-    // עיבוד pageUrl - הצגת רק ה-domain (klumit-online.co.il או localhost)
+    // עיבוד pageUrl - הצגת domain + path (ללא protocol ו-port)
     let pageUrlDisplay = 'לא צוין';
     if (data.pageUrl) {
       try {
         const url = new URL(data.pageUrl);
-        // נציג רק את ה-hostname (domain)
-        pageUrlDisplay = url.hostname;
-        // אם זה localhost - נשאיר את זה
-        // אם זה klumit-online.co.il - נסיר את ה-www אם קיים
-        if (pageUrlDisplay.startsWith('www.')) {
-          pageUrlDisplay = pageUrlDisplay.replace(/^www\./, '');
+        // נציג את ה-hostname (domain) + pathname (path)
+        let hostname = url.hostname;
+        // נסיר את ה-www אם קיים
+        if (hostname.startsWith('www.')) {
+          hostname = hostname.replace(/^www\./, '');
+        }
+        // נשאיר את ה-port אם קיים (למשל :3000)
+        if (url.port) {
+          hostname = `${hostname}:${url.port}`;
+        }
+        
+        // נצרף את ה-pathname אם קיים
+        const pathname = url.pathname;
+        if (pathname && pathname !== '/') {
+          pageUrlDisplay = `${hostname}${pathname}`;
+        } else {
+          pageUrlDisplay = hostname;
         }
       } catch {
-        // אם זה לא URL תקין, ננסה לחלץ את ה-domain ידנית
+        // אם זה לא URL תקין, ננסה לחלץ את ה-domain + path ידנית
         const urlWithoutProtocol = data.pageUrl.replace(/^https?:\/\//, '');
-        const domain = urlWithoutProtocol.split('/')[0];
-        if (domain) {
-          pageUrlDisplay = domain.replace(/^www\./, '');
+        const parts = urlWithoutProtocol.split('/');
+        if (parts.length > 0) {
+          let domain = parts[0];
+          // נשאיר את ה-port אם קיים (למשל :3000)
+          // נסיר את ה-www אם קיים
+          domain = domain.replace(/^www\./, '');
+          
+          if (parts.length > 1) {
+            // יש path
+            const path = '/' + parts.slice(1).join('/');
+            pageUrlDisplay = `${domain}${path}`;
+          } else {
+            pageUrlDisplay = domain;
+          }
         }
       }
     }
@@ -81,7 +104,7 @@ export async function sendChatMessage(data: {
 📱 טלפון: ${data.userPhone ? `<code>${escapeHtml(data.userPhone)}</code>` : 'לא צוין'}
 📧 אימייל: ${data.userEmail ? escapeHtml(data.userEmail) : 'לא צוין'}
 🔗 עמוד: ${escapeHtml(pageUrlDisplay)}
-───────────────────────
+
 ${escapeHtml(data.message)}`;
 
     const messageIds: string[] = [];
@@ -106,6 +129,7 @@ ${escapeHtml(data.message)}`;
             chat_id: chatId,
             text: messageText,
             parse_mode: 'HTML',
+            disable_web_page_preview: true, // מונע תצוגה מקדימה של האתר
             reply_markup: {
               inline_keyboard: [inlineKeyboard]
             }
@@ -161,7 +185,7 @@ export async function sendChatReply(data: {
     const messageText = `✅ <b>נענה על ידי ${escapeHtml(data.repliedByName)}</b>
 
 💬 שיחה #${escapeHtml(data.conversationId.slice(0, 8))}
-───────────────────────
+
 ${escapeHtml(data.message)}`;
 
     // Send to all chat IDs (כולל מי שענה - כדי שיראה שהתגובה נשלחה)

@@ -37,14 +37,20 @@ export default function AboutPage() {
         <section className="py-12">
           <div className="max-w-7xl mx-auto px-4">
             <div className="grid md:grid-cols-2 gap-8 items-center mb-12">
-              <div className="relative aspect-[4/3] order-2 md:order-1">
-                <Image
-                  src="/about-image-3.jpg"
-                  alt="שני גברים הולכים בחוץ"
-                  fill
-                  className="object-contain object-top"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
+              <div className="order-2 md:order-1 space-y-3">
+                <div className="relative aspect-[4/2.25] rounded-lg overflow-hidden shadow-2xl">
+                  <Image
+                    src="/about-image-3.jpg"
+                    alt="משה חייט וללו קורילנו"
+                    fill
+                    className="object-cover"
+                    style={{ objectPosition: 'center 30%' }}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                </div>
+                <p className="text-sm text-gray-600 text-center font-light italic">
+                  משה חייט וללו קורילנו, הנשיא של Carlino Group
+                </p>
               </div>
               <div className="text-right space-y-4 order-1 md:order-2">
                 <span className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-light block">
@@ -78,26 +84,38 @@ export default function AboutPage() {
                   </p>
                 </div>
               </div>
-              <div className="relative aspect-[4/3]">
-                <Image
-                  src="/about-image-2.jpg"
-                  alt="שני גברים עומדים זה לצד זה"
-                  fill
-                  className="object-contain object-top"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
+              <div className="space-y-3">
+                <div className="relative aspect-[4/2.25] rounded-lg overflow-hidden shadow-2xl">
+                  <Image
+                    src="/about-image-2.jpg"
+                    alt="משה חייט"
+                    fill
+                    className="object-cover"
+                    style={{ objectPosition: 'center 20%' }}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                </div>
+                <p className="text-sm text-gray-600 text-center font-light italic">
+                  משה חייט עם פליפו אנג'י הבן של Renato Angi והמנהל בפועל של החברה
+                </p>
               </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 items-center mt-12">
-              <div className="relative aspect-[4/3] order-2 md:order-1">
-                <Image
-                  src="/about-image-1.jpg"
-                  alt="תמונה נוספת"
-                  fill
-                  className="object-contain object-top"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
+              <div className="order-2 md:order-1 space-y-3">
+                <div className="relative aspect-[4/2.25] rounded-lg overflow-hidden shadow-2xl">
+                  <Image
+                    src="/about-image-1.jpg"
+                    alt="משה חייט עם הבעלים של Renato Angi"
+                    fill
+                    className="object-cover"
+                    style={{ objectPosition: 'center 30%' }}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                </div>
+                <p className="text-sm text-gray-600 text-center font-light italic">
+                  משה חייט עם רנטו האנגי הבעלים של Rento Angi   
+                </p>
               </div>
               <div className="text-right space-y-4 order-1 md:order-2">
                 <div className="space-y-3 text-base font-light text-gray-700 leading-relaxed">
