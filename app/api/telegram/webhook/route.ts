@@ -19,13 +19,71 @@ export async function POST(request: NextRequest) {
     }
 
     const update = await request.json();
+    const supabaseAdmin = createSupabaseAdminClient();
+
+    // טיפול בלחיצה על inline keyboard buttons (קיצורים לתגובה מהירה)
+    if (update.callback_query) {
+      const callbackData = update.callback_query.data;
+      const chatId = update.callback_query.message?.chat?.id?.toString();
+      
+      if (callbackData?.startsWith('quick_reply:')) {
+        // פורמט: quick_reply:conversation_id:message
+        const parts = callbackData.split(':');
+        if (parts.length >= 3) {
+          const conversationId = parts[1];
+          const replyMessage = decodeURIComponent(parts.slice(2).join(':')); // במקרה שיש : בטקסט
+          
+          // שמירת התגובה ב-DB
+          const { data: savedMessage, error: insertError } = await supabaseAdmin
+            .from('klumit_chat_messages')
+            .insert({
+              conversation_id: conversationId,
+              message: replyMessage,
+              from_user: false,
+              telegram_chat_id: chatId,
+              replied_by_name: 'קלומית',
+              status: 'delivered_to_telegram',
+            })
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('Error saving quick reply:', insertError);
+          } else {
+            console.log('Quick reply saved:', savedMessage?.id, 'for conversation:', conversationId);
+            
+            // שליחה ל-CHAT_ID השני
+            try {
+              await sendChatReply({
+                conversationId,
+                message: replyMessage,
+                repliedByChatId: chatId || 'quick-reply',
+                repliedByName: 'קלומית',
+              });
+            } catch (sendError) {
+              console.error('Error sending chat reply:', sendError);
+            }
+          }
+          
+          // אישור לטלגרם שהלחיצה התקבלה
+          const botToken = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT || '8562898707:AAGUimoO2VTbdvjgHr2nKOVFAY1WtbCRGhI';
+          await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              callback_query_id: update.callback_query.id,
+            }),
+          });
+        }
+        
+        return NextResponse.json({ ok: true });
+      }
+    }
 
     // רק הודעות טקסט
     if (!update.message || !update.message.text) {
       return NextResponse.json({ ok: true });
     }
-
-    const supabaseAdmin = createSupabaseAdminClient();
 
     const messageText = update.message.text;
     const chatId = update.message.chat.id.toString();

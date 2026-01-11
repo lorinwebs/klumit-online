@@ -18,6 +18,12 @@ interface TelegramChatMessage {
   text: string;
   parse_mode?: 'HTML' | 'Markdown' | 'MarkdownV2';
   reply_to_message_id?: number;
+  reply_markup?: {
+    inline_keyboard: Array<Array<{
+      text: string;
+      callback_data: string;
+    }>>;
+  };
 }
 
 interface TelegramChatAction {
@@ -47,16 +53,49 @@ export async function sendChatMessage(data: {
   }
 
   try {
+    // עיבוד pageUrl - הצגת רק ה-domain (klumit-online.co.il או localhost)
+    let pageUrlDisplay = 'לא צוין';
+    if (data.pageUrl) {
+      try {
+        const url = new URL(data.pageUrl);
+        // נציג רק את ה-hostname (domain)
+        pageUrlDisplay = url.hostname;
+        // אם זה localhost - נשאיר את זה
+        // אם זה klumit-online.co.il - נסיר את ה-www אם קיים
+        if (pageUrlDisplay.startsWith('www.')) {
+          pageUrlDisplay = pageUrlDisplay.replace(/^www\./, '');
+        }
+      } catch {
+        // אם זה לא URL תקין, ננסה לחלץ את ה-domain ידנית
+        const urlWithoutProtocol = data.pageUrl.replace(/^https?:\/\//, '');
+        const domain = urlWithoutProtocol.split('/')[0];
+        if (domain) {
+          pageUrlDisplay = domain.replace(/^www\./, '');
+        }
+      }
+    }
+
     const messageText = `💬 <b>הודעה חדשה משיחה #${escapeHtml(data.conversationId.slice(0, 8))}</b>
 
 👤 משתמש: ${data.userName ? escapeHtml(data.userName) : 'לא צוין'}
 📱 טלפון: ${data.userPhone ? `<code>${escapeHtml(data.userPhone)}</code>` : 'לא צוין'}
 📧 אימייל: ${data.userEmail ? escapeHtml(data.userEmail) : 'לא צוין'}
-🔗 עמוד: ${data.pageUrl ? escapeHtml(data.pageUrl) : 'לא צוין'}
+🔗 עמוד: ${escapeHtml(pageUrlDisplay)}
 ───────────────────────
 ${escapeHtml(data.message)}`;
 
     const messageIds: string[] = [];
+    
+    // קיצורים לתגובה מהירה
+    const quickReplies = [
+      { text: 'היי! איך אפשר לעזור לך היום?', reply: 'היי! איך אפשר לעזור לך היום?' }
+    ];
+    
+    // יצירת inline keyboard
+    const inlineKeyboard = quickReplies.map(reply => ({
+      text: reply.text,
+      callback_data: `quick_reply:${data.conversationId}:${encodeURIComponent(reply.reply)}`
+    }));
     
     // Send to all chat IDs
     const results = await Promise.all(
@@ -67,6 +106,9 @@ ${escapeHtml(data.message)}`;
             chat_id: chatId,
             text: messageText,
             parse_mode: 'HTML',
+            reply_markup: {
+              inline_keyboard: [inlineKeyboard]
+            }
           } as TelegramChatMessage;
           
           const response = await fetch(url, {
