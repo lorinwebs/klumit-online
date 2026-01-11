@@ -825,10 +825,9 @@ export default function AccountClient({
               ) : (
                 <div className="space-y-4">
                   {orders.map((order) => (
-                    <a
+                    <div
                       key={order.id}
-                      href={`/order/${order.name.replace('#', '')}`}
-                      className="block border border-gray-200 p-5 lg:p-6 hover:border-[#1a1a1a] hover:shadow-sm transition-all group"
+                      className="block border border-gray-200 p-5 lg:p-6 transition-all group"
                     >
                       <div className="flex items-start gap-4 lg:gap-6">
                         {order.lineItems.edges[0]?.node.image && (
@@ -889,7 +888,7 @@ export default function AccountClient({
                           </div>
                         </div>
                       </div>
-                    </a>
+                    </div>
                   ))}
                 </div>
               )}

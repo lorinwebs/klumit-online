@@ -11,7 +11,6 @@ const INSTAGRAM_POSTS = [
 
 export default function InstagramFeed() {
   const [active, setActive] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
   const processEmbeds = () => {
@@ -28,29 +27,8 @@ export default function InstagramFeed() {
     }
   };
 
-  // Lazy load: detect when section enters viewport
+  // Load Instagram embed script immediately on mount
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '200px' } // Load slightly before visible
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  // Load Instagram embed script only when visible
-  useEffect(() => {
-    if (!isVisible) return;
-
     const existing = document.querySelector('script[src="https://www.instagram.com/embed.js"]');
     if (existing) {
       processEmbeds();
@@ -63,14 +41,13 @@ export default function InstagramFeed() {
     document.body.appendChild(script);
 
     script.onload = () => processEmbeds();
-  }, [isVisible]);
+  }, []);
 
   // Re-process embeds when active slide changes
   useEffect(() => {
-    if (!isVisible) return;
     const timeout = setTimeout(() => processEmbeds(), 100);
     return () => clearTimeout(timeout);
-  }, [active, isVisible]);
+  }, [active]);
 
   return (
     <section ref={sectionRef} className="py-8 md:py-12 bg-[#fdfcfb]">

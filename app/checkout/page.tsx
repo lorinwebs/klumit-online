@@ -67,18 +67,11 @@ export default function CheckoutPage() {
     // טען פרטים מהפרופיל אם המשתמש מחובר
     async function loadProfileData() {
       try {
-        // השתמש ב-API route כדי לבדוק את הסשן מהקוקיז (אמין יותר)
-        const response = await fetch('/api/auth/session', { 
-          credentials: 'include',
-          cache: 'no-store'
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const session = data?.session || (data?.user ? { user: data.user } : null);
+        // שימוש ישיר ב-supabase.auth.getUser() במקום דרך API
+        const { supabase } = await import('@/lib/supabase');
+        const { data: { user: currentUser }, error } = await supabase.auth.getUser();
           
-          if (session?.user) {
-            const currentUser = session.user;
+        if (!error && currentUser) {
             setUser(currentUser);
             const currentEmail = currentUser.email || currentUser.user_metadata?.email || '';
             

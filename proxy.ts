@@ -65,7 +65,18 @@ export async function proxy(request: NextRequest) {
   );
 
   // קריאה ל-getUser היא קריטית - היא זו שמרעננת את הטוקן ומפעילה את ה-cookies.set למעלה
-  const { data: { user }, error } = await supabase.auth.getUser();
+  // הוספת error handling למניעת קריסות על שגיאות רשת
+  let user = null;
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (!error && data?.user) {
+      user = data.user;
+    }
+  } catch (err) {
+    // שגיאת רשת - לא נעצור את ה-request, פשוט נמשיך בלי user
+    // זה יכול לקרות אם Supabase לא זמין או שיש בעיות רשת
+    console.error('Error getting user in proxy:', err);
+  }
 
   // הגנה על נתיבים: אם המשתמש לא מחובר ומנסה לגשת לחשבון
   if (!user && request.nextUrl.pathname.startsWith('/account')) {

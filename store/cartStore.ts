@@ -110,25 +110,12 @@ export const useCartStore = create<CartStore>()((set, get) => {
     set({ isLoading: true });
     
     try {
-      // משתמשים ב-API route כדי לבדוק את הסשן מהקוקיז (אמין יותר מ-supabase.auth.getSession)
-      let session: any = null;
-      try {
-        const response = await fetch('/api/auth/session', { 
-          credentials: 'include',
-          cache: 'no-store'
-        });
-        if (response.ok) {
-          const data = await response.json();
-          session = data?.session || (data?.user ? { user: data.user } : null);
-        }
-      } catch (err) {
-        // Fallback to supabase.auth.getSession
-        const { supabase } = await import('@/lib/supabase');
-        const { data } = await supabase.auth.getSession();
-        session = data?.session;
-      }
+      // שימוש ישיר ב-supabase.auth.getUser() במקום דרך API
+      const { supabase } = await import('@/lib/supabase');
+      const { data: { user }, error } = await supabase.auth.getUser();
       
-      const isLoggedIn = !!session?.user;
+      const isLoggedIn = !!user;
+      const session = user ? { user } : null;
       let targetCartId: string | null = null;
       
       // לוגיקת מציאת Cart ID

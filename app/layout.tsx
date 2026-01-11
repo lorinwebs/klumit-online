@@ -3,6 +3,7 @@ import { Assistant, Cormorant_Garamond } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import { Suspense } from 'react';
 import AnalyticsProvider from '@/components/Analytics';
+import ChatWidget from '@/components/ChatWidget';
 import './globals.css';
 
 const assistant = Assistant({ 
@@ -210,6 +211,7 @@ export default function RootLayout({
           </AnalyticsProvider>
         </Suspense>
         <Analytics />
+        <ChatWidget />
       </body>
     </html>
   );

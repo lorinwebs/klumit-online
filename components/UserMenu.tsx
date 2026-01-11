@@ -1,96 +1,108 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import type { User } from '@/lib/supabase';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import type { User } from '@supabase/supabase-js';
 import { User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useCartStore } from '@/store/cartStore';
+import { supabase } from '@/lib/supabase';
 
 export default function UserMenu() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  
   const loadFromShopify = useCartStore((state) => state.loadFromShopify);
+  
+  // Ref אחד למניעת ריצות כפולות - עוקב אחרי ה-user ID שכבר עיבדנו
+  const processedUserIdRef = useRef<string | null>(null);
 
-  // פונקציה לבדיקה ויצירת Shopify Customer אם צריך
-  // רק אם המשתמש מחובר
-  // חשוב: לא ניצור יוזר חדש - זה צריך להיות רק דרך כפתור "חבר עכשיו" בדף החשבון
-  const ensureShopifyCustomer = async (user: User) => {
-    if (!user) {
+  // פונקציה מרכזית לניהול שינויי משתמש (סינכרון עגלה + בדיקת שופיפיי)
+  const handleUserSync = useCallback(async (currentUser: User | null) => {
+    // 1. עדכון סטייט מקומי
+    setUser(currentUser);
+    setLoading(false);
+
+    // 2. אם המשתמש הוא אותו משתמש שכבר עיבדנו - לא עושים כלום
+    // (מטפל גם במקרה של null וגם במקרה של אותו user id)
+    if (processedUserIdRef.current === currentUser?.id) {
       return;
     }
-    
-    try {
-      // בדוק קודם ב-DB דרך API (server-side) במקום client-side
-      const response = await fetch(`/api/user/shopify-customer-id?userId=${user.id}`, {
-        credentials: 'include',
-        cache: 'no-store'
-      });
-      
-      if (response.ok) {
-        const { shopifyCustomerId } = await response.json();
-        if (shopifyCustomerId) {
-          return; // יש כבר חיבור, לא צריך לעשות כלום
-        }
-      }
-    } catch (err) {
-      // שגיאה בבדיקה - לא קריטי
-    }
-  };
 
-  useEffect(() => {
-    let isMounted = true;
-    
-    const checkSession = async () => {
+    // עדכון ה-Ref למשתמש הנוכחי (או null)
+    processedUserIdRef.current = currentUser?.id || null;
+
+    // 3. טעינת עגלה מחדש (תמיד קורה כשמתחלף יוזר או מתנתק)
+    // loadFromShopify אמורה לדעת לטפל במצב שאין יוזר (לטעון עגלת אורח/מקומי)
+    try {
+      await loadFromShopify();
+    } catch (error) {
+      console.error('Failed to sync cart:', error);
+    }
+
+    // 4. בדיקת חיבור שופיפיי (רק אם יש משתמש מחובר)
+    if (currentUser) {
       try {
-        const response = await fetch('/api/auth/session', { 
+        const response = await fetch(`/api/user/shopify-customer-id?userId=${currentUser.id}`, {
           credentials: 'include',
           cache: 'no-store'
         });
-        
-        if (!isMounted) return;
-        
+        // אנחנו לא צריכים את התוצאה כאן, רק לוודא שהקריאה קרתה לצרכי סנכרון בצד שרת אם צריך
         if (response.ok) {
-          const data = await response.json();
-          const userData = data.user || data.session?.user;
-          
-          if (userData) {
-            setUser(userData);
-            setLoading(false);
-            // בדוק Shopify Customer ID רק פעם אחת
-            await ensureShopifyCustomer(userData).catch(() => {});
-            // טען את העגלה מ-Shopify
-            loadFromShopify().catch(() => {});
-          } else {
-            setUser(null);
-            setLoading(false);
-            // אם המשתמש התנתק, טען את העגלה מ-localStorage (אם יש)
-            loadFromShopify().catch(() => {});
-          }
-        } else {
-          setUser(null);
-          setLoading(false);
-          // טען את העגלה מ-localStorage (אם יש)
-          loadFromShopify().catch(() => {});
+          // בדיקה הושלמה בהצלחה
         }
       } catch (err) {
-        if (!isMounted) return;
-        setUser(null);
-        setLoading(false);
-        // טען את העגלה מ-localStorage (אם יש)
-        loadFromShopify().catch(() => {});
+        // התעלמות שקטה משגיאות בדיקת רקע
+      }
+    }
+  }, [loadFromShopify]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    // 1. בדיקה ראשונית בעליית הקומפוננטה
+    const checkInitialSession = async () => {
+      try {
+        const { data: { user: initialUser } } = await supabase.auth.getUser();
+        if (isMounted) {
+          await handleUserSync(initialUser);
+        }
+      } catch (error) {
+        if (isMounted) {
+          await handleUserSync(null);
+        }
       }
     };
 
-    checkSession();
+    checkInitialSession();
+
+    // 2. האזנה לשינויים (כולל Refresh Token, Sign In, Sign Out)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+
+      const sessionUser = session?.user || null;
+      
+      // אופטימיזציה: אם האירוע הוא רק עדכון טוקן והיוזר לא השתנה, נדלג
+      if (event === 'TOKEN_REFRESHED' && sessionUser?.id === processedUserIdRef.current) {
+        return;
+      }
+
+      await handleUserSync(sessionUser);
+    });
 
     return () => {
       isMounted = false;
+      subscription.unsubscribe();
     };
-  }, []); // רק פעם אחת ב-mount
+  }, [handleUserSync]);
 
-  // תמיד הצג את האייקון, גם בזמן טעינה
-  // אם יש שגיאה או שהטעינה נתקעה, עדיין נראה את האייקון
-  // אם loading, נציג את האייקון של התחברות (default)
+  // Render Logic
+  const Icon = (
+    <UserIcon 
+      size={22} 
+      className={`text-[#1a1a1a] transition-opacity ${loading ? 'opacity-50' : ''}`} 
+      aria-hidden="true" 
+    />
+  );
 
   if (!user) {
     return (
@@ -99,7 +111,7 @@ export default function UserMenu() {
         className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6 min-w-[24px] shrink-0"
         aria-label="התחברות"
       >
-        <UserIcon size={22} className={`text-[#1a1a1a] ${loading ? 'opacity-50' : ''}`} aria-hidden="true" />
+        {Icon}
         <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gray-400 rounded-full border border-white" aria-hidden="true" />
       </Link>
     );
@@ -111,10 +123,8 @@ export default function UserMenu() {
       className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6 min-w-[24px] shrink-0"
       aria-label="החשבון שלי"
     >
-      <UserIcon size={22} className="text-[#1a1a1a]" aria-hidden="true" />
+      {Icon}
       <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" aria-hidden="true" />
     </Link>
   );
 }
-
-

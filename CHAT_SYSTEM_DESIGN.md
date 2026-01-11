@@ -29,6 +29,9 @@ CREATE TABLE IF NOT EXISTS klumit_chat_conversations (
   user_phone TEXT,
   user_email TEXT,
   status TEXT DEFAULT 'open' CHECK (status IN ('open', 'waiting', 'closed')),
+  last_message_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(), -- תאריך הודעה אחרונה (למיון)
+  viewed_by_admin_id UUID REFERENCES auth.users(id) ON DELETE SET NULL, -- מי צופה בשיחה עכשיו (concurrency)
+  viewed_by_admin_at TIMESTAMP WITH TIME ZONE, -- מתי התחיל לצפות
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -36,23 +39,42 @@ CREATE TABLE IF NOT EXISTS klumit_chat_conversations (
 CREATE INDEX idx_klumit_chat_conversations_user_id ON klumit_chat_conversations(user_id);
 CREATE INDEX idx_klumit_chat_conversations_session_id ON klumit_chat_conversations(session_id);
 CREATE INDEX idx_klumit_chat_conversations_status ON klumit_chat_conversations(status);
+CREATE INDEX idx_klumit_chat_conversations_last_message_at ON klumit_chat_conversations(last_message_at DESC);
 
 -- RLS Policies
 ALTER TABLE klumit_chat_conversations ENABLE ROW LEVEL SECURITY;
 
+-- רק משתמשים מחוברים יכולים לראות את השיחות שלהם
+-- משתמשים אנונימיים מנוהלים דרך API עם Service Role
 CREATE POLICY "Users can view their own conversations"
   ON klumit_chat_conversations FOR SELECT
-  USING (auth.uid() = user_id OR session_id = current_setting('app.session_id', true));
+  USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can create their own conversations"
   ON klumit_chat_conversations FOR INSERT
-  WITH CHECK (auth.uid() = user_id OR session_id = current_setting('app.session_id', true));
+  WITH CHECK (auth.uid() = user_id);
 
 -- Trigger לעדכון updated_at
 CREATE TRIGGER update_klumit_chat_conversations_updated_at
   BEFORE UPDATE ON klumit_chat_conversations
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger לעדכון last_message_at כשנוספת הודעה חדשה
+CREATE OR REPLACE FUNCTION update_conversation_last_message_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE klumit_chat_conversations
+  SET last_message_at = NEW.created_at
+  WHERE id = NEW.conversation_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_klumit_chat_conversations_last_message
+  AFTER INSERT ON klumit_chat_messages
+  FOR EACH ROW
+  EXECUTE FUNCTION update_conversation_last_message_at();
 ```
 
 ### טבלה: `klumit_chat_messages`
@@ -63,28 +85,31 @@ CREATE TABLE IF NOT EXISTS klumit_chat_messages (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   conversation_id UUID NOT NULL REFERENCES klumit_chat_conversations(id) ON DELETE CASCADE,
   message TEXT NOT NULL,
-  from_user BOOLEAN NOT NULL, -- true=מהאתר, false=מ-Telegram
+  from_user BOOLEAN NOT NULL, -- true=מהאתר, false=מ-Telegram/Admin
   telegram_chat_id TEXT, -- מי הגיב ב-Telegram (אם from_user=false)
   replied_by_name TEXT, -- שם של מי ענה (אם from_user=false)
+  telegram_message_id TEXT, -- מזהה ההודעה ב-Telegram (לקישור Reply)
+  status TEXT DEFAULT 'sent_to_server' CHECK (status IN ('sent_to_server', 'delivered_to_telegram', 'failed')), -- סטטוס שליחת ההודעה
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 CREATE INDEX idx_klumit_chat_messages_conversation_id ON klumit_chat_messages(conversation_id);
 CREATE INDEX idx_klumit_chat_messages_created_at ON klumit_chat_messages(created_at DESC);
+CREATE INDEX idx_klumit_chat_messages_telegram_message_id ON klumit_chat_messages(telegram_message_id) WHERE telegram_message_id IS NOT NULL;
+CREATE INDEX idx_klumit_chat_messages_status ON klumit_chat_messages(status);
 
 -- RLS Policies
 ALTER TABLE klumit_chat_messages ENABLE ROW LEVEL SECURITY;
 
+-- רק משתמשים מחוברים יכולים לראות את ההודעות שלהם
+-- משתמשים אנונימיים מנוהלים דרך API עם Service Role
 CREATE POLICY "Users can view messages in their conversations"
   ON klumit_chat_messages FOR SELECT
   USING (
     EXISTS (
       SELECT 1 FROM klumit_chat_conversations
       WHERE klumit_chat_conversations.id = klumit_chat_messages.conversation_id
-      AND (
-        klumit_chat_conversations.user_id = auth.uid()
-        OR klumit_chat_conversations.session_id = current_setting('app.session_id', true)
-      )
+      AND klumit_chat_conversations.user_id = auth.uid()
     )
   );
 
@@ -142,14 +167,29 @@ CREATE POLICY "Admins can view all messages"
 //   message: string,
 //   session_id?: string
 // }
-// Output: { success: boolean, message_id: string }
+// Output: { success: boolean, message_id: string, status: string }
+```
+
+### `/app/api/chat/typing/route.ts`
+**POST** - שליחת אינדיקטור "מקליד..." ל-Telegram
+
+```typescript
+// Input: { conversation_id: string }
+// Output: { success: boolean }
 ```
 
 **תהליך:**
 1. אימות שיחה שייכת למשתמש
-2. שמירת הודעה ב-DB
-3. שליחה ל-Telegram דרך `sendChatMessage()`
-4. החזרת תשובה
+2. קריאה ל-`sendChatAction('typing')` ב-telegram.ts
+3. שליחה לכל ה-CHAT_IDs
+4. החזרת success
+
+**תהליך:**
+1. אימות שיחה שייכת למשתמש (מחובר: לפי user_id, אנונימי: לפי session_id)
+2. שמירת הודעה ב-DB (from_user=true)
+3. שליחה ל-Telegram דרך `sendChatMessage()` - **חשוב: שמירת telegram_message_id**
+4. עדכון ה-DB עם ה-`telegram_message_id` שהתקבל מ-Telegram
+5. החזרת תשובה
 
 ### `/app/api/telegram/webhook/route.ts`
 **POST** - Webhook מ-Telegram
@@ -160,14 +200,77 @@ CREATE POLICY "Admins can view all messages"
 ```
 
 **תהליך:**
-1. אימות webhook (אופציונלי - secret token)
+1. אימות webhook (secret token)
 2. זיהוי סוג update (message, callback_query)
-3. אם הודעה חדשה:
-   - חילוץ conversation_id מהודעה (אם יש)
-   - שמירת תגובה ב-DB
-   - שליחה למשתמש באתר (Realtime)
-   - שליחה ל-CHAT_ID השני עם אינדיקטור "נענה"
-4. החזרת 200 OK
+3. **זיהוי Reply:**
+   - אם `update.message.reply_to_message` קיים:
+     - חילוץ `reply_to_message.message_id`
+     - חיפוש ב-DB: `SELECT conversation_id FROM klumit_chat_messages WHERE telegram_message_id = ?`
+     - אם נמצא: זו תשובה לשיחה קיימת
+   - אם לא נמצא Reply: בדיקת פקודה `/reply [conversation_id] [text]`
+4. שמירת תגובה ב-DB:
+   - `from_user=false`
+   - `telegram_chat_id` = מי שלח
+   - `replied_by_name` = שם מהטלגרם
+   - `conversation_id` = מהחיפוש למעלה
+5. שליחה למשתמש באתר (Realtime) - אם מחובר
+6. שליחה ל-CHAT_ID השני עם אינדיקטור "נענה"
+7. אם המשתמש לא מחובר/ניתק: שליחת אימייל (אם יש)
+8. החזרת 200 OK
+
+**קוד דוגמה:**
+```typescript
+export async function POST(req: Request) {
+  const update = await req.json();
+  
+  // אימות webhook
+  const secretToken = req.headers.get('X-Telegram-Bot-Api-Secret-Token');
+  if (secretToken !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
+  // זיהוי Reply
+  if (update.message?.reply_to_message) {
+    const originalMsgId = update.message.reply_to_message.message_id.toString();
+    
+    // מציאת השיחה לפי ההודעה המקורית בטלגרם
+    const supabaseAdmin = createClient(/* service role */);
+    const { data: originalDbMsg } = await supabaseAdmin
+      .from('klumit_chat_messages')
+      .select('conversation_id')
+      .eq('telegram_message_id', originalMsgId)
+      .single();
+
+    if (originalDbMsg) {
+      // זו תשובה לשיחה קיימת!
+      const conversationId = originalDbMsg.conversation_id;
+      const replyText = update.message.text;
+      const chatId = update.message.chat.id.toString();
+      
+      // שמירת התגובה ב-DB
+      await supabaseAdmin.from('klumit_chat_messages').insert({
+        conversation_id: conversationId,
+        message: replyText,
+        from_user: false,
+        telegram_chat_id: chatId,
+        replied_by_name: update.message.from?.first_name || 'Unknown'
+      });
+      
+      // Realtime broadcast + שליחה ל-CHAT_ID השני
+      // ...
+      
+      return NextResponse.json({ ok: true });
+    }
+  }
+  
+  // פקודה ישירה: /reply [uuid] [text]
+  if (update.message?.text?.startsWith('/reply ')) {
+    // פרסור פקודה...
+  }
+  
+  return NextResponse.json({ ok: true });
+}
+```
 
 ### `/app/api/admin/chat/conversations/route.ts`
 **GET** - קבלת כל השיחות (Admin)
@@ -249,6 +352,9 @@ CREATE POLICY "Admins can view all messages"
 - שליחת הודעות
 - הצגת הודעות (משתמש + תגובות)
 - אינדיקטור "נענה" אם יש תגובה
+- **אינדיקטור "מקליד..."** - דו-כיווני (Web ↔ Telegram/Admin)
+- **סטטוס הודעות** - הצגת סטטוס (נשלח/נמסר/נכשל)
+- **מיזוג אורח למשתמש** - אוטומטי בעת התחברות
 - עיצוב RTL לעברית
 
 **Position:** Fixed bottom-left/right, z-index גבוה
@@ -336,7 +442,7 @@ export async function sendChatMessage(data: {
   userPhone?: string;
   userEmail?: string;
   pageUrl?: string;
-}): Promise<boolean>
+}): Promise<{ success: boolean; messageIds?: string[] }>
 ```
 
 **תהליך:**
@@ -352,7 +458,21 @@ export async function sendChatMessage(data: {
    ${message}
    ```
 2. שליחה לכל ה-CHAT_IDs
-3. החזרת success/failure
+3. **חשוב:** שמירת `message_id` מכל תגובה של Telegram
+4. החזרת `{ success: boolean, messageIds: string[] }` - כדי לעדכן ב-DB
+
+**קוד דוגמה:**
+```typescript
+const messageIds: string[] = [];
+for (const chatId of TELEGRAM_CHAT_IDS) {
+  const response = await fetch(/* ... */);
+  const result = await response.json();
+  if (result.ok) {
+    messageIds.push(result.result.message_id.toString());
+  }
+}
+return { success: messageIds.length > 0, messageIds };
+```
 
 ### פונקציה חדשה: `sendChatReply()`
 
@@ -386,6 +506,24 @@ export async function getTelegramChatName(chatId: string): Promise<string | null
 
 מחזיר שם של chat_id (אם אפשר לקבל מ-Telegram API)
 
+### פונקציה חדשה: `sendChatAction()`
+
+```typescript
+export async function sendChatAction(
+  chatId: string,
+  action: 'typing' | 'upload_photo' | 'record_video' | 'upload_video' | 'record_voice' | 'upload_voice' | 'upload_document' | 'find_location' | 'record_video_note' | 'upload_video_note'
+): Promise<boolean>
+```
+
+**תהליך:**
+1. שליחת `sendChatAction` לכל ה-CHAT_IDs
+2. Telegram מציג "מקליד..." למשך 5 שניות
+3. החזרת success/failure
+
+**שימוש:**
+- כשהמשתמש מקליד ב-ChatWidget
+- שליחה אוטומטית כל 5 שניות (אם עדיין מקליד)
+
 ---
 
 ## 5. זרימת עבודה מפורטת
@@ -418,11 +556,12 @@ export async function getTelegramChatName(chatId: string): Promise<string | null
      session_id: "..."
    }
 3. API Route:
-   a. אימות שיחה שייכת למשתמש
+   a. אימות שיחה שייכת למשתמש (מחובר: user_id, אנונימי: session_id)
    b. שמירת הודעה ב-DB (from_user=true)
    c. קבלת פרטי משתמש (אם מחובר)
    d. קריאה ל-sendChatMessage() ב-telegram.ts
-   e. החזרת { success: true, message_id }
+   e. **חשוב:** שמירת telegram_message_id ב-DB (מהתגובה של Telegram)
+   f. החזרת { success: true, message_id }
 4. ChatWidget מעדכן UI (מוסיף הודעה לרשימה)
 5. Realtime מעדכן את כל הלקוחות המחוברים
 ```
@@ -492,6 +631,94 @@ export async function getTelegramChatName(chatId: string): Promise<string | null
 6. אם מישהו ב-Telegram מגיב אחר כך:
    - התגובה נשלחת גם ל-Admin (Realtime בדף הניהול)
 ```
+
+### 5.7 מיזוג אורח למשתמש רשום
+
+**תרחיש:**
+- משתמש מתחיל צ'אט כ"אורח" (יש לו session_id)
+- תוך כדי שיחה, הנציג אומר לו "תירשם רגע לאתר"
+- המשתמש נרשם/מתחבר
+
+**בעיה:**
+הצ'אט נעלם לו (כי עכשיו המערכת מחפשת לפי user_id והצ'אט הישן משויך רק ל-session_id).
+
+**פתרון:**
+1. ב-Hook של ההתחברות (`onAuthStateChange` ב-ChatWidget)
+2. או ב-API של ה-Login (`/app/auth/actions.ts`)
+3. קריאה ל-`POST /api/chat/merge-guest`:
+   ```typescript
+   {
+     session_id: currentSessionId,
+     user_id: newUserId
+   }
+   ```
+4. SQL Update:
+   ```sql
+   UPDATE klumit_chat_conversations
+   SET user_id = $1
+   WHERE session_id = $2 AND user_id IS NULL;
+   ```
+5. עדכון UI - הצגת השיחות הישנות
+
+### 5.8 אינדיקטור "מקליד..." (Typing Indicator)
+
+**Web → Telegram:**
+- כשהמשתמש מקליד ב-ChatWidget
+- שליחת `sendChatAction('typing')` ל-Telegram
+- API: `POST /api/chat/typing` → `telegram.ts` → `sendChatAction()`
+
+**Telegram → Web:**
+- Telegram לא שולחת webhook על "typing" של נציג בבוט (מורכב)
+- **פתרון:** Realtime Presence בדף הניהול
+- כשמ-Admin מקליד, עדכון דרך Realtime Channel
+- ChatWidget מציג: "👤 Admin מקליד..."
+
+**יישום:**
+```typescript
+// ב-ChatWidget
+const [isTyping, setIsTyping] = useState(false);
+const [adminTyping, setAdminTyping] = useState(false);
+
+// כשהמשתמש מקליד
+useEffect(() => {
+  const timer = setTimeout(() => {
+    if (inputValue.length > 0) {
+      fetch('/api/chat/typing', { method: 'POST', body: JSON.stringify({ conversation_id }) });
+    }
+  }, 500);
+  return () => clearTimeout(timer);
+}, [inputValue]);
+
+// Realtime Presence
+const channel = supabase.channel(`chat:${conversationId}`)
+  .on('presence', { event: 'sync' }, () => {
+    const state = channel.presenceState();
+    setAdminTyping(/* check if admin is typing */);
+  })
+  .subscribe();
+```
+
+### 5.9 סטטוס הודעות (Message Status)
+
+**בעיה:**
+מה קורה אם הבוט של טלגרם נכשל בשליחה (למשל, חסימה מצד טלגרם או שגיאת רשת)?
+המשתמש באתר יראה "V" אחד (נשלח לשרת) אבל לא יקבל מענה לעולם.
+
+**פתרון:**
+1. שדה `status` ב-`klumit_chat_messages`:
+   - `sent_to_server` - נשלח לשרת (ברירת מחדל)
+   - `delivered_to_telegram` - נמסר לטלגרם (אחרי ok: true)
+   - `failed` - נכשל (אם יש שגיאה)
+
+2. עדכון סטטוס:
+   - אחרי שמירה ב-DB: `status='sent_to_server'`
+   - אחרי שליחה מוצלחת ל-Telegram: `status='delivered_to_telegram'`
+   - אם נכשל: `status='failed'`
+
+3. UI ב-ChatWidget:
+   - ✓ נשלח לשרת (`sent_to_server`)
+   - ✓✓ נמסר לטלגרם (`delivered_to_telegram`)
+   - ✗ נכשל (`failed`) - איקון אדום + אפשרות לנסות שוב
 
 ---
 
@@ -594,18 +821,113 @@ curl -X POST "https://api.telegram.org/bot${BOT_TOKEN}/setWebhook" \
 ## 9. אבטחה
 
 ### 1. RLS Policies
-- משתמשים יכולים לראות רק את השיחות שלהם
-- Admins יכולים לראות את כל השיחות (policy נפרד)
-- Server-side validation לכל API calls
-- Admin authentication - whitelist של emails או role-based
 
-### 2. Webhook Security
-- Secret token לאימות webhook
-- אימות IP (אופציונלי)
+**משתמשים מחוברים:**
+- RLS לפי `auth.uid()` - רק השיחות שלהם
+- Policy פשוט ויעיל
 
-### 3. Rate Limiting
+**משתמשים אנונימיים:**
+- **לא משתמשים ב-RLS** עם `current_setting()` (מורכב מדי)
+- **פתרון:** API Routes משתמשים ב-Service Role (Bypass RLS)
+- אימות `session_id` ב-API עצמו:
+  ```typescript
+  // ב-API Route
+  const sessionId = req.headers.get('X-Session-ID') || req.cookies.get('session_id');
+  if (!sessionId) return unauthorized;
+  
+  // שימוש ב-Supabase Admin Client
+  const supabaseAdmin = createClient(/* service role */);
+  const { data } = await supabaseAdmin
+    .from('klumit_chat_conversations')
+    .select('*')
+    .eq('session_id', sessionId);
+  ```
+
+**Admins:**
+- Policy נפרד לראות את כל השיחות
+- Authentication - whitelist של emails או role-based
+
+### 2. Server-side Validation
+- כל API calls מאומתים ב-Server
+- אימות session_id למשתמשים אנונימיים
+- אימות user_id למשתמשים מחוברים
+
+### 3. Webhook Security
+- Secret token לאימות webhook (`X-Telegram-Bot-Api-Secret-Token`)
+- אימות IP (אופציונלי - רשימת IPs של Telegram)
+
+### 4. Rate Limiting
 - הגבלת הודעות למשתמש (למניעת spam)
 - הגבלת יצירת שיחות חדשות
+- Timeout בין הודעות (למניעת flooding)
+
+---
+
+## 9.1. מנגנון Concurrency - "מי עונה עכשיו?"
+
+### מטרה:
+למנוע מצב ששני Admins עונים לאותה שיחה במקביל.
+
+### יישום:
+
+**שדות בטבלה:**
+- `viewed_by_admin_id` - מי צופה בשיחה עכשיו
+- `viewed_by_admin_at` - מתי התחיל לצפות
+
+**API: `/app/api/admin/chat/conversations/[id]/view`**
+```typescript
+// POST - סימון "אני צופה בשיחה"
+// PUT - עדכון זמן צפייה (heartbeat כל 30 שניות)
+// DELETE - שחרור השיחה (כשיוצאים)
+```
+
+**לוגיקה:**
+1. Admin נכנס לשיחה → `POST /view` → עדכון `viewed_by_admin_id`
+2. Heartbeat כל 30 שניות → `PUT /view` → עדכון `viewed_by_admin_at`
+3. אם `viewed_by_admin_at` > 2 דקות → שחרור אוטומטי
+4. Admin אחר רואה: "יוסי צופה בשיחה זו כעת"
+
+**UI בדף הניהול:**
+- Badge: "👁️ יוסי צופה בשיחה זו"
+- Disable כפתור "שלח" אם מישהו אחר צופה
+- או: Warning "⚠️ שים לב: יוסי גם צופה בשיחה זו"
+
+---
+
+## 9.2. טיפול ב-User Abandonment
+
+### בעיה:
+מה קורה אם המשתמש יצא מהאתר לפני שעניתם?
+
+### פתרון:
+
+**1. איסוף אימייל:**
+- ב-ChatWidget, אם המשתמש לא מחובר:
+  - לפני/אחרי ההודעה הראשונה: "השאר אימייל למקרה שנתנתק"
+  - שמירת האימייל ב-`user_email` של השיחה
+
+**2. זיהוי ניתוק:**
+- Realtime subscription נסגר
+- אם יש תגובה חדשה והמשתמש לא מחובר:
+  - בדיקה: האם יש `user_email`?
+  - אם כן: שליחת אימייל עם התגובה
+
+**3. שליחת אימייל:**
+```typescript
+// ב-Webhook או ב-Admin API
+if (userDisconnected && conversation.user_email) {
+  await sendEmail({
+    to: conversation.user_email,
+    subject: 'תגובה להודעתך - קלומית',
+    body: `שלום ${conversation.user_name},\n\nקיבלנו את הודעתך: "${lastUserMessage}"\n\nתגובתנו: "${replyMessage}"\n\nניתן להמשיך את השיחה באתר...`
+  });
+}
+```
+
+**4. UI ב-ChatWidget:**
+- אם המשתמש חזר אחרי ניתוק:
+  - הודעה: "יש לך תגובה חדשה! לחץ כאן לראות"
+  - או: טעינה אוטומטית של ההודעות החדשות
 
 ---
 
@@ -662,8 +984,13 @@ curl -X POST "https://api.telegram.org/bot${BOT_TOKEN}/setWebhook" \
 14. `/supabase-chat-schema.sql` (migration)
 
 ### קבצים משונים:
-1. `/lib/telegram.ts` - הוספת פונקציות חדשות
+1. `/lib/telegram.ts` - הוספת פונקציות חדשות:
+   - `sendChatMessage()` - עם החזרת messageIds
+   - `sendChatReply()` - תגובות
+   - `sendChatAction()` - אינדיקטור "מקליד..."
+   - `getTelegramChatName()` - שם משתמש
 2. `/app/layout.tsx` - הוספת ChatWidget
+3. `/app/auth/actions.ts` - הוספת קריאה ל-merge-guest בעת התחברות
 
 ---
 
@@ -692,6 +1019,73 @@ curl -X POST "https://api.telegram.org/bot${BOT_TOKEN}/setWebhook" \
 - הודעות ישנות נטענות רק כשפותחים שיחה (lazy loading)
 - אפשר להוסיף pagination להודעות ישנות
 - אפשר להוסיף תמיכה בקבצים/תמונות (בעתיד)
+
+---
+
+## 16. סיכום שיפורים קריטיים
+
+### ✅ שיפורים שהוספו לפי ביקורת:
+
+1. **`telegram_message_id`** - קישור בין הודעות ב-Telegram לשיחות ב-DB
+   - שדה חדש ב-`klumit_chat_messages`
+   - Index למהירות חיפוש
+   - שמירה אחרי כל שליחה ל-Telegram
+
+2. **`last_message_at`** - מיון שיחות לפי פעילות
+   - שדה חדש ב-`klumit_chat_conversations`
+   - Trigger לעדכון אוטומטי
+   - Index למיון מהיר
+
+3. **RLS מפושט** - משתמשים אנונימיים מנוהלים דרך Service Role
+   - הסרת `current_setting()` המורכב
+   - אימות `session_id` ב-API Routes
+   - שימוש ב-Supabase Admin Client
+
+4. **Concurrency Management** - מניעת תשובות כפולות בין Admins
+   - שדות: `viewed_by_admin_id`, `viewed_by_admin_at`
+   - API: `/view` עם heartbeat
+   - UI: אינדיקטור "מי צופה בשיחה"
+
+5. **User Abandonment** - שליחת אימייל אם המשתמש ניתק
+   - איסוף אימייל למשתמשים אנונימיים
+   - זיהוי ניתוק Realtime
+   - שליחת אימייל אוטומטית
+
+6. **Webhook Logic משופר** - זיהוי Reply לפי `telegram_message_id`
+   - חיפוש ב-DB לפי `reply_to_message.message_id`
+   - תמיכה בפקודה `/reply [uuid] [text]`
+   - קוד דוגמה מלא
+
+7. **שיפור `sendChatMessage()`** - החזרת `messageIds` לעדכון DB
+   - Return type: `{ success: boolean, messageIds: string[] }`
+   - שמירת כל ה-message_ids מהתגובות
+
+8. **מיזוג אורח למשתמש** - שמירת שיחות בעת התחברות
+   - API: `/api/chat/merge-guest`
+   - SQL Update: `UPDATE ... SET user_id = ... WHERE session_id = ...`
+   - Hook ב-`onAuthStateChange`
+
+9. **אינדיקטור "מקליד..."** - דו-כיווני
+   - Web → Telegram: `sendChatAction('typing')`
+   - Admin → Web: Realtime Presence
+   - פונקציה: `sendChatAction()` ב-telegram.ts
+
+10. **סטטוס הודעות** - Tracking של שליחת הודעות
+    - שדה `status` ב-`klumit_chat_messages`
+    - ערכים: `sent_to_server`, `delivered_to_telegram`, `failed`
+    - עדכון אחרי כל שליחה ל-Telegram
+    - UI: הצגת סטטוס (✓, ✓✓, ✗)
+
+### 🔑 נקודות קריטיות ליישום:
+
+1. **חובה:** שמירת `telegram_message_id` אחרי כל שליחה ל-Telegram
+2. **חובה:** שימוש ב-Service Role למשתמשים אנונימיים (לא RLS)
+3. **חובה:** עדכון סטטוס הודעה אחרי שליחה ל-Telegram
+4. **חובה:** מיזוג שיחות אורח בעת התחברות
+5. **מומלץ:** Heartbeat mechanism ל-Concurrency (כל 30 שניות)
+6. **מומלץ:** איסוף אימייל למשתמשים אנונימיים
+7. **מומלץ:** שליחת אימייל אוטומטית אם המשתמש ניתק
+8. **מומלץ:** אינדיקטור "מקליד..." לשיפור UX
 
 ## 15. דף ניהול צ'אט - פרטים נוספים
 
@@ -798,3 +1192,70 @@ const channel = supabase
 - Link ב-Header/Footer (אם Admin)
 - או דרך `/account` (אם Admin)
 - או דף נפרד `/admin` עם menu
+
+---
+
+## 16. סיכום שיפורים קריטיים
+
+### ✅ שיפורים שהוספו לפי ביקורת:
+
+1. **`telegram_message_id`** - קישור בין הודעות ב-Telegram לשיחות ב-DB
+   - שדה חדש ב-`klumit_chat_messages`
+   - Index למהירות חיפוש
+   - שמירה אחרי כל שליחה ל-Telegram
+
+2. **`last_message_at`** - מיון שיחות לפי פעילות
+   - שדה חדש ב-`klumit_chat_conversations`
+   - Trigger לעדכון אוטומטי
+   - Index למיון מהיר
+
+3. **RLS מפושט** - משתמשים אנונימיים מנוהלים דרך Service Role
+   - הסרת `current_setting()` המורכב
+   - אימות `session_id` ב-API Routes
+   - שימוש ב-Supabase Admin Client
+
+4. **Concurrency Management** - מניעת תשובות כפולות בין Admins
+   - שדות: `viewed_by_admin_id`, `viewed_by_admin_at`
+   - API: `/view` עם heartbeat
+   - UI: אינדיקטור "מי צופה בשיחה"
+
+5. **User Abandonment** - שליחת אימייל אם המשתמש ניתק
+   - איסוף אימייל למשתמשים אנונימיים
+   - זיהוי ניתוק Realtime
+   - שליחת אימייל אוטומטית
+
+6. **Webhook Logic משופר** - זיהוי Reply לפי `telegram_message_id`
+   - חיפוש ב-DB לפי `reply_to_message.message_id`
+   - תמיכה בפקודה `/reply [uuid] [text]`
+   - קוד דוגמה מלא
+
+7. **שיפור `sendChatMessage()`** - החזרת `messageIds` לעדכון DB
+   - Return type: `{ success: boolean, messageIds: string[] }`
+   - שמירת כל ה-message_ids מהתגובות
+
+8. **מיזוג אורח למשתמש** - שמירת שיחות בעת התחברות
+   - API: `/api/chat/merge-guest`
+   - SQL Update: `UPDATE ... SET user_id = ... WHERE session_id = ...`
+   - Hook ב-`onAuthStateChange`
+
+9. **אינדיקטור "מקליד..."** - דו-כיווני
+   - Web → Telegram: `sendChatAction('typing')`
+   - Admin → Web: Realtime Presence
+   - פונקציה: `sendChatAction()` ב-telegram.ts
+
+10. **סטטוס הודעות** - Tracking של שליחת הודעות
+    - שדה `status` ב-`klumit_chat_messages`
+    - ערכים: `sent_to_server`, `delivered_to_telegram`, `failed`
+    - עדכון אחרי כל שליחה ל-Telegram
+    - UI: הצגת סטטוס (✓, ✓✓, ✗)
+
+### 🔑 נקודות קריטיות ליישום:
+
+1. **חובה:** שמירת `telegram_message_id` אחרי כל שליחה ל-Telegram
+2. **חובה:** שימוש ב-Service Role למשתמשים אנונימיים (לא RLS)
+3. **חובה:** עדכון סטטוס הודעה אחרי שליחה ל-Telegram
+4. **חובה:** מיזוג שיחות אורח בעת התחברות
+5. **מומלץ:** Heartbeat mechanism ל-Concurrency (כל 30 שניות)
+6. **מומלץ:** איסוף אימייל למשתמשים אנונימיים
+7. **מומלץ:** שליחת אימייל אוטומטית אם המשתמש ניתק
+8. **מומלץ:** אינדיקטור "מקליד..." לשיפור UX

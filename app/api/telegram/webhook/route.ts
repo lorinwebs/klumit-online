@@ -1,0 +1,111 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { sendChatReply, getTelegramChatName } from '@/lib/telegram-chat';
+
+// POST - Webhook מ-Telegram
+export async function POST(request: NextRequest) {
+  try {
+    // אימות webhook (secret token)
+    const secretToken = request.headers.get('X-Telegram-Bot-Api-Secret-Token');
+    const expectedToken = process.env.TELEGRAM_WEBHOOK_SECRET;
+    
+    if (expectedToken && secretToken !== expectedToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const update = await request.json();
+
+    // רק הודעות טקסט
+    if (!update.message || !update.message.text) {
+      return NextResponse.json({ ok: true });
+    }
+
+    const supabaseAdmin = createSupabaseAdminClient();
+
+    const messageText = update.message.text;
+    const chatId = update.message.chat.id.toString();
+    const messageId = update.message.message_id;
+
+    // זיהוי Reply
+    if (update.message.reply_to_message) {
+      const originalMsgId = update.message.reply_to_message.message_id.toString();
+      
+      // מציאת השיחה לפי ההודעה המקורית בטלגרם
+      const { data: originalDbMsg } = await supabaseAdmin
+        .from('klumit_chat_messages')
+        .select('conversation_id')
+        .eq('telegram_message_id', originalMsgId)
+        .single();
+
+      if (originalDbMsg) {
+        // זו תשובה לשיחה קיימת!
+        const conversationId = originalDbMsg.conversation_id;
+        
+        // קבלת שם של מי ענה
+        const repliedByName = await getTelegramChatName(chatId) || 
+                              update.message.from?.first_name || 
+                              'Unknown';
+
+        // שמירת התגובה ב-DB
+        const { error: insertError } = await supabaseAdmin
+          .from('klumit_chat_messages')
+          .insert({
+            conversation_id: conversationId,
+            message: messageText,
+            from_user: false,
+            telegram_chat_id: chatId,
+            replied_by_name: repliedByName,
+            status: 'delivered_to_telegram',
+          });
+
+        if (!insertError) {
+          // שליחה ל-CHAT_ID השני עם אינדיקטור "נענה"
+          await sendChatReply({
+            conversationId,
+            message: messageText,
+            repliedByChatId: chatId,
+            repliedByName,
+          });
+
+          // Realtime broadcast (עדכון אוטומטי דרך Supabase Realtime)
+          // זה יעבוד אוטומטית כי ההודעה נשמרה ב-DB
+        }
+      }
+    } else if (messageText.startsWith('/reply ')) {
+      // פקודה ישירה: /reply [uuid] [text]
+      const parts = messageText.split(' ');
+      if (parts.length >= 3) {
+        const conversationId = parts[1];
+        const replyText = parts.slice(2).join(' ');
+
+        const repliedByName = await getTelegramChatName(chatId) || 
+                              update.message.from?.first_name || 
+                              'Unknown';
+
+        // שמירת התגובה ב-DB
+        await supabaseAdmin
+          .from('klumit_chat_messages')
+          .insert({
+            conversation_id: conversationId,
+            message: replyText,
+            from_user: false,
+            telegram_chat_id: chatId,
+            replied_by_name: repliedByName,
+            status: 'delivered_to_telegram',
+          });
+
+        // שליחה ל-CHAT_ID השני
+        await sendChatReply({
+          conversationId,
+          message: replyText,
+          repliedByChatId: chatId,
+          repliedByName,
+        });
+      }
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error: any) {
+    return NextResponse.json({ ok: true }); // תמיד להחזיר 200 כדי ש-Telegram לא ינסה שוב
+  }
+}

@@ -3,6 +3,7 @@
 import { shopifyClient, CREATE_CART_MUTATION, ADD_TO_CART_MUTATION, GET_CART_QUERY, UPDATE_CART_BUYER_IDENTITY_MUTATION, REMOVE_CART_LINES_MUTATION, UPDATE_CART_LINES_MUTATION } from './shopify';
 import { supabase } from './supabase';
 import type { CartItem } from '@/store/cartStore';
+import { formatPhoneForShopify } from './utils/phone';
 
 // Debouncing ל-saveCartIdToMetafields כדי למנוע קריאות מיותרות
 let saveCartIdTimeout: NodeJS.Timeout | null = null;
@@ -52,6 +53,9 @@ export async function waitForSyncToComplete(): Promise<void> {
       await currentSyncPromise;
     } catch (err) {
       // התעלם משגיאות - רק חכה שהעדכון יסתיים
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[waitForSyncToComplete] Sync completed with error:', err);
+      }
     }
   }
 }
@@ -83,7 +87,9 @@ export async function saveCartIdToMetafields(cartId: string | null, immediate: b
   saveCartIdTimeout = setTimeout(() => {
     if (pendingCartId !== null) { // Allow null to be passed to clear metafield
       saveCartIdToMetafieldsImpl(pendingCartId).catch(err => {
-
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[saveCartIdToMetafields] Failed to save cart ID:', err);
+        }
       });
       pendingCartId = null;
     }
@@ -109,8 +115,12 @@ async function saveCartIdToMetafieldsImpl(cartId: string | null): Promise<void> 
     }
     
     // בדיקה שהטוקן לא פג תוקף
+    // הערה: Supabase יבדוק את התוקף בצד השרת, אבל בודקים כאן כדי למנוע קריאות מיותרות
     const now = Math.floor(Date.now() / 1000);
     if (session.expires_at && session.expires_at < now) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[saveCartIdToMetafieldsImpl] Session expired, skipping save');
+      }
       return; // הסשן פג תוקף
     }
 
@@ -139,7 +149,9 @@ async function saveCartIdToMetafieldsImpl(cartId: string | null): Promise<void> 
           }
         }
       } catch (err) {
-        // ignore
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[saveCartIdToMetafieldsImpl] Error finding customer:', err);
+        }
       }
     }
     
@@ -160,7 +172,10 @@ async function saveCartIdToMetafieldsImpl(cartId: string | null): Promise<void> 
       }
     }
   } catch (err) {
-    // שקט - לא נדפיס שגיאה כאן כי זה לא קריטי
+    // לא קריטי - לא נדפיס שגיאה ב-production כדי לא להפריע למשתמש
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[saveCartIdToMetafieldsImpl] Unexpected error:', err);
+    }
   }
 }
 
@@ -262,26 +277,6 @@ async function syncCartToShopifyImpl(
 ): Promise<string | null> {
   
   try {
-    // פונקציה עזר לעיצוב טלפון בפורמט Shopify (E.164)
-    const formatPhoneForShopify = (phone: string | undefined): string | undefined => {
-      if (!phone) return undefined;
-      let cleaned = phone.trim().replace(/[\s\-\(\)]/g, '');
-      if (cleaned.startsWith('+')) {
-        const digitsAfterPlus = cleaned.substring(1).replace(/\D/g, '');
-        return digitsAfterPlus.length >= 10 ? cleaned : undefined;
-      }
-      const digitsOnly = cleaned.replace(/\D/g, '');
-      if (digitsOnly.length === 0) return undefined;
-      if (digitsOnly.startsWith('972')) return `+${digitsOnly}`;
-      if (digitsOnly.startsWith('0') && digitsOnly.length >= 9 && digitsOnly.length <= 10) {
-        return `+972${digitsOnly.substring(1)}`;
-      }
-      if (digitsOnly.length >= 9 && digitsOnly.length <= 10 && !digitsOnly.startsWith('0')) {
-        return `+972${digitsOnly}`;
-      }
-      return undefined;
-    };
-
     // נסה לקבל buyerIdentity מהמשתמש המחובר אם לא סופק
     if (!buyerIdentity) {
       try {
@@ -298,7 +293,9 @@ async function syncCartToShopifyImpl(
           }
         }
       } catch (err) {
-        // ignore
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[syncCartToShopifyImpl] Error getting session:', err);
+        }
       }
     } else if (buyerIdentity.phone) {
       const formattedPhone = formatPhoneForShopify(buyerIdentity.phone);
@@ -380,7 +377,9 @@ async function syncCartToShopifyImpl(
           }
         }
       } catch (err) {
-        // ignore
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[syncCartToShopifyImpl] Error loading cart from metafields:', err);
+        }
       }
     }
 
@@ -420,14 +419,18 @@ async function syncCartToShopifyImpl(
                       }
                     }
                   } catch (retryErr) {
-                    // ignore
+                    if (process.env.NODE_ENV === 'development') {
+                      console.error('[syncCartToShopifyImpl] Error checking retry cart:', retryErr);
+                    }
                   }
                 }
               }
             }
           }
         } catch (retryErr) {
-          // ignore
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[syncCartToShopifyImpl] Error retrying metafields lookup:', retryErr);
+          }
         }
       }
       
@@ -456,7 +459,9 @@ async function syncCartToShopifyImpl(
               await saveCartIdToMetafields(newCartId, true);
             }
           } catch(e) {
-            // ignore
+            if (process.env.NODE_ENV === 'development') {
+              console.error('[syncCartToShopifyImpl] Error saving new cart ID:', e);
+            }
           }
         }
         return newCartId;
@@ -492,7 +497,10 @@ async function syncCartToShopifyImpl(
           cartId: existingCartId,
           buyerIdentity: validBuyerIdentity,
         });
-      } catch (e) { 
+      } catch (e) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[syncCartToShopifyImpl] Error updating buyer identity:', e);
+        }
       }
     }
 
@@ -580,6 +588,9 @@ async function syncCartToShopifyImpl(
       
       // בדוק אם יש שגיאות
       if (updateResult?.cartLinesUpdate?.userErrors?.length > 0) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[syncCartToShopifyImpl] Cart lines update errors:', updateResult.cartLinesUpdate.userErrors);
+        }
       }
     }
 
@@ -594,12 +605,25 @@ async function syncCartToShopifyImpl(
     try {
       const { supabase } = await import('@/lib/supabase');
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) saveCartIdToMetafields(existingCartId, true).catch(() => {});
-    } catch(e) {}
+      if (session?.user) {
+        saveCartIdToMetafields(existingCartId, true).catch((e) => {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[syncCartToShopifyImpl] Error saving cart ID to metafields:', e);
+          }
+        });
+      }
+    } catch(e) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[syncCartToShopifyImpl] Error getting session for metafields save:', e);
+      }
+    }
 
     return existingCartId;
 
   } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[syncCartToShopifyImpl] Fatal error during cart sync:', error);
+    }
     return existingCartId; 
   }
 }
@@ -675,6 +699,9 @@ export async function loadCartFromShopify(cartId: string): Promise<CartItem[] | 
 
     return items;
   } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[loadCartFromShopify] Error loading cart:', error);
+    }
     return null;
   }
 }
@@ -689,29 +716,21 @@ export async function findCartByBuyerIdentity(
   if (typeof window === 'undefined') return null;
 
   // קודם נבדוק אם המשתמש מחובר - אם כן, נבדוק קודם ב-metafields
-  // משתמשים ב-API route כדי לבדוק את הסשן מהקוקיז (אמין יותר)
+  // שימוש ישיר ב-supabase.auth.getUser() במקום דרך API
   let session: any = null;
   let isLoggedIn = false;
   try {
-    const response = await fetch('/api/auth/session', { 
-      credentials: 'include',
-      cache: 'no-store'
-    });
-    if (response.ok) {
-      const data = await response.json();
-      session = data?.session || (data?.user ? { user: data.user } : null);
-      isLoggedIn = !!session?.user;
+    const { supabase } = await import('@/lib/supabase');
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (!error && user) {
+      session = { user };
+      isLoggedIn = true;
     }
   } catch (err) {
-    // Fallback to supabase.auth.getSession
-    try {
-      const { supabase } = await import('@/lib/supabase');
-      const { data } = await supabase.auth.getSession();
-      session = data?.session;
-      isLoggedIn = !!session?.user;
-    } catch (fallbackErr) {
-      return null;
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[findCartByBuyerIdentity] Error getting user:', err);
     }
+    return null;
   }
 
   // אם המשתמש מחובר, נבדוק קודם ב-metafields
@@ -741,7 +760,9 @@ export async function findCartByBuyerIdentity(
             }
           }
         } catch (err) {
-          // ignore
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[findCartByBuyerIdentity] Error finding customer:', err);
+          }
         }
       }
       
@@ -769,26 +790,6 @@ export async function findCartByBuyerIdentity(
                     // ננסה לעדכן את ה-buyerIdentity אם צריך, אבל נחזיר את העגלה בכל מקרה
                     const cartBuyerIdentity = cartResponse.cart.buyerIdentity;
                     const emailMatch = !buyerIdentity.email || cartBuyerIdentity?.email === buyerIdentity.email;
-                    
-                    // פונקציה עזר לעיצוב טלפון בפורמט Shopify (E.164) - אותה פונקציה כמו ב-syncCartToShopifyImpl
-                    const formatPhoneForShopify = (phone: string | undefined): string | undefined => {
-                      if (!phone) return undefined;
-                      let cleaned = phone.trim().replace(/[\s\-\(\)]/g, '');
-                      if (cleaned.startsWith('+')) {
-                        const digitsAfterPlus = cleaned.substring(1).replace(/\D/g, '');
-                        return digitsAfterPlus.length >= 10 ? cleaned : undefined;
-                      }
-                      const digitsOnly = cleaned.replace(/\D/g, '');
-                      if (digitsOnly.length === 0) return undefined;
-                      if (digitsOnly.startsWith('972')) return `+${digitsOnly}`;
-                      if (digitsOnly.startsWith('0') && digitsOnly.length >= 9 && digitsOnly.length <= 10) {
-                        return `+972${digitsOnly.substring(1)}`;
-                      }
-                      if (digitsOnly.length >= 9 && digitsOnly.length <= 10 && !digitsOnly.startsWith('0')) {
-                        return `+972${digitsOnly}`;
-                      }
-                      return undefined;
-                    };
                     
                     // השוואת טלפון - נשווה גם את הפורמט המקורי וגם את הפורמט המעוצב
                     const formattedBuyerPhone = formatPhoneForShopify(buyerIdentity.phone);
@@ -822,6 +823,9 @@ export async function findCartByBuyerIdentity(
                         }
                       } catch (err) {
                         // אם יש שגיאה בעדכון, נמשיך בכל מקרה
+                        if (process.env.NODE_ENV === 'development') {
+                          console.error('[findCartByBuyerIdentity] Error updating buyer identity:', err);
+                        }
                       }
                     }
                     
@@ -829,21 +833,34 @@ export async function findCartByBuyerIdentity(
                     return cartResponse.cart.id;
                   }
                     } catch (err) {
-                      // ignore
+                      if (process.env.NODE_ENV === 'development') {
+                        console.error('[findCartByBuyerIdentity] Error checking cart:', err);
+                      }
                     }
                   }
                 } catch (jsonError: any) {
                   // נמשיך לבדוק ב-localStorage במקרה של שגיאה
+                  if (process.env.NODE_ENV === 'development') {
+                    console.error('[findCartByBuyerIdentity] Error parsing JSON:', jsonError);
+                  }
                 }
               } else {
                 // נמשיך לבדוק ב-localStorage במקרה של שגיאה
+                if (process.env.NODE_ENV === 'development') {
+                  console.warn('[findCartByBuyerIdentity] Failed to fetch cart ID from metafields');
+                }
               }
             } catch (fetchError: any) {
               // נמשיך לבדוק ב-localStorage במקרה של שגיאה
+              if (process.env.NODE_ENV === 'development') {
+                console.error('[findCartByBuyerIdentity] Error fetching cart ID:', fetchError);
+              }
             }
       }
     } catch (err) {
-      // ignore
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[findCartByBuyerIdentity] Error in metafields lookup:', err);
+      }
     }
   }
 
@@ -872,14 +889,18 @@ export async function findCartByBuyerIdentity(
               },
             });
           } catch (updateErr) {
-            // ignore
+            if (process.env.NODE_ENV === 'development') {
+              console.error('[findCartByBuyerIdentity] Error updating buyer identity from localStorage:', updateErr);
+            }
           }
         }
         
         return response.cart.id;
       }
     } catch (err) {
-      // ignore
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[findCartByBuyerIdentity] Error loading cart from localStorage:', err);
+      }
     }
   }
   return null;

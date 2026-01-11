@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Phone, X } from 'lucide-react';
+import { verifyOtpServer } from '@/app/auth/actions';
+import { useRouter } from 'next/navigation';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -11,6 +13,7 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
+  const router = useRouter();
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [step, setStep] = useState<'phone' | 'verify'>('phone');
@@ -141,15 +144,27 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       // השתמש במספר המנורמל שנשמר בשליחה, או ננרמל מחדש
       const phoneToVerify = e164Phone || normalizeILPhone(phone);
       
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: phoneToVerify,
-        token: code,
-        type: 'sms',
-      });
+      // השתמש ב-server action כדי לשמור את הסשן נכון
+      const formData = new FormData();
+      formData.append('phone', phoneToVerify);
+      formData.append('token', code);
+      
+      const result = await verifyOtpServer(null, formData);
+      
+      if (result?.error) {
+        throw new Error(result.error);
+      }
 
-      if (error) throw error;
-
-      if (data.user) {
+      // אם הצליח, בדוק את הסשן ב-client
+      // המתן קצת כדי לוודא שהסשן נשמר
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // בדוק את המשתמש מחדש
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // רענון הדף כדי לעדכן את הסטטוס
+        router.refresh();
+        
         // קריאה ל-onSuccess אם קיים
         if (onSuccess) {
           onSuccess();
@@ -157,14 +172,24 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         
         // סגור את ה-modal
         onClose();
+      } else {
+        throw new Error('ההתחברות נכשלה');
       }
-    } catch (err) {
+    } catch (err: any) {
       let errorMessage = 'קוד שגוי';
       if (err instanceof Error) {
         if (err.message.includes('expired')) {
           errorMessage = 'קוד פג תוקף. אנא בקשי קוד חדש';
         } else if (err.message.includes('invalid')) {
           errorMessage = 'קוד שגוי. אנא נסי שוב';
+        } else if (err.message.includes('NEXT_REDIRECT')) {
+          // אם יש redirect, זה אומר שההתחברות הצליחה
+          router.refresh();
+          if (onSuccess) {
+            onSuccess();
+          }
+          onClose();
+          return;
         } else {
           errorMessage = err.message;
         }
