@@ -43,7 +43,12 @@ export async function POST(request: NextRequest) {
       if (callbackData?.startsWith('qr:')) {
         // אישור לטלגרם שהלחיצה התקבלה - מיד (לפני כל העיבוד)
         // זה מונע את ה-loading state בכפתור
-        const botToken = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT
+        const botToken = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT;
+        if (!botToken) {
+          console.error('TELEGRAM_CHAT_BOT_TOKEN_KLUMIT is not set');
+          return NextResponse.json({ ok: true });
+        }
+        
         try {
           const answerResponse = await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
             method: 'POST',
@@ -85,26 +90,51 @@ export async function POST(request: NextRequest) {
           console.log('Looking for conversation with short ID:', shortConvId);
           
           // מציאת השיחה לפי ה-short ID (8 תווים ראשונים)
-          // נשתמש ב-ilike עם pattern כדי למצוא UUID שמתחיל ב-short ID
+          // נמיר את ה-UUID ל-text כדי לחפש
           const { data: conversations, error: findError } = await supabaseAdmin
             .from('klumit_chat_conversations')
             .select('id')
-            .ilike('id', `${shortConvId}%`)
+            .ilike('id::text', `${shortConvId}%`)
             .limit(1);
           
           console.log('Conversation search result:', { 
             found: !!conversations && conversations.length > 0,
             count: conversations?.length,
+            conversations: conversations,
             error: findError?.message,
+            errorCode: findError?.code,
           });
           
-          if (findError || !conversations || conversations.length === 0) {
-            console.error('Conversation not found for short ID:', shortConvId, 'Error:', findError);
+          let conversationId: string | null = null;
+          
+          if (findError) {
+            console.error('Error finding conversation:', findError);
+            // ננסה גם עם ilike אם like נכשל
+            const { data: conversations2, error: findError2 } = await supabaseAdmin
+              .from('klumit_chat_conversations')
+              .select('id')
+              .ilike('id::text', `${shortConvId}%`)
+              .limit(1);
+            
+            if (findError2 || !conversations2 || conversations2.length === 0) {
+              console.error('Conversation not found for short ID (both methods failed):', shortConvId);
+              return NextResponse.json({ ok: true });
+            }
+            
+            conversationId = conversations2[0].id;
+            console.log('Found conversation (fallback method):', conversationId);
+          } else if (!conversations || conversations.length === 0) {
+            console.error('Conversation not found for short ID:', shortConvId);
             return NextResponse.json({ ok: true });
+          } else {
+            conversationId = conversations[0].id;
+            console.log('Found conversation:', conversationId);
           }
           
-          const conversationId = conversations[0].id;
-          console.log('Found conversation:', conversationId);
+          if (!conversationId) {
+            console.error('No conversation ID found');
+            return NextResponse.json({ ok: true });
+          }
           
           // שמירת התגובה ב-DB
           const { data: savedMessage, error: insertError } = await supabaseAdmin
@@ -158,10 +188,15 @@ export async function POST(request: NextRequest) {
       
       // תמיכה בפורמט הישן (לצורך תאימות לאחור)
       if (callbackData?.startsWith('quick_reply:')) {
-        // אישור לטלגרם שהלחיצה התקבלה - מיד (לפני כל העיבוד)
-        const botToken = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT || '8562898707:AAGUimoO2VTbdvjgHr2nKOVFAY1WtbCRGhI';
-        try {
-          const answerResponse = await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+          // אישור לטלגרם שהלחיצה התקבלה - מיד (לפני כל העיבוד)
+          const botToken = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT;
+          if (!botToken) {
+            console.error('TELEGRAM_CHAT_BOT_TOKEN_KLUMIT is not set');
+            return NextResponse.json({ ok: true });
+          }
+          
+          try {
+            const answerResponse = await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
