@@ -26,6 +26,99 @@ export async function POST(request: NextRequest) {
       const callbackData = update.callback_query.data;
       const chatId = update.callback_query.message?.chat?.id?.toString();
       
+      // פורמט חדש: qr:shortConvId:replyId (קיצור ל-64 בתים)
+      if (callbackData?.startsWith('qr:')) {
+        const parts = callbackData.split(':');
+        if (parts.length >= 3) {
+          const shortConvId = parts[1]; // 8 תווים ראשונים
+          const replyId = parts[2]; // ID של התגובה המהירה
+          
+          // מיפוי של quick replies
+          const quickRepliesMap: Record<string, string> = {
+            'hi': 'היי! איך אפשר לעזור לך היום?'
+          };
+          
+          const replyMessage = quickRepliesMap[replyId];
+          
+          if (!replyMessage) {
+            console.error('Unknown reply ID:', replyId);
+            return NextResponse.json({ ok: true });
+          }
+          
+          // מציאת השיחה לפי ה-short ID (8 תווים ראשונים)
+          // נשתמש ב-ilike עם pattern כדי למצוא UUID שמתחיל ב-short ID
+          const { data: conversations, error: findError } = await supabaseAdmin
+            .from('klumit_chat_conversations')
+            .select('id')
+            .ilike('id', `${shortConvId}%`)
+            .limit(1);
+          
+          if (findError || !conversations || conversations.length === 0) {
+            console.error('Conversation not found for short ID:', shortConvId);
+            return NextResponse.json({ ok: true });
+          }
+          
+          const conversationId = conversations[0].id;
+          
+          // שמירת התגובה ב-DB
+          const { data: savedMessage, error: insertError } = await supabaseAdmin
+            .from('klumit_chat_messages')
+            .insert({
+              conversation_id: conversationId,
+              message: replyMessage,
+              from_user: false,
+              telegram_chat_id: chatId,
+              replied_by_name: 'קלומית',
+              status: 'delivered_to_telegram',
+            })
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('Error saving quick reply:', insertError);
+          } else {
+            console.log('Quick reply saved:', savedMessage?.id, 'for conversation:', conversationId);
+            
+            // עדכון השיחה - סגירת needs_response
+            await supabaseAdmin
+              .from('klumit_chat_conversations')
+              .update({ 
+                needs_response: false,
+                status: 'open',
+                deleted_at: null, // אם השיחה הייתה מחוקה, נשחזר אותה
+              })
+              .eq('id', conversationId);
+            
+            // שליחה ל-CHAT_ID השני (אינדיקטור)
+            try {
+              console.log('Sending chat reply to Telegram for conversation:', conversationId);
+              const replyResult = await sendChatReply({
+                conversationId,
+                message: replyMessage,
+                repliedByChatId: chatId || 'quick-reply',
+                repliedByName: 'קלומית',
+              });
+              console.log('Chat reply result:', replyResult);
+            } catch (sendError) {
+              console.error('Error sending chat reply:', sendError);
+            }
+          }
+          
+          // אישור לטלגרם שהלחיצה התקבלה
+          const botToken = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT || '8562898707:AAGUimoO2VTbdvjgHr2nKOVFAY1WtbCRGhI';
+          await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              callback_query_id: update.callback_query.id,
+            }),
+          });
+        }
+        
+        return NextResponse.json({ ok: true });
+      }
+      
+      // תמיכה בפורמט הישן (לצורך תאימות לאחור)
       if (callbackData?.startsWith('quick_reply:')) {
         // פורמט: quick_reply:conversation_id:message
         const parts = callbackData.split(':');

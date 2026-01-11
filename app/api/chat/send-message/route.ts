@@ -5,13 +5,24 @@ import { sendChatMessage } from '@/lib/telegram-chat';
 
 // POST - שליחת הודעה מהאתר
 export async function POST(request: NextRequest) {
+  console.log('=== send-message route called ===');
+  console.log('Stack trace:', new Error().stack);
   try {
     const body = await request.json();
+    console.log('Request body:', { 
+      conversation_id: body.conversation_id, 
+      messageLength: body.message?.length,
+      hasSessionId: !!body.session_id,
+    });
+    
     let { conversation_id, message, session_id } = body;
 
     if (!conversation_id || !message) {
+      console.error('Missing required fields:', { conversation_id, message });
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+    
+    console.log('Processing message for conversation:', conversation_id);
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -197,6 +208,23 @@ export async function POST(request: NextRequest) {
     }
 
     // שליחה ל-Telegram
+    console.log('=== About to send message to Telegram ===');
+    console.log('Sending message to Telegram:', {
+      conversationId: conversation_id,
+      messageLength: message.length,
+      userName: conversation.user_name,
+      userPhone: conversation.user_phone,
+      userEmail: conversation.user_email,
+      pageUrl: body.page_url,
+    });
+    
+    // בדיקה מהירה של environment variables
+    console.log('Environment check:', {
+      hasToken: !!process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT,
+      chatIdRaw: process.env.TELEGRAM_CHAT_ID_KLUMIT || 'NOT SET',
+      chatIdLength: (process.env.TELEGRAM_CHAT_ID_KLUMIT || '').length,
+    });
+    
     const telegramResult = await sendChatMessage({
       conversationId: conversation_id,
       message,
@@ -205,6 +233,19 @@ export async function POST(request: NextRequest) {
       userEmail: conversation.user_email || undefined,
       pageUrl: body.page_url || undefined,
     });
+    
+    console.log('=== Telegram send result ===', telegramResult);
+    
+    if (!telegramResult.success) {
+      console.error('❌ Telegram send failed!');
+      console.error('Possible causes:');
+      console.error('1. TELEGRAM_CHAT_BOT_TOKEN_KLUMIT is not set');
+      console.error('2. TELEGRAM_CHAT_ID_KLUMIT is not set or empty');
+      console.error('3. Telegram API error (check sendChatMessage logs above)');
+      console.error('Check the "sendChatMessage called:" log above for details');
+    } else {
+      console.log('✅ Telegram send succeeded!');
+    }
 
     // עדכון סטטוס ההודעה
     if (telegramResult.success && telegramResult.messageIds && telegramResult.messageIds.length > 0) {
@@ -222,13 +263,17 @@ export async function POST(request: NextRequest) {
         .eq('id', savedMessage.id);
     }
 
-    return NextResponse.json({
+    const response = {
       success: telegramResult.success,
       message_id: savedMessage.id,
       conversation_id: conversation_id, // אם נוצרה שיחה חדשה, זה ה-ID החדש
       status: telegramResult.success ? 'delivered_to_telegram' : 'failed',
-    });
+    };
+    
+    console.log('=== send-message route completed ===', response);
+    return NextResponse.json(response);
   } catch (error: any) {
+    console.error('=== send-message route error ===', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

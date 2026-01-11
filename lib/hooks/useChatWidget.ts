@@ -63,6 +63,7 @@ export function useChatWidget(): UseChatWidgetReturn {
   const notificationChannelRef = useRef<RealtimeChannel | null>(null);
   const hasMergedRef = useRef<boolean>(false);
   const isPageVisibleRef = useRef<boolean>(true);
+  const isSendingRef = useRef<boolean>(false);
 
   // טעינת session_id מ-localStorage
   useEffect(() => {
@@ -390,8 +391,17 @@ export function useChatWidget(): UseChatWidgetReturn {
 
   // שליחת הודעה
   const sendMessage = useCallback(async () => {
-    if (!inputValue.trim() || !conversationId || loading) return;
+    if (!inputValue.trim() || !conversationId || loading || isSendingRef.current) {
+      console.log('sendMessage blocked:', { 
+        hasInput: !!inputValue.trim(), 
+        hasConversationId: !!conversationId, 
+        loading, 
+        isSending: isSendingRef.current 
+      });
+      return;
+    }
 
+    isSendingRef.current = true;
     const messageText = inputValue.trim();
     setInputValue('');
     setIsTyping(false);
@@ -411,19 +421,26 @@ export function useChatWidget(): UseChatWidgetReturn {
     try {
       setLoading(true);
 
+      const requestBody = {
+        conversation_id: conversationId,
+        message: messageText,
+        session_id: sessionId,
+        page_url: window.location.href,
+      };
+      
+      console.log('Sending message to server:', requestBody);
+
       const response = await fetch('/api/chat/send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversation_id: conversationId,
-          message: messageText,
-          session_id: sessionId,
-          page_url: window.location.href,
-        }),
+        body: JSON.stringify(requestBody),
       });
+
+      console.log('Response status:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Response error:', errorData);
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === tempMessage.id ? { ...msg, status: 'failed' } : msg
@@ -433,6 +450,7 @@ export function useChatWidget(): UseChatWidgetReturn {
       }
 
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (data.success) {
         // אם נוצרה שיחה חדשה (כי השיחה הישנה הייתה מחוקה), עדכן את conversationId
@@ -467,6 +485,7 @@ export function useChatWidget(): UseChatWidgetReturn {
       throw error; // נזרוק את השגיאה כדי שהקומפוננטה תטפל בה
     } finally {
       setLoading(false);
+      isSendingRef.current = false;
     }
   }, [inputValue, conversationId, sessionId, loading]);
 

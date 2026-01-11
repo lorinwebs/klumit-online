@@ -44,12 +44,24 @@ export async function sendChatMessage(data: {
   userEmail?: string;
   pageUrl?: string;
 }): Promise<{ success: boolean; messageIds?: string[] }> {
+  console.log('sendChatMessage called:', {
+    conversationId: data.conversationId,
+    messageLength: data.message.length,
+    hasToken: !!TELEGRAM_CHAT_BOT_TOKEN,
+    chatIdsCount: TELEGRAM_CHAT_IDS.length,
+    chatIds: TELEGRAM_CHAT_IDS,
+  });
+
   if (!TELEGRAM_CHAT_BOT_TOKEN) {
-    // TELEGRAM_CHAT_BOT_TOKEN is missing
+    console.error('sendChatMessage: TELEGRAM_CHAT_BOT_TOKEN is missing');
+    console.error('Environment variable TELEGRAM_CHAT_BOT_TOKEN_KLUMIT is not set');
     return { success: false };
   }
   
   if (TELEGRAM_CHAT_IDS.length === 0) {
+    console.error('sendChatMessage: TELEGRAM_CHAT_IDS is empty');
+    console.error('Environment variable TELEGRAM_CHAT_ID_KLUMIT is not set or empty');
+    console.error('Current value:', process.env.TELEGRAM_CHAT_ID_KLUMIT || 'undefined');
     return { success: false };
   }
 
@@ -110,17 +122,37 @@ ${escapeHtml(data.message)}`;
     const messageIds: string[] = [];
     
     // קיצורים לתגובה מהירה
+    // שימוש ב-ID קצר במקום ה-message המלא כדי להישאר במגבלת 64 בתים של Telegram
     const quickReplies = [
-      { text: 'היי! איך אפשר לעזור לך היום?', reply: 'היי! איך אפשר לעזור לך היום?' }
+      { id: 'hi', text: 'היי! איך אפשר לעזור לך היום?', reply: 'היי! איך אפשר לעזור לך היום?' }
     ];
     
     // יצירת inline keyboard
-    const inlineKeyboard = quickReplies.map(reply => ({
-      text: reply.text,
-      callback_data: `quick_reply:${data.conversationId}:${encodeURIComponent(reply.reply)}`
-    }));
+    // callback_data מוגבל ל-64 בתים ב-Telegram
+    // פורמט: quick_reply:conversationId:replyId
+    // conversationId הוא UUID (36 תווים), replyId הוא קצר (2-3 תווים)
+    const inlineKeyboard = quickReplies.map(reply => {
+      // קיצור conversationId ל-8 תווים ראשונים (מספיק לזיהוי ייחודי)
+      const shortConvId = data.conversationId.slice(0, 8);
+      const callbackData = `qr:${shortConvId}:${reply.id}`;
+      
+      // בדיקה שהאורך לא עולה על 64 בתים
+      if (callbackData.length > 64) {
+        console.error('callback_data too long:', callbackData.length, 'bytes');
+      }
+      
+      return {
+        text: reply.text,
+        callback_data: callbackData
+      };
+    });
     
     // Send to all chat IDs
+    console.log('Sending message to Telegram with inline keyboard:', {
+      chatIds: TELEGRAM_CHAT_IDS,
+      inlineKeyboard,
+    });
+
     const results = await Promise.all(
       TELEGRAM_CHAT_IDS.map(async (chatId) => {
         try {
@@ -135,32 +167,41 @@ ${escapeHtml(data.message)}`;
             }
           } as TelegramChatMessage;
           
+          console.log('Sending to Telegram chat ID:', chatId, 'payload:', JSON.stringify(payload, null, 2));
+          
           const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           });
           
+          const responseData = await response.json().catch(() => ({}));
+          console.log('Telegram API response for chat ID', chatId, ':', {
+            ok: response.ok,
+            status: response.status,
+            data: responseData,
+          });
+          
           if (!response.ok) {
+            console.error('Telegram API error for chat ID', chatId, ':', responseData);
             return false;
           }
           
-          const result = await response.json();
-          
-          if (result.ok && result.result?.message_id) {
-            messageIds.push(result.result.message_id.toString());
+          if (responseData.ok && responseData.result?.message_id) {
+            messageIds.push(responseData.result.message_id.toString());
             return true;
           }
           
           return false;
         } catch (error: any) {
-          // Telegram fetch error
+          console.error('Error sending to Telegram chat ID', chatId, ':', error);
           return false;
         }
       })
     );
 
     const allSent = results.some(r => r); // לפחות אחד הצליח
+    console.log('sendChatMessage result:', { success: allSent, messageIds, results });
     return { success: allSent, messageIds };
   } catch (error) {
     return { success: false };
