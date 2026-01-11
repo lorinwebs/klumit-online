@@ -98,7 +98,7 @@ export async function POST(
         conversation_id: conversationId,
         message,
         from_user: false,
-        replied_by_name: 'Admin',
+        replied_by_name: 'קלומית',
         status: 'delivered_to_telegram',
       })
       .select()

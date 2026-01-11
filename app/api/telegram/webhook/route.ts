@@ -54,11 +54,8 @@ export async function POST(request: NextRequest) {
         const conversationId = originalDbMsg.conversation_id;
         console.log('Found conversation:', conversationId, 'for telegram_message_id:', originalMsgId);
         
-        // קבלת שם של מי ענה
-        const repliedByName = await getTelegramChatName(chatId) || 
-                              update.message.from?.first_name || 
-                              update.message.from?.username ||
-                              'Unknown';
+        // תמיד נציג "קלומית" כשעונים מטלגרם
+        const repliedByName = 'קלומית';
 
         // שמירת התגובה ב-DB
         const { data: savedMessage, error: insertError } = await supabaseAdmin
@@ -123,11 +120,8 @@ export async function POST(request: NextRequest) {
               const conversationId = foundConversation.conversation_id;
               console.log('Found conversation by text:', conversationId);
               
-              // קבלת שם של מי ענה
-              const repliedByName = await getTelegramChatName(chatId) || 
-                                    update.message.from?.first_name || 
-                                    update.message.from?.username ||
-                                    'Unknown';
+              // תמיד נציג "קלומית" כשעונים מטלגרם
+              const repliedByName = 'קלומית';
 
               // שמירת התגובה ב-DB
               const { data: savedMessage, error: insertError } = await supabaseAdmin
@@ -172,9 +166,8 @@ export async function POST(request: NextRequest) {
         const conversationId = parts[1];
         const replyText = parts.slice(2).join(' ');
 
-        const repliedByName = await getTelegramChatName(chatId) || 
-                              update.message.from?.first_name || 
-                              'Unknown';
+        // תמיד נציג "קלומית" כשעונים מטלגרם
+        const repliedByName = 'קלומית';
 
         // שמירת התגובה ב-DB
         await supabaseAdmin
