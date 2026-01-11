@@ -564,14 +564,14 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                   <div className="flex items-center justify-center gap-4 mb-2 w-full">
                     <button
                       onClick={() => {
-                        const newIndex = currentImageIndex === filteredImages.length - 1 
-                          ? 0 
-                          : currentImageIndex + 1;
+                        const newIndex = currentImageIndex === 0 
+                          ? filteredImages.length - 1 
+                          : currentImageIndex - 1;
                         setCurrentImageIndex(newIndex);
                         setSelectedImage(filteredImages[newIndex].node.url);
                       }}
                       className="bg-white/90 hover:bg-white rounded-full p-2 shadow-md transition-all border border-gray-200 flex-shrink-0"
-                      aria-label="Next image"
+                      aria-label="Previous image"
                     >
                       <ChevronRight size={20} className="text-[#1a1a1a]" />
                     </button>
@@ -599,14 +599,14 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     </div>
                     <button
                       onClick={() => {
-                        const newIndex = currentImageIndex === 0 
-                          ? filteredImages.length - 1 
-                          : currentImageIndex - 1;
+                        const newIndex = currentImageIndex === filteredImages.length - 1 
+                          ? 0 
+                          : currentImageIndex + 1;
                         setCurrentImageIndex(newIndex);
                         setSelectedImage(filteredImages[newIndex].node.url);
                       }}
                       className="bg-white/90 hover:bg-white rounded-full p-2 shadow-md transition-all border border-gray-200 flex-shrink-0"
-                      aria-label="Previous image"
+                      aria-label="Next image"
                     >
                       <ChevronLeft size={20} className="text-[#1a1a1a]" />
                     </button>

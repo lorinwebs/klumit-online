@@ -192,11 +192,11 @@ function CategoryCarousel({
                 </div>
 
                 {/* Product Info - Minimal */}
-                <div className="space-y-1">
-                  <h3 className="text-lg md:text-xl font-light text-[#1a1a1a] text-left group-hover/card:text-gray-600 transition-colors">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="text-lg md:text-xl font-light text-[#1a1a1a] text-left group-hover/card:text-gray-600 transition-colors flex-1 min-w-0">
                     {product.title}
                   </h3>
-                  <p className="text-base md:text-lg font-light text-gray-500 text-right">
+                  <p className="text-base md:text-lg font-light text-gray-500 text-right flex-shrink-0 whitespace-nowrap">
                     ₪{formatPrice(product.priceRange.minVariantPrice.amount)}
                   </p>
                 </div>
