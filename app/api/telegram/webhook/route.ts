@@ -64,12 +64,14 @@ export async function POST(request: NextRequest) {
             
             // שליחה ל-CHAT_ID השני (אינדיקטור)
             try {
-              await sendChatReply({
+              console.log('Sending chat reply to Telegram for conversation:', conversationId);
+              const replyResult = await sendChatReply({
                 conversationId,
                 message: replyMessage,
                 repliedByChatId: chatId || 'quick-reply',
                 repliedByName: 'קלומית',
               });
+              console.log('Chat reply result:', replyResult);
             } catch (sendError) {
               console.error('Error sending chat reply:', sendError);
             }
