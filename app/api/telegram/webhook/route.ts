@@ -41,6 +41,26 @@ export async function POST(request: NextRequest) {
       
       // פורמט חדש: qr:shortConvId:replyId (קיצור ל-64 בתים)
       if (callbackData?.startsWith('qr:')) {
+        // אישור לטלגרם שהלחיצה התקבלה - מיד (לפני כל העיבוד)
+        // זה מונע את ה-loading state בכפתור
+        const botToken = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT
+        try {
+          const answerResponse = await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              callback_query_id: update.callback_query.id,
+            }),
+          });
+          const answerData = await answerResponse.json();
+          console.log('Callback query answered (qr:) - immediately:', answerData);
+          if (!answerData.ok) {
+            console.error('Failed to answer callback query:', answerData);
+          }
+        } catch (answerError) {
+          console.error('Error answering callback query:', answerError);
+        }
+        
         const parts = callbackData.split(':');
         console.log('Parsing callback data:', { parts, length: parts.length });
         
@@ -129,25 +149,6 @@ export async function POST(request: NextRequest) {
               console.error('Error sending chat reply:', sendError);
             }
           }
-          
-          // אישור לטלגרם שהלחיצה התקבלה
-          const botToken = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT || '8562898707:AAGUimoO2VTbdvjgHr2nKOVFAY1WtbCRGhI';
-          try {
-            const answerResponse = await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                callback_query_id: update.callback_query.id,
-              }),
-            });
-            const answerData = await answerResponse.json();
-            console.log('Callback query answered (qr:):', answerData);
-            if (!answerData.ok) {
-              console.error('Failed to answer callback query:', answerData);
-            }
-          } catch (answerError) {
-            console.error('Error answering callback query:', answerError);
-          }
         } else {
           console.error('Invalid callback data format - expected qr:shortConvId:replyId, got:', callbackData);
         }
@@ -157,6 +158,25 @@ export async function POST(request: NextRequest) {
       
       // תמיכה בפורמט הישן (לצורך תאימות לאחור)
       if (callbackData?.startsWith('quick_reply:')) {
+        // אישור לטלגרם שהלחיצה התקבלה - מיד (לפני כל העיבוד)
+        const botToken = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT || '8562898707:AAGUimoO2VTbdvjgHr2nKOVFAY1WtbCRGhI';
+        try {
+          const answerResponse = await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              callback_query_id: update.callback_query.id,
+            }),
+          });
+          const answerData = await answerResponse.json();
+          console.log('Callback query answered (quick_reply:) - immediately:', answerData);
+          if (!answerData.ok) {
+            console.error('Failed to answer callback query:', answerData);
+          }
+        } catch (answerError) {
+          console.error('Error answering callback query:', answerError);
+        }
+        
         // פורמט: quick_reply:conversation_id:message
         const parts = callbackData.split(':');
         if (parts.length >= 3) {
@@ -205,25 +225,6 @@ export async function POST(request: NextRequest) {
             } catch (sendError) {
               console.error('Error sending chat reply:', sendError);
             }
-          }
-          
-          // אישור לטלגרם שהלחיצה התקבלה
-          const botToken = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT || '8562898707:AAGUimoO2VTbdvjgHr2nKOVFAY1WtbCRGhI';
-          try {
-            const answerResponse = await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                callback_query_id: update.callback_query.id,
-              }),
-            });
-            const answerData = await answerResponse.json();
-            console.log('Callback query answered (quick_reply:):', answerData);
-            if (!answerData.ok) {
-              console.error('Failed to answer callback query:', answerData);
-            }
-          } catch (answerError) {
-            console.error('Error answering callback query:', answerError);
           }
         }
         
