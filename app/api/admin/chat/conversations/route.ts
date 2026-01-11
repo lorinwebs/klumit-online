@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     let query = supabaseAdmin
       .from('klumit_chat_conversations')
       .select('*')
+      .is('deleted_at', null) // רק שיחות שלא נמחקו
       .order('last_message_at', { ascending: false });
 
     if (status && status !== 'all') {
@@ -28,9 +29,79 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // ספירת הודעות שלא נקראו לכל שיחה + טעינת פרטי משתמש
+    // ספירת הודעות שלא נקראו לכל שיחה + טעינת פרטי משתמש + בדיקה שיש הודעות
     const conversationsWithCounts = await Promise.all(
       (conversations || []).map(async (conv) => {
+        // בדיקה אם יש הודעות בשיחה - אם אין, נסנן אותה
+        const { count: messageCount } = await supabaseAdmin
+          .from('klumit_chat_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('conversation_id', conv.id);
+        
+        // אם אין הודעות - נחזיר null כדי לסנן
+        if (!messageCount || messageCount === 0) {
+          return null;
+        }
+        
+        // מציאת ההודעה האחרונה (מכל השיחות אם יש user_id, או מהשיחה הספציפית אם אורח)
+        let lastUserMessageAt: string | null = null;
+        let lastMessage: { message: string; from_user: boolean; replied_by_name: string | null; created_at: string } | null = null;
+        
+        if (conv.user_id) {
+          // מציאת כל השיחות של המשתמש
+          const { data: allConversations } = await supabaseAdmin
+            .from('klumit_chat_conversations')
+            .select('id')
+            .eq('user_id', conv.user_id)
+            .is('deleted_at', null);
+          
+          const conversationIds = (allConversations || []).map(c => c.id);
+          
+          // קבלת ההודעה האחרונה מכל השיחות (לא רק מהיוזר)
+          const { data: lastMsg } = await supabaseAdmin
+            .from('klumit_chat_messages')
+            .select('message, from_user, replied_by_name, created_at')
+            .in('conversation_id', conversationIds)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          lastMessage = lastMsg || null;
+          
+          // קבלת ההודעה האחרונה מהיוזר למיון
+          const { data: lastUserMessage } = await supabaseAdmin
+            .from('klumit_chat_messages')
+            .select('created_at')
+            .in('conversation_id', conversationIds)
+            .eq('from_user', true)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          lastUserMessageAt = lastUserMessage?.created_at || null;
+        } else {
+          // אם אין user_id (אורח) - נבדוק את ההודעה האחרונה מהשיחה הספציפית
+          const { data: lastMsg } = await supabaseAdmin
+            .from('klumit_chat_messages')
+            .select('message, from_user, replied_by_name, created_at')
+            .eq('conversation_id', conv.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          lastMessage = lastMsg || null;
+          
+          const { data: lastUserMessage } = await supabaseAdmin
+            .from('klumit_chat_messages')
+            .select('created_at')
+            .eq('conversation_id', conv.id)
+            .eq('from_user', true)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          lastUserMessageAt = lastUserMessage?.created_at || null;
+        }
         // חישוב unread_count ו-needs_response - רק אם ההודעה האחרונה היא מהמשתמש
         let unreadCount = 0;
         let needsResponse = false;
@@ -110,7 +181,15 @@ export async function GET(request: NextRequest) {
         }
 
         // אם יש user_id אבל אין user_name/user_email - נטען מהמשתמש
-        let enrichedConv = { ...conv, unread_count: unreadCount, needs_response: needsResponse };
+        let enrichedConv = { 
+          ...conv, 
+          unread_count: unreadCount, 
+          needs_response: needsResponse,
+          last_user_message_at: lastUserMessageAt, // שמירה למיון
+          last_message: lastMessage?.message || null, // ההודעה האחרונה
+          last_message_from_user: lastMessage?.from_user || false, // האם מהמשתמש
+          last_message_replied_by: lastMessage?.replied_by_name || null // מי ענה (אם לא מהמשתמש)
+        };
         
         if (conv.user_id && (!conv.user_name || !conv.user_email || !conv.user_phone)) {
           try {
@@ -146,12 +225,15 @@ export async function GET(request: NextRequest) {
         return enrichedConv;
       })
     );
+    
+    // סינון שיחות בלי הודעות (null values)
+    const conversationsWithMessages = conversationsWithCounts.filter(conv => conv !== null) as typeof conversationsWithCounts;
 
     // קיבוץ שיחות לפי user_id - רק השיחה האחרונה לכל משתמש
     // אבל נשמור את כל ה-conversation_ids של המשתמש
-    const conversationsByUserId = new Map<string, typeof conversationsWithCounts[0] & { all_conversation_ids?: string[] }>();
+    const conversationsByUserId = new Map<string, typeof conversationsWithMessages[0] & { all_conversation_ids?: string[] }>();
     
-    for (const conv of conversationsWithCounts) {
+    for (const conv of conversationsWithMessages) {
       // אם יש user_id - נקבץ לפי user_id
       // אם אין user_id - נשתמש ב-session_id (אורחים)
       const key = conv.user_id || conv.session_id;
@@ -187,11 +269,20 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // המרה חזרה למערך ומיון לפי last_message_at
+    // המרה חזרה למערך ומיון - שיחות שצריך להגיב להן קודם, אחר כך לפי ההודעה האחרונה מהיוזר
     const uniqueConversations = Array.from(conversationsByUserId.values())
       .sort((a, b) => {
-        const dateA = new Date(a.last_message_at || a.created_at).getTime();
-        const dateB = new Date(b.last_message_at || b.created_at).getTime();
+        // קודם כל - שיחות שצריך להגיב להן
+        const needsResponseA = (a as any).needs_response ? 1 : 0;
+        const needsResponseB = (b as any).needs_response ? 1 : 0;
+        
+        if (needsResponseA !== needsResponseB) {
+          return needsResponseB - needsResponseA; // needs_response=true קודם
+        }
+        
+        // אם שתיהן באותו סטטוס - מיון לפי ההודעה האחרונה מהיוזר
+        const dateA = new Date((a as any).last_user_message_at || a.last_message_at || a.created_at).getTime();
+        const dateB = new Date((b as any).last_user_message_at || b.last_message_at || b.created_at).getTime();
         return dateB - dateA;
       });
 

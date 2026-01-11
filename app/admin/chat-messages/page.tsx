@@ -17,6 +17,9 @@ interface Conversation {
   viewed_by_admin_at: string | null;
   unread_count?: number;
   needs_response?: boolean;
+  last_message?: string | null;
+  last_message_from_user?: boolean;
+  last_message_replied_by?: string | null;
 }
 
 interface Message {
@@ -342,43 +345,101 @@ export default function AdminChatPage() {
               {conversations.map((conv) => (
                 <div
                   key={conv.id}
-                  onClick={() => setSelectedConversation(conv)}
-                  className={`p-4 cursor-pointer hover:bg-gray-50 ${
+                  className={`p-4 hover:bg-gray-50 ${
                     selectedConversation?.id === conv.id ? 'bg-blue-50' : ''
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="font-semibold">
-                      {conv.user_name || conv.user_email || 'אורח'}
+                  <div 
+                    onClick={() => setSelectedConversation(conv)}
+                    className="cursor-pointer"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="font-semibold">
+                        {conv.user_name || conv.user_email || 'אורח'}
+                      </div>
+                      <div className="text-xs">{getStatusBadge(conv.status)}</div>
                     </div>
-                    <div className="text-xs">{getStatusBadge(conv.status)}</div>
-                  </div>
-                  
-                  {conv.user_phone && (
-                    <div className="text-sm text-gray-600 mb-1">📞 {conv.user_phone}</div>
-                  )}
-                  
-                  {conv.user_email && (
-                    <div className="text-sm text-gray-600 mb-1">✉️ {conv.user_email}</div>
-                  )}
-                  
-                  <div className="text-xs text-gray-500">
-                    {formatDate(conv.last_message_at)}
-                  </div>
-                  
-                  {conv.needs_response && (
-                    <div className="mt-2">
-                      <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">
-                        צריך להגיב!
-                      </span>
+                    
+                    {conv.user_phone && (
+                      <div className="text-sm text-gray-600 mb-1">📞 {conv.user_phone}</div>
+                    )}
+                    
+                    {conv.user_email && (
+                      <div className="text-sm text-gray-600 mb-1">✉️ {conv.user_email}</div>
+                    )}
+                    
+                    <div className="text-xs text-gray-500 mb-2">
+                      {formatDate(conv.last_message_at)}
                     </div>
-                  )}
+                    
+                    {/* הצגת ההודעה האחרונה */}
+                    {conv.last_message && (
+                      <div className="text-sm text-gray-700 mb-2 line-clamp-2">
+                        {conv.last_message_from_user ? (
+                          <>
+                            <span className="font-medium underline">
+                              {conv.user_name || conv.user_email || 'אורח'}
+                            </span>
+                            <span>: </span>
+                            {conv.last_message}
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-medium underline">
+                              {conv.last_message_replied_by || 'קלומית'}
+                            </span>
+                            <span>: </span>
+                            {conv.last_message}
+                          </>
+                        )}
+                      </div>
+                    )}
+                    
+                    {conv.needs_response && (
+                      <div className="mt-2">
+                        <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">
+                          צריך להגיב!
+                        </span>
+                      </div>
+                    )}
 
-                  {conv.viewed_by_admin_id && (
-                    <div className="mt-2 text-xs text-blue-600">
-                      👁️ מנהל אחר צופה בשיחה זו
-                    </div>
-                  )}
+                    {conv.viewed_by_admin_id && (
+                      <div className="mt-2 text-xs text-blue-600">
+                        👁️ מנהל אחר צופה בשיחה זו
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* כפתור מחק */}
+                  <div className="mt-2 pt-2 border-t">
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (confirm('האם אתה בטוח שברצונך למחוק את השיחה?')) {
+                          try {
+                            const response = await fetch(`/api/admin/chat/conversations/${conv.id}`, {
+                              method: 'DELETE',
+                            });
+                            
+                            if (response.ok) {
+                              // הסרה מה-UI
+                              setConversations(conversations.filter(c => c.id !== conv.id));
+                              if (selectedConversation?.id === conv.id) {
+                                setSelectedConversation(null);
+                              }
+                            } else {
+                              alert('שגיאה במחיקת השיחה');
+                            }
+                          } catch (error) {
+                            alert('שגיאה במחיקת השיחה');
+                          }
+                        }
+                      }}
+                      className="w-full px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded border border-red-200 hover:border-red-300 transition-colors"
+                    >
+                      🗑️ מחק
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

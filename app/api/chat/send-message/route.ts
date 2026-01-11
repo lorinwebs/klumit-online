@@ -121,6 +121,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // עדכון deleted_at ל-null אם השיחה נמחקה - כדי שתצוף שוב
+    await supabaseAdmin
+      .from('klumit_chat_conversations')
+      .update({ deleted_at: null })
+      .eq('id', conversation_id);
+
     // שמירת הודעה ב-DB
     const { data: savedMessage, error: insertError } = await supabaseAdmin
       .from('klumit_chat_messages')
