@@ -119,10 +119,10 @@ export const useCartStore = create<CartStore>()((set, get) => {
       let targetCartId: string | null = null;
       
       // לוגיקת מציאת Cart ID
-      if (isLoggedIn) {
+      if (isLoggedIn && user) {
         const buyerIdentity = {
-          email: session.user.email || session.user.user_metadata?.email,
-          phone: session.user.phone || session.user.user_metadata?.phone,
+          email: user.email || user.user_metadata?.email,
+          phone: user.phone || user.user_metadata?.phone,
         };
         // תמיד מחפשים לפי buyerIdentity אם המשתמש מחובר
         targetCartId = await findCartByBuyerIdentity(buyerIdentity);

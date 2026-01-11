@@ -195,7 +195,7 @@ export default function CheckoutPage() {
     return () => clearTimeout(timer);
   }, [formData.address, formData.city]);
 
-  const getTotal = useMemo(() => {
+  const calculatedTotal = useMemo(() => {
     // אם יש לנו מחיר סופי מ-Shopify (אחרי הנחה ומסים), זה הערך הכי מדויק
     if (cartTotal !== null) {
       return cartTotal;
@@ -1189,7 +1189,7 @@ export default function CheckoutPage() {
                   <div className="flex justify-between text-base pt-3 border-t border-gray-200">
                     <span className="font-light">סה״כ</span>
                     <span className="font-light text-[#1a1a1a]">
-                      ₪{formatPrice(getTotal)}
+                      ₪{formatPrice(calculatedTotal)}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 mt-2 text-right">כולל מע״מ</p>
