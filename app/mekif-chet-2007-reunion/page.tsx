@@ -116,14 +116,22 @@ export default function ReunionPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10 md:mb-16">
+          {/* School Logo */}
+          <div className="mb-6 flex justify-center">
+            <img 
+              src="https://mekifh.mashov.info/wp-content/uploads/sites/82/2021/06/Semel-MekifH-%D7%A9%D7%9C%D7%95%D7%9D-%D7%95%D7%90%D7%A0%D7%95%D7%A0%D7%95.png"
+              alt="לוגו מקיף ח'"
+              className="h-24 md:h-32 w-auto object-contain"
+            />
+          </div>
           <div className="inline-block mb-6">
             <h1 className="text-4xl md:text-6xl font-light text-slate-900 mb-3 tracking-tight">
               מפגש מחזור 2007 מקיף ח' - האיחוד!
             </h1>
-            <div className="h-1 w-24 bg-gradient-to-r from-indigo-500 to-purple-500 mx-auto rounded-full"></div>
+            <div className="h-1 w-24 bg-gradient-to-r from-indigo-500 to-purple-500 mx-auto"></div>
           </div>
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6">
-            <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-xl px-6 py-3 rounded-full shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300">
+            <div className="inline-flex items-center gap-3 bg-white px-6 py-3 shadow-md border border-slate-200 hover:shadow-lg transition-all duration-300">
               <Users className="text-indigo-600" size={28} />
               <span className="text-2xl md:text-3xl font-light text-slate-800">
                 <span className="font-semibold text-indigo-600">{total}</span> נרשמו
@@ -133,7 +141,7 @@ export default function ReunionPage() {
               href="https://forms.monday.com/forms/f2abc9fccb939b062aeb659cc4454b24?r=euc1"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-full shadow-xl hover:shadow-2xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:-translate-y-0.5 font-medium text-lg"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 font-medium text-lg"
             >
               <UserPlus size={22} />
               הרשמה למפגש
@@ -143,7 +151,7 @@ export default function ReunionPage() {
 
         {/* Welcome Message */}
         <div className="mb-10 md:mb-16 max-w-3xl mx-auto">
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl p-6 md:p-8 border border-white/20">
+          <div className="bg-white shadow-md p-6 md:p-8 border border-slate-200">
             <p className="text-lg md:text-xl text-slate-700 leading-relaxed text-center font-light">
               היי לכולם, החלטנו שהגיע הזמן ליצור מפגש, רק לנו (בלי בני זוג וילדים!!) לא להאמין כמה אנחנו זקנים וכמה זמן לא נפגשנו, יאללה תמלאו את הטופס ובקרוב נעדכן מתי זה קורה!
             </p>
@@ -158,15 +166,14 @@ export default function ReunionPage() {
             return (
               <div
                 key={className}
-                className="group bg-white/90 backdrop-blur-xl rounded-2xl shadow-lg overflow-hidden border border-white/50 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+                className="group bg-white shadow-md overflow-hidden border border-slate-200 hover:shadow-lg transition-all duration-300"
                 style={{ animationDelay: `${idx * 50}ms` }}
               >
                 {/* Class Header */}
                 <div className={`bg-gradient-to-br ${gradient.from} ${gradient.to} ${gradient.text} px-5 py-4 relative overflow-hidden`}>
-                  <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
                   <div className="relative flex items-center justify-between">
                     <h2 className="text-xl md:text-2xl font-semibold">{className}</h2>
-                    <span className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full text-sm font-semibold border border-white/30">
+                    <span className="bg-white/30 px-3 py-1.5 text-sm font-semibold border border-white/40">
                       {participants.length}
                     </span>
                   </div>
@@ -178,13 +185,13 @@ export default function ReunionPage() {
                     participants.map((participant, index) => (
                       <div
                         key={index}
-                        className="bg-gradient-to-r from-slate-50 to-white rounded-xl p-3 border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all duration-200 group/item"
+                        className="bg-white p-3 border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all duration-200 group/item"
                       >
                         <div className="font-medium text-slate-900 mb-1.5 group-hover/item:text-indigo-700 transition-colors">
                           {index + 1}. {participant.name}
                         </div>
                         {participant.otherClass && (
-                          <div className="text-xs text-slate-400 mt-1.5 italic bg-slate-50 px-2 py-1 rounded-md inline-block">
+                          <div className="text-xs text-slate-400 mt-1.5 italic bg-slate-50 px-2 py-1 inline-block">
                             {participant.otherClass}
                           </div>
                         )}
@@ -203,7 +210,7 @@ export default function ReunionPage() {
 
         {/* Organizers Section */}
         <div className="mt-12 text-center">
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl p-6 md:p-8 border border-white/20 max-w-2xl mx-auto">
+          <div className="bg-white shadow-md p-6 md:p-8 border border-slate-200 max-w-2xl mx-auto">
             <h3 className="text-xl md:text-2xl font-light text-slate-900 mb-6">המארגנות:</h3>
             <div className="space-y-4 text-slate-700">
               <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4">
