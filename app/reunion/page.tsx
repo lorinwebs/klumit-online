@@ -197,6 +197,33 @@ export default function ReunionPage() {
             );
           })}
         </div>
+
+        {/* Organizers Section */}
+        <div className="mt-12 text-center">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl p-6 md:p-8 border border-white/20 max-w-2xl mx-auto">
+            <h3 className="text-xl md:text-2xl font-light text-slate-900 mb-6">המארגנות:</h3>
+            <div className="space-y-4 text-slate-700">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4">
+                <span className="font-medium">לורין טוטח (חייט)</span>
+                <a href="tel:0524893329" className="text-indigo-600 hover:text-indigo-700 transition-colors">
+                  0524893329
+                </a>
+              </div>
+              <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4">
+                <span className="font-medium">נטלי נחום (אמיר)</span>
+                <a href="tel:0524258068" className="text-indigo-600 hover:text-indigo-700 transition-colors">
+                  0524258068
+                </a>
+              </div>
+              <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4">
+                <span className="font-medium">וטל נקר (מיפז)</span>
+                <a href="tel:0542553737" className="text-indigo-600 hover:text-indigo-700 transition-colors">
+                  0542553737
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
