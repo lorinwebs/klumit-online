@@ -6,12 +6,12 @@ export async function GET(request: NextRequest) {
   try {
     const supabaseAdmin = createSupabaseAdminClient();
 
-    // ספירת שיחות לפי סטטוס
+    // ספירת שיחות לפי סטטוס (רק שיחות שלא נמחקו)
     const [open, waiting, closed, total] = await Promise.all([
-      supabaseAdmin.from('klumit_chat_conversations').select('*', { count: 'exact', head: true }).eq('status', 'open'),
-      supabaseAdmin.from('klumit_chat_conversations').select('*', { count: 'exact', head: true }).eq('status', 'waiting'),
-      supabaseAdmin.from('klumit_chat_conversations').select('*', { count: 'exact', head: true }).eq('status', 'closed'),
-      supabaseAdmin.from('klumit_chat_conversations').select('*', { count: 'exact', head: true }),
+      supabaseAdmin.from('klumit_chat_conversations').select('*', { count: 'exact', head: true }).eq('status', 'open').is('deleted_at', null),
+      supabaseAdmin.from('klumit_chat_conversations').select('*', { count: 'exact', head: true }).eq('status', 'waiting').is('deleted_at', null),
+      supabaseAdmin.from('klumit_chat_conversations').select('*', { count: 'exact', head: true }).eq('status', 'closed').is('deleted_at', null),
+      supabaseAdmin.from('klumit_chat_conversations').select('*', { count: 'exact', head: true }).is('deleted_at', null),
     ]);
 
     // הודעות היום
