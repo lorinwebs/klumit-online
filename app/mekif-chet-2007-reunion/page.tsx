@@ -181,14 +181,8 @@ export default function ReunionPage() {
                         className="bg-gradient-to-r from-slate-50 to-white rounded-xl p-3 border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all duration-200 group/item"
                       >
                         <div className="font-medium text-slate-900 mb-1.5 group-hover/item:text-indigo-700 transition-colors">
-                          {participant.name}
+                          {index + 1}. {participant.name}
                         </div>
-                        {participant.city && (
-                          <div className="text-xs text-slate-500 flex items-center gap-1.5">
-                            <MapPin size={14} className="text-slate-400" />
-                            {participant.city}
-                          </div>
-                        )}
                         {participant.otherClass && (
                           <div className="text-xs text-slate-400 mt-1.5 italic bg-slate-50 px-2 py-1 rounded-md inline-block">
                             {participant.otherClass}
@@ -225,7 +219,7 @@ export default function ReunionPage() {
                 </a>
               </div>
               <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4">
-                <span className="font-medium">וטל נקר (מיפז)</span>
+                <span className="font-medium">טל נקר (מי-פז)</span>
                 <a href="tel:0542553737" className="text-indigo-600 hover:text-indigo-700 transition-colors">
                   0542553737
                 </a>
