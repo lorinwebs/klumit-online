@@ -141,6 +141,15 @@ export default function ReunionPage() {
           </div>
         </div>
 
+        {/* Welcome Message */}
+        <div className="mb-10 md:mb-16 max-w-3xl mx-auto">
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl p-6 md:p-8 border border-white/20">
+            <p className="text-lg md:text-xl text-slate-700 leading-relaxed text-center font-light">
+              היי לכולם, החלטנו שהגיע הזמן ליצור מפגש, רק לנו (בלי בני זוג וילדים!!) לא להאמין כמה אנחנו זקנים וכמה זמן לא נפגשנו, יאללה תמלאו את הטופס ובקרוב נעדכן מתי זה קורה!
+            </p>
+          </div>
+        </div>
+
         {/* Classes Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mb-12">
           {Object.entries(allClassesData).map(([className, participants], idx) => {
