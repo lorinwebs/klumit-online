@@ -39,45 +39,61 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const query = `
-      query {
-        boards(ids: [${BOARD_ID}]) {
-          items_page {
-            items {
-              id
-              name
-              column_values(ids: ["name", "${CLASS_COLUMN_ID}", "${OTHER_CLASS_COLUMN_ID}", "phonewmatatfo", "emailpm71o46m", "short_texthbssufi9", "single_selectp6t5jmo", "single_selectiapws1k", "single_selectgrjlcmm", "long_text1wz8do45", "single_selectpw3esvn"]) {
+    // Fetch all items with pagination
+    let allItems: MondayItem[] = [];
+    let cursor: string | null = null;
+    let hasMore = true;
+
+    while (hasMore) {
+      const query = `
+        query {
+          boards(ids: [${BOARD_ID}]) {
+            items_page(limit: 100${cursor ? `, cursor: "${cursor}"` : ''}) {
+              items {
                 id
-                text
-                value
+                name
+                column_values(ids: ["name", "${CLASS_COLUMN_ID}", "${OTHER_CLASS_COLUMN_ID}", "phonewmatatfo", "emailpm71o46m", "short_texthbssufi9", "single_selectp6t5jmo", "single_selectiapws1k", "single_selectgrjlcmm", "long_text1wz8do45", "single_selectpw3esvn"]) {
+                  id
+                  text
+                  value
+                }
               }
+              cursor
             }
           }
         }
+      `;
+
+      const response = await fetch('https://api.monday.com/v2', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': MONDAY_API_KEY,
+          'API-Version': '2024-01',
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Monday.com API error: ${response.statusText}`);
       }
-    `;
 
-    const response = await fetch('https://api.monday.com/v2', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': MONDAY_API_KEY,
-        'API-Version': '2024-01',
-      },
-      body: JSON.stringify({ query }),
-    });
+      const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(`Monday.com API error: ${response.statusText}`);
+      if (data.errors) {
+        throw new Error(data.errors[0].message);
+      }
+
+      const itemsPage = data.data.boards[0]?.items_page;
+      const items: MondayItem[] = itemsPage?.items || [];
+      
+      allItems = [...allItems, ...items];
+      
+      cursor = itemsPage?.cursor || null;
+      hasMore = cursor !== null && items.length > 0;
     }
 
-    const data = await response.json();
-
-    if (data.errors) {
-      throw new Error(data.errors[0].message);
-    }
-
-    const items: MondayItem[] = data.data.boards[0]?.items_page?.items || [];
+    const items: MondayItem[] = allItems;
 
     const participants: Participant[] = items.map((item) => {
       const columns = item.column_values.reduce((acc, col) => {
@@ -143,7 +159,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result, {
       headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30',
+        'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=5',
       },
     });
   } catch (error: any) {
