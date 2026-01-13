@@ -37,6 +37,19 @@ const CLASS_GRADIENTS: Record<string, { from: string; to: string; text: string }
   'לא צוין': { from: 'from-gray-400', to: 'to-gray-500', text: 'text-gray-50' },
 };
 
+const CLASS_NAMES: Record<string, string> = {
+  'יב1': 'מדעית',
+  'יב2': 'מחר ספורט',
+  'יב3': 'מחר',
+  'יב4': 'אתגר',
+  'יב5': 'טכ"מ',
+  'יב6': 'מב"ר',
+  'יב7': 'חינוך מיוחד',
+  'יב8': 'תעשייה וניהול',
+  'יב9': 'מחר',
+  'יב10': 'משאבי אנוש',
+};
+
 export default function ReunionPage() {
   const [data, setData] = useState<ReunionData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -171,11 +184,16 @@ export default function ReunionPage() {
               >
                 {/* Class Header */}
                 <div className={`bg-gradient-to-br ${gradient.from} ${gradient.to} ${gradient.text} px-5 py-4 relative overflow-hidden`}>
-                  <div className="relative flex items-center justify-between">
-                    <h2 className="text-xl md:text-2xl font-semibold">{className}</h2>
-                    <span className="bg-white/30 px-3 py-1.5 text-sm font-semibold border border-white/40">
-                      {participants.length}
-                    </span>
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-1">
+                      <h2 className="text-xl md:text-2xl font-semibold">{className}</h2>
+                      <span className="bg-white/30 px-3 py-1.5 text-sm font-semibold border border-white/40">
+                        {participants.length}
+                      </span>
+                    </div>
+                    {CLASS_NAMES[className] && (
+                      <p className="text-sm opacity-90">{CLASS_NAMES[className]}</p>
+                    )}
                   </div>
                 </div>
 
