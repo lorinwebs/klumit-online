@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     let hasMore = true;
 
     while (hasMore) {
-      const query = `
+      const query: string = `
         query {
           boards(ids: [${BOARD_ID}]) {
             items_page(limit: 100${cursor ? `, cursor: "${cursor}"` : ''}) {
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
         }
       `;
 
-      const response = await fetch('https://api.monday.com/v2', {
+      const response: Response = await fetch('https://api.monday.com/v2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,13 +78,13 @@ export async function GET(request: NextRequest) {
         throw new Error(`Monday.com API error: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data: any = await response.json();
 
       if (data.errors) {
         throw new Error(data.errors[0].message);
       }
 
-      const itemsPage = data.data.boards[0]?.items_page;
+      const itemsPage: any = data.data.boards[0]?.items_page;
       const items: MondayItem[] = itemsPage?.items || [];
       
       allItems = [...allItems, ...items];
