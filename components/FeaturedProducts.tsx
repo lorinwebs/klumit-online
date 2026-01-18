@@ -133,12 +133,22 @@ function CategoryCarousel({
       touchEndX.current = 0;
     };
 
+    const handleImageClick = (e: React.MouseEvent) => {
+      // On mobile, clicking image should change image, not navigate
+      if (window.innerWidth < 768 && images.length > 1) {
+        e.preventDefault();
+        e.stopPropagation();
+        setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+      }
+    };
+
     return (
       <div 
         className="relative w-full h-full"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onClick={handleImageClick}
       >
         {/* Image Container */}
         <div className="relative w-full h-full">
@@ -193,8 +203,8 @@ function CategoryCarousel({
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover/card:bg-black/10 transition-colors duration-500" />
         
-        {/* Quick View Button */}
-        <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover/card:opacity-100 transform translate-y-4 group-hover/card:translate-y-0 transition-all duration-500 z-10">
+        {/* Quick View Button - hidden on mobile */}
+        <div className="hidden md:block absolute bottom-4 left-4 right-4 opacity-0 group-hover/card:opacity-100 transform translate-y-4 group-hover/card:translate-y-0 transition-all duration-500 z-10">
           <span className="block w-full bg-white/95 backdrop-blur-sm text-[#1a1a1a] text-center py-3 text-xs tracking-[0.2em] uppercase">
             צפה במוצר
           </span>
@@ -261,9 +271,8 @@ function CategoryCarousel({
           style={{ scrollSnapType: 'x mandatory' }}
         >
           {products.map((product, index) => (
-            <Link
+            <div
               key={product.id}
-              href={`/products/${product.handle}`}
               className="flex-shrink-0 w-[34vw] md:w-[30vw] lg:w-[22vw] xl:w-[18vw] snap-start group/card"
             >
               <motion.div
@@ -280,17 +289,17 @@ function CategoryCarousel({
                   </div>
                 </div>
 
-                {/* Product Info - Minimal */}
-                <div className="flex items-start justify-between gap-2">
+                {/* Product Info - Minimal - Clickable on mobile */}
+                <Link href={`/products/${product.handle}`} className="flex items-start justify-between gap-2">
                   <h3 className="text-lg md:text-xl font-light text-[#1a1a1a] text-left group-hover/card:text-gray-600 transition-colors flex-1 min-w-0">
                     {product.title}
                   </h3>
                   <p className="text-base md:text-lg font-light text-gray-500 text-right flex-shrink-0 whitespace-nowrap">
                     ₪{formatPrice(product.priceRange.minVariantPrice.amount)}
                   </p>
-                </div>
+                </Link>
               </motion.div>
-            </Link>
+            </div>
           ))}
         </div>
       </div>
