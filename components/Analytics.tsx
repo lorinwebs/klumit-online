@@ -23,8 +23,15 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
 
   // Track page views on route change
   useEffect(() => {
-    const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
-    trackPageView(url);
+    // Wait for Next.js to update the document title
+    const timeoutId = setTimeout(() => {
+      const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
+      // Get page title from document or use pathname as fallback
+      const pageTitle = typeof document !== 'undefined' ? document.title : pathname;
+      trackPageView(url, pageTitle);
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, [pathname, searchParams]);
 
   return <>{children}</>;

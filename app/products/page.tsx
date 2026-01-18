@@ -3,6 +3,15 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { createServerShopifyClient, PRODUCTS_QUERY } from '@/lib/shopify';
 import ProductsClient from './ProductsClient';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'קטלוג מוצרים',
+  description: 'קולקציית תיקים יוקרתיים מאיטליה - RENTAO ANGI ו-CARLINO GROUP. תיקי עור איכותיים, תיקי גב, תיקי צד וחגורות. משלוח חינם מעל 500₪.',
+  alternates: {
+    canonical: 'https://www.klumit-online.co.il/products',
+  },
+};
 
 interface Product {
   id: string;

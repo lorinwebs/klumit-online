@@ -4,6 +4,15 @@ import Hero from '@/components/Hero';
 import ValueProps from '@/components/ValueProps';
 import FeaturedProducts from '@/components/FeaturedProducts';
 import InstagramFeed from '@/components/InstagramFeed';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'דף הבית',
+  description: 'יבואן בלעדי בישראל לתיקי RENTAO ANGI ו-CARLINO GROUP. תיקים יוקרתיים מעור איטלקי איכותי, חגורות ואביזרי אופנה היישר מאיטליה.',
+  alternates: {
+    canonical: 'https://www.klumit-online.co.il',
+  },
+};
 
 export default function Home() {
   return (

@@ -46,9 +46,15 @@ function sendEvent(eventName: string, params?: Record<string, any>): void {
  * Page View - קרא בכל מעבר דף
  */
 export function trackPageView(path?: string, title?: string): void {
+  if (typeof window === 'undefined') return;
+  
+  const pagePath = path || window.location.pathname;
+  const pageTitle = title || document.title || pagePath;
+  
   sendEvent('page_view', {
-    page_path: path || window.location.pathname,
-    page_title: title || document.title,
+    page_path: pagePath,
+    page_title: pageTitle,
+    page_location: window.location.href,
   });
 }
 

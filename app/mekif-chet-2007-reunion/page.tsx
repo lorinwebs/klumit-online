@@ -56,6 +56,9 @@ export default function ReunionPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Update page title for Google Analytics
+    document.title = 'מפגש מחזור 2007 מקיף ח\' - האיחוד';
+    
     const fetchData = async () => {
       try {
         const response = await fetch('/api/monday/reunion');
