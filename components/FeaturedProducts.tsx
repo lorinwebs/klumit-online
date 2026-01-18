@@ -90,6 +90,119 @@ function CategoryCarousel({
     return Math.round(num).toLocaleString('he-IL');
   };
 
+  // Product Image Carousel Component
+  function ProductImageCarousel({ product }: { product: Product }) {
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const touchStartX = useRef<number>(0);
+    const touchEndX = useRef<number>(0);
+    const images = product.images.edges;
+
+    if (images.length === 0) {
+      return (
+        <div className="w-full h-full flex items-center justify-center text-gray-400">
+          <span className="text-sm">אין תמונה</span>
+        </div>
+      );
+    }
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+      touchStartX.current = e.touches[0].clientX;
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+      touchEndX.current = e.touches[0].clientX;
+    };
+
+    const handleTouchEnd = () => {
+      if (!touchStartX.current || !touchEndX.current) return;
+      
+      const distance = touchStartX.current - touchEndX.current;
+      const minSwipeDistance = 50;
+
+      if (Math.abs(distance) > minSwipeDistance) {
+        if (distance > 0) {
+          // Swipe left - next image
+          setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+        } else {
+          // Swipe right - previous image
+          setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+        }
+      }
+
+      touchStartX.current = 0;
+      touchEndX.current = 0;
+    };
+
+    return (
+      <div 
+        className="relative w-full h-full"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Image Container */}
+        <div className="relative w-full h-full">
+          <Image
+            src={images[currentImageIndex].node.url}
+            alt={images[currentImageIndex].node.altText || product.title}
+            fill
+            className="object-cover transition-opacity duration-500"
+            sizes="(max-width: 768px) 34vw, (max-width: 1024px) 30vw, 18vw"
+            loading="eager"
+            priority
+          />
+        </div>
+
+        {/* Image Dots Indicator - only show if more than 1 image */}
+        {images.length > 1 && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+            {images.map((_, index) => (
+              <div
+                key={index}
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  index === currentImageIndex 
+                    ? 'bg-white w-6' 
+                    : 'bg-white/40 w-1.5'
+                }`}
+                aria-label={`תמונה ${index + 1} מתוך ${images.length}`}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Hover areas for navigation - left and right halves */}
+        {images.length > 1 && (
+          <>
+            <div
+              onMouseEnter={() => {
+                setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+              }}
+              className="absolute left-0 top-0 bottom-0 w-1/2 z-10"
+              aria-label="תמונה קודמת"
+            />
+            <div
+              onMouseEnter={() => {
+                setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+              }}
+              className="absolute right-0 top-0 bottom-0 w-1/2 z-10"
+              aria-label="תמונה הבאה"
+            />
+          </>
+        )}
+
+        {/* Hover Overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover/card:bg-black/10 transition-colors duration-500" />
+        
+        {/* Quick View Button */}
+        <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover/card:opacity-100 transform translate-y-4 group-hover/card:translate-y-0 transition-all duration-500 z-10">
+          <span className="block w-full bg-white/95 backdrop-blur-sm text-[#1a1a1a] text-center py-3 text-xs tracking-[0.2em] uppercase">
+            צפה במוצר
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   if (products.length === 0) return null;
 
   return (
@@ -163,31 +276,7 @@ function CategoryCarousel({
                 {/* Product Image with Luxury Frame */}
                 <div className="relative p-2 bg-white mb-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] group-hover/card:shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-shadow duration-500">
                   <div className="relative aspect-[3/4] bg-[#f5f5f3] overflow-hidden">
-                    {product.images.edges[0]?.node.url ? (
-                      <>
-                        <Image
-                          src={product.images.edges[0].node.url}
-                          alt={product.title}
-                          fill
-                          className="object-cover transition-transform duration-700 group-hover/card:scale-105"
-                          sizes="(max-width: 768px) 34vw, (max-width: 1024px) 30vw, 18vw"
-                          loading="eager"
-                          priority
-                        />
-                        {/* Hover Overlay */}
-                        <div className="absolute inset-0 bg-black/0 group-hover/card:bg-black/10 transition-colors duration-500" />
-                        {/* Quick View Button */}
-                        <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover/card:opacity-100 transform translate-y-4 group-hover/card:translate-y-0 transition-all duration-500">
-                          <span className="block w-full bg-white/95 backdrop-blur-sm text-[#1a1a1a] text-center py-3 text-xs tracking-[0.2em] uppercase">
-                            צפה במוצר
-                          </span>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <span className="text-sm">אין תמונה</span>
-                      </div>
-                    )}
+                    <ProductImageCarousel product={product} />
                   </div>
                 </div>
 
