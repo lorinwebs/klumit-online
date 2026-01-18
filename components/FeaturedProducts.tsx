@@ -220,10 +220,14 @@ export default function FeaturedProducts() {
   useEffect(() => {
     async function fetchProducts() {
       try {
+        // Query products from collection "2026" sorted by newest first
         const data = await shopifyClient.request<{
           products: { edges: Array<{ node: Product }> };
         }>(PRODUCTS_QUERY, {
           first: 50,
+          query: 'collection:2026',
+          sortKey: 'CREATED_AT',
+          reverse: true,
         });
 
         const allProducts = data.products.edges.map((edge) => edge.node);
@@ -306,7 +310,7 @@ export default function FeaturedProducts() {
           transition={{ duration: 0.6 }}
           className="text-center mb-6 md:mb-10 px-4"
         >
-          <span className="text-xs tracking-[0.4em] uppercase text-[#c9a962] mb-4 block">Made in Italy</span>
+          <span className="text-xs tracking-[0.4em] uppercase text-[#c9a962] mb-4 block">2026</span>
           <h2 className="text-4xl md:text-6xl lg:text-7xl font-light luxury-font text-[#1a1a1a]">הקולקציה</h2>
         </motion.div>
 

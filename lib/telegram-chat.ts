@@ -1,17 +1,11 @@
-// Telegram Bot for Chat System
-// Bot מיוחד להודעות צ'אט
-// Token: 8562898707:AAGUimoO2VTbdvjgHr2nKOVFAY1WtbCRGhI
-
 import { escapeHtml } from './telegram';
 
-const TELEGRAM_CHAT_BOT_TOKEN = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT || '8562898707:AAGUimoO2VTbdvjgHr2nKOVFAY1WtbCRGhI';
+const TELEGRAM_CHAT_BOT_TOKEN = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT;
 const TELEGRAM_CHAT_IDS_RAW = process.env.TELEGRAM_CHAT_ID_KLUMIT || '';
 const TELEGRAM_CHAT_IDS = TELEGRAM_CHAT_IDS_RAW
   .split(',')
   .map(id => id.trim())
   .filter(id => id.length > 0);
-
-// Debug log removed for production
 
 interface TelegramChatMessage {
   chat_id: string;
@@ -44,24 +38,11 @@ export async function sendChatMessage(data: {
   userEmail?: string;
   pageUrl?: string;
 }): Promise<{ success: boolean; messageIds?: string[] }> {
-  console.log('sendChatMessage called:', {
-    conversationId: data.conversationId,
-    messageLength: data.message.length,
-    hasToken: !!TELEGRAM_CHAT_BOT_TOKEN,
-    chatIdsCount: TELEGRAM_CHAT_IDS.length,
-    chatIds: TELEGRAM_CHAT_IDS,
-  });
-
   if (!TELEGRAM_CHAT_BOT_TOKEN) {
-    console.error('sendChatMessage: TELEGRAM_CHAT_BOT_TOKEN is missing');
-    console.error('Environment variable TELEGRAM_CHAT_BOT_TOKEN_KLUMIT is not set');
     return { success: false };
   }
   
   if (TELEGRAM_CHAT_IDS.length === 0) {
-    console.error('sendChatMessage: TELEGRAM_CHAT_IDS is empty');
-    console.error('Environment variable TELEGRAM_CHAT_ID_KLUMIT is not set or empty');
-    console.error('Current value:', process.env.TELEGRAM_CHAT_ID_KLUMIT || 'undefined');
     return { success: false };
   }
 
@@ -135,21 +116,10 @@ ${escapeHtml(data.message)}`;
     const inlineKeyboard = quickReplies.map(reply => {
       const callbackData = `qr:${data.conversationId}:${reply.id}`;
       
-      // בדיקה שהאורך לא עולה על 64 בתים
-      if (callbackData.length > 64) {
-        console.error('callback_data too long:', callbackData.length, 'bytes', callbackData);
-      }
-      
       return {
         text: reply.text,
         callback_data: callbackData
       };
-    });
-    
-    // Send to all chat IDs
-    console.log('Sending message to Telegram with inline keyboard:', {
-      chatIds: TELEGRAM_CHAT_IDS,
-      inlineKeyboard,
     });
 
     const results = await Promise.all(
@@ -160,13 +130,11 @@ ${escapeHtml(data.message)}`;
             chat_id: chatId,
             text: messageText,
             parse_mode: 'HTML',
-            disable_web_page_preview: true, // מונע תצוגה מקדימה של האתר
+            disable_web_page_preview: true,
             reply_markup: {
               inline_keyboard: [inlineKeyboard]
             }
           } as TelegramChatMessage;
-          
-          console.log('Sending to Telegram chat ID:', chatId, 'payload:', JSON.stringify(payload, null, 2));
           
           const response = await fetch(url, {
             method: 'POST',
@@ -175,14 +143,8 @@ ${escapeHtml(data.message)}`;
           });
           
           const responseData = await response.json().catch(() => ({}));
-          console.log('Telegram API response for chat ID', chatId, ':', {
-            ok: response.ok,
-            status: response.status,
-            data: responseData,
-          });
           
           if (!response.ok) {
-            console.error('Telegram API error for chat ID', chatId, ':', responseData);
             return false;
           }
           
@@ -193,14 +155,12 @@ ${escapeHtml(data.message)}`;
           
           return false;
         } catch (error: any) {
-          console.error('Error sending to Telegram chat ID', chatId, ':', error);
           return false;
         }
       })
     );
 
-    const allSent = results.some(r => r); // לפחות אחד הצליח
-    console.log('sendChatMessage result:', { success: allSent, messageIds, results });
+    const allSent = results.some(r => r);
     return { success: allSent, messageIds };
   } catch (error) {
     return { success: false };
@@ -217,21 +177,7 @@ export async function sendChatReply(data: {
   repliedByName: string;
   originalMessage?: string;
 }): Promise<boolean> {
-  console.log('sendChatReply called:', {
-    conversationId: data.conversationId,
-    messageLength: data.message.length,
-    repliedByChatId: data.repliedByChatId,
-    repliedByName: data.repliedByName,
-    hasToken: !!TELEGRAM_CHAT_BOT_TOKEN,
-    chatIdsCount: TELEGRAM_CHAT_IDS.length,
-    chatIds: TELEGRAM_CHAT_IDS,
-  });
-
   if (!TELEGRAM_CHAT_BOT_TOKEN || TELEGRAM_CHAT_IDS.length === 0) {
-    console.error('sendChatReply: Missing token or chat IDs', {
-      hasToken: !!TELEGRAM_CHAT_BOT_TOKEN,
-      chatIdsCount: TELEGRAM_CHAT_IDS.length,
-    });
     return false;
   }
 
@@ -242,11 +188,9 @@ export async function sendChatReply(data: {
 
 ${escapeHtml(data.message)}`;
 
-    // Send to all chat IDs (כולל מי שענה - כדי שיראה שהתגובה נשלחה)
     const results = await Promise.all(
       TELEGRAM_CHAT_IDS.map(async (chatId) => {
         try {
-          console.log('Sending reply to Telegram chat ID:', chatId);
           const response = await fetch(
             `https://api.telegram.org/bot${TELEGRAM_CHAT_BOT_TOKEN}/sendMessage`,
             {
@@ -260,26 +204,15 @@ ${escapeHtml(data.message)}`;
             }
           );
           
-          const responseData = await response.json().catch(() => ({}));
-          console.log('Telegram API response:', {
-            ok: response.ok,
-            status: response.status,
-            data: responseData,
-          });
-          
           return response.ok;
         } catch (error) {
-          console.error('Error sending to Telegram chat ID:', chatId, error);
           return false;
         }
       })
     );
 
-    const success = results.some(r => r);
-    console.log('sendChatReply result:', { success, results });
-    return success; // לפחות אחד הצליח
+    return results.some(r => r);
   } catch (error) {
-    console.error('sendChatReply error:', error);
     return false;
   }
 }
