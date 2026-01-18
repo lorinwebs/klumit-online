@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -10,92 +10,97 @@ import { supabase } from '@/lib/supabase';
 export default function UserMenu() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  
   const loadFromShopify = useCartStore((state) => state.loadFromShopify);
-  
-  // Ref אחד למניעת ריצות כפולות - עוקב אחרי ה-user ID שכבר עיבדנו
-  const processedUserIdRef = useRef<string | null>(null);
 
-  // פונקציה מרכזית לניהול שינויי משתמש (סינכרון עגלה + בדיקת שופיפיי)
-  const handleUserSync = useCallback(async (currentUser: User | null) => {
-    // 1. עדכון סטייט מקומי
-    setUser(currentUser);
-    setLoading(false);
-
-    // 2. אם המשתמש הוא אותו משתמש שכבר עיבדנו - לא עושים כלום
-    // (מטפל גם במקרה של null וגם במקרה של אותו user id)
-    if (processedUserIdRef.current === currentUser?.id) {
-      return;
-    }
-
-    // עדכון ה-Ref למשתמש הנוכחי (או null)
-    processedUserIdRef.current = currentUser?.id || null;
-
-    // 3. טעינת עגלה מחדש (תמיד קורה כשמתחלף יוזר או מתנתק)
-    // loadFromShopify אמורה לדעת לטפל במצב שאין יוזר (לטעון עגלת אורח/מקומי)
+  // Helper for Shopify Sync (kept separate to not block UI)
+  const checkShopifyId = async (userId: string) => {
     try {
-      await loadFromShopify();
-    } catch (error) {
-      console.error('Failed to sync cart:', error);
+      fetch(`/api/user/shopify-customer-id?userId=${userId}`, { cache: 'no-store' });
+    } catch (e) {
+      // silent fail
     }
+  };
 
-    // 4. בדיקת חיבור שופיפיי (רק אם יש משתמש מחובר)
-    if (currentUser) {
+  useEffect(() => {
+    let mounted = true;
+
+    const checkUser = async () => {
       try {
-        const response = await fetch(`/api/user/shopify-customer-id?userId=${currentUser.id}`, {
+        // בדיקה דרך ה-API - בדיוק כמו שהדף /account עושה
+        // זה בודק את ה-cookies בצד השרת, לא רק localStorage
+        const res = await fetch('/api/auth/session', { 
           credentials: 'include',
           cache: 'no-store'
         });
-        // אנחנו לא צריכים את התוצאה כאן, רק לוודא שהקריאה קרתה לצרכי סנכרון בצד שרת אם צריך
-        if (response.ok) {
-          // בדיקה הושלמה בהצלחה
+        
+        if (!res.ok) {
+          if (mounted) {
+            setUser(null);
+            setLoading(false);
+          }
+          return;
         }
-      } catch (err) {
-        // התעלמות שקטה משגיאות בדיקת רקע
-      }
-    }
-  }, [loadFromShopify]);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    // 1. בדיקה ראשונית בעליית הקומפוננטה
-    const checkInitialSession = async () => {
-      try {
-        const { data: { user: initialUser } } = await supabase.auth.getUser();
-        if (isMounted) {
-          await handleUserSync(initialUser);
+        const data = await res.json();
+        
+        if (data?.user && mounted) {
+          // יש משתמש מחובר - עדכן את ה-state
+          setUser(data.user);
+          setLoading(false);
+          
+          // סנכרן את ה-session ל-localStorage (אם צריך)
+          try {
+            if (data.session) {
+              await supabase.auth.setSession({
+                access_token: data.session.access_token,
+                refresh_token: data.session.refresh_token,
+              });
+            }
+          } catch (err) {
+            // ignore - לא קריטי
+          }
+          
+          // Background tasks
+          loadFromShopify().catch(() => {});
+          checkShopifyId(data.user.id);
+        } else if (mounted) {
+          // אין משתמש
+          setUser(null);
+          setLoading(false);
         }
       } catch (error) {
-        if (isMounted) {
-          await handleUserSync(null);
+        // שגיאה - נניח שאין משתמש
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
         }
       }
     };
 
-    checkInitialSession();
+    // בדיקה ראשונית
+    checkUser();
 
-    // 2. האזנה לשינויים (כולל Refresh Token, Sign In, Sign Out)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMounted) return;
-
-      const sessionUser = session?.user || null;
-      
-      // אופטימיזציה: אם האירוע הוא רק עדכון טוקן והיוזר לא השתנה, נדלג
-      if (event === 'TOKEN_REFRESHED' && sessionUser?.id === processedUserIdRef.current) {
-        return;
+    // האזנה לשינויים ב-auth (Login, Logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) {
+        setUser(session?.user ?? null);
+        setLoading(false);
+        if (session?.user) {
+          loadFromShopify().catch(() => {});
+          checkShopifyId(session.user.id);
+        } else {
+          // אם יש signOut, נבדוק שוב דרך ה-API
+          checkUser();
+        }
       }
-
-      await handleUserSync(sessionUser);
     });
 
     return () => {
-      isMounted = false;
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, [handleUserSync]);
+  }, [loadFromShopify]);
 
-  // Render Logic
   const Icon = (
     <UserIcon 
       size={22} 
@@ -104,27 +109,31 @@ export default function UserMenu() {
     />
   );
 
-  if (!user) {
+  // אם יש משתמש, נציג עיגול ירוק
+  if (user) {
     return (
       <Link
-        href="/auth/login"
+        href="/account"
         className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6 min-w-[24px] shrink-0"
-        aria-label="התחברות"
+        aria-label="החשבון שלי"
       >
         {Icon}
-        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gray-400 rounded-full border border-white" aria-hidden="true" />
+        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" aria-hidden="true" />
       </Link>
     );
   }
-
+  
+  // אם אין משתמש
   return (
     <Link
-      href="/account"
+      href="/auth/login"
       className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6 min-w-[24px] shrink-0"
-      aria-label="החשבון שלי"
+      aria-label="התחברות"
     >
       {Icon}
-      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" aria-hidden="true" />
+      {!loading && (
+        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gray-400 rounded-full border border-white" aria-hidden="true" />
+      )}
     </Link>
   );
 }

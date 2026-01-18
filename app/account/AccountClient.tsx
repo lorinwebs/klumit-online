@@ -176,16 +176,38 @@ export default function AccountClient({
   }, [formData.shippingAddress, formData.shippingCity, editing]);
 
   const handleLogout = async () => {
+    // פשוט: נקה הכל ונלך לדף הבית
+    // לא משנה מה קורה - תמיד נעשה redirect
     try {
-      // נקה גם בצד הלקוח
-      await supabase.auth.signOut();
-      // נקה גם בצד השרת (עוגיות)
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (error) {
-      // ignore
-    }
-    router.push('/');
-    router.refresh();
+      // נקה בצד הלקוח
+      supabase.auth.signOut().catch(() => {});
+      
+      // נקה storage
+      try {
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('sb-') || key.includes('supabase')) {
+            localStorage.removeItem(key);
+          }
+        });
+      } catch {}
+      
+      try {
+        Object.keys(sessionStorage).forEach(key => {
+          if (key.includes('sb-') || key.includes('supabase')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      } catch {}
+      
+      // נקה בצד השרת
+      fetch('/api/auth/logout', { 
+        method: 'POST',
+        credentials: 'include'
+      }).catch(() => {});
+    } catch {}
+    
+    // תמיד redirect - גם אם הכל נכשל
+    window.location.replace('/');
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -374,6 +396,7 @@ export default function AccountClient({
               </div>
             </div>
             <button
+              type="button"
               onClick={handleLogout}
               className="px-4 py-2 text-sm font-light text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border border-gray-200 hover:border-gray-300 whitespace-nowrap"
               dir="rtl"
