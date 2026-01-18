@@ -398,7 +398,15 @@ export default function AccountClient({
             <button
               type="button"
               onClick={handleLogout}
-              className="px-4 py-2 text-sm font-light text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2 border border-gray-200 hover:border-gray-300 whitespace-nowrap"
+              onTouchStart={(e) => {
+                // וודא שה-touch event עובד במובייל
+                e.currentTarget.style.opacity = '0.7';
+              }}
+              onTouchEnd={(e) => {
+                e.currentTarget.style.opacity = '1';
+              }}
+              className="px-4 py-2 text-sm font-light text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors flex items-center gap-2 border border-gray-200 hover:border-gray-300 whitespace-nowrap touch-manipulation"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
               dir="rtl"
             >
               <span>התנתק</span>

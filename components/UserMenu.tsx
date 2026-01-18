@@ -26,45 +26,50 @@ export default function UserMenu() {
 
     const checkUser = async () => {
       try {
-        // בדיקה דרך ה-API - בדיוק כמו שהדף /account עושה
-        // זה בודק את ה-cookies בצד השרת, לא רק localStorage
+        // 1. נסה קודם מ-localStorage (מהיר יותר, עובד גם במובייל)
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user && mounted) {
+          setUser(session.user);
+          setLoading(false);
+          loadFromShopify().catch(() => {});
+          checkShopifyId(session.user.id);
+          return;
+        }
+        
+        // 2. Fallback: בדיקה דרך ה-API (בודק cookies בצד השרת)
         const res = await fetch('/api/auth/session', { 
           credentials: 'include',
           cache: 'no-store'
         });
         
-        if (!res.ok) {
-          if (mounted) {
-            setUser(null);
+        if (res.ok) {
+          const data = await res.json();
+          
+          if (data?.user && mounted) {
+            setUser(data.user);
             setLoading(false);
-          }
-          return;
-        }
-
-        const data = await res.json();
-        
-        if (data?.user && mounted) {
-          // יש משתמש מחובר - עדכן את ה-state
-          setUser(data.user);
-          setLoading(false);
-          
-          // סנכרן את ה-session ל-localStorage (אם צריך)
-          try {
-            if (data.session) {
-              await supabase.auth.setSession({
-                access_token: data.session.access_token,
-                refresh_token: data.session.refresh_token,
-              });
+            
+            // סנכרן את ה-session ל-localStorage
+            try {
+              if (data.session) {
+                await supabase.auth.setSession({
+                  access_token: data.session.access_token,
+                  refresh_token: data.session.refresh_token,
+                });
+              }
+            } catch (err) {
+              // ignore
             }
-          } catch (err) {
-            // ignore - לא קריטי
+            
+            loadFromShopify().catch(() => {});
+            checkShopifyId(data.user.id);
+            return;
           }
-          
-          // Background tasks
-          loadFromShopify().catch(() => {});
-          checkShopifyId(data.user.id);
-        } else if (mounted) {
-          // אין משתמש
+        }
+        
+        // 3. אין משתמש
+        if (mounted) {
           setUser(null);
           setLoading(false);
         }
@@ -114,11 +119,12 @@ export default function UserMenu() {
     return (
       <Link
         href="/account"
-        className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6 min-w-[24px] shrink-0"
+        className="relative hover:opacity-70 active:opacity-50 transition-opacity flex items-center justify-center w-6 h-6 min-w-[24px] shrink-0 touch-manipulation"
         aria-label="החשבון שלי"
+        style={{ WebkitTapHighlightColor: 'transparent' }}
       >
         {Icon}
-        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" aria-hidden="true" />
+        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white pointer-events-none" aria-hidden="true" />
       </Link>
     );
   }
@@ -127,12 +133,13 @@ export default function UserMenu() {
   return (
     <Link
       href="/auth/login"
-      className="relative hover:opacity-70 transition-opacity flex items-center justify-center w-6 h-6 min-w-[24px] shrink-0"
+      className="relative hover:opacity-70 active:opacity-50 transition-opacity flex items-center justify-center w-6 h-6 min-w-[24px] shrink-0 touch-manipulation"
       aria-label="התחברות"
+      style={{ WebkitTapHighlightColor: 'transparent' }}
     >
       {Icon}
       {!loading && (
-        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gray-400 rounded-full border border-white" aria-hidden="true" />
+        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gray-400 rounded-full border border-white pointer-events-none" aria-hidden="true" />
       )}
     </Link>
   );
