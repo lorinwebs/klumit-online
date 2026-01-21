@@ -95,6 +95,8 @@ function CategoryCarousel({
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const touchStartX = useRef<number>(0);
     const touchEndX = useRef<number>(0);
+    const touchStartTime = useRef<number>(0);
+    const hasSwiped = useRef<boolean>(false);
     const images = product.images.edges;
 
     if (images.length === 0) {
@@ -105,21 +107,37 @@ function CategoryCarousel({
       );
     }
 
+    const hasSwiped = useRef<boolean>(false);
+
     const handleTouchStart = (e: React.TouchEvent) => {
       touchStartX.current = e.touches[0].clientX;
+      hasSwiped.current = false;
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
+      if (touchStartX.current === 0) return;
       touchEndX.current = e.touches[0].clientX;
+      // אם יש תנועה משמעותית, זה swipe
+      if (Math.abs(touchStartX.current - touchEndX.current) > 10) {
+        hasSwiped.current = true;
+      }
     };
 
-    const handleTouchEnd = () => {
-      if (!touchStartX.current || !touchEndX.current) return;
+    const handleTouchEnd = (e: React.TouchEvent) => {
+      if (!touchStartX.current || touchEndX.current === 0) {
+        touchStartX.current = 0;
+        touchEndX.current = 0;
+        return;
+      }
       
       const distance = touchStartX.current - touchEndX.current;
       const minSwipeDistance = 50;
 
-      if (Math.abs(distance) > minSwipeDistance) {
+      // רק אם זה swipe משמעותי, נשנה תמונה ונמנע navigation
+      if (Math.abs(distance) > minSwipeDistance && hasSwiped.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         if (distance > 0) {
           // Swipe left - next image
           setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
@@ -129,26 +147,20 @@ function CategoryCarousel({
         }
       }
 
+      // Reset
       touchStartX.current = 0;
       touchEndX.current = 0;
-    };
-
-    const handleImageClick = (e: React.MouseEvent) => {
-      // On mobile, clicking image should change image, not navigate
-      if (window.innerWidth < 768 && images.length > 1) {
-        e.preventDefault();
-        e.stopPropagation();
-        setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-      }
+      hasSwiped.current = false;
     };
 
     return (
-      <div 
-        className="relative w-full h-full"
+      <Link 
+        href={`/products/${product.handle}`}
+        className="relative w-full h-full block touch-manipulation"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClick={handleImageClick}
+        style={{ WebkitTapHighlightColor: 'transparent' }}
       >
         {/* Image Container */}
         <div className="relative w-full h-full">
@@ -180,21 +192,21 @@ function CategoryCarousel({
           </div>
         )}
 
-        {/* Hover areas for navigation - left and right halves */}
+        {/* Hover areas for navigation - left and right halves (desktop only) */}
         {images.length > 1 && (
           <>
             <div
               onMouseEnter={() => {
                 setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
               }}
-              className="absolute left-0 top-0 bottom-0 w-1/2 z-10"
+              className="hidden md:block absolute left-0 top-0 bottom-0 w-1/2 z-10 pointer-events-none"
               aria-label="תמונה קודמת"
             />
             <div
               onMouseEnter={() => {
                 setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
               }}
-              className="absolute right-0 top-0 bottom-0 w-1/2 z-10"
+              className="hidden md:block absolute right-0 top-0 bottom-0 w-1/2 z-10 pointer-events-none"
               aria-label="תמונה הבאה"
             />
           </>
@@ -209,7 +221,7 @@ function CategoryCarousel({
             צפה במוצר
           </span>
         </div>
-      </div>
+      </Link>
     );
   }
 
