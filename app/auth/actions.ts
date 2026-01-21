@@ -120,6 +120,7 @@ export async function saveShopifyCustomerId(
 export async function verifyOtpServer(prevState: any, formData: FormData) {
   const phone = formData.get('phone') as string;
   const token = formData.get('token') as string;
+  const skipRedirect = formData.get('skipRedirect') === 'true';
   
   if (!phone || !token) {
     return { error: 'מספר טלפון וקוד נדרשים' };
@@ -154,6 +155,11 @@ export async function verifyOtpServer(prevState: any, formData: FormData) {
     }
     
     // סנכרון Shopify Customer הוסר - נעשה בנפרד
+
+    // אם skipRedirect הוא true, לא נבצע redirect (למשל מדף checkout)
+    if (skipRedirect) {
+      return { success: true };
+    }
 
     // בדיקה אם יש פרופיל כדי לדעת לאן לנווט
     const hasProfile = 

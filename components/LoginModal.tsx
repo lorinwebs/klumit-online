@@ -144,24 +144,26 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       // השתמש במספר המנורמל שנשמר בשליחה, או ננרמל מחדש
       const phoneToVerify = e164Phone || normalizeILPhone(phone);
       
-      // השתמש ב-server action כדי לשמור את הסשן נכון
-      const formData = new FormData();
-      formData.append('phone', phoneToVerify);
-      formData.append('token', code);
+      // בדוק אם אנחנו בדף checkout - אם כן, נשתמש ב-client-side verify
+      const isCheckoutPage = typeof window !== 'undefined' && window.location.pathname === '/checkout';
       
-      const result = await verifyOtpServer(null, formData);
-      
-      if (result?.error) {
-        throw new Error(result.error);
-      }
+      if (isCheckoutPage) {
+        // בדף checkout, נשתמש ב-client-side verify כדי שהסשן יישמר ב-localStorage
+        const { data, error } = await supabase.auth.verifyOtp({
+          phone: phoneToVerify,
+          token: code,
+          type: 'sms',
+        });
 
-      // אם הצליח, בדוק את הסשן ב-client
-      // המתן קצת כדי לוודא שהסשן נשמר
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // בדוק את המשתמש מחדש
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        if (!data?.session || !data?.user) {
+          throw new Error('אימות נכשל');
+        }
+
+        // הסשן נשמר אוטומטית ב-localStorage
         // רענון הדף כדי לעדכן את הסטטוס
         router.refresh();
         
@@ -173,7 +175,19 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         // סגור את ה-modal
         onClose();
       } else {
-        throw new Error('ההתחברות נכשלה');
+        // בדפים אחרים, נשתמש ב-server action
+        const formData = new FormData();
+        formData.append('phone', phoneToVerify);
+        formData.append('token', code);
+        
+        const result = await verifyOtpServer(null, formData);
+        
+        if (result?.error) {
+          throw new Error(result.error);
+        }
+
+        // אם יש redirect, זה אומר שההתחברות הצליחה
+        // (ה-redirect יקרה אוטומטית דרך Next.js)
       }
     } catch (err: any) {
       let errorMessage = 'קוד שגוי';

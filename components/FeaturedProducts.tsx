@@ -97,8 +97,7 @@ function CategoryCarousel({
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const touchStartX = useRef<number>(0);
     const touchEndX = useRef<number>(0);
-    const hasSwiped = useRef<boolean>(false);
-    const swipeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const wasSwipe = useRef<boolean>(false);
     const images = product.images.edges;
 
     if (images.length === 0) {
@@ -111,29 +110,27 @@ function CategoryCarousel({
 
     const handleTouchStart = (e: React.TouchEvent) => {
       touchStartX.current = e.touches[0].clientX;
-      hasSwiped.current = false;
+      touchEndX.current = 0;
+      wasSwipe.current = false;
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
       if (touchStartX.current === 0) return;
       touchEndX.current = e.touches[0].clientX;
-      // אם יש תנועה משמעותית, זה swipe
-      if (Math.abs(touchStartX.current - touchEndX.current) > 10) {
-        hasSwiped.current = true;
-      }
     };
 
     const handleTouchEnd = (e: React.TouchEvent) => {
       if (!touchStartX.current) {
         touchStartX.current = 0;
         touchEndX.current = 0;
+        wasSwipe.current = false;
         return;
       }
       
       if (touchEndX.current === 0) {
-        // אם אין תנועה, זה tap - תן ל-Link לעבוד
+        // אם אין תנועה, זה tap - תן ל-click לעבוד
         touchStartX.current = 0;
-        hasSwiped.current = false;
+        wasSwipe.current = false;
         return;
       }
       
@@ -141,9 +138,10 @@ function CategoryCarousel({
       const minSwipeDistance = 50;
 
       // רק אם זה swipe משמעותי, נשנה תמונה ונמנע navigation
-      if (Math.abs(distance) > minSwipeDistance && hasSwiped.current) {
+      if (Math.abs(distance) > minSwipeDistance) {
         e.preventDefault();
         e.stopPropagation();
+        wasSwipe.current = true;
         
         if (distance > 0) {
           // Swipe left - next image
@@ -153,16 +151,13 @@ function CategoryCarousel({
           setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
         }
         
-        // שמור את מצב ה-swipe לזמן קצר כדי למנוע click
-        if (swipeTimeoutRef.current) {
-          clearTimeout(swipeTimeoutRef.current);
-        }
-        swipeTimeoutRef.current = setTimeout(() => {
-          hasSwiped.current = false;
-        }, 500);
+        // אפס את המצב אחרי זמן קצר
+        setTimeout(() => {
+          wasSwipe.current = false;
+        }, 300);
       } else {
         // אם אין swipe - נאפס מיד כדי שה-click יעבוד
-        hasSwiped.current = false;
+        wasSwipe.current = false;
       }
 
       // Reset
@@ -172,7 +167,7 @@ function CategoryCarousel({
 
     const handleClick = () => {
       // אם היה swipe, לא נכנס לדף המוצר
-      if (hasSwiped.current) {
+      if (wasSwipe.current) {
         return;
       }
       // אחרת - נווט לדף המוצר
