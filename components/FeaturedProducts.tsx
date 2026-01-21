@@ -109,8 +109,6 @@ function CategoryCarousel({
       );
     }
 
-    const hasSwiped = useRef<boolean>(false);
-
     const handleTouchStart = (e: React.TouchEvent) => {
       touchStartX.current = e.touches[0].clientX;
       hasSwiped.current = false;
