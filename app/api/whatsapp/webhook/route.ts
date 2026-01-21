@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
                     .select()
                     .single();
 
-                  if (savedMessage) {
+                  if (savedMessage && conversationId && fromPhone) {
                     await supabaseAdmin
                       .from('klumit_chat_conversations')
                       .update({ 
@@ -111,15 +111,13 @@ export async function POST(request: NextRequest) {
                       .eq('id', conversationId);
                     
                     // שליחת תגובה ל-WhatsApp (אופציונלי - כדי לאשר שהתגובה נשמרה)
-                    if (fromPhone) {
-                      await sendChatReply({
-                        conversationId,
-                        message: replyText,
-                        repliedByChatId: fromPhone,
-                        repliedByName,
-                        originalMessageId: messageId,
-                      });
-                    }
+                    await sendChatReply({
+                      conversationId,
+                      message: replyText,
+                      repliedByChatId: fromPhone,
+                      repliedByName,
+                      originalMessageId: messageId,
+                    });
                   }
                 }
                 continue;
@@ -151,7 +149,7 @@ export async function POST(request: NextRequest) {
               continue;
             }
 
-            if (savedMessage) {
+            if (savedMessage && conversationId && fromPhone) {
               await supabaseAdmin
                 .from('klumit_chat_conversations')
                 .update({ 
@@ -162,15 +160,13 @@ export async function POST(request: NextRequest) {
                 .eq('id', conversationId);
               
               // שליחת תגובה ל-WhatsApp (אופציונלי)
-              if (fromPhone) {
-                await sendChatReply({
-                  conversationId,
-                  message: messageText,
-                  repliedByChatId: fromPhone,
-                  repliedByName,
-                  originalMessageId: message.context?.id,
-                });
-              }
+              await sendChatReply({
+                conversationId,
+                message: messageText,
+                repliedByChatId: fromPhone,
+                repliedByName,
+                originalMessageId: message.context?.id,
+              });
             }
           }
         }
