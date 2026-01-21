@@ -41,9 +41,37 @@ function sendEvent(eventName: string, params?: Record<string, any>): void {
 }
 
 // Helper to send events to Meta Pixel
+// Meta Pixel's fbq function has built-in queueing, so we can call it directly
 function sendMetaPixelEvent(eventName: string, params?: Record<string, any>): void {
-  if (typeof window === 'undefined' || !(window as any).fbq) return;
-  (window as any).fbq('track', eventName, params);
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const fbq = (window as any).fbq;
+    
+    // Meta Pixel's fbq is created before the script loads and has built-in queueing
+    if (fbq) {
+      if (typeof fbq === 'function') {
+        // Standard case: fbq is a function
+        fbq('track', eventName, params);
+      } else if (fbq.queue && Array.isArray(fbq.queue)) {
+        // Fallback: if fbq is an object with queue array, push directly
+        fbq.queue.push(['track', eventName, params]);
+      } else if (fbq.callMethod) {
+        // Another fallback: use callMethod if available
+        fbq.callMethod.apply(fbq, ['track', eventName, params]);
+      }
+    } else {
+      // If fbq doesn't exist yet, create a minimal queue
+      // This shouldn't happen with proper Meta Pixel setup, but just in case
+      (window as any)._fbq = (window as any)._fbq || [];
+      (window as any)._fbq.push(['track', eventName, params]);
+    }
+  } catch (e) {
+    // Log warning in development
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Meta Pixel event failed:', eventName, e);
+    }
+  }
 }
 
 // ============ Standard Analytics Events ============
@@ -89,7 +117,7 @@ export function trackProductViewed(product: ProductData): void {
   // Meta Pixel - ViewContent
   sendMetaPixelEvent('ViewContent', {
     content_name: product.name,
-    content_ids: [product.id],
+    content_ids: [String(product.id)], // Ensure ID is a string
     content_type: 'product',
     value: product.price,
     currency: product.currency || 'ILS',
@@ -144,10 +172,11 @@ export function trackAddToCart(product: ProductData): void {
   // Meta Pixel - AddToCart
   sendMetaPixelEvent('AddToCart', {
     content_name: product.name,
-    content_ids: [product.id],
+    content_ids: [String(product.id)], // Ensure ID is a string
     content_type: 'product',
     value: value,
     currency: product.currency || 'ILS',
+    quantity: quantity,
   });
 }
 

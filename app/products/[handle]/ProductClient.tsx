@@ -231,12 +231,17 @@ export default function ProductClient({ product, relatedProducts: initialRelated
 
   // Track product view
   useEffect(() => {
-    trackProductViewed({
-      id: product.id,
-      name: product.title,
-      price: parseFloat(product.priceRange.minVariantPrice.amount),
-      currency: product.priceRange.minVariantPrice.currencyCode,
-    });
+    // Small delay to ensure Meta Pixel is initialized
+    const timer = setTimeout(() => {
+      trackProductViewed({
+        id: product.id,
+        name: product.title,
+        price: parseFloat(product.priceRange.minVariantPrice.amount),
+        currency: product.priceRange.minVariantPrice.currencyCode,
+      });
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [product.id, product.title, product.priceRange.minVariantPrice]);
 
   // Update image when variant changes

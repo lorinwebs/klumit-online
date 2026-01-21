@@ -7,6 +7,7 @@ import { ShoppingBag } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { motion } from 'framer-motion';
 import Toast from './Toast';
+import { trackAddToCart } from '@/lib/analytics';
 
 interface ProductCardProps {
   id: string;
@@ -57,6 +58,15 @@ export default function ProductCard({
         available,
         quantityAvailable,
         handle,
+      });
+      
+      // Track add to cart
+      trackAddToCart({
+        id: variantId,
+        name: title,
+        price: parseFloat(price),
+        currency: currencyCode,
+        quantity: 1,
       });
       
       // Show toast
