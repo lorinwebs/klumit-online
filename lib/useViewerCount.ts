@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from './supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -25,6 +25,7 @@ function getSessionId(): string {
 export function useViewerCount() {
   const [viewerCount, setViewerCount] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
+  const hasNotifiedHighTraffic = useRef(false);
 
   useEffect(() => {
     let channel: RealtimeChannel | null = null;
@@ -143,6 +144,39 @@ export function useViewerCount() {
       }
     };
   }, []);
+
+  // שליחת הודעה לטלגרם אם יש יותר מ-10 צופים (רק פעם אחת)
+  // ה-cooldown מנוהל בצד השרת כדי למנוע שליחות כפולות מכל הדפדפנים
+  useEffect(() => {
+    if (!isInitialized || viewerCount <= 10) {
+      // איפוס ה-flag אם המספר ירד מתחת ל-10
+      if (viewerCount <= 10) {
+        hasNotifiedHighTraffic.current = false;
+      }
+      return;
+    }
+
+    // אם עדיין לא שלחנו הודעה
+    if (!hasNotifiedHighTraffic.current) {
+      hasNotifiedHighTraffic.current = true;
+      
+      // נשלח אחרי זמן קצר כדי לוודא שהמספר יציב
+      // ה-cooldown מנוהל בצד השרת - אם כבר נשלחה הודעה לאחרונה, השרת לא ישלח שוב
+      const timeoutId = setTimeout(async () => {
+        try {
+          await fetch('/api/telegram/notify-high-traffic', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ viewerCount }),
+          });
+        } catch (err) {
+          // ignore errors
+        }
+      }, 3000); // המתן 3 שניות כדי לוודא שהמספר יציב
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [viewerCount, isInitialized]);
 
   // מציג 0 עד שהמערכת מאותחלת וסופרת רק משתמשים פעילים
   return isInitialized ? viewerCount : 0;
