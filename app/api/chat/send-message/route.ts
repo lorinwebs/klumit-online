@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-import { sendChatMessage } from '@/lib/telegram-chat';
+import { sendChatMessage as sendTelegramMessage } from '@/lib/telegram-chat';
+import { sendChatMessage as sendWhatsAppMessage } from '@/lib/whatsapp-chat';
 
 // POST - שליחת הודעה מהאתר
 export async function POST(request: NextRequest) {
@@ -197,23 +198,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    const telegramResult = await sendChatMessage({
-      conversationId: conversation_id,
-      message,
-      userName: conversation.user_name || undefined,
-      userPhone: conversation.user_phone || undefined,
-      userEmail: conversation.user_email || undefined,
-      pageUrl: body.page_url || undefined,
-    });
+    // בחירת פלטפורמה לפי משתנה סביבה
+    const useWhatsApp = process.env.USE_WHATSAPP === 'true';
+    
+    let result;
+    let statusField;
+    let statusValue;
+    
+    if (useWhatsApp) {
+      result = await sendWhatsAppMessage({
+        conversationId: conversation_id,
+        message,
+        userName: conversation.user_name || undefined,
+        userPhone: conversation.user_phone || undefined,
+        userEmail: conversation.user_email || undefined,
+        pageUrl: body.page_url || undefined,
+      });
+      statusField = 'whatsapp_message_id';
+      statusValue = 'delivered_to_whatsapp';
+    } else {
+      result = await sendTelegramMessage({
+        conversationId: conversation_id,
+        message,
+        userName: conversation.user_name || undefined,
+        userPhone: conversation.user_phone || undefined,
+        userEmail: conversation.user_email || undefined,
+        pageUrl: body.page_url || undefined,
+      });
+      statusField = 'telegram_message_id';
+      statusValue = 'delivered_to_telegram';
+    }
 
     // עדכון סטטוס ההודעה
-    if (telegramResult.success && telegramResult.messageIds && telegramResult.messageIds.length > 0) {
+    if (result.success && result.messageIds && result.messageIds.length > 0) {
+      const updateData: any = {
+        status: statusValue,
+      };
+      updateData[statusField] = result.messageIds[0]; // שמירת הראשון
+      
       await supabaseAdmin
         .from('klumit_chat_messages')
-        .update({
-          status: 'delivered_to_telegram',
-          telegram_message_id: telegramResult.messageIds[0], // שמירת הראשון
-        })
+        .update(updateData)
         .eq('id', savedMessage.id);
     } else {
       await supabaseAdmin
@@ -223,10 +248,10 @@ export async function POST(request: NextRequest) {
     }
 
     const response = {
-      success: telegramResult.success,
+      success: result.success,
       message_id: savedMessage.id,
       conversation_id: conversation_id,
-      status: telegramResult.success ? 'delivered_to_telegram' : 'failed',
+      status: result.success ? statusValue : 'failed',
     };
     
     return NextResponse.json(response);

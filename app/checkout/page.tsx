@@ -12,6 +12,7 @@ import LoginModal from '@/components/LoginModal';
 import Link from 'next/link';
 import { Check, User } from 'lucide-react';
 import { trackBeginCheckout } from '@/lib/analytics';
+import { notifyCheckoutVisit } from '@/lib/telegram';
 
 export default function CheckoutPage() {
   const { items, cartId, loadFromShopify, getTotal } = useCartStore();
@@ -28,6 +29,7 @@ export default function CheckoutPage() {
   const [cartSubtotal, setCartSubtotal] = useState<number | null>(null);
   const [user, setUser] = useState<any>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [buttonError, setButtonError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -42,6 +44,7 @@ export default function CheckoutPage() {
   });
 
   const hasTrackedCheckout = useRef(false);
+  const hasNotifiedCheckout = useRef(false);
 
   useEffect(() => {
     // טען פרטים מהפרופיל אם המשתמש מחובר
@@ -152,6 +155,21 @@ export default function CheckoutPage() {
 
     return () => subscription.unsubscribe();
   }, [items]);
+
+  // שלח הודעה לטלגרם על הגעה לדף checkout (רק פעם אחת, אחרי שהמשתמש נטען)
+  useEffect(() => {
+    if (!hasNotifiedCheckout.current && items.length > 0 && !loadingProfile) {
+      hasNotifiedCheckout.current = true;
+      notifyCheckoutVisit({
+        userEmail: user?.email || undefined,
+        userPhone: user?.phone || user?.user_metadata?.phone || undefined,
+        itemsCount: items.length,
+        totalValue: getTotal(),
+      }).catch(() => {
+        // ignore errors
+      });
+    }
+  }, [items.length, loadingProfile, user]);
 
   const formatPrice = (amount: number) => {
     return Math.round(amount).toLocaleString('he-IL');
@@ -395,20 +413,32 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // אפס את הודעת הכפתור הקודמת
+    setButtonError(null);
+    
     if (!acceptedTerms) {
-      setError('אנא אשר את תנאי הרכישה והתקנון כדי להמשיך');
+      const message = 'אנא אשר את תנאי הרכישה';
+      setError(message);
+      setButtonError(message);
+      setTimeout(() => setButtonError(null), 2000);
       return;
     }
 
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.zipCode) {
-      setError('אנא מלא את כל השדות הנדרשים');
+      const message = 'אנא מלא את כל השדות הנדרשים';
+      setError(message);
+      setButtonError(message);
+      setTimeout(() => setButtonError(null), 2000);
       return;
     }
 
     // ולידציה של מיקוד ישראלי (7 ספרות)
     const cleanZip = formData.zipCode.replace(/\D/g, '');
     if (cleanZip.length !== 7) {
+      const message = 'מיקוד לא תקין';
       setError('מיקוד לא תקין - מיקוד ישראלי צריך להכיל 7 ספרות');
+      setButtonError(message);
+      setTimeout(() => setButtonError(null), 2000);
       return;
     }
 
@@ -416,7 +446,10 @@ export default function CheckoutPage() {
     const cleanPhone = formData.phone.replace(/[\s\-\(\)]/g, '');
     const phoneDigits = cleanPhone.replace(/\D/g, '');
     if (phoneDigits.length < 9 || phoneDigits.length > 12) {
-      setError('מספר טלפון לא תקין');
+      const message = 'מספר טלפון לא תקין';
+      setError(message);
+      setButtonError(message);
+      setTimeout(() => setButtonError(null), 2000);
       return;
     }
 
@@ -1289,9 +1322,15 @@ export default function CheckoutPage() {
                     }
                   }}
                   disabled={loading || !acceptedTerms}
-                  className="w-full bg-[#1a1a1a] text-white py-3 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  className={`w-full py-3 px-6 text-sm tracking-luxury uppercase font-light transition-luxury disabled:cursor-not-allowed ${
+                    buttonError 
+                      ? 'bg-red-600 text-white hover:bg-red-700' 
+                      : loading 
+                        ? 'bg-[#1a1a1a] text-white' 
+                        : 'bg-[#1a1a1a] text-white hover:bg-[#2a2a2a] disabled:bg-gray-300'
+                  }`}
                 >
-                  {loading ? 'מעבר לתשלום...' : 'המשך לתשלום מאובטח'}
+                  {loading ? 'מעבר לתשלום...' : buttonError || 'המשך לתשלום מאובטח'}
                 </button>
                 {(!acceptedTerms || !formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.zipCode) && (
                   <p className="text-xs text-gray-500 mt-2 text-right">

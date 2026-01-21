@@ -90,3 +90,25 @@ export async function notifyNewOrder(orderData: {
   return sendTelegramMessage(message);
 }
 
+// Notification for checkout page visit
+export async function notifyCheckoutVisit(data?: {
+  userEmail?: string;
+  userPhone?: string;
+  itemsCount?: number;
+  totalValue?: number;
+}): Promise<boolean> {
+  const userInfo = data?.userEmail || data?.userPhone 
+    ? `👤 ${data.userEmail ? escapeHtml(data.userEmail) : ''}${data.userPhone ? ` (${escapeHtml(data.userPhone)})` : ''}`
+    : '👤 אורח';
+  
+  const itemsInfo = data?.itemsCount ? `\n📝 מוצרים בעגלה: ${data.itemsCount}` : '';
+  const totalInfo = data?.totalValue ? `\n💰 סכום: <b>₪${data.totalValue.toLocaleString('he-IL')}</b>` : '';
+  
+  const message = `🛒 <b>משתמש הגיע לדף תשלום</b>
+
+${userInfo}${itemsInfo}${totalInfo}
+📅 תאריך: ${new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}`;
+
+  return sendTelegramMessage(message);
+}
+

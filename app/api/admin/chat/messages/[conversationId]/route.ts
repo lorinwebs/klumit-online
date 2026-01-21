@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-import { sendChatReply } from '@/lib/telegram-chat';
+import { sendChatReply as sendTelegramReply } from '@/lib/telegram-chat';
+import { sendChatReply as sendWhatsAppReply } from '@/lib/whatsapp-chat';
 
 // GET - קבלת הודעות בשיחה (למנהלים)
 // אם יש user_id, נטען את כל ההודעות מכל השיחות של המשתמש
@@ -91,6 +92,10 @@ export async function POST(
 
     const supabaseAdmin = createSupabaseAdminClient();
 
+    // בחירת פלטפורמה לפי משתנה סביבה
+    const useWhatsApp = process.env.USE_WHATSAPP === 'true';
+    const statusValue = useWhatsApp ? 'delivered_to_whatsapp' : 'delivered_to_telegram';
+
     // שמירת ההודעה ב-DB
     const { data: savedMessage, error: insertError } = await supabaseAdmin
       .from('klumit_chat_messages')
@@ -99,7 +104,7 @@ export async function POST(
         message,
         from_user: false,
         replied_by_name: 'קלומית',
-        status: 'delivered_to_telegram',
+        status: statusValue,
       })
       .select()
       .single();
@@ -108,14 +113,23 @@ export async function POST(
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    // שליחה ל-Telegram (אם ביקשו)
+    // שליחה לפלטפורמה (אם ביקשו)
     if (send_to_telegram) {
-      await sendChatReply({
-        conversationId,
-        message,
-        repliedByChatId: 'web-admin',
-        repliedByName: 'Admin',
-      });
+      if (useWhatsApp) {
+        await sendWhatsAppReply({
+          conversationId,
+          message,
+          repliedByChatId: 'web-admin',
+          repliedByName: 'Admin',
+        });
+      } else {
+        await sendTelegramReply({
+          conversationId,
+          message,
+          repliedByChatId: 'web-admin',
+          repliedByName: 'Admin',
+        });
+      }
     }
 
     return NextResponse.json({
