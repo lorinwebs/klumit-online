@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Instagram } from 'lucide-react';
+import { Instagram, Facebook, MessageCircle } from 'lucide-react';
 import { ViewerCount } from './ViewerCount';
 
 export default function Footer() {
@@ -18,15 +18,35 @@ export default function Footer() {
             <div className="text-xs font-light text-[#c9a962] tracking-luxury mb-4">
               Renato Angi Venezia • Carlino Group
             </div>
-            <a 
-              href="https://www.instagram.com/klomit/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-gray-500 hover:text-[#E1306C] transition-colors"
-              aria-label="Instagram"
-            >
-              <Instagram size={20} />
-            </a>
+            <div className="flex items-center gap-3 mb-4">
+              <a 
+                href="https://www.instagram.com/klomit/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-gray-500 hover:text-[#E1306C] transition-colors"
+                aria-label="Instagram"
+              >
+                <Instagram size={20} />
+              </a>
+              <a 
+                href="https://www.facebook.com/klomit" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-gray-500 hover:text-[#1877F2] transition-colors"
+                aria-label="Facebook"
+              >
+                <Facebook size={20} />
+              </a>
+              <a 
+                href="https://wa.me/message/XORXP7SG55MHJ1" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-gray-500 hover:text-[#25D366] transition-colors"
+                aria-label="WhatsApp"
+              >
+                <MessageCircle size={20} />
+              </a>
+            </div>
             <ViewerCount />
           </div>
           
