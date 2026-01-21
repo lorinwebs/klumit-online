@@ -52,11 +52,9 @@ export async function POST(request: NextRequest) {
             }
 
             // בדיקה אם זו תגובה להודעה קיימת
-            if (message.context?.referred_product) {
-              // תגובה למוצר - לא רלוונטי כרגע
-              continue;
-            }
-
+            // WhatsApp שולח context.referred_product רק למוצרים, לא להודעות טקסט
+            // עבור הודעות טקסט, context.id מכיל את ה-message_id של ההודעה המקורית
+            
             // חיפוש שיחה לפי הודעה קודמת (אם יש context)
             let conversationId: string | null = null;
             
@@ -113,13 +111,15 @@ export async function POST(request: NextRequest) {
                       .eq('id', conversationId);
                     
                     // שליחת תגובה ל-WhatsApp (אופציונלי - כדי לאשר שהתגובה נשמרה)
-                    await sendChatReply({
-                      conversationId,
-                      message: replyText,
-                      repliedByChatId: fromPhone,
-                      repliedByName,
-                      originalMessageId: messageId,
-                    });
+                    if (fromPhone) {
+                      await sendChatReply({
+                        conversationId,
+                        message: replyText,
+                        repliedByChatId: fromPhone,
+                        repliedByName,
+                        originalMessageId: messageId,
+                      });
+                    }
                   }
                 }
                 continue;
@@ -162,13 +162,15 @@ export async function POST(request: NextRequest) {
                 .eq('id', conversationId);
               
               // שליחת תגובה ל-WhatsApp (אופציונלי)
-              await sendChatReply({
-                conversationId,
-                message: messageText,
-                repliedByChatId: fromPhone,
-                repliedByName,
-                originalMessageId: message.context?.id,
-              });
+              if (fromPhone) {
+                await sendChatReply({
+                  conversationId,
+                  message: messageText,
+                  repliedByChatId: fromPhone,
+                  repliedByName,
+                  originalMessageId: message.context?.id,
+                });
+              }
             }
           }
         }
