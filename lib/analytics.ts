@@ -34,10 +34,16 @@ export function initGA4(): void {
   // This function is kept for backwards compatibility
 }
 
-// Helper to send events
+// Helper to send events to GA4
 function sendEvent(eventName: string, params?: Record<string, any>): void {
   if (typeof window === 'undefined' || !(window as any).gtag) return;
   (window as any).gtag('event', eventName, params);
+}
+
+// Helper to send events to Meta Pixel
+function sendMetaPixelEvent(eventName: string, params?: Record<string, any>): void {
+  if (typeof window === 'undefined' || !(window as any).fbq) return;
+  (window as any).fbq('track', eventName, params);
 }
 
 // ============ Standard Analytics Events ============
@@ -51,17 +57,22 @@ export function trackPageView(path?: string, title?: string): void {
   const pagePath = path || window.location.pathname;
   const pageTitle = title || document.title || pagePath;
   
+  // Google Analytics
   sendEvent('page_view', {
     page_path: pagePath,
     page_title: pageTitle,
     page_location: window.location.href,
   });
+  
+  // Meta Pixel - PageView (already tracked in layout.tsx, but track again for SPA navigation)
+  sendMetaPixelEvent('PageView');
 }
 
 /**
  * Product Viewed - כשמישהו צופה בדף מוצר
  */
 export function trackProductViewed(product: ProductData): void {
+  // Google Analytics
   sendEvent('view_item', {
     currency: product.currency || 'ILS',
     value: product.price,
@@ -74,12 +85,22 @@ export function trackProductViewed(product: ProductData): void {
       quantity: 1,
     }],
   });
+  
+  // Meta Pixel - ViewContent
+  sendMetaPixelEvent('ViewContent', {
+    content_name: product.name,
+    content_ids: [product.id],
+    content_type: 'product',
+    value: product.price,
+    currency: product.currency || 'ILS',
+  });
 }
 
 /**
  * Product List Viewed - כשמישהו צופה ברשימת מוצרים
  */
 export function trackProductListViewed(products: ProductData[], listName?: string): void {
+  // Google Analytics
   sendEvent('view_item_list', {
     item_list_name: listName || 'Products',
     items: products.map((product, index) => ({
@@ -90,23 +111,43 @@ export function trackProductListViewed(products: ProductData[], listName?: strin
       index: index,
     })),
   });
+  
+  // Meta Pixel - ViewCategory (for product lists)
+  sendMetaPixelEvent('ViewCategory', {
+    content_name: listName || 'Products',
+    content_ids: products.map(p => p.id),
+    content_type: 'product',
+  });
 }
 
 /**
  * Add to Cart - כשמוסיפים מוצר לסל
  */
 export function trackAddToCart(product: ProductData): void {
+  const quantity = product.quantity || 1;
+  const value = product.price * quantity;
+  
+  // Google Analytics
   sendEvent('add_to_cart', {
     currency: product.currency || 'ILS',
-    value: product.price * (product.quantity || 1),
+    value: value,
     items: [{
       item_id: product.id,
       item_name: product.name,
       price: product.price,
       item_category: product.category,
       item_variant: product.variant,
-      quantity: product.quantity || 1,
+      quantity: quantity,
     }],
+  });
+  
+  // Meta Pixel - AddToCart
+  sendMetaPixelEvent('AddToCart', {
+    content_name: product.name,
+    content_ids: [product.id],
+    content_type: 'product',
+    value: value,
+    currency: product.currency || 'ILS',
   });
 }
 
@@ -130,6 +171,7 @@ export function trackRemoveFromCart(product: ProductData): void {
  * View Cart - כשצופים בדף העגלה
  */
 export function trackViewCart(cart: CartData): void {
+  // Google Analytics
   sendEvent('view_cart', {
     currency: cart.currency || 'ILS',
     value: cart.totalValue,
@@ -140,12 +182,22 @@ export function trackViewCart(cart: CartData): void {
       quantity: item.quantity || 1,
     })),
   });
+  
+  // Meta Pixel - ViewCart
+  sendMetaPixelEvent('ViewCart', {
+    content_ids: cart.items.map(item => item.id),
+    content_type: 'product',
+    value: cart.totalValue,
+    currency: cart.currency || 'ILS',
+    num_items: cart.items.reduce((sum, item) => sum + (item.quantity || 1), 0),
+  });
 }
 
 /**
  * Begin Checkout - כשמתחילים checkout (לפני המעבר ל-Shopify)
  */
 export function trackBeginCheckout(cart: CartData): void {
+  // Google Analytics
   sendEvent('begin_checkout', {
     currency: cart.currency || 'ILS',
     value: cart.totalValue,
@@ -155,6 +207,15 @@ export function trackBeginCheckout(cart: CartData): void {
       price: item.price,
       quantity: item.quantity || 1,
     })),
+  });
+  
+  // Meta Pixel - InitiateCheckout
+  sendMetaPixelEvent('InitiateCheckout', {
+    content_ids: cart.items.map(item => item.id),
+    content_type: 'product',
+    value: cart.totalValue,
+    currency: cart.currency || 'ILS',
+    num_items: cart.items.reduce((sum, item) => sum + (item.quantity || 1), 0),
   });
 }
 
