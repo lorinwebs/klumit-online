@@ -12,7 +12,6 @@ import LoginModal from '@/components/LoginModal';
 import Link from 'next/link';
 import { Check, User } from 'lucide-react';
 import { trackBeginCheckout } from '@/lib/analytics';
-import { notifyCheckoutVisit } from '@/lib/telegram';
 
 export default function CheckoutPage() {
   const { items, cartId, loadFromShopify, getTotal } = useCartStore();
@@ -184,13 +183,18 @@ export default function CheckoutPage() {
       // נשלח אחרי זמן קצר כדי לתת זמן למשתמש להיטען (אם יש)
       const timeoutId = setTimeout(async () => {
         try {
-          const result = await notifyCheckoutVisit({
-            userEmail: user?.email || undefined,
-            userPhone: user?.phone || user?.user_metadata?.phone || undefined,
-            itemsCount: items.length,
-            totalValue: getTotal(),
+          const response = await fetch('/api/telegram/notify-checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userEmail: user?.email || undefined,
+              userPhone: user?.phone || user?.user_metadata?.phone || undefined,
+              itemsCount: items.length,
+              totalValue: getTotal(),
+            }),
           });
-          if (!result) {
+          
+          if (!response.ok) {
             console.warn('Checkout visit notification failed to send');
           }
         } catch (err) {
