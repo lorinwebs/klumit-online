@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { shopifyClient, PRODUCTS_QUERY } from '@/lib/shopify';
 
@@ -92,11 +93,12 @@ function CategoryCarousel({
 
   // Product Image Carousel Component
   function ProductImageCarousel({ product }: { product: Product }) {
+    const router = useRouter();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const touchStartX = useRef<number>(0);
     const touchEndX = useRef<number>(0);
-    const touchStartTime = useRef<number>(0);
     const hasSwiped = useRef<boolean>(false);
+    const swipeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const images = product.images.edges;
 
     if (images.length === 0) {
@@ -124,9 +126,16 @@ function CategoryCarousel({
     };
 
     const handleTouchEnd = (e: React.TouchEvent) => {
-      if (!touchStartX.current || touchEndX.current === 0) {
+      if (!touchStartX.current) {
         touchStartX.current = 0;
         touchEndX.current = 0;
+        return;
+      }
+      
+      if (touchEndX.current === 0) {
+        // אם אין תנועה, זה tap - תן ל-Link לעבוד
+        touchStartX.current = 0;
+        hasSwiped.current = false;
         return;
       }
       
@@ -145,21 +154,40 @@ function CategoryCarousel({
           // Swipe right - previous image
           setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
         }
+        
+        // שמור את מצב ה-swipe לזמן קצר כדי למנוע click
+        if (swipeTimeoutRef.current) {
+          clearTimeout(swipeTimeoutRef.current);
+        }
+        swipeTimeoutRef.current = setTimeout(() => {
+          hasSwiped.current = false;
+        }, 500);
+      } else {
+        // אם אין swipe - נאפס מיד כדי שה-click יעבוד
+        hasSwiped.current = false;
       }
 
       // Reset
       touchStartX.current = 0;
       touchEndX.current = 0;
-      hasSwiped.current = false;
+    };
+
+    const handleClick = () => {
+      // אם היה swipe, לא נכנס לדף המוצר
+      if (hasSwiped.current) {
+        return;
+      }
+      // אחרת - נווט לדף המוצר
+      router.push(`/products/${product.handle}`);
     };
 
     return (
-      <Link 
-        href={`/products/${product.handle}`}
-        className="relative w-full h-full block touch-manipulation"
+      <div 
+        className="relative w-full h-full block touch-manipulation cursor-pointer"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onClick={handleClick}
         style={{ WebkitTapHighlightColor: 'transparent' }}
       >
         {/* Image Container */}
@@ -221,7 +249,7 @@ function CategoryCarousel({
             צפה במוצר
           </span>
         </div>
-      </Link>
+      </div>
     );
   }
 
