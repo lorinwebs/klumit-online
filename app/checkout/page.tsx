@@ -44,26 +44,6 @@ export default function CheckoutPage() {
   const hasTrackedCheckout = useRef(false);
 
   useEffect(() => {
-      if (items.length === 0) {
-        window.location.href = '/cart';
-        return;
-      }
-
-    // Track begin checkout event (only once)
-    if (items.length > 0 && !hasTrackedCheckout.current) {
-      trackBeginCheckout({
-        items: items.map(item => ({
-          id: item.variantId,
-          name: item.title,
-          price: parseFloat(item.price),
-          quantity: item.quantity,
-        })),
-        totalValue: getTotal(),
-        currency: items[0]?.currencyCode || 'ILS',
-      });
-      hasTrackedCheckout.current = true;
-    }
-
     // טען פרטים מהפרופיל אם המשתמש מחובר
     async function loadProfileData() {
       try {
@@ -124,6 +104,26 @@ export default function CheckoutPage() {
     }
 
     loadProfileData();
+
+    if (items.length === 0) {
+      window.location.href = '/cart';
+      return;
+    }
+
+    // Track begin checkout event (only once)
+    if (items.length > 0 && !hasTrackedCheckout.current) {
+      trackBeginCheckout({
+        items: items.map(item => ({
+          id: item.variantId,
+          name: item.title,
+          price: parseFloat(item.price),
+          quantity: item.quantity,
+        })),
+        totalValue: getTotal(),
+        currency: items[0]?.currencyCode || 'ILS',
+      });
+      hasTrackedCheckout.current = true;
+    }
 
     // האזן לשינויים בסטטוס ההתחברות
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
