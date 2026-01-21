@@ -13,6 +13,7 @@ interface TelegramMessage {
 
 export async function sendTelegramMessage(text: string): Promise<boolean> {
   if (!TELEGRAM_BOT_TOKEN || TELEGRAM_CHAT_IDS.length === 0) {
+    console.warn('Telegram: Missing bot token or chat IDs');
     return false;
   }
 
@@ -35,6 +36,8 @@ export async function sendTelegramMessage(text: string): Promise<boolean> {
         );
         
         if (!response.ok) {
+          const errorText = await response.text().catch(() => 'Unknown error');
+          console.error('Telegram API error:', response.status, errorText);
           return false;
         }
         return true;
@@ -42,8 +45,12 @@ export async function sendTelegramMessage(text: string): Promise<boolean> {
     );
 
     const allSent = results.every(r => r);
+    if (!allSent) {
+      console.warn('Telegram: Some messages failed to send');
+    }
     return allSent;
   } catch (error) {
+    console.error('Telegram send error:', error);
     return false;
   }
 }

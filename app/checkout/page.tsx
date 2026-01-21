@@ -49,16 +49,16 @@ export default function CheckoutPage() {
   useEffect(() => {
     // טען פרטים מהפרופיל אם המשתמש מחובר
     async function loadProfileData() {
-      // Timeout של 5 שניות - אם זה לוקח יותר מדי זמן, נעצור
+      // Timeout של 1.5 שניות - אם זה לוקח יותר מדי זמן, נעצור מיד
       const timeoutId = setTimeout(() => {
         setLoadingProfile(false);
-      }, 5000);
+      }, 1500);
 
       try {
         // שימוש ישיר ב-supabase.auth.getUser() במקום דרך API
         const { supabase } = await import('@/lib/supabase');
         
-        // ננסה עם timeout
+        // ננסה עם timeout קצר
         let currentUser = null;
         let error = null;
         
@@ -66,7 +66,7 @@ export default function CheckoutPage() {
           const result = await Promise.race([
             supabase.auth.getUser(),
             new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Timeout')), 3000)
+              setTimeout(() => reject(new Error('Timeout')), 1000)
             )
           ]) as { data: { user: any }, error: any };
           
@@ -107,7 +107,7 @@ export default function CheckoutPage() {
               const result = await Promise.race([
                 supabase.auth.getSession(),
                 new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error('Timeout')), 2000)
+                  setTimeout(() => reject(new Error('Timeout')), 500)
                 )
               ]) as { data: { session: any } };
               
@@ -215,20 +215,31 @@ export default function CheckoutPage() {
     };
   }, [items]);
 
-  // שלח הודעה לטלגרם על הגעה לדף checkout (רק פעם אחת, אחרי שהמשתמש נטען)
+  // שלח הודעה לטלגרם על הגעה לדף checkout (רק פעם אחת)
   useEffect(() => {
-    if (!hasNotifiedCheckout.current && items.length > 0 && !loadingProfile) {
+    if (!hasNotifiedCheckout.current && items.length > 0) {
       hasNotifiedCheckout.current = true;
-      notifyCheckoutVisit({
-        userEmail: user?.email || undefined,
-        userPhone: user?.phone || user?.user_metadata?.phone || undefined,
-        itemsCount: items.length,
-        totalValue: getTotal(),
-      }).catch(() => {
-        // ignore errors
-      });
+      
+      // נשלח אחרי זמן קצר כדי לתת זמן למשתמש להיטען (אם יש)
+      const timeoutId = setTimeout(async () => {
+        try {
+          const result = await notifyCheckoutVisit({
+            userEmail: user?.email || undefined,
+            userPhone: user?.phone || user?.user_metadata?.phone || undefined,
+            itemsCount: items.length,
+            totalValue: getTotal(),
+          });
+          if (!result) {
+            console.warn('Checkout visit notification failed to send');
+          }
+        } catch (err) {
+          console.error('Error sending checkout visit notification:', err);
+        }
+      }, 2000); // המתן 2 שניות כדי שהמשתמש יטען (אם יש)
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [items.length, loadingProfile, user]);
+  }, [items.length, user]);
 
   const formatPrice = (amount: number) => {
     return Math.round(amount).toLocaleString('he-IL');
