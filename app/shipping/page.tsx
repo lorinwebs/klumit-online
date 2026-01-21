@@ -51,13 +51,15 @@ export default function ShippingPage() {
           <section>
             <h2 className="text-2xl font-light luxury-font mb-4">שאלות נוספות</h2>
             <p className="font-light leading-relaxed text-gray-700 mb-4">
-              לשאלות בנושא משלוחים, צרו קשר עם מור:
+              לשאלות בנושא משלוחים, צרו קשר בוואטסאפ:
             </p>
             <a 
-              href="tel:0542600177" 
+              href="https://wa.me/972549903139" 
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-lg font-light text-[#1a1a1a] hover:opacity-70 transition-opacity"
             >
-              📞 054-260-0177
+              📱 054-990-3139 (וואטסאפ)
             </a>
           </section>
         </div>

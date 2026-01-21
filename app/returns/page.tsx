@@ -85,7 +85,7 @@ export default function ReturnsPage() {
                 שימי לב: לא תתקבל כל החזרה או החלפה ללא תיאום מראש מול שירות הלקוחות.
               </p>
               <p className="font-light leading-relaxed text-gray-700 mb-4">
-                יש לפנות לשירות הלקוחות בווטסאפ למספר: <a href="https://wa.me/972542600177" className="text-[#1a1a1a] underline underline-offset-2">054-2600177</a> לצורך פתיחת בקשה וקבלת אישור.
+                יש לפנות לשירות הלקוחות בווטסאפ למספר: <a href="https://wa.me/972549903139" target="_blank" rel="noopener noreferrer" className="text-[#1a1a1a] underline underline-offset-2">054-990-3139</a> (וואטסאפ) לצורך פתיחת בקשה וקבלת אישור.
               </p>
             </div>
             <p className="font-light leading-relaxed text-gray-700 mb-4">

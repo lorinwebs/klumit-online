@@ -26,7 +26,7 @@ const props = [
   {
     icon: HeadphonesIcon,
     title: 'שירות לקוחות',
-    subtitle: '054-260-0177',
+    subtitle: '054-990-3139 (וואטסאפ)',
   },
 ];
 
