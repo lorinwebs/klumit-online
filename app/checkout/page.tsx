@@ -178,7 +178,7 @@ export default function CheckoutPage() {
     // נמתין קצת לפני שניצור את ה-subscription כדי לא להפריע לטעינה הראשונית
     const subscriptionTimeout = setTimeout(() => {
       try {
-        const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
           if (session?.user) {
             setUser(session.user);
             const currentUser = session.user;
@@ -201,7 +201,7 @@ export default function CheckoutPage() {
             setUser(null);
           }
         });
-        subscription = data;
+        subscription = authSubscription;
       } catch (err) {
         // אם יש שגיאה ב-subscription, נמשיך בלי זה
       }
