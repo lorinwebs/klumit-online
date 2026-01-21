@@ -40,7 +40,7 @@ function sendEvent(eventName: string, params?: Record<string, any>): void {
   (window as any).gtag('event', eventName, params);
 }
 
-// Helper to send events to Meta Pixel
+// Helper to send standard events to Meta Pixel
 // Meta Pixel's fbq function has built-in queueing, so we can call it directly
 function sendMetaPixelEvent(eventName: string, params?: Record<string, any>): void {
   if (typeof window === 'undefined') return;
@@ -70,6 +70,33 @@ function sendMetaPixelEvent(eventName: string, params?: Record<string, any>): vo
     // Log warning in development
     if (process.env.NODE_ENV === 'development') {
       console.warn('Meta Pixel event failed:', eventName, e);
+    }
+  }
+}
+
+// Helper to send custom events to Meta Pixel
+function sendMetaPixelCustomEvent(eventName: string, params?: Record<string, any>): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const fbq = (window as any).fbq;
+    
+    if (fbq) {
+      if (typeof fbq === 'function') {
+        // Use trackCustom for non-standard events
+        fbq('trackCustom', eventName, params);
+      } else if (fbq.queue && Array.isArray(fbq.queue)) {
+        fbq.queue.push(['trackCustom', eventName, params]);
+      } else if (fbq.callMethod) {
+        fbq.callMethod.apply(fbq, ['trackCustom', eventName, params]);
+      }
+    } else {
+      (window as any)._fbq = (window as any)._fbq || [];
+      (window as any)._fbq.push(['trackCustom', eventName, params]);
+    }
+  } catch (e) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Meta Pixel custom event failed:', eventName, e);
     }
   }
 }
@@ -212,9 +239,9 @@ export function trackViewCart(cart: CartData): void {
     })),
   });
   
-  // Meta Pixel - ViewCart
-  sendMetaPixelEvent('ViewCart', {
-    content_ids: cart.items.map(item => item.id),
+  // Meta Pixel - ViewCart (custom event)
+  sendMetaPixelCustomEvent('ViewCart', {
+    content_ids: cart.items.map(item => String(item.id)),
     content_type: 'product',
     value: cart.totalValue,
     currency: cart.currency || 'ILS',
