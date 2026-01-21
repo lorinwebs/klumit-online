@@ -81,6 +81,7 @@ export default function CheckoutPage() {
           
         clearTimeout(timeoutId);
           
+        // אם יש משתמש, נטען את הפרטים שלו
         if (!error && currentUser) {
           setUser(currentUser);
           const currentEmail = currentUser.email || currentUser.user_metadata?.email || '';
@@ -99,53 +100,13 @@ export default function CheckoutPage() {
             notes: currentUser.user_metadata?.shipping_notes || '',
           });
         } else {
-          // Fallback ל-supabase.auth.getSession
-          try {
-            let session = null;
-            
-            try {
-              const result = await Promise.race([
-                supabase.auth.getSession(),
-                new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error('Timeout')), 500)
-                )
-              ]) as { data: { session: any } };
-              
-              if (result?.data) {
-                session = result.data.session;
-              }
-            } catch (sessionTimeoutErr) {
-              // אם יש timeout, נמשיך בלי session
-            }
-            
-            if (session?.user) {
-              const currentUser = session.user;
-              setUser(currentUser);
-              const currentEmail = currentUser.email || currentUser.user_metadata?.email || '';
-              
-              setFormData({
-                firstName: currentUser.user_metadata?.first_name || '',
-                lastName: currentUser.user_metadata?.last_name || '',
-                email: currentEmail,
-                phone: currentUser.phone || currentUser.user_metadata?.phone || '',
-                address: currentUser.user_metadata?.shipping_address || '',
-                city: currentUser.user_metadata?.shipping_city || '',
-                zipCode: currentUser.user_metadata?.shipping_zip_code || '',
-                apartment: currentUser.user_metadata?.shipping_apartment || '',
-                floor: currentUser.user_metadata?.shipping_floor || '',
-                notes: currentUser.user_metadata?.shipping_notes || '',
-              });
-            } else {
-              setUser(null);
-            }
-          } catch (fallbackErr) {
-            setUser(null);
-          }
+          // אין משתמש מחובר - נסיים מיד בלי לנסות fallback
+          setUser(null);
         }
+        setLoadingProfile(false);
       } catch (err) {
         clearTimeout(timeoutId);
         setUser(null);
-      } finally {
         setLoadingProfile(false);
       }
     }
