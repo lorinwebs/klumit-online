@@ -49,10 +49,37 @@ export default function CheckoutPage() {
   useEffect(() => {
     // טען פרטים מהפרופיל אם המשתמש מחובר
     async function loadProfileData() {
+      // Timeout של 5 שניות - אם זה לוקח יותר מדי זמן, נעצור
+      const timeoutId = setTimeout(() => {
+        setLoadingProfile(false);
+      }, 5000);
+
       try {
         // שימוש ישיר ב-supabase.auth.getUser() במקום דרך API
         const { supabase } = await import('@/lib/supabase');
-        const { data: { user: currentUser }, error } = await supabase.auth.getUser();
+        
+        // ננסה עם timeout
+        let currentUser = null;
+        let error = null;
+        
+        try {
+          const result = await Promise.race([
+            supabase.auth.getUser(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout')), 3000)
+            )
+          ]) as { data: { user: any }, error: any };
+          
+          if (result?.data) {
+            currentUser = result.data.user;
+            error = result.error;
+          }
+        } catch (timeoutErr) {
+          // אם יש timeout, ננסה getSession
+          error = { message: 'Timeout' };
+        }
+          
+        clearTimeout(timeoutId);
           
         if (!error && currentUser) {
           setUser(currentUser);
@@ -74,7 +101,23 @@ export default function CheckoutPage() {
         } else {
           // Fallback ל-supabase.auth.getSession
           try {
-            const { data: { session } } = await supabase.auth.getSession();
+            let session = null;
+            
+            try {
+              const result = await Promise.race([
+                supabase.auth.getSession(),
+                new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('Timeout')), 2000)
+                )
+              ]) as { data: { session: any } };
+              
+              if (result?.data) {
+                session = result.data.session;
+              }
+            } catch (sessionTimeoutErr) {
+              // אם יש timeout, נמשיך בלי session
+            }
+            
             if (session?.user) {
               const currentUser = session.user;
               setUser(currentUser);
@@ -100,6 +143,7 @@ export default function CheckoutPage() {
           }
         }
       } catch (err) {
+        clearTimeout(timeoutId);
         setUser(null);
       } finally {
         setLoadingProfile(false);
@@ -128,32 +172,47 @@ export default function CheckoutPage() {
       hasTrackedCheckout.current = true;
     }
 
-    // האזן לשינויים בסטטוס ההתחברות
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        const currentUser = session.user;
-        const currentEmail = currentUser.email || currentUser.user_metadata?.email || '';
-        
-        // טען פרטים מהפרופיל כ-default
-        setFormData({
-          firstName: currentUser.user_metadata?.first_name || '',
-          lastName: currentUser.user_metadata?.last_name || '',
-          email: currentEmail,
-          phone: currentUser.phone || currentUser.user_metadata?.phone || '',
-          address: currentUser.user_metadata?.shipping_address || '',
-          city: currentUser.user_metadata?.shipping_city || '',
-          zipCode: currentUser.user_metadata?.shipping_zip_code || '',
-          apartment: currentUser.user_metadata?.shipping_apartment || '',
-          floor: currentUser.user_metadata?.shipping_floor || '',
-          notes: currentUser.user_metadata?.shipping_notes || '',
+    // האזן לשינויים בסטטוס ההתחברות (רק אחרי שהטעינה הראשונית הסתיימה)
+    let subscription: { unsubscribe: () => void } | null = null;
+    
+    // נמתין קצת לפני שניצור את ה-subscription כדי לא להפריע לטעינה הראשונית
+    const subscriptionTimeout = setTimeout(() => {
+      try {
+        const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+          if (session?.user) {
+            setUser(session.user);
+            const currentUser = session.user;
+            const currentEmail = currentUser.email || currentUser.user_metadata?.email || '';
+            
+            // טען פרטים מהפרופיל כ-default
+            setFormData({
+              firstName: currentUser.user_metadata?.first_name || '',
+              lastName: currentUser.user_metadata?.last_name || '',
+              email: currentEmail,
+              phone: currentUser.phone || currentUser.user_metadata?.phone || '',
+              address: currentUser.user_metadata?.shipping_address || '',
+              city: currentUser.user_metadata?.shipping_city || '',
+              zipCode: currentUser.user_metadata?.shipping_zip_code || '',
+              apartment: currentUser.user_metadata?.shipping_apartment || '',
+              floor: currentUser.user_metadata?.shipping_floor || '',
+              notes: currentUser.user_metadata?.shipping_notes || '',
+            });
+          } else {
+            setUser(null);
+          }
         });
-      } else {
-        setUser(null);
+        subscription = data;
+      } catch (err) {
+        // אם יש שגיאה ב-subscription, נמשיך בלי זה
       }
-    });
+    }, 1000);
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(subscriptionTimeout);
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
   }, [items]);
 
   // שלח הודעה לטלגרם על הגעה לדף checkout (רק פעם אחת, אחרי שהמשתמש נטען)
