@@ -120,7 +120,7 @@ const jsonLd = {
         addressCountry: 'IL',
       },
       sameAs: [
-        'https://www.instagram.com/klomit/',
+        'https://www.instagram.com/klumit_bags/',
       ],
     },
     {

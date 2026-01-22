@@ -20,7 +20,7 @@ export default function Footer() {
             </div>
             <div className="flex items-center gap-3 mb-4">
               <a 
-                href="https://www.instagram.com/klomit/" 
+                href="https://www.instagram.com/klumit_bags/" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-gray-500 hover:text-[#E1306C] transition-colors"

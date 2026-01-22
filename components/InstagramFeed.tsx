@@ -62,7 +62,7 @@ export default function InstagramFeed() {
         {/* Header */}
         <div className="text-center mb-6 md:mb-12">
           <a
-            href="https://www.instagram.com/klomit/"
+            href="https://www.instagram.com/klumit_bags/"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 md:gap-3 group"
@@ -72,7 +72,7 @@ export default function InstagramFeed() {
               עקבו אחרינו באינסטגרם
             </span>
           </a>
-          <p className="text-gray-500 font-light mt-1 md:mt-3 text-sm md:text-base">@klomit</p>
+          <p className="text-gray-500 font-light mt-1 md:mt-3 text-sm md:text-base">@klumit_bags</p>
         </div>
 
         {/* Mobile - Single post with navigation */}

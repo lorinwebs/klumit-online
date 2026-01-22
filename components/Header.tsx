@@ -89,7 +89,7 @@ export default function Header() {
 
       {/* --- באנר השקה --- */}
       <a 
-        href="https://www.instagram.com/klomit/" 
+        href="https://www.instagram.com/klumit_bags/" 
         target="_blank" 
         rel="noopener noreferrer"
         className="w-full bg-black text-white flex items-center justify-center h-10 md:h-auto md:py-2 text-xs md:text-sm tracking-wide hover:bg-gray-800 transition-colors"
