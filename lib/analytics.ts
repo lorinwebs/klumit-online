@@ -124,12 +124,12 @@ function getSessionId(): string {
 /**
  * Track page visit history
  */
-function getPageHistory(): Array<{ path: string; title: string; url?: string }> {
+function getPageHistory(): Array<{ path: string; title: string; url?: string; enteredAt?: number; timeSpent?: number }> {
   if (typeof window === 'undefined') return [];
   
   const storageKey = 'telegram_visit_history';
   const historyStr = localStorage.getItem(storageKey);
-  const history: Array<{ path: string; title: string; url?: string }> = historyStr ? JSON.parse(historyStr) : [];
+  const history: Array<{ path: string; title: string; url?: string; enteredAt?: number; timeSpent?: number }> = historyStr ? JSON.parse(historyStr) : [];
   
   // Keep only last 10 pages
   return history.slice(-10);
@@ -143,18 +143,36 @@ function updatePageHistory(pagePath: string, pageTitle: string): void {
   
   const storageKey = 'telegram_visit_history';
   const history = getPageHistory();
+  const now = Date.now();
   
   // Get full URL without protocol
   const currentFullUrl = window.location.href;
   const currentUrlWithoutProtocol = currentFullUrl.replace(/^https?:\/\//, '');
   
-  // Add current page if it's different from the last one
+  // Calculate time spent on previous page if exists
   const lastPage = history[history.length - 1];
+  if (lastPage && lastPage.enteredAt && lastPage.path !== pagePath) {
+    const timeSpent = Math.round((now - lastPage.enteredAt) / 1000); // in seconds
+    lastPage.timeSpent = timeSpent;
+  }
+  
+  // Add current page if it's different from the last one
   if (!lastPage || lastPage.path !== pagePath) {
-    history.push({ path: pagePath, title: pageTitle, url: currentUrlWithoutProtocol });
+    history.push({ 
+      path: pagePath, 
+      title: pageTitle, 
+      url: currentUrlWithoutProtocol,
+      enteredAt: now 
+    });
     // Keep only last 10 pages
     const trimmedHistory = history.slice(-10);
     localStorage.setItem(storageKey, JSON.stringify(trimmedHistory));
+  } else {
+    // Same page - just update the enteredAt if not set
+    if (!lastPage.enteredAt) {
+      lastPage.enteredAt = now;
+      localStorage.setItem(storageKey, JSON.stringify(history));
+    }
   }
 }
 
@@ -175,7 +193,18 @@ async function trackVisitToTelegram(pagePath: string, pageTitle: string): Promis
     const previousPages = history.map((item) => {
       // Use url if available, otherwise use path
       const itemUrl = item.url || item.path;
-      return `${item.title} (${itemUrl})`;
+      // Format time spent
+      let timeInfo = '';
+      if (item.timeSpent !== undefined) {
+        const minutes = Math.floor(item.timeSpent / 60);
+        const seconds = item.timeSpent % 60;
+        if (minutes > 0) {
+          timeInfo = ` - ${minutes}ד ${seconds}ש`;
+        } else {
+          timeInfo = ` - ${seconds}ש`;
+        }
+      }
+      return `${item.title} (${itemUrl})${timeInfo}`;
     });
     
     // Get stored message ID if exists
