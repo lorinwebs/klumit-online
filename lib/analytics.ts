@@ -104,6 +104,102 @@ function sendMetaPixelCustomEvent(eventName: string, params?: Record<string, any
 // ============ Standard Analytics Events ============
 
 /**
+ * Get or create session ID for tracking visits
+ */
+function getSessionId(): string {
+  if (typeof window === 'undefined') return '';
+  
+  const storageKey = 'telegram_visit_session_id';
+  let sessionId = localStorage.getItem(storageKey);
+  
+  if (!sessionId) {
+    // Generate a unique session ID
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    localStorage.setItem(storageKey, sessionId);
+  }
+  
+  return sessionId;
+}
+
+/**
+ * Track page visit history
+ */
+function getPageHistory(): Array<{ path: string; title: string }> {
+  if (typeof window === 'undefined') return [];
+  
+  const storageKey = 'telegram_visit_history';
+  const historyStr = localStorage.getItem(storageKey);
+  const history: Array<{ path: string; title: string }> = historyStr ? JSON.parse(historyStr) : [];
+  
+  // Keep only last 10 pages
+  return history.slice(-10);
+}
+
+/**
+ * Update page history
+ */
+function updatePageHistory(pagePath: string, pageTitle: string): void {
+  if (typeof window === 'undefined') return;
+  
+  const storageKey = 'telegram_visit_history';
+  const history = getPageHistory();
+  
+  // Add current page if it's different from the last one
+  const lastPage = history[history.length - 1];
+  if (!lastPage || lastPage.path !== pagePath) {
+    history.push({ path: pagePath, title: pageTitle });
+    // Keep only last 10 pages
+    const trimmedHistory = history.slice(-10);
+    localStorage.setItem(storageKey, JSON.stringify(trimmedHistory));
+  }
+}
+
+/**
+ * Send visit tracking to Telegram
+ */
+async function trackVisitToTelegram(pagePath: string, pageTitle: string): Promise<void> {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const sessionId = getSessionId();
+    const history = getPageHistory();
+    const previousPages = history.map((item) => 
+      `${item.title} (${item.path})`
+    );
+    
+    // Get stored message ID if exists
+    const messageIdKey = 'telegram_visit_message_id';
+    const storedMessageId = localStorage.getItem(messageIdKey);
+    const messageId = storedMessageId ? parseInt(storedMessageId, 10) : undefined;
+    
+    const response = await fetch('/api/telegram/track-visit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId,
+        pagePath,
+        pageTitle,
+        previousPages,
+        messageId,
+      }),
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.messageId) {
+        // Store message ID for future updates
+        localStorage.setItem(messageIdKey, result.messageId.toString());
+      }
+    }
+  } catch (error) {
+    // Silently fail - don't break the page if Telegram tracking fails
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Telegram visit tracking failed:', error);
+    }
+  }
+}
+
+/**
  * Page View - קרא בכל מעבר דף
  */
 export function trackPageView(path?: string, title?: string): void {
@@ -121,6 +217,10 @@ export function trackPageView(path?: string, title?: string): void {
   
   // Meta Pixel - PageView (already tracked in layout.tsx, but track again for SPA navigation)
   sendMetaPixelEvent('PageView');
+  
+  // Telegram visit tracking
+  updatePageHistory(pagePath, pageTitle);
+  trackVisitToTelegram(pagePath, pageTitle);
 }
 
 /**
