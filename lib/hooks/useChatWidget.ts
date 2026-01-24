@@ -393,12 +393,6 @@ export function useChatWidget(): UseChatWidgetReturn {
   // שליחת הודעה
   const sendMessage = useCallback(async () => {
     if (!inputValue.trim() || !conversationId || loading || isSendingRef.current) {
-      console.log('sendMessage blocked:', { 
-        hasInput: !!inputValue.trim(), 
-        hasConversationId: !!conversationId, 
-        loading, 
-        isSending: isSendingRef.current 
-      });
       return;
     }
 
@@ -428,8 +422,6 @@ export function useChatWidget(): UseChatWidgetReturn {
         session_id: sessionId,
         page_url: window.location.href,
       };
-      
-      console.log('Sending message to server:', requestBody);
 
       const response = await fetch('/api/chat/send-message', {
         method: 'POST',
@@ -437,11 +429,11 @@ export function useChatWidget(): UseChatWidgetReturn {
         body: JSON.stringify(requestBody),
       });
 
-      console.log('Response status:', response.status, response.statusText);
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('Response error:', errorData);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Response error:', errorData);
+        }
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === tempMessage.id ? { ...msg, status: 'failed' } : msg
@@ -451,7 +443,6 @@ export function useChatWidget(): UseChatWidgetReturn {
       }
 
       const data = await response.json();
-      console.log('Response data:', data);
 
       if (data.success) {
         // אם נוצרה שיחה חדשה (כי השיחה הישנה הייתה מחוקה), עדכן את conversationId
@@ -582,7 +573,6 @@ export function useChatWidget(): UseChatWidgetReturn {
     let messagesChannel: RealtimeChannel | null = null;
     
     // ערוץ להודעות חדשות ועדכונים - Realtime בלבד (ללא polling)
-    console.log('Setting up Realtime subscription for conversation:', conversationId, 'user:', !!user);
     messagesChannel = supabase
       .channel(`chat-messages:${conversationId}`)
       .on(
@@ -594,12 +584,6 @@ export function useChatWidget(): UseChatWidgetReturn {
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          console.log('Realtime INSERT event received:', {
-            messageId: payload.new.id,
-            fromUser: payload.new.from_user,
-            message: payload.new.message?.substring(0, 50),
-            conversationId: payload.new.conversation_id,
-          });
           const newMessage = payload.new as ChatMessage;
           if (isMounted) {
             // אם ההודעה מהמשתמש - נחליף את ה-temp message במקום להוסיף חדשה
@@ -672,9 +656,7 @@ export function useChatWidget(): UseChatWidgetReturn {
           }
         }
       )
-      .subscribe((status) => {
-        console.log('Realtime messages channel subscription status:', status);
-      });
+      .subscribe();
 
     // ערוץ להתראות (כשהצ'אט סגור)
     notificationChannel = supabase
@@ -694,9 +676,7 @@ export function useChatWidget(): UseChatWidgetReturn {
           }
         }
       )
-      .subscribe((status) => {
-        console.log('Realtime notifications channel subscription status:', status);
-      });
+      .subscribe();
 
     notificationChannelRef.current = notificationChannel;
 
