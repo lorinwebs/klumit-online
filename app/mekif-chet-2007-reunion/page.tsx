@@ -57,7 +57,7 @@ export default function ReunionPage() {
 
   useEffect(() => {
     // Update page title for Google Analytics
-    document.title = 'מפגש מחזור 2007 מקיף ח\' - האיחוד';
+    document.title = 'מקיף ח\' 2007 מפגש איחוד!';
     
     const fetchData = async () => {
       try {
@@ -142,7 +142,7 @@ export default function ReunionPage() {
           </div>
           <div className="inline-block mb-6">
             <h1 className="text-4xl md:text-6xl font-light text-slate-900 mb-3 tracking-tight">
-              מפגש מחזור 2007 מקיף ח' - האיחוד!
+              מקיף ח' 2007 מפגש איחוד!
             </h1>
             <div className="h-1 w-24 bg-gradient-to-r from-indigo-500 to-purple-500 mx-auto"></div>
           </div>
