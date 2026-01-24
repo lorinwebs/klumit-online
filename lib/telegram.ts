@@ -135,6 +135,26 @@ ${userInfo}${itemsInfo}${totalInfo}
   return sendTelegramMessage(message);
 }
 
+// Notification for WhatsApp share
+export async function notifyWhatsAppShare(data: {
+  productTitle: string;
+  productUrl: string;
+  productPrice?: string;
+}): Promise<boolean> {
+  // Get URL without protocol
+  const urlWithoutProtocol = data.productUrl.replace(/^https?:\/\//, '');
+  
+  const priceInfo = data.productPrice ? `\n💰 מחיר: <b>${escapeHtml(data.productPrice)}</b>` : '';
+  
+  const message = `📱 <b>משתמש שיתף מוצר בוואטסאפ</b>
+
+📦 מוצר: ${escapeHtml(data.productTitle)}${priceInfo}
+🔗 ${escapeHtml(urlWithoutProtocol)}
+📅 תאריך: ${new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}`;
+
+  return sendTelegramMessage(message);
+}
+
 // Track user visits - send or update message in Telegram
 // Sends to all chat IDs (like other notifications)
 export async function trackUserVisit(data: {

@@ -448,12 +448,29 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   };
 
   // Share to WhatsApp
-  const handleShareWhatsApp = () => {
+  const handleShareWhatsApp = async () => {
     const productUrl = typeof window !== 'undefined' 
       ? window.location.href 
       : `https://www.klumit-online.co.il/products/${product.handle}`;
     const text = `${product.title} - ₪${price}\n${productUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    
+    // Send notification to Telegram
+    try {
+      await fetch('/api/telegram/notify-whatsapp-share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productTitle: product.title,
+          productUrl: productUrl,
+          productPrice: `₪${price}`,
+        }),
+      });
+    } catch (error) {
+      // Silent fail - don't break WhatsApp share if Telegram fails
+      console.warn('Failed to send WhatsApp share notification:', error);
+    }
+    
     window.open(whatsappUrl, '_blank');
   };
 
