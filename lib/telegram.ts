@@ -25,6 +25,7 @@ interface TelegramMessage {
   chat_id: string;
   text: string;
   parse_mode?: 'HTML' | 'Markdown' | 'MarkdownV2';
+  disable_web_page_preview?: boolean;
 }
 
 export async function sendTelegramMessage(text: string): Promise<boolean> {
@@ -47,6 +48,7 @@ export async function sendTelegramMessage(text: string): Promise<boolean> {
               chat_id: chatId,
               text,
               parse_mode: 'HTML',
+              disable_web_page_preview: true,
             } as TelegramMessage),
           }
         );
@@ -210,6 +212,7 @@ ${pagesList}
               chat_id: chatId,
               text: message,
               parse_mode: 'HTML',
+              disable_web_page_preview: true,
             }),
           }
         );
