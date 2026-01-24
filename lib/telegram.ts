@@ -155,15 +155,15 @@ export async function notifyWhatsAppShare(data: {
   return sendTelegramMessage(message);
 }
 
-// Track user visits - send or update message in Telegram
+// Track user visits - send new message in Telegram
 // Sends to all chat IDs (like other notifications)
+// Always creates a new message (doesn't update existing)
 export async function trackUserVisit(data: {
   sessionId: string;
   pagePath: string;
   pageTitle: string;
   pageUrl?: string;
   previousPages?: string[];
-  messageId?: number;
 }): Promise<{ success: boolean; messageId?: number }> {
   if (!TELEGRAM_BOT_TOKEN_VISITS) {
     console.warn('Telegram Visits: Missing bot token');
@@ -197,55 +197,7 @@ ${pagesList}
 🕐 ${time}
 🆔 Session: <code>${data.sessionId}</code>`;
 
-    // If we have a messageId, update the existing message (only for first chat ID)
-    // Note: Each chat ID has its own messageId, so we can only update one
-    // For simplicity, we update the first one and send new messages to others
-    if (data.messageId && chatIds.length > 0) {
-      const firstChatId = chatIds[0];
-      const response = await fetch(
-        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN_VISITS}/editMessageText`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: firstChatId,
-            message_id: data.messageId,
-            text: message,
-            parse_mode: 'HTML',
-          }),
-        }
-      );
-
-      if (response.ok) {
-        const result = await response.json();
-        // If there are more chat IDs, send new messages to them
-        if (chatIds.length > 1) {
-          const otherChatIds = chatIds.slice(1);
-          await Promise.all(
-            otherChatIds.map(async (chatId) => {
-              try {
-                await fetch(
-                  `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN_VISITS}/sendMessage`,
-                  {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      chat_id: chatId,
-                      text: message,
-                      parse_mode: 'HTML',
-                    }),
-                  }
-                );
-              } catch (e) {
-                // Silent fail for additional chat IDs
-              }
-            })
-          );
-        }
-        return { success: true, messageId: result.result?.message_id };
-      }
-    }
-
+    // Always send new messages (don't update existing)
     // Send new messages to all chat IDs
     const results = await Promise.all(
       chatIds.map(async (chatId) => {

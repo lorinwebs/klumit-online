@@ -207,11 +207,7 @@ async function trackVisitToTelegram(pagePath: string, pageTitle: string): Promis
       return `${item.title} (${itemUrl})${timeInfo}`;
     });
     
-    // Get stored message ID if exists
-    const messageIdKey = 'telegram_visit_message_id';
-    const storedMessageId = localStorage.getItem(messageIdKey);
-    const messageId = storedMessageId ? parseInt(storedMessageId, 10) : undefined;
-    
+    // Always send a new message (don't update existing)
     const response = await fetch('/api/telegram/track-visit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -221,17 +217,9 @@ async function trackVisitToTelegram(pagePath: string, pageTitle: string): Promis
         pageTitle,
         pageUrl: urlWithoutProtocol,
         previousPages,
-        messageId,
+        // Don't send messageId - always create new message
       }),
     });
-    
-    if (response.ok) {
-      const result = await response.json();
-      if (result.success && result.messageId) {
-        // Store message ID for future updates
-        localStorage.setItem(messageIdKey, result.messageId.toString());
-      }
-    }
   } catch (error) {
     // Silently fail - don't break the page if Telegram tracking fails
     if (process.env.NODE_ENV === 'development') {
