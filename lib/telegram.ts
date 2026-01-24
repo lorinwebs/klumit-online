@@ -9,49 +9,16 @@ const TELEGRAM_CHAT_IDS = process.env.TELEGRAM_CHAT_ID_KLUMIT?.split(',').map(id
 // Bot: @Klumit_enteres_bot
 const TELEGRAM_BOT_TOKEN_VISITS = process.env.TELEGRAM_BOT_TOKEN_VISITS || '8540786111:AAFP3pR0PW30KHz8YLAX97a0agQwm0K3nrM';
 
-// Get chat ID from bot updates (first message sent to bot)
-async function getChatIdFromBot(): Promise<string | null> {
-  if (!TELEGRAM_BOT_TOKEN_VISITS) return null;
-  
-  try {
-    const response = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN_VISITS}/getUpdates`,
-      { method: 'GET' }
-    );
-    
-    if (!response.ok) return null;
-    
-    const result = await response.json();
-    if (result.ok && result.result && result.result.length > 0) {
-      // Get the chat ID from the last update
-      const lastUpdate = result.result[result.result.length - 1];
-      const chatId = lastUpdate.message?.chat?.id || lastUpdate.channel_post?.chat?.id;
-      return chatId ? String(chatId) : null;
-    }
-    return null;
-  } catch (error) {
-    console.error('Failed to get chat ID from bot:', error);
-    return null;
-  }
-}
-
-// Cache chat ID to avoid repeated API calls
-let cachedChatId: string | null = null;
-
-async function getTelegramChatIdVisits(): Promise<string | null> {
-  // First try environment variable
+// Get chat IDs for visits tracking - uses existing TELEGRAM_CHAT_ID_KLUMIT
+// TELEGRAM_CHAT_ID_VISITS is optional - if set, uses it; otherwise uses TELEGRAM_CHAT_ID_KLUMIT
+function getTelegramChatIdsVisits(): string[] {
+  // First try dedicated environment variable (can be comma-separated)
   if (process.env.TELEGRAM_CHAT_ID_VISITS) {
-    return process.env.TELEGRAM_CHAT_ID_VISITS;
+    return process.env.TELEGRAM_CHAT_ID_VISITS.split(',').map(id => id.trim()).filter(id => id.length > 0);
   }
   
-  // Then try cached value
-  if (cachedChatId) {
-    return cachedChatId;
-  }
-  
-  // Finally, try to get from bot
-  cachedChatId = await getChatIdFromBot();
-  return cachedChatId;
+  // Use all chat IDs from TELEGRAM_CHAT_ID_KLUMIT (same as other notifications)
+  return TELEGRAM_CHAT_IDS;
 }
 
 interface TelegramMessage {
@@ -169,6 +136,7 @@ ${userInfo}${itemsInfo}${totalInfo}
 }
 
 // Track user visits - send or update message in Telegram
+// Sends to all chat IDs (like other notifications)
 export async function trackUserVisit(data: {
   sessionId: string;
   pagePath: string;
@@ -181,9 +149,9 @@ export async function trackUserVisit(data: {
     return { success: false };
   }
 
-  const chatId = await getTelegramChatIdVisits();
-  if (!chatId) {
-    console.warn('Telegram Visits: Could not get chat ID. Send a message to @Klumit_enteres_bot first.');
+  const chatIds = getTelegramChatIdsVisits();
+  if (chatIds.length === 0) {
+    console.warn('Telegram Visits: Could not get chat IDs. Make sure TELEGRAM_CHAT_ID_KLUMIT is set in .env.local');
     return { success: false };
   }
 
@@ -207,15 +175,18 @@ ${pagesList}
 🕐 ${time}
 🆔 Session: <code>${data.sessionId.substring(0, 8)}...</code>`;
 
-    // If we have a messageId, update the existing message
-    if (data.messageId) {
+    // If we have a messageId, update the existing message (only for first chat ID)
+    // Note: Each chat ID has its own messageId, so we can only update one
+    // For simplicity, we update the first one and send new messages to others
+    if (data.messageId && chatIds.length > 0) {
+      const firstChatId = chatIds[0];
       const response = await fetch(
         `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN_VISITS}/editMessageText`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            chat_id: chatId,
+            chat_id: firstChatId,
             message_id: data.messageId,
             text: message,
             parse_mode: 'HTML',
@@ -223,38 +194,66 @@ ${pagesList}
         }
       );
 
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        console.error('Telegram edit error:', response.status, errorText);
-        return { success: false };
+      if (response.ok) {
+        const result = await response.json();
+        // If there are more chat IDs, send new messages to them
+        if (chatIds.length > 1) {
+          const otherChatIds = chatIds.slice(1);
+          await Promise.all(
+            otherChatIds.map(async (chatId) => {
+              try {
+                await fetch(
+                  `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN_VISITS}/sendMessage`,
+                  {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      chat_id: chatId,
+                      text: message,
+                      parse_mode: 'HTML',
+                    }),
+                  }
+                );
+              } catch (e) {
+                // Silent fail for additional chat IDs
+              }
+            })
+          );
+        }
+        return { success: true, messageId: result.result?.message_id };
       }
-
-      const result = await response.json();
-      return { success: true, messageId: result.result?.message_id };
     }
 
-    // Otherwise, send a new message
-    const response = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN_VISITS}/sendMessage`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: message,
-          parse_mode: 'HTML',
-        }),
-      }
+    // Send new messages to all chat IDs
+    const results = await Promise.all(
+      chatIds.map(async (chatId) => {
+        const response = await fetch(
+          `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN_VISITS}/sendMessage`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: message,
+              parse_mode: 'HTML',
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'Unknown error');
+          console.error(`Telegram send error for ${chatId}:`, response.status, errorText);
+          return null;
+        }
+
+        const result = await response.json();
+        return result.result?.message_id;
+      })
     );
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      console.error('Telegram send error:', response.status, errorText);
-      return { success: false };
-    }
-
-    const result = await response.json();
-    return { success: true, messageId: result.result?.message_id };
+    // Return the first messageId (for updating later)
+    const firstMessageId = results.find(id => id !== null);
+    return { success: firstMessageId !== null, messageId: firstMessageId };
   } catch (error) {
     console.error('Telegram track visit error:', error);
     return { success: false };
