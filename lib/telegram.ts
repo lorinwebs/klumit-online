@@ -141,6 +141,7 @@ export async function trackUserVisit(data: {
   sessionId: string;
   pagePath: string;
   pageTitle: string;
+  pageUrl?: string;
   previousPages?: string[];
   messageId?: number;
 }): Promise<{ success: boolean; messageId?: number }> {
@@ -162,18 +163,19 @@ export async function trackUserVisit(data: {
 
     const currentPage = escapeHtml(data.pagePath);
     const currentTitle = escapeHtml(data.pageTitle);
+    const currentUrl = data.pageUrl ? escapeHtml(data.pageUrl) : currentPage;
     const time = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' });
 
     const message = `👤 <b>משתמש באתר</b>
 
 📍 <b>דף נוכחי:</b> ${currentTitle}
-🔗 ${currentPage}
+🔗 ${currentUrl}
 
 📋 <b>היסטוריית דפים:</b>
 ${pagesList}
 
 🕐 ${time}
-🆔 Session: <code>${data.sessionId.substring(0, 8)}...</code>`;
+🆔 Session: <code>${data.sessionId}</code>`;
 
     // If we have a messageId, update the existing message (only for first chat ID)
     // Note: Each chat ID has its own messageId, so we can only update one

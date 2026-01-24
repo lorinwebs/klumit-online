@@ -124,12 +124,12 @@ function getSessionId(): string {
 /**
  * Track page visit history
  */
-function getPageHistory(): Array<{ path: string; title: string }> {
+function getPageHistory(): Array<{ path: string; title: string; url?: string }> {
   if (typeof window === 'undefined') return [];
   
   const storageKey = 'telegram_visit_history';
   const historyStr = localStorage.getItem(storageKey);
-  const history: Array<{ path: string; title: string }> = historyStr ? JSON.parse(historyStr) : [];
+  const history: Array<{ path: string; title: string; url?: string }> = historyStr ? JSON.parse(historyStr) : [];
   
   // Keep only last 10 pages
   return history.slice(-10);
@@ -144,10 +144,14 @@ function updatePageHistory(pagePath: string, pageTitle: string): void {
   const storageKey = 'telegram_visit_history';
   const history = getPageHistory();
   
+  // Get full URL without protocol
+  const currentFullUrl = window.location.href;
+  const currentUrlWithoutProtocol = currentFullUrl.replace(/^https?:\/\//, '');
+  
   // Add current page if it's different from the last one
   const lastPage = history[history.length - 1];
   if (!lastPage || lastPage.path !== pagePath) {
-    history.push({ path: pagePath, title: pageTitle });
+    history.push({ path: pagePath, title: pageTitle, url: currentUrlWithoutProtocol });
     // Keep only last 10 pages
     const trimmedHistory = history.slice(-10);
     localStorage.setItem(storageKey, JSON.stringify(trimmedHistory));
@@ -163,9 +167,16 @@ async function trackVisitToTelegram(pagePath: string, pageTitle: string): Promis
   try {
     const sessionId = getSessionId();
     const history = getPageHistory();
-    const previousPages = history.map((item) => 
-      `${item.title} (${item.path})`
-    );
+    
+    // Get full URL without protocol for current page
+    const fullUrl = window.location.href;
+    const urlWithoutProtocol = fullUrl.replace(/^https?:\/\//, '');
+    
+    const previousPages = history.map((item) => {
+      // Use url if available, otherwise use path
+      const itemUrl = item.url || item.path;
+      return `${item.title} (${itemUrl})`;
+    });
     
     // Get stored message ID if exists
     const messageIdKey = 'telegram_visit_message_id';
@@ -179,6 +190,7 @@ async function trackVisitToTelegram(pagePath: string, pageTitle: string): Promis
         sessionId,
         pagePath,
         pageTitle,
+        pageUrl: urlWithoutProtocol,
         previousPages,
         messageId,
       }),

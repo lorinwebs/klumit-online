@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    const { sessionId, pagePath, pageTitle, previousPages, messageId } = body;
+    const { sessionId, pagePath, pageTitle, pageUrl, previousPages, messageId } = body;
 
     if (!sessionId || !pagePath) {
       return NextResponse.json(
@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
       sessionId,
       pagePath,
       pageTitle: pageTitle || pagePath,
+      pageUrl: pageUrl || pagePath,
       previousPages: previousPages || [],
       messageId,
     });
