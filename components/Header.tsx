@@ -144,17 +144,17 @@ export default function Header() {
             id="mobile-menu" 
             className="md:hidden border-t border-black/5 bg-white/95 backdrop-blur-sm absolute w-full left-0 top-full h-[calc(100dvh-100%)] z-50 overflow-y-auto pb-20"
         >
-          <div className="flex flex-col gap-8 pt-12 text-center px-8">
-            <Link href="/products?tab=bags" className={`text-sm tracking-[0.25em] uppercase font-light border-b border-black/5 pb-6 transition-opacity duration-300 ${isProductsPage && currentTab === 'bags' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} onClick={() => setMobileMenuOpen(false)}>
+          <div className="flex flex-col gap-0 pt-6 text-center px-8">
+            <Link href="/products?tab=bags" className={`text-sm tracking-[0.25em] uppercase font-light border-b border-black/5 py-4 transition-opacity duration-300 ${isProductsPage && currentTab === 'bags' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} onClick={() => setMobileMenuOpen(false)}>
               תיקים
             </Link>
-            <Link href="/products?tab=belts" className={`text-sm tracking-[0.25em] uppercase font-light border-b border-black/5 pb-6 transition-opacity duration-300 ${isProductsPage && currentTab === 'belts' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} onClick={() => setMobileMenuOpen(false)}>
+            <Link href="/products?tab=belts" className={`text-sm tracking-[0.25em] uppercase font-light border-b border-black/5 py-4 transition-opacity duration-300 ${isProductsPage && currentTab === 'belts' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} onClick={() => setMobileMenuOpen(false)}>
               חגורות
             </Link>
-            <Link href="/products?tab=wallets" className={`text-sm tracking-[0.25em] uppercase font-light border-b border-black/5 pb-6 transition-opacity duration-300 ${isProductsPage && currentTab === 'wallets' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} onClick={() => setMobileMenuOpen(false)}>
+            <Link href="/products?tab=wallets" className={`text-sm tracking-[0.25em] uppercase font-light border-b border-black/5 py-4 transition-opacity duration-300 ${isProductsPage && currentTab === 'wallets' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} onClick={() => setMobileMenuOpen(false)}>
               ארנקים
             </Link>
-            <Link href="/about" className={`text-sm tracking-[0.25em] uppercase font-light border-b border-black/5 pb-6 transition-opacity duration-300 ${pathname === '/about' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} onClick={() => setMobileMenuOpen(false)}>
+            <Link href="/about" className={`text-sm tracking-[0.25em] uppercase font-light border-b border-black/5 py-4 transition-opacity duration-300 ${pathname === '/about' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} onClick={() => setMobileMenuOpen(false)}>
               אודות
             </Link>
           </div>

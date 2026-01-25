@@ -20,10 +20,10 @@ export default function MembershipPopup() {
     // בדוק אם המשתמש כבר ראה את הפופ-אפ
     const hasSeenPopup = localStorage.getItem('hasSeenMembershipPopup');
     if (!hasSeenPopup) {
-      // הצג את הפופ-אפ אחרי עיכוב קצר
+      // הצג את הפופ-אפ אחרי 10 שניות
       const timer = setTimeout(() => {
         setIsOpen(true);
-      }, 1000);
+      }, 10000);
       return () => clearTimeout(timer);
     }
   }, [pathname]);
