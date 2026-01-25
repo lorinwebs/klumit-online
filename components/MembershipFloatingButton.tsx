@@ -109,7 +109,7 @@ export default function MembershipFloatingButton() {
 
   return (
     <>
-      <div className="fixed bottom-6 left-6 z-50 relative">
+      <div className="fixed left-4 bottom-6 md:left-6 z-50">
         <button
           onClick={() => setShowLoginModal(true)}
           className="bg-gradient-to-r from-[#8B6914] to-[#c9a962] text-white px-6 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex flex-col items-center gap-1 group relative pr-8"

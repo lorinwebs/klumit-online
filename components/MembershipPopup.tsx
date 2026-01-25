@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 import LoginModal from './LoginModal';
 
@@ -9,8 +9,14 @@ export default function MembershipPopup() {
   const [isOpen, setIsOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
+    // אל תציג את הפופ-אפ בדף מקיף ח'
+    if (pathname?.includes('/mekif-chet-2007-reunion')) {
+      return;
+    }
+    
     // בדוק אם המשתמש כבר ראה את הפופ-אפ
     const hasSeenPopup = localStorage.getItem('hasSeenMembershipPopup');
     if (!hasSeenPopup) {
@@ -20,7 +26,7 @@ export default function MembershipPopup() {
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [pathname]);
 
   const handleClose = () => {
     setIsOpen(false);
