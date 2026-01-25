@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { shopifyClient, PRODUCTS_QUERY } from '@/lib/shopify';
+import { useCartStore } from '@/store/cartStore';
+import { trackAddToCart } from '@/lib/analytics';
 
 interface Product {
   id: string;
@@ -23,6 +25,20 @@ interface Product {
       node: {
         url: string;
         altText: string | null;
+      };
+    }>;
+  };
+  variants?: {
+    edges: Array<{
+      node: {
+        id: string;
+        title: string;
+        price: {
+          amount: string;
+          currencyCode: string;
+        };
+        availableForSale: boolean;
+        quantityAvailable: number | null;
       };
     }>;
   };
@@ -138,6 +154,13 @@ function CategoryCarousel({
         e.stopPropagation();
         wasSwipe.current = true;
         
+        // שמור את המצב ב-element כדי שה-Link יוכל לבדוק
+        const element = e.currentTarget as HTMLElement;
+        (element as any).wasSwipe = true;
+        setTimeout(() => {
+          (element as any).wasSwipe = false;
+        }, 300);
+        
         if (distance > 0) {
           // Swipe left - next image
           setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
@@ -151,30 +174,37 @@ function CategoryCarousel({
           wasSwipe.current = false;
         }, 300);
       } else if (touchEndX.current === 0 || Math.abs(distance) < 10) {
-        // Tap (לא swipe) - החלף תמונה במובייל
-        e.preventDefault();
-        e.stopPropagation();
-        
+        // Tap (לא swipe) - תן ל-Link לעבוד (לא נמנע navigation)
+        // רק tap כפול יחליף תמונה
         const currentTime = Date.now();
         const timeDiff = currentTime - lastTapTime.current;
         
-        // אם זה tap כפול (פחות מ-300ms מהקודם), נווט לדף המוצר
+        // אם זה tap כפול (פחות מ-300ms מהקודם), החלף תמונה
         if (timeDiff < 300 && timeDiff > 0) {
-          // Double tap - navigate to product
+          // Double tap - change image
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // שמור את המצב ב-element כדי שה-Link יוכל לבדוק
+          const element = e.currentTarget as HTMLElement;
+          (element as any).wasDoubleTap = true;
+          setTimeout(() => {
+            (element as any).wasDoubleTap = false;
+          }, 300);
+          
           if (tapTimeout.current) {
             clearTimeout(tapTimeout.current);
             tapTimeout.current = null;
           }
           lastTapTime.current = 0;
-          router.push(`/products/${product.handle}`);
+          if (images.length > 1) {
+            setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+          }
           return;
         }
         
-        // Single tap - change image
+        // Single tap - תן ל-Link לעבוד (לא נמנע navigation)
         lastTapTime.current = currentTime;
-        if (images.length > 1) {
-          setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-        }
         
         // אם אין tap כפול תוך 300ms, נאפס
         tapTimeout.current = setTimeout(() => {
@@ -190,19 +220,6 @@ function CategoryCarousel({
       touchEndX.current = 0;
     };
 
-    const handleClick = (e: React.MouseEvent) => {
-      // אם היה swipe, לא נכנס לדף המוצר
-      if (wasSwipe.current) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-      // בדסקטופ בלבד - נווט לדף המוצר
-      // במובייל - tap מטופל ב-handleTouchEnd
-      if (typeof window !== 'undefined' && window.innerWidth >= 768) {
-        router.push(`/products/${product.handle}`);
-      }
-    };
 
     const handleMouseEnter = () => {
       if (images.length > 1) {
@@ -212,21 +229,21 @@ function CategoryCarousel({
 
     return (
       <div 
+        data-carousel
         className="relative w-full h-full"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onMouseEnter={handleMouseEnter}
-        onClick={handleClick}
-        style={{ WebkitTapHighlightColor: 'transparent' }}
+        style={{ WebkitTapHighlightColor: 'transparent', pointerEvents: 'auto' }}
       >
         {/* Image Container */}
-        <div className="relative w-full h-full">
+        <div className="relative w-full h-full pointer-events-none">
           <Image
             src={images[currentImageIndex].node.url}
             alt={images[currentImageIndex].node.altText || product.title}
             fill
-            className="object-cover transition-opacity duration-300"
+            className="object-cover transition-opacity duration-300 pointer-events-none"
             sizes="(max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
             loading="lazy"
           />
@@ -234,7 +251,7 @@ function CategoryCarousel({
 
         {/* Image Dots Indicator - minimal */}
         {images.length > 1 && (
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-10 flex gap-0.5">
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-10 flex gap-0.5 pointer-events-none">
             {images.map((_, index) => (
               <div
                 key={index}
@@ -264,6 +281,132 @@ function CategoryCarousel({
   // Show first 12 products in compact grid
   const displayProducts = products.slice(0, 12);
 
+  // Product Card Component with Add to Cart
+  function ProductCard({ product, index }: { product: Product; index: number }) {
+    const addItem = useCartStore((state) => state.addItem);
+    const [isAdding, setIsAdding] = useState(false);
+    const [showToast, setShowToast] = useState(false);
+    
+    // Get first available variant or first variant
+    const firstVariant = product.variants?.edges?.[0]?.node;
+    const availableVariant = product.variants?.edges?.find(v => v.node.availableForSale)?.node || firstVariant;
+    const firstImage = product.images.edges[0]?.node;
+    
+    const handleAddToCart = async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (!availableVariant || !availableVariant.availableForSale || isAdding) {
+        return;
+      }
+      
+      setIsAdding(true);
+      
+      try {
+        await addItem({
+          id: availableVariant.id,
+          variantId: availableVariant.id,
+          title: product.title,
+          price: availableVariant.price.amount,
+          currencyCode: availableVariant.price.currencyCode,
+          image: firstImage?.url || '',
+          available: availableVariant.availableForSale,
+          quantityAvailable: availableVariant.quantityAvailable,
+          handle: product.handle,
+          variantTitle: availableVariant.title,
+        });
+        
+        // Track add to cart
+        trackAddToCart({
+          id: availableVariant.id,
+          name: product.title,
+          price: parseFloat(availableVariant.price.amount),
+          currency: availableVariant.price.currencyCode,
+          variant: availableVariant.title,
+          quantity: 1,
+        });
+        
+        // Show toast
+        setShowToast(true);
+        setTimeout(() => {
+          setShowToast(false);
+        }, 2000);
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+      } finally {
+        setTimeout(() => {
+          setIsAdding(false);
+        }, 500);
+      }
+    };
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.4, delay: index * 0.05 }}
+        className="group relative"
+      >
+        <div className="block">
+          {/* Product Image - Smaller */}
+          <Link 
+            href={`/products/${product.handle}`} 
+            className="relative aspect-[3/4] bg-[#fafafa] overflow-hidden mb-1 group-hover:opacity-90 transition-opacity duration-300 block"
+            onClick={(e) => {
+              // אם היה swipe או tap כפול, אל תעבור לדף המוצר
+              const carouselDiv = e.currentTarget.querySelector('[data-carousel]') as HTMLElement;
+              if (carouselDiv && ((carouselDiv as any).wasSwipe || (carouselDiv as any).wasDoubleTap)) {
+                e.preventDefault();
+              }
+            }}
+          >
+            <ProductImageCarousel product={product} />
+            
+            {/* Add to Cart Button - Overlay */}
+            {availableVariant && availableVariant.availableForSale && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleAddToCart(e);
+                }}
+                disabled={isAdding}
+                className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-[#1a1a1a] text-white px-3 md:px-4 py-1.5 md:py-2 text-[9px] md:text-[10px] tracking-luxury uppercase font-light hover:bg-[#2a2a2a] active:bg-[#3a3a3a] transition-all duration-300 opacity-0 group-hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation whitespace-nowrap rounded-sm z-20"
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+                aria-label="הוסף לעגלה"
+              >
+                {isAdding ? 'מוסיף...' : 'הוסף לעגלה'}
+              </button>
+            )}
+          </Link>
+
+          {/* Product Info - Compact */}
+          <Link href={`/products/${product.handle}`} className="block space-y-1.5 text-center">
+            <h3 className="text-[10px] md:text-xs font-light text-[#1a1a1a] group-hover:text-gray-600 transition-colors line-clamp-2">
+              {product.title}
+            </h3>
+            <p className="text-[10px] md:text-xs font-light text-gray-500">
+              ₪{formatPrice(product.priceRange.minVariantPrice.amount)}
+            </p>
+          </Link>
+        </div>
+        
+        {/* Toast Notification */}
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1a1a1a] text-white px-3 py-2 text-[10px] rounded z-20 pointer-events-none"
+          >
+            נוסף לעגלה
+          </motion.div>
+        )}
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
@@ -290,31 +433,11 @@ function CategoryCarousel({
       <div className="px-4 md:px-8">
         <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1 md:gap-2">
           {displayProducts.map((product, index) => (
-            <motion.div
+            <ProductCard 
               key={product.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: index * 0.05 }}
-              className="group"
-            >
-              <div className="block">
-                {/* Product Image - Smaller */}
-                <div className="relative aspect-[3/4] bg-[#fafafa] overflow-hidden mb-1 group-hover:opacity-90 transition-opacity duration-300">
-                  <ProductImageCarousel product={product} />
-                </div>
-
-                {/* Product Info - Compact */}
-                <Link href={`/products/${product.handle}`} className="block space-y-1.5 text-center">
-                  <h3 className="text-[10px] md:text-xs font-light text-[#1a1a1a] group-hover:text-gray-600 transition-colors line-clamp-2">
-                    {product.title}
-                  </h3>
-                  <p className="text-[10px] md:text-xs font-light text-gray-500">
-                    ₪{formatPrice(product.priceRange.minVariantPrice.amount)}
-                  </p>
-                </Link>
-              </div>
-            </motion.div>
+              product={product}
+              index={index}
+            />
           ))}
         </div>
       </div>
