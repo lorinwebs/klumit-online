@@ -29,11 +29,6 @@ export default function MembershipFloatingButton() {
       }
     }, 2 * 60 * 1000); // 2 דקות
 
-    return () => {
-      clearTimeout(timer);
-    };
-  }, []);
-
     const checkUser = async () => {
       if (!isMounted) return;
       
@@ -90,6 +85,7 @@ export default function MembershipFloatingButton() {
 
     return () => {
       isMounted = false;
+      clearTimeout(timer);
       subscription.unsubscribe();
     };
   }, []);
