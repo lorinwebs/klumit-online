@@ -453,7 +453,6 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       ? window.location.href 
       : `https://www.klumit-online.co.il/products/${product.handle}`;
     const text = `${product.title} - ₪${price}\n${productUrl}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     
     // Send notification to Telegram
     try {
@@ -471,19 +470,58 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       console.warn('Failed to send WhatsApp share notification:', error);
     }
     
-    // For mobile: use location.href directly (more reliable than window.open)
-    // For desktop: try window.open, fallback to location.href if blocked
     if (typeof window !== 'undefined') {
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
-      if (isMobile) {
-        // On mobile, location.href works better and opens WhatsApp app directly
-        window.location.href = whatsappUrl;
+      // Try Web Share API first on mobile (opens WhatsApp directly with text)
+      if (isMobile && navigator.share) {
+        try {
+          await navigator.share({
+            title: product.title,
+            text: text,
+            url: productUrl,
+          });
+          return; // Success - Web Share API handled it
+        } catch (error: any) {
+          // User cancelled or share failed, fall through to WhatsApp URL
+          if (error.name === 'AbortError') {
+            return; // User cancelled, don't proceed
+          }
+        }
+      }
+      
+      // Fallback: Use WhatsApp URL scheme
+      // For iOS: whatsapp://send?text=...
+      // For Android: https://wa.me/?text=... (works better than intent://)
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      
+      let whatsappUrl: string;
+      if (isIOS) {
+        // iOS: Use whatsapp:// protocol to open app directly
+        whatsappUrl = `whatsapp://send?text=${encodeURIComponent(text)}`;
+      } else if (isAndroid) {
+        // Android: Use intent:// to open app directly, fallback to wa.me
+        whatsappUrl = `intent://send?text=${encodeURIComponent(text)}#Intent;scheme=whatsapp;package=com.whatsapp;end`;
       } else {
-        // On desktop, try window.open first
+        // Desktop: Use wa.me
+        whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      }
+      
+      // Try to open WhatsApp app directly
+      if (isMobile) {
+        window.location.href = whatsappUrl;
+        // Fallback after 2 seconds if app didn't open
+        setTimeout(() => {
+          // If still on page, open wa.me as fallback
+          if (document.visibilityState === 'visible') {
+            window.location.href = `https://wa.me/?text=${encodeURIComponent(text)}`;
+          }
+        }, 2000);
+      } else {
+        // Desktop: try window.open, fallback to location.href
         const newWindow = window.open(whatsappUrl, '_blank');
         if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-          // Popup blocked, use location.href instead
           window.location.href = whatsappUrl;
         }
       }
