@@ -22,11 +22,11 @@ export default function Toast({ show, message, showViewCart = true, type = 'succ
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -10, scale: 0.95 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50"
+          className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-50 px-4 max-w-[calc(100vw-2rem)]"
           role="alert"
           aria-live="polite"
         >
-          <div className={`${isWarning ? 'bg-amber-600' : 'bg-[#1a1a1a]'} text-white px-6 py-4 rounded-sm shadow-lg flex items-center gap-4 min-w-[280px]`}>
+          <div className={`${isWarning ? 'bg-amber-600' : 'bg-[#1a1a1a]'} text-white px-4 md:px-6 py-3 md:py-4 rounded-sm shadow-lg flex items-center gap-3 md:gap-4 min-w-[280px] max-w-full`}>
             <div className="flex-shrink-0" aria-hidden="true">
               {isWarning ? (
                 <AlertCircle size={18} className="text-white" />
@@ -34,13 +34,13 @@ export default function Toast({ show, message, showViewCart = true, type = 'succ
                 <Check size={18} className="text-white" />
               )}
             </div>
-            <span className="text-sm font-light tracking-luxury uppercase flex-grow">
+            <span className="text-sm font-light tracking-luxury uppercase flex-grow truncate">
               {message}
             </span>
             {showViewCart && !isWarning && (
               <Link
                 href="/cart"
-                className="text-xs font-light tracking-luxury uppercase underline underline-offset-2 hover:opacity-80 transition-opacity whitespace-nowrap"
+                className="text-xs font-light tracking-luxury uppercase underline underline-offset-2 hover:opacity-80 transition-opacity whitespace-nowrap flex-shrink-0"
                 onClick={(e) => e.stopPropagation()}
               >
                 צפה בעגלה
