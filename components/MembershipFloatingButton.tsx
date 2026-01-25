@@ -10,6 +10,7 @@ export default function MembershipFloatingButton() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [showButton, setShowButton] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -20,6 +21,18 @@ export default function MembershipFloatingButton() {
     if (dismissed === 'true') {
       setIsDismissed(true);
     }
+
+    // עיכוב של 2 דקות לפני הצגת הכפתור
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        setShowButton(true);
+      }
+    }, 2 * 60 * 1000); // 2 דקות
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, []);
 
     const checkUser = async () => {
       if (!isMounted) return;
@@ -102,8 +115,8 @@ export default function MembershipFloatingButton() {
     }
   };
 
-  // אם המשתמש מחובר, עדיין בודקים, או שהכפתור נסגר - אל תציג את הכפתור
-  if (isLoggedIn === null || isLoggedIn || isDismissed) {
+  // אם המשתמש מחובר, עדיין בודקים, הכפתור נסגר, או שעדיין לא עברו 2 דקות - אל תציג את הכפתור
+  if (isLoggedIn === null || isLoggedIn || isDismissed || !showButton) {
     return null;
   }
 
