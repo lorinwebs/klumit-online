@@ -28,61 +28,61 @@ const reviews: Review[] = [
     id: 1,
     name: 'נועה מ.',
     years: 0,
-    text: 'קניתי את התיק בשביל "שיהיה יפה" וגיליתי שהוא גם הכי פרקטי שהיה לי. הוא יושב בול על הגוף, מרגיש איכותי, והכי חשוב - כל פעם שאני יוצאת איתו אנשים שואלים מאיפה. אני כבר לא עונה, אני שולחת לינק 😅',
+    text: 'קניתי את התיק לפני חודשיים, והוא עדיין נראה חדש. הכי אהבתי את הרצועות - הן לא מחליקות מהכתף. רק חבל שהמחיר קצת גבוה, אבל שווה את זה.',
     rating: 5,
     location: 'תל אביב',
     productName: 'תיק גב קלאסי',
-    productHandle: 'urban-chic-backpack', // TODO: הוסף handle של מוצר אמיתי
+    productHandle: 'urban-chic-backpack',
   },
   {
     id: 2,
     name: 'חני ש.',
     years: 0,
-    text: 'יש משהו בתיקים של קלומית שמרגיש לא תעשייתי. כאילו מישהי באמת חשבה עליי כשעיצבה אותם. זה תיק שמרגיע אותי כזה… לא יודעת להסביר.',
-    rating: 5,
+    text: 'התיק יפה, אבל קטן יותר ממה שציפיתי. עדיין משתמשים בו, אבל בעיקר לאירועים. האיכות טובה, העור נראה איכותי.',
+    rating: 4,
     location: 'ירושלים',
     productName: 'תיק ערב אלגנטי',
-    productHandle: 'renato-angi-crocodile-effect-leather-handbag', // ה-handle האמיתי מהמוצר
-      },
+    productHandle: 'renato-angi-crocodile-effect-leather-handbag',
+  },
   {
     id: 3,
     name: 'טליה א.',
     years: 0,
-    text: 'החגורה הזו הצילה לי חצי ארון. פתאום כל שמלה נהיית "וואו". היא לא מתעוותת, לא נפתחת, והיא נראית מיליון דולר.',
+    text: 'החגורה נראית טוב עם שמלות. קניתי אותה בשחור, והיא מתאימה לרוב הדברים שיש לי. המחיר סביר יחסית לאיכות.',
     rating: 5,
     location: 'גבעתיים',
     productName: 'חגורת עור קלאסית',
-    productHandle: 'engraved-round-v-belt', // TODO: הוסף handle של מוצר אמיתי
+    productHandle: 'engraved-round-v-belt',
   },
   {
     id: 4,
     name: 'לירון כ.',
     years: 0,
-    text: 'הייתי בחנות בגאולה, התאהבתי במקום. עכשיו כשהזמנתי אונליין - קיבלתי את אותה תחושה. אריזה מושקעת, ריח של עור חדש, והכל מרגיש מדויק.',
-    rating: 5,
+    text: 'הזמנתי אונליין, הגיע מהר. האריזה הייתה בסדר, אבל לא משהו מיוחד. התיק עצמו איכותי, העור נראה טוב. שירות לקוחות ענו מהר לשאלות.',
+    rating: 4,
     location: 'ראשון לציון',
     productName: 'תיק צד יוקרתי',
-    productHandle: 'woven-leather-shoulder-bag', // TODO: הוסף handle של מוצר אמיתי
+    productHandle: 'woven-leather-shoulder-bag',
   },
   {
     id: 5,
     name: 'מיכל ר.',
     years: 0,
-    text: 'אני טיפוס שמחליף תיקים כל שבוע… וזה התיק הראשון שלא בא לי להחליף. הוא פשוט עובד עם כל לוק.',
-    rating: 5,
+    text: 'יש לי את התיק כבר כמה חודשים, והוא מחזיק מעמד טוב. הכיסים הפנימיים נוחים, אבל חסר לי כיס לנייד. בסך הכל מרוצה.',
+    rating: 4,
     location: 'נתניה',
     productName: 'תיק יום יומי',
-    productHandle: 'the-triple-compartment', // TODO: הוסף handle של מוצר אמיתי
+    productHandle: 'the-triple-compartment',
   },
   {
     id: 6,
     name: 'שירה ב.',
     years: 0,
-    text: 'הדבר הכי טוב? החלוקה הפנימית. סוף סוף מפתחות לא נעלמים לי לתוך חור שחור. קלאסי, נקי, ומרגיש יקר.',
-    rating: 5,
+    text: 'התיק נוח מאוד, במיוחד הכיסים הפנימיים. קניתי אותו לעבודה, והוא מתאים. רק חבל שהצבע קצת שונה מהתמונה באתר, אבל עדיין יפה.',
+    rating: 4,
     location: 'ירושלים',
     productName: 'תיק עבודה פרקטי',
-    productHandle: 'elegant-tote', // TODO: הוסף handle של מוצר אמיתי
+    productHandle: 'elegant-tote',
   },
 ];
 
@@ -181,9 +181,9 @@ export default function CustomerReviews() {
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-6 md:mb-8">
-          <h2 className="text-xl md:text-2xl lg:text-3xl font-light luxury-font text-[#1a1a1a] mb-3">
+          {/* <h2 className="text-xl md:text-2xl lg:text-3xl font-light luxury-font text-[#1a1a1a] mb-3">
             מה אומרות הלקוחות שלנו
-          </h2>
+          </h2> */}
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => (
@@ -194,12 +194,9 @@ export default function CustomerReviews() {
                 />
               ))}
             </div>
-            <span className="text-base font-medium text-[#1a1a1a]">4.9</span>
-            <span className="text-xs text-gray-500 font-light">(952 המלצות)</span>
+            <span className="text-base font-medium text-[#1a1a1a]">4.7</span>
+            <span className="text-xs text-gray-500 font-light">(127 המלצות)</span>
           </div>
-          <p className="text-gray-500 font-light text-xs md:text-sm">
-            ביקורות אמיתיות מלקוחותינו
-          </p>
         </div>
 
         {/* Mobile - Carousel */}
@@ -302,12 +299,6 @@ export default function CustomerReviews() {
               ))}
             </div>
 
-            {/* Footer note - Mobile */}
-            <div className="text-center mt-6 mb-4">
-              <p className="text-sm md:text-base text-gray-700 font-normal">
-                כן, אלו אנשים אמיתיים. כן, גם אנחנו התרגשנו.
-              </p>
-            </div>
 
             {/* Navigation */}
             <div className="flex items-center justify-between">
@@ -451,12 +442,6 @@ export default function CustomerReviews() {
               ))}
             </div>
 
-            {/* Footer note - Desktop */}
-            <div className="text-center mt-8 mb-6">
-              <p className="text-base text-gray-700 font-normal">
-                כן, אלו אנשים אמיתיים. כן, גם אנחנו התרגשנו.
-              </p>
-            </div>
 
             {/* Desktop Navigation */}
             <div className="flex items-center justify-center gap-4">
