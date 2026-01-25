@@ -81,6 +81,21 @@ export function escapeHtml(text: string): string {
     .replace(/>/g, '&gt;');
 }
 
+// Helper to break URLs with spaces so Telegram doesn't recognize them as links
+export function breakUrlForTelegram(url: string): string {
+  // Remove protocol if exists
+  let urlWithoutProtocol = url.replace(/^https?:\/\//, '');
+  
+  // Break common domains with spaces to prevent Telegram link preview
+  urlWithoutProtocol = urlWithoutProtocol
+    .replace(/klumit-online\.co\.il/gi, 'klumit-online. co . il')
+    .replace(/klumit-online\.vercel\.app/gi, 'klumit-online. vercel . app')
+    .replace(/klumit\.vercel\.app/gi, 'klumit. vercel . app')
+    .replace(/www\.klumit-online\.co\.il/gi, 'www. klumit-online. co . il');
+  
+  return urlWithoutProtocol;
+}
+
 // Notification for new user registration
 export async function notifyNewUser(phone: string, userId: string): Promise<boolean> {
   const message = `🆕 <b>משתמש חדש נרשם!</b>
@@ -143,15 +158,15 @@ export async function notifyWhatsAppShare(data: {
   productUrl: string;
   productPrice?: string;
 }): Promise<boolean> {
-  // Get URL without protocol
-  const urlWithoutProtocol = data.productUrl.replace(/^https?:\/\//, '');
+  // Break URL with spaces so Telegram doesn't recognize it as a link
+  const urlBroken = breakUrlForTelegram(data.productUrl);
   
   const priceInfo = data.productPrice ? `\n💰 מחיר: <b>${escapeHtml(data.productPrice)}</b>` : '';
   
   const message = `📱 <b>משתמש שיתף מוצר בוואטסאפ</b>
 
 📦 מוצר: ${escapeHtml(data.productTitle)}${priceInfo}
-🔗 ${escapeHtml(urlWithoutProtocol)}
+🔗 ${escapeHtml(urlBroken)}
 📅 תאריך: ${new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}`;
 
   return sendTelegramMessage(message);
@@ -185,7 +200,9 @@ export async function trackUserVisit(data: {
 
     const currentPage = escapeHtml(data.pagePath);
     const currentTitle = escapeHtml(data.pageTitle);
-    const currentUrl = data.pageUrl ? escapeHtml(data.pageUrl) : currentPage;
+    const currentUrl = data.pageUrl 
+      ? escapeHtml(breakUrlForTelegram(data.pageUrl)) 
+      : currentPage;
     const time = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' });
 
     const message = `👤 <b>משתמש באתר</b>

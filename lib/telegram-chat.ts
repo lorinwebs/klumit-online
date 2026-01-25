@@ -1,4 +1,4 @@
-import { escapeHtml } from './telegram';
+import { escapeHtml, breakUrlForTelegram } from './telegram';
 
 const TELEGRAM_CHAT_BOT_TOKEN = process.env.TELEGRAM_CHAT_BOT_TOKEN_KLUMIT;
 const TELEGRAM_CHAT_IDS_RAW = process.env.TELEGRAM_CHAT_ID_KLUMIT || '';
@@ -91,12 +91,15 @@ export async function sendChatMessage(data: {
       }
     }
 
+    // Break URL with spaces so Telegram doesn't recognize it as a link
+    const pageUrlBroken = pageUrlDisplay !== 'לא צוין' ? breakUrlForTelegram(pageUrlDisplay) : 'לא צוין';
+    
     const messageText = `💬 <b>הודעה חדשה משיחה #${escapeHtml(data.conversationId.slice(0, 8))}</b>
 
 👤 משתמש: ${data.userName ? escapeHtml(data.userName) : 'לא צוין'}
 📱 טלפון: ${data.userPhone ? `<code>${escapeHtml(data.userPhone)}</code>` : 'לא צוין'}
 📧 אימייל: ${data.userEmail ? escapeHtml(data.userEmail) : 'לא צוין'}
-🔗 עמוד: ${escapeHtml(pageUrlDisplay)}
+🔗 עמוד: ${escapeHtml(pageUrlBroken)}
 
 ${escapeHtml(data.message)}`;
 
