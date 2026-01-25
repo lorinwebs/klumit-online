@@ -311,7 +311,7 @@ function CategoryCarousel({
           currencyCode: availableVariant.price.currencyCode,
           image: firstImage?.url || '',
           available: availableVariant.availableForSale,
-          quantityAvailable: availableVariant.quantityAvailable,
+          quantityAvailable: availableVariant.quantityAvailable ?? undefined,
           handle: product.handle,
           variantTitle: availableVariant.title,
         });
