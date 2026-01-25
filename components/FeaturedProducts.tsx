@@ -98,6 +98,8 @@ function CategoryCarousel({
     const touchStartX = useRef<number>(0);
     const touchEndX = useRef<number>(0);
     const wasSwipe = useRef<boolean>(false);
+    const lastTapTime = useRef<number>(0);
+    const tapTimeout = useRef<NodeJS.Timeout | null>(null);
     const images = product.images.edges;
 
     if (images.length === 0) {
@@ -127,17 +129,10 @@ function CategoryCarousel({
         return;
       }
       
-      if (touchEndX.current === 0) {
-        // אם אין תנועה, זה tap - תן ל-click לעבוד
-        touchStartX.current = 0;
-        wasSwipe.current = false;
-        return;
-      }
-      
       const distance = touchStartX.current - touchEndX.current;
       const minSwipeDistance = 50;
 
-      // רק אם זה swipe משמעותי, נשנה תמונה ונמנע navigation
+      // אם זה swipe משמעותי, נשנה תמונה ונמנע navigation
       if (Math.abs(distance) > minSwipeDistance) {
         e.preventDefault();
         e.stopPropagation();
@@ -155,6 +150,36 @@ function CategoryCarousel({
         setTimeout(() => {
           wasSwipe.current = false;
         }, 300);
+      } else if (touchEndX.current === 0 || Math.abs(distance) < 10) {
+        // Tap (לא swipe) - החלף תמונה במובייל
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const currentTime = Date.now();
+        const timeDiff = currentTime - lastTapTime.current;
+        
+        // אם זה tap כפול (פחות מ-300ms מהקודם), נווט לדף המוצר
+        if (timeDiff < 300 && timeDiff > 0) {
+          // Double tap - navigate to product
+          if (tapTimeout.current) {
+            clearTimeout(tapTimeout.current);
+            tapTimeout.current = null;
+          }
+          lastTapTime.current = 0;
+          router.push(`/products/${product.handle}`);
+          return;
+        }
+        
+        // Single tap - change image
+        lastTapTime.current = currentTime;
+        if (images.length > 1) {
+          setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+        }
+        
+        // אם אין tap כפול תוך 300ms, נאפס
+        tapTimeout.current = setTimeout(() => {
+          lastTapTime.current = 0;
+        }, 300);
       } else {
         // אם אין swipe - נאפס מיד כדי שה-click יעבוד
         wasSwipe.current = false;
@@ -165,13 +190,18 @@ function CategoryCarousel({
       touchEndX.current = 0;
     };
 
-    const handleClick = () => {
+    const handleClick = (e: React.MouseEvent) => {
       // אם היה swipe, לא נכנס לדף המוצר
       if (wasSwipe.current) {
+        e.preventDefault();
+        e.stopPropagation();
         return;
       }
-      // אחרת - נווט לדף המוצר
-      router.push(`/products/${product.handle}`);
+      // בדסקטופ בלבד - נווט לדף המוצר
+      // במובייל - tap מטופל ב-handleTouchEnd
+      if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+        router.push(`/products/${product.handle}`);
+      }
     };
 
     const handleMouseEnter = () => {
@@ -218,6 +248,13 @@ function CategoryCarousel({
             ))}
           </div>
         )}
+        
+        {/* Mobile tap hint */}
+        {images.length > 1 && (
+          <div className="absolute top-1 right-1 md:hidden z-10 bg-black/50 text-white text-[8px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            {images.length} תמונות
+          </div>
+        )}
       </div>
     );
   }
@@ -261,22 +298,22 @@ function CategoryCarousel({
               transition={{ duration: 0.4, delay: index * 0.05 }}
               className="group"
             >
-              <Link href={`/products/${product.handle}`} className="block">
+              <div className="block">
                 {/* Product Image - Smaller */}
                 <div className="relative aspect-[3/4] bg-[#fafafa] overflow-hidden mb-1 group-hover:opacity-90 transition-opacity duration-300">
                   <ProductImageCarousel product={product} />
                 </div>
 
                 {/* Product Info - Compact */}
-                <div className="space-y-1.5 text-center">
+                <Link href={`/products/${product.handle}`} className="block space-y-1.5 text-center">
                   <h3 className="text-[10px] md:text-xs font-light text-[#1a1a1a] group-hover:text-gray-600 transition-colors line-clamp-2">
                     {product.title}
                   </h3>
                   <p className="text-[10px] md:text-xs font-light text-gray-500">
                     ₪{formatPrice(product.priceRange.minVariantPrice.amount)}
                   </p>
-                </div>
-              </Link>
+                </Link>
+              </div>
             </motion.div>
           ))}
         </div>
