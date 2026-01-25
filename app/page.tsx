@@ -3,7 +3,7 @@ import Footer from '@/components/Footer';
 import Hero from '@/components/Hero';
 import ValueProps from '@/components/ValueProps';
 import FeaturedProducts from '@/components/FeaturedProducts';
-import CustomerReviews from '@/components/CustomerReviews';
+// import CustomerReviews from '@/components/CustomerReviews';
 import InstagramFeed from '@/components/InstagramFeed';
 import type { Metadata } from 'next';
 
@@ -23,7 +23,7 @@ export default function Home() {
         <Hero />
         <ValueProps />
         <FeaturedProducts />
-        <CustomerReviews />
+        {/* <CustomerReviews /> */}
         <InstagramFeed />
       </main>
       <Footer />
