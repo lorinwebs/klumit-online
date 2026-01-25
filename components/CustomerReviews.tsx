@@ -170,9 +170,9 @@ export default function CustomerReviews() {
   };
 
   return (
-    <section className="py-12 md:py-16 bg-[#fdfcfb]">
+    <section className="py-8 md:py-12 bg-[#fdfcfb]">
       {/* Divider */}
-      <div className="flex items-center justify-center mb-8 md:mb-12 px-8">
+      <div className="flex items-center justify-center mb-6 md:mb-8 px-8">
         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
         <span className="px-6 text-xs tracking-[0.3em] uppercase text-gray-400">◆</span>
         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
@@ -180,24 +180,24 @@ export default function CustomerReviews() {
 
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-8 md:mb-12">
-          <h2 className="text-2xl md:text-4xl font-light luxury-font text-[#1a1a1a] mb-4">
+        <div className="text-center mb-6 md:mb-8">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-light luxury-font text-[#1a1a1a] mb-3">
             מה אומרות הלקוחות שלנו
           </h2>
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <div className="flex items-center gap-1">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <div className="flex items-center gap-0.5">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
-                  size={20}
+                  size={16}
                   className="fill-amber-400 text-amber-400"
                 />
               ))}
             </div>
-            <span className="text-lg font-medium text-[#1a1a1a]">4.9</span>
-            <span className="text-sm text-gray-500 font-light">(952 המלצות)</span>
+            <span className="text-base font-medium text-[#1a1a1a]">4.9</span>
+            <span className="text-xs text-gray-500 font-light">(952 המלצות)</span>
           </div>
-          <p className="text-gray-500 font-light text-sm md:text-base">
+          <p className="text-gray-500 font-light text-xs md:text-sm">
             ביקורות אמיתיות מלקוחותינו
           </p>
         </div>

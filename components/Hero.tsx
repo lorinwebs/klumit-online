@@ -6,40 +6,21 @@ import Link from 'next/link';
 
 export default function Hero() {
   return (
-    <section className="relative w-full h-[60vh] md:h-[65vh] min-h-[350px] landscape:min-h-[80svh] overflow-hidden">
-      {/* Full-width Background Image - LCP element - Loaded first, outside LazyMotion */}
-      <Image
-        src="/coverimage.jpeg"
-        alt="קלומית - מוצרי עור מאיטליה"
-        fill
-        className="object-cover"
-        priority
-        fetchPriority="high"
-        quality={85}
-        sizes="100vw"
-        loading="eager"
-        placeholder="blur"
-        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAMH/8QAIhAAAgEDBAMBAAAAAAAAAAAAAQIRAAMEBRIhMQYTQVH/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8A0G7c2I20AAeiImpUqD/9k="
-      />
-      
-      {/* Warm Light Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/10 to-black/25" />
-      
-      {/* Content - Wrapped in LazyMotion for animations only */}
-      <LazyMotion features={domAnimation} strict>
-        <div className="absolute inset-0 flex items-center justify-center focus-light">
+    <>
+      {/* Text Section - Separate */}
+      <section className="w-full bg-[#fdfcfb] py-4 md:py-6 pb-2 md:pb-3">
+        <LazyMotion features={domAnimation} strict>
           <m.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: 'easeOut' }}
-            className="text-center text-white px-4"
-            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8), 0 4px 12px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4)' }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            className="text-center px-6 py-2 md:px-10 md:py-3 max-w-4xl mx-auto"
           >
             <m.h1 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
-              className="text-3xl md:text-5xl lg:text-6xl mb-4 font-light tracking-luxury leading-tight luxury-font"
+              transition={{ delay: 0.1, duration: 0.7 }}
+              className="text-3xl md:text-4xl lg:text-5xl mb-1 font-bold tracking-luxury leading-tight luxury-font bg-gradient-to-r from-[#8B6914] via-[#c9a962] to-[#8B6914] bg-clip-text text-transparent"
             >
               קלומית אונליין
             </m.h1>
@@ -47,72 +28,61 @@ export default function Hero() {
             {/* Mobile Layout */}
             <div className="md:hidden">
               <m.p 
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.8 }}
-                className="text-lg font-light leading-relaxed"
+                transition={{ delay: 0.2, duration: 0.7 }}
+                className="text-sm font-bold leading-tight whitespace-nowrap text-[#4a4a4a]"
               >
-                יבואני תיקים ארנקים וחגורות מאיטליה
+                יבואני תיקים ארנקים וחגורות מאיטליה • משנת 1984
               </m.p>
               <m.p 
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.45, duration: 0.8 }}
-                className="text-lg font-light leading-relaxed mb-3"
+                transition={{ delay: 0.25, duration: 0.7 }}
+                className="text-xs font-bold text-[#6a6a6a] mt-0.5"
               >
-                משנת 1984
-              </m.p>
-              <m.p 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.8 }}
-                className="text-base font-light opacity-90"
-              >
-                יבואנים בלעדיים של
-              </m.p>
-              <m.p 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.55, duration: 0.8 }}
-                className="text-lg font-light opacity-90 mb-10"
-              >
-                <strong>Renato Angi Venezia</strong> ו-<strong>Carlino Group</strong>
+                יבואנים בלעדיים של <strong className="text-[#8B6914]">Renato Angi Venezia</strong> ו-<strong className="text-[#8B6914]">Carlino Group</strong>
               </m.p>
             </div>
             
             {/* Desktop Layout */}
             <m.p 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.8 }}
-              className="hidden md:block text-xl lg:text-2xl mb-3 font-light leading-relaxed"
+              transition={{ delay: 0.2, duration: 0.7 }}
+              className="hidden md:block text-base lg:text-lg font-bold leading-tight text-[#4a4a4a]"
             >
-              יבואני תיקים ארנקים וחגורות מאיטליה - משנת 1984
+              יבואני תיקים ארנקים וחגורות מאיטליה • משנת 1984
             </m.p>
             <m.p 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
-              className="hidden md:block text-xl lg:text-2xl mb-10 font-light opacity-90"
+              transition={{ delay: 0.25, duration: 0.7 }}
+              className="hidden md:block text-sm lg:text-base font-bold text-[#6a6a6a] mt-0.5"
             >
-              יבואנים בלעדיים של <strong>Renato Angi Venezia</strong> ו-<strong>Carlino Group</strong>
+              יבואנים בלעדיים של <strong className="text-[#8B6914]">Renato Angi Venezia</strong> ו-<strong className="text-[#8B6914]">Carlino Group</strong>
             </m.p>
-            <m.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.8 }}
-            >
-              <Link
-                href="/products"
-                className="inline-block bg-white text-[#1a1a1a] px-12 py-4 text-sm tracking-luxury hover:bg-[#c9a962] hover:text-white transition-luxury uppercase font-medium shadow-lg"
-                style={{ textShadow: 'none' }}
-              >
-                לצפייה בקולקציה
-              </Link>
-            </m.div>
           </m.div>
-        </div>
-      </LazyMotion>
-    </section>
+        </LazyMotion>
+      </section>
+
+      {/* Image Section - Separate */}
+      <section className="relative w-full h-[30vh] md:h-[35vh] min-h-[200px] overflow-hidden">
+        <Image
+          src="/coverimage.jpeg"
+          alt="קלומית - מוצרי עור מאיטליה"
+          fill
+          className="object-cover object-center"
+          priority
+          fetchPriority="high"
+          quality={85}
+          sizes="100vw"
+          loading="eager"
+          placeholder="blur"
+          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAMH/8QAIhAAAgEDBAMBAAAAAAAAAAAAAQIRAAMEBRIhMQYTQVH/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8A0G7c2I20AAeiImpUqD/9k="
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/5 to-black/15" />
+      </section>
+    </>
   );
 }

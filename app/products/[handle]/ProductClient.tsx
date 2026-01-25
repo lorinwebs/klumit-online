@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, X, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import Toast from '@/components/Toast';
 import ProductCard from '@/components/ProductCard';
+import Tooltip from '@/components/Tooltip';
 import { trackProductViewed, trackAddToCart } from '@/lib/analytics';
 
 interface Product {
@@ -66,6 +67,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const [showStockToast, setShowStockToast] = useState(false);
   const [stockMessage, setStockMessage] = useState('');
   const [showFloatingCart, setShowFloatingCart] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [relatedProducts] = useState<Product[]>(initialRelatedProducts);
   const addItem = useCartStore((state) => state.addItem);
   const items = useCartStore((state) => state.items);
@@ -217,8 +219,13 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       
       // Set initial image from variant if available
       if (firstVariant.image?.url) {
-        setSelectedImage(firstVariant.image.url);
-        setCurrentImageIndex(0);
+        const variantImageUrl = firstVariant.image.url;
+        setSelectedImage(variantImageUrl);
+        // Find the index in filteredImages
+        const imageIndex = product.images.edges.findIndex(
+          ({ node }) => node.url === variantImageUrl
+        );
+        setCurrentImageIndex(imageIndex >= 0 ? imageIndex : 0);
       } else if (product.images.edges.length > 0) {
         setSelectedImage(product.images.edges[0].node.url);
         setCurrentImageIndex(0);
@@ -369,7 +376,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   };
 
   const handleAddToCart = async () => {
-    if (!product || !selectedVariant) return;
+    if (!product || !selectedVariant || isAddingToCart) return;
     
     if (currentVariant && currentVariant.availableForSale) {
       // בדיקת מלאי לפני הוספה
@@ -401,6 +408,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
         }
       }
       // אם quantityAvailable הוא undefined או null - מאפשרים הוספה (אין מידע על מלאי)
+      
+      // Set loading state
+      setIsAddingToCart(true);
       
       // Use variant image if available, otherwise use selected image
       const imageToUse = currentVariant.image?.url || selectedImage;
@@ -434,6 +444,11 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       setTimeout(() => {
         setShowToast(false);
       }, 2000);
+
+      // Keep button disabled for 500ms to prevent double clicks
+      setTimeout(() => {
+        setIsAddingToCart(false);
+      }, 500);
     }
   };
 
@@ -588,8 +603,55 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const firstLine = extractFirstLine(product.descriptionHtml || product.description);
   const descriptionWithoutFirstLine = getDescriptionWithoutFirstLine(product.descriptionHtml || product.description);
 
+  // Render CTA buttons component (reusable)
+  const renderCTAs = (isMobile: boolean = false) => {
+    const existingItem = items.find((i) => i.variantId === currentVariant?.id);
+    const currentQuantity = existingItem?.quantity || 0;
+    const isMaxStock = currentVariant?.quantityAvailable !== undefined && 
+                       currentQuantity >= currentVariant.quantityAvailable;
+    const tooltipText = isMaxStock ? `אזל המלאי (${currentVariant?.quantityAvailable} יחידות)` : undefined;
+    const isDisabled = !currentVariant?.availableForSale || isMaxStock || isAddingToCart;
+    const button = (
+      <button
+        onClick={handleAddToCart}
+        disabled={isDisabled}
+        className={`w-full text-white ${isMobile ? 'py-3 px-6' : 'py-4 px-6'} text-sm tracking-luxury uppercase font-light transition-luxury flex items-center justify-center gap-2 ${
+          isAddingToCart 
+            ? 'bg-green-600 cursor-wait' 
+            : 'bg-[#1a1a1a] hover:bg-[#2a2a2a]'
+        } disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300`}
+      >
+        {isAddingToCart ? (
+          <>
+            <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            נוסף לעגלה
+          </>
+        ) : isMaxStock ? 'אזל המלאי' : 'הוסף לעגלה'}
+      </button>
+    );
+    const addToCartButton = tooltipText ? (
+      <Tooltip content={tooltipText} position="top" disabled={isAddingToCart}>
+        {button}
+      </Tooltip>
+    ) : button;
+
+    return (
+      <div className={`space-y-2 ${isMobile ? '' : 'md:space-y-3'}`}>
+        {addToCartButton}
+        <button 
+          onClick={handleShareWhatsApp}
+          className={`w-full border border-green-600 text-green-600 ${isMobile ? 'py-3 px-6' : 'py-4 px-6'} text-sm tracking-luxury uppercase font-light hover:bg-green-600 hover:text-white transition-luxury flex items-center justify-center gap-2`}
+        >
+          <Share2 size={18} />
+          שתפו בוואטסאפ
+        </button>
+      </div>
+    );
+  };
+
   return (
     <>
+
       <main id="main-content" className="flex-grow max-w-[1400px] mx-auto px-4 pt-0 pb-16 md:py-20 w-full overflow-x-hidden" role="main">
         <div className="grid grid-cols-12 gap-6 md:gap-8 items-start">
           {/* Left Side - Thumbnail Images (Desktop only) */}
@@ -654,7 +716,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     {/* Main Image */}
                     <div 
                       className={`relative bg-[#fdfcfb] overflow-hidden touch-none flex-shrink-0 transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}
-                      style={{ width: '70%', maxWidth: '100%', aspectRatio: '2/3' }}
+                      style={{ width: '55%', maxWidth: '100%', aspectRatio: '2/3' }}
                       onTouchStart={handleTouchStart}
                       onTouchMove={handleTouchMove}
                       onTouchEnd={handleTouchEnd}
@@ -663,11 +725,13 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     >
                       {selectedImage && (
                         <Image
+                          key={selectedImage}
                           src={selectedImage}
                           alt={`${product.title} - תמונה ${currentImageIndex + 1}`}
                           fill
                           className="object-contain select-none"
-                          priority={currentImageIndex === 0}
+                          priority
+                          loading="eager"
                           draggable={false}
                           sizes="(max-width: 768px) 70vw, 50vw"
                         />
@@ -692,21 +756,66 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                 {filteredImages.length === 1 && (
                   <div 
                     className={`relative bg-[#fdfcfb] overflow-hidden mb-2 mx-auto touch-none transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}
-                    style={{ width: '70%', aspectRatio: '2/3' }}
+                    style={{ width: '55%', aspectRatio: '2/3' }}
                   >
                     {selectedImage && (
                       <Image
+                        key={selectedImage}
                         src={selectedImage}
                         alt={product.title}
                         fill
                         className="object-contain select-none"
                         priority
+                        loading="eager"
                         draggable={false}
                         sizes="(max-width: 768px) 70vw, 50vw"
                       />
                     )}
                   </div>
                 )}
+                
+                {/* Mobile - Add to Cart & WhatsApp Buttons - Above thumbnails */}
+                <div className="md:hidden mb-4 px-4 space-y-2">
+                  {(() => {
+                    const existingItem = items.find((i) => i.variantId === currentVariant?.id);
+                    const currentQuantity = existingItem?.quantity || 0;
+                    const isMaxStock = currentVariant?.quantityAvailable !== undefined && 
+                                       currentQuantity >= currentVariant.quantityAvailable;
+                    const tooltipText = isMaxStock ? `אזל המלאי (${currentVariant?.quantityAvailable} יחידות)` : undefined;
+                    const isDisabled = !currentVariant?.availableForSale || isMaxStock || isAddingToCart;
+                    const button = (
+                      <button
+                        onClick={handleAddToCart}
+                        disabled={isDisabled}
+                        className={`w-full text-white py-3 px-6 text-sm tracking-luxury uppercase font-light transition-luxury flex items-center justify-center gap-2 ${
+                          isAddingToCart 
+                            ? 'bg-green-600 cursor-wait' 
+                            : 'bg-[#1a1a1a] hover:bg-[#2a2a2a]'
+                        } disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300`}
+                      >
+                        {isAddingToCart ? (
+                          <>
+                            <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                            נוסף לעגלה
+                          </>
+                        ) : isMaxStock ? 'אזל המלאי' : 'הוסף לעגלה'}
+                      </button>
+                    );
+                    return tooltipText ? (
+                      <Tooltip content={tooltipText} position="top" disabled={isAddingToCart}>
+                        {button}
+                      </Tooltip>
+                    ) : button;
+                  })()}
+                  <button 
+                    onClick={handleShareWhatsApp}
+                    className="w-full border border-green-600 text-green-600 py-3 px-6 text-sm tracking-luxury uppercase font-light hover:bg-green-600 hover:text-white transition-luxury flex items-center justify-center gap-2"
+                  >
+                    <Share2 size={18} />
+                    שתפו בוואטסאפ
+                  </button>
+                </div>
+                
                 {/* Thumbnail Images - Scrollable */}
                 {filteredImages.length > 1 && (
                   <div className={`flex gap-2 overflow-x-auto pb-2 scrollbar-hide justify-center w-full transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}>
@@ -835,6 +944,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                           );
                         })}
                       </div>
+                      
                     </div>
                   )}
 
@@ -873,33 +983,6 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                       )}
                     </div>
                   )}
-
-                  {/* CTAs */}
-                  <div className="space-y-2" data-cta-section>
-                    {(() => {
-                      const existingItem = items.find((i) => i.variantId === currentVariant?.id);
-                      const currentQuantity = existingItem?.quantity || 0;
-                      const isMaxStock = currentVariant?.quantityAvailable !== undefined && 
-                                         currentQuantity >= currentVariant.quantityAvailable;
-                      return (
-                        <button
-                          onClick={handleAddToCart}
-                          disabled={!currentVariant?.availableForSale || isMaxStock}
-                          className="w-full bg-[#1a1a1a] text-white py-3 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-                          title={isMaxStock ? `אזל המלאי (${currentVariant?.quantityAvailable} יחידות)` : undefined}
-                        >
-                          {isMaxStock ? 'אזל המלאי' : 'הוסף לעגלה'}
-                        </button>
-                      );
-                    })()}
-                    <button 
-                      onClick={handleShareWhatsApp}
-                      className="w-full border border-green-600 text-green-600 py-3 px-6 text-sm tracking-luxury uppercase font-light hover:bg-green-600 hover:text-white transition-luxury flex items-center justify-center gap-2"
-                    >
-                      <Share2 size={18} />
-                      שתפו בוואטסאפ
-                    </button>
-                  </div>
                 </div>
               </div>
 
@@ -964,6 +1047,11 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                         );
                       })}
                     </div>
+                    
+                    {/* Desktop CTAs - Next to color selection */}
+                    <div className="mt-6 space-y-3" data-cta-section>
+                      {renderCTAs(false)}
+                    </div>
                   </div>
                 )}
 
@@ -984,6 +1072,18 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                         </option>
                       ))}
                     </select>
+                    
+                    {/* Desktop CTAs - Next to variants */}
+                    <div className="mt-6 space-y-3" data-cta-section>
+                      {renderCTAs(false)}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Desktop CTAs - If no variants or colors */}
+                {product.variants.edges.length === 1 && !hasColors && (
+                  <div className="hidden md:block mt-6 space-y-3" data-cta-section>
+                    {renderCTAs(false)}
                   </div>
                 )}
 
@@ -1007,33 +1107,6 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     )}
                   </div>
                 )}
-
-                {/* Desktop CTAs */}
-                <div className="hidden md:block space-y-3 pt-4">
-                  {(() => {
-                    const existingItem = items.find((i) => i.variantId === currentVariant?.id);
-                    const currentQuantity = existingItem?.quantity || 0;
-                    const isMaxStock = currentVariant?.quantityAvailable !== undefined && 
-                                       currentQuantity >= currentVariant.quantityAvailable;
-                    return (
-                      <button
-                        onClick={handleAddToCart}
-                        disabled={!currentVariant?.availableForSale || isMaxStock}
-                        className="w-full bg-[#1a1a1a] text-white py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-                        title={isMaxStock ? `אזל המלאי (${currentVariant?.quantityAvailable} יחידות)` : undefined}
-                      >
-                        {isMaxStock ? 'אזל המלאי' : 'הוסף לעגלה'}
-                      </button>
-                    );
-                  })()}
-                  <button 
-                    onClick={handleShareWhatsApp}
-                    className="w-full border border-green-600 text-green-600 py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-green-600 hover:text-white transition-luxury flex items-center justify-center gap-2"
-                  >
-                    <Share2 size={18} />
-                    שתפו בוואטסאפ
-                  </button>
-                </div>
 
                 {/* Product Details */}
                 <div className="pt-8 space-y-6 border-t border-gray-200">
@@ -1150,16 +1223,31 @@ export default function ProductClient({ product, relatedProducts: initialRelated
               const currentQuantity = existingItem?.quantity || 0;
               const isMaxStock = currentVariant?.quantityAvailable !== undefined && 
                                  currentQuantity >= currentVariant.quantityAvailable;
-              return (
+              const tooltipText = isMaxStock ? `אזל המלאי (${currentVariant?.quantityAvailable} יחידות)` : undefined;
+              const isDisabled = !currentVariant?.availableForSale || isMaxStock || isAddingToCart;
+              const button = (
                 <button
                   onClick={handleAddToCart}
-                  disabled={!currentVariant?.availableForSale || isMaxStock}
-                  className="bg-[#1a1a1a] text-white py-3 px-8 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury flex-shrink-0 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-                  title={isMaxStock ? `אזל המלאי (${currentVariant?.quantityAvailable} יחידות)` : undefined}
+                  disabled={isDisabled}
+                  className={`text-white py-3 px-8 text-sm tracking-luxury uppercase font-light transition-luxury flex-shrink-0 flex items-center justify-center gap-2 ${
+                    isAddingToCart 
+                      ? 'bg-green-600 cursor-wait' 
+                      : 'bg-[#1a1a1a] hover:bg-[#2a2a2a]'
+                  } disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300`}
                 >
-                  {isMaxStock ? 'אזל המלאי' : 'הוסף לעגלה'}
+                  {isAddingToCart ? (
+                    <>
+                      <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      נוסף
+                    </>
+                  ) : isMaxStock ? 'אזל המלאי' : 'הוסף לעגלה'}
                 </button>
               );
+              return tooltipText ? (
+                <Tooltip content={tooltipText} position="top" disabled={isAddingToCart}>
+                  {button}
+                </Tooltip>
+              ) : button;
             })()}
           </div>
         </div>

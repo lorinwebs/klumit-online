@@ -357,71 +357,73 @@ export const useCartStore = create<CartStore>()((set, get) => {
     
     setItems(newItems);
     
-    // 3. שליחה לשרת - אם המשתמש מחובר, נשלח גם buyerIdentity
-    try {
-      let buyerIdentity: { email?: string; phone?: string } | undefined = undefined;
+    // עדכון ה-UI מיד - לא מחכים ל-sync
+    updateInProgress = false;
+    set({ isUpdating: false });
+    
+    // 3. שליחה לשרת ברקע - אם המשתמש מחובר, נשלח גם buyerIdentity
+    // עושים את זה ברקע כדי לא לחסום את ה-UI
+    (async () => {
       try {
-        const { supabase } = await import('@/lib/supabase');
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          buyerIdentity = {
-            email: session.user.email || session.user.user_metadata?.email,
-            phone: session.user.phone || session.user.user_metadata?.phone,
-          };
+        let buyerIdentity: { email?: string; phone?: string } | undefined = undefined;
+        try {
+          const { supabase } = await import('@/lib/supabase');
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            buyerIdentity = {
+              email: session.user.email || session.user.user_metadata?.email,
+              phone: session.user.phone || session.user.user_metadata?.phone,
+            };
+          }
+        } catch (err) {
+          // ignore
+        }
+        
+        const newCartId = await syncCartToShopify(newItems, cartId, buyerIdentity);
+        
+        // עדכון ה-Cart ID שחזר - תמיד שומרים את ה-cartId ב-localStorage וב-metafields
+        const finalCartId = newCartId || cartId;
+        
+        if (finalCartId) {
+          if (finalCartId !== stateCartId) {
+            set({ cartId: finalCartId });
+          }
+          // תמיד שומרים את ה-cartId ב-localStorage, גם אם הוא לא השתנה
+          saveCartIdToLocalStorage(finalCartId);
+          
+          // שמירה ל-Supabase אם מחובר - תמיד שומרים גם אם זה לא השתנה
+          const { supabase } = await import('@/lib/supabase');
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            saveCartIdToMetafields(finalCartId, true).catch(() => {});
+          }
+        }
+        
+        // טעינה מחדש מהשרת ברקע (לא חוסמת את ה-UI)
+        // זה נעשה כדי לקבל את המצב האמיתי (כולל מלאי ותיקון כמות אם חרגה)
+        if (newCartId || cartId) {
+          // עושים את זה ברקע - לא חוסם את ה-UI
+          loadCartFromShopify(newCartId || cartId!).then(loadedItems => {
+            // רק נעדכן אם קיבלנו פריטים מהשרת - לא נדרוס עם מערך ריק
+            if (loadedItems && loadedItems.length > 0) {
+              // בדיקה: אם המשתמש כבר עשה פעולה אחרת, לא נעדכן
+              if (!updateInProgress) {
+                setItems(loadedItems);
+              }
+            }
+          }).catch(() => {
+            // התעלם משגיאות ברקע
+          });
         }
       } catch (err) {
-        // ignore
-      }
-      
-      const newCartId = await syncCartToShopify(newItems, cartId, buyerIdentity);
-      
-      // עדכון ה-Cart ID שחזר - תמיד שומרים את ה-cartId ב-localStorage וב-metafields
-      const finalCartId = newCartId || cartId;
-      
-      if (finalCartId) {
-        if (finalCartId !== stateCartId) {
-          set({ cartId: finalCartId });
-        }
-        // תמיד שומרים את ה-cartId ב-localStorage, גם אם הוא לא השתנה
-        saveCartIdToLocalStorage(finalCartId);
-        
-        // שמירה ל-Supabase אם מחובר - תמיד שומרים גם אם זה לא השתנה
-        const { supabase } = await import('@/lib/supabase');
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          saveCartIdToMetafields(finalCartId, true).catch(() => {});
+        // במקרה שגיאה, לא נדרוס את ה-UI כי העדכון האופטימי כבר נעשה
+        // רק נוודא שה-state לא תקוע
+        if (updateInProgress) {
+          updateInProgress = false;
+          set({ isUpdating: false });
         }
       }
-      
-      // טעינה מחדש מהשרת כדי לקבל את המצב האמיתי (כולל מלאי ותיקון כמות אם חרגה)
-      // אבל רק אם יש cart ID - לא נדרוס את הפריטים החדשים אם אין cart ID
-      updateInProgress = false; // חייבים לסיים לפני loadFromShopify
-      if (newCartId || cartId) {
-        // מחכים קצת כדי לוודא ש-Shopify סיים לעדכן
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        const loadedItems = await loadCartFromShopify(newCartId || cartId!);
-        // רק נעדכן אם קיבלנו פריטים מהשרת - לא נדרוס עם מערך ריק
-        if (loadedItems && loadedItems.length > 0) {
-          // אם Shopify תיקן את הכמות, נשתמש בערך שלו
-          const updatedItem = loadedItems.find(i => i.variantId === item.variantId);
-          if (updatedItem && updatedItem.quantity !== newQuantity) {
-          }
-          
-          // תמיד נשתמש בנתונים מ-Shopify כי זה המצב האמיתי
-          setItems(loadedItems);
-        }
-        // אם קיבלנו מערך ריק - נשאיר את העדכון האופטימי (newItems)
-      }
-    } catch (err) {
-      // במקרה שגיאה, נחזיר את המצב הקודם
-      setItems(freshItems);
-      updateInProgress = false;
-      set({ isUpdating: false });
-    } finally {
-      updateInProgress = false;
-      set({ isUpdating: false });
-    }
+    })();
   },
   
   removeItem: async (variantId: string) => {

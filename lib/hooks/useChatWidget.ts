@@ -354,7 +354,16 @@ export function useChatWidget(): UseChatWidgetReturn {
       });
       
       if (!response.ok) {
-        throw new Error('Merge failed');
+        let errorData: any;
+        try {
+          const text = await response.text();
+          errorData = text ? JSON.parse(text) : { error: `HTTP ${response.status}` };
+        } catch {
+          errorData = { error: `HTTP ${response.status}` };
+        }
+        console.error('Merge failed:', errorData);
+        // Don't throw - just log and return, merge is not critical
+        return;
       }
 
       const data = await response.json();
@@ -378,6 +387,7 @@ export function useChatWidget(): UseChatWidgetReturn {
       }
     } catch (error) {
       console.error('Merge error:', error);
+      // Don't throw - merge failure shouldn't break the chat
     } finally {
       setLoading(false);
     }

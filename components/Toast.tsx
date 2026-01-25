@@ -22,11 +22,14 @@ export default function Toast({ show, message, showViewCart = true, type = 'succ
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -10, scale: 0.95 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
-          className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-50 px-4 max-w-[calc(100vw-2rem)]"
+          className="fixed bottom-24 md:bottom-8 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 z-50"
           role="alert"
           aria-live="polite"
+          style={{
+            maxWidth: 'calc(100vw - 2rem)',
+          }}
         >
-          <div className={`${isWarning ? 'bg-amber-600' : 'bg-[#1a1a1a]'} text-white px-4 md:px-6 py-3 md:py-4 rounded-sm shadow-lg flex items-center gap-3 md:gap-4 min-w-[280px] max-w-full`}>
+          <div className={`${isWarning ? 'bg-amber-600' : 'bg-[#1a1a1a]'} text-white px-4 md:px-6 py-3 md:py-4 rounded-sm shadow-lg flex items-center gap-3 md:gap-4 w-full max-w-full`}>
             <div className="flex-shrink-0" aria-hidden="true">
               {isWarning ? (
                 <AlertCircle size={18} className="text-white" />
@@ -34,7 +37,7 @@ export default function Toast({ show, message, showViewCart = true, type = 'succ
                 <Check size={18} className="text-white" />
               )}
             </div>
-            <span className="text-sm font-light tracking-luxury uppercase flex-grow truncate">
+            <span className="text-sm font-light tracking-luxury uppercase flex-grow break-words whitespace-normal">
               {message}
             </span>
             {showViewCart && !isWarning && (

@@ -174,12 +174,19 @@ function CategoryCarousel({
       router.push(`/products/${product.handle}`);
     };
 
+    const handleMouseEnter = () => {
+      if (images.length > 1) {
+        setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+      }
+    };
+
     return (
       <div 
-        className="relative w-full h-full block touch-manipulation cursor-pointer"
+        className="relative w-full h-full"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onMouseEnter={handleMouseEnter}
         onClick={handleClick}
         style={{ WebkitTapHighlightColor: 'transparent' }}
       >
@@ -189,64 +196,36 @@ function CategoryCarousel({
             src={images[currentImageIndex].node.url}
             alt={images[currentImageIndex].node.altText || product.title}
             fill
-            className="object-cover transition-opacity duration-500"
-            sizes="(max-width: 768px) 34vw, (max-width: 1024px) 30vw, 18vw"
-            loading="eager"
-            priority
+            className="object-cover transition-opacity duration-300"
+            sizes="(max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+            loading="lazy"
           />
         </div>
 
-        {/* Image Dots Indicator - only show if more than 1 image */}
+        {/* Image Dots Indicator - minimal */}
         {images.length > 1 && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-10 flex gap-0.5">
             {images.map((_, index) => (
               <div
                 key={index}
-                className={`h-1 rounded-full transition-all duration-300 ${
+                className={`h-0.5 rounded-full transition-all duration-300 ${
                   index === currentImageIndex 
-                    ? 'bg-white w-6' 
-                    : 'bg-white/40 w-1.5'
+                    ? 'bg-[#1a1a1a] w-2' 
+                    : 'bg-[#1a1a1a]/30 w-1'
                 }`}
                 aria-label={`תמונה ${index + 1} מתוך ${images.length}`}
               />
             ))}
           </div>
         )}
-
-        {/* Hover areas for navigation - left and right halves (desktop only) */}
-        {images.length > 1 && (
-          <>
-            <div
-              onMouseEnter={() => {
-                setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-              }}
-              className="hidden md:block absolute left-0 top-0 bottom-0 w-1/2 z-10 pointer-events-none"
-              aria-label="תמונה קודמת"
-            />
-            <div
-              onMouseEnter={() => {
-                setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-              }}
-              className="hidden md:block absolute right-0 top-0 bottom-0 w-1/2 z-10 pointer-events-none"
-              aria-label="תמונה הבאה"
-            />
-          </>
-        )}
-
-        {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover/card:bg-black/10 transition-colors duration-500" />
-        
-        {/* Quick View Button - hidden on mobile */}
-        <div className="hidden md:block absolute bottom-4 left-4 right-4 opacity-0 group-hover/card:opacity-100 transform translate-y-4 group-hover/card:translate-y-0 transition-all duration-500 z-10">
-          <span className="block w-full bg-white/95 backdrop-blur-sm text-[#1a1a1a] text-center py-3 text-xs tracking-[0.2em] uppercase">
-            צפה במוצר
-          </span>
-        </div>
       </div>
     );
   }
 
   if (products.length === 0) return null;
+
+  // Show first 12 products in compact grid
+  const displayProducts = products.slice(0, 12);
 
   return (
     <motion.div
@@ -254,85 +233,51 @@ function CategoryCarousel({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-100px' }}
       transition={{ duration: 0.8, delay }}
-      className="mb-8 md:mb-12"
+      className="mb-6 md:mb-8"
     >
       {/* Category Header */}
-      <div className="flex justify-between items-end mb-8 md:mb-12 px-4 md:px-8">
+      <div className="flex justify-between items-end mb-2 md:mb-3 px-4 md:px-8">
         <div className="text-left">
-          <span className="block text-xs tracking-[0.3em] uppercase text-[#c9a962] mb-2">{subtitle}</span>
-          <h2 className="text-3xl md:text-5xl font-light luxury-font text-[#1a1a1a]">{title}</h2>
+          <span className="block text-xs tracking-[0.25em] uppercase text-[#1a1a1a] mb-0.5 font-light opacity-60">{subtitle}</span>
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-light luxury-font text-[#1a1a1a]">{title}</h2>
         </div>
         <Link 
           href="/products?tab=bags" 
-          className="text-xs tracking-[0.2em] uppercase text-gray-500 hover:text-[#1a1a1a] transition-colors border-b border-transparent hover:border-gray-400 pb-1"
+          className="text-xs tracking-[0.2em] uppercase text-gray-500 hover:text-[#1a1a1a] transition-colors"
         >
-          צפה בכל
+          צפה בכל →
         </Link>
       </div>
 
-      {/* Carousel Container */}
-      <div className="relative group">
-        {/* Navigation Arrows */}
-        <button
-          onClick={() => scroll('left')}
-          className={`absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 bg-white/90 backdrop-blur-sm border border-gray-200 flex items-center justify-center transition-all duration-300 ${
-            canScrollLeft ? 'opacity-100 hover:bg-[#1a1a1a] hover:text-white hover:border-[#1a1a1a]' : 'opacity-0 pointer-events-none'
-          }`}
-          aria-label="הקודם"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        
-        <button
-          onClick={() => scroll('right')}
-          className={`absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 bg-white/90 backdrop-blur-sm border border-gray-200 flex items-center justify-center transition-all duration-300 ${
-            canScrollRight ? 'opacity-100 hover:bg-[#1a1a1a] hover:text-white hover:border-[#1a1a1a]' : 'opacity-0 pointer-events-none'
-          }`}
-          aria-label="הבא"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-
-        {/* Scrollable Products */}
-        <div
-          ref={scrollRef}
-          className="flex gap-4 md:gap-6 overflow-x-auto scrollbar-hide px-4 md:px-8 pb-4 snap-x snap-mandatory"
-          style={{ scrollSnapType: 'x mandatory' }}
-        >
-          {products.map((product, index) => (
-            <div
+      {/* Compact Grid Layout */}
+      <div className="px-4 md:px-8">
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1 md:gap-2">
+          {displayProducts.map((product, index) => (
+            <motion.div
               key={product.id}
-              className="flex-shrink-0 w-[34vw] md:w-[30vw] lg:w-[22vw] xl:w-[18vw] snap-start group/card"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: index * 0.05 }}
+              className="group"
             >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="relative"
-              >
-                {/* Product Image with Luxury Frame */}
-                <div className="relative p-2 bg-white mb-4 shadow-[0_2px_15px_rgba(0,0,0,0.08)] group-hover/card:shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-shadow duration-500">
-                  <div className="relative aspect-[3/4] bg-[#f5f5f3] overflow-hidden">
-                    <ProductImageCarousel product={product} />
-                  </div>
+              <Link href={`/products/${product.handle}`} className="block">
+                {/* Product Image - Smaller */}
+                <div className="relative aspect-[3/4] bg-[#fafafa] overflow-hidden mb-1 group-hover:opacity-90 transition-opacity duration-300">
+                  <ProductImageCarousel product={product} />
                 </div>
 
-                {/* Product Info - Minimal - Clickable on mobile */}
-                <Link href={`/products/${product.handle}`} className="flex items-start justify-between gap-2">
-                  <h3 className="text-lg md:text-xl font-light text-[#1a1a1a] text-left group-hover/card:text-gray-600 transition-colors flex-1 min-w-0">
+                {/* Product Info - Compact */}
+                <div className="space-y-1.5 text-center">
+                  <h3 className="text-[10px] md:text-xs font-light text-[#1a1a1a] group-hover:text-gray-600 transition-colors line-clamp-2">
                     {product.title}
                   </h3>
-                  <p className="text-base md:text-lg font-light text-gray-500 text-right flex-shrink-0 whitespace-nowrap">
+                  <p className="text-[10px] md:text-xs font-light text-gray-500">
                     ₪{formatPrice(product.priceRange.minVariantPrice.amount)}
                   </p>
-                </Link>
-              </motion.div>
-            </div>
+                </div>
+              </Link>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -431,7 +376,7 @@ export default function FeaturedProducts() {
   }
 
   return (
-    <section className="w-full bg-[#fdfcfb] pt-8 md:pt-12 pb-6">
+    <section className="w-full bg-[#fdfcfb] pt-2 md:pt-3 pb-2">
       <div className="max-w-[1800px] mx-auto">
         {/* Section Intro */}
         <motion.div
@@ -439,10 +384,10 @@ export default function FeaturedProducts() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-6 md:mb-10 px-4"
+          className="text-center mb-2 md:mb-3 px-4"
         >
-          <span className="text-xs tracking-[0.4em] uppercase text-[#c9a962] mb-4 block">2026</span>
-          <h2 className="text-4xl md:text-6xl lg:text-7xl font-light luxury-font text-[#1a1a1a]">הקולקציה</h2>
+          <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-gray-400 mb-1 block font-light">2026</span>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-light luxury-font text-[#2c2c2c] tracking-wide leading-tight">הקולקציה</h2>
         </motion.div>
 
         {/* Category Carousels */}
