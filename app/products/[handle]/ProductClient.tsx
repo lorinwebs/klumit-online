@@ -471,7 +471,23 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       console.warn('Failed to send WhatsApp share notification:', error);
     }
     
-    window.open(whatsappUrl, '_blank');
+    // For mobile: use location.href directly (more reliable than window.open)
+    // For desktop: try window.open, fallback to location.href if blocked
+    if (typeof window !== 'undefined') {
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // On mobile, location.href works better and opens WhatsApp app directly
+        window.location.href = whatsappUrl;
+      } else {
+        // On desktop, try window.open first
+        const newWindow = window.open(whatsappUrl, '_blank');
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          // Popup blocked, use location.href instead
+          window.location.href = whatsappUrl;
+        }
+      }
+    }
   };
 
   // פורמט מחיר פרימיום
