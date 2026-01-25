@@ -338,8 +338,25 @@ export default function AccountClient({
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
       <main id="main-content" className="flex-grow w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 lg:py-12" role="main">
-        <div className="mb-6 md:mb-8 lg:mb-12">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+        <div className="mb-6 md:mb-8 lg:mb-12 relative">
+          {/* כפתור התנתק בפינה במובייל */}
+          <button
+            type="button"
+            onClick={handleLogout}
+            onTouchStart={(e) => {
+              e.currentTarget.style.opacity = '0.7';
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.opacity = '1';
+            }}
+            className="md:hidden absolute top-0 left-0 p-2 text-gray-600 hover:text-gray-800 active:text-gray-900 hover:bg-gray-50 active:bg-gray-100 transition-colors rounded-full touch-manipulation"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
+            aria-label="התנתק"
+          >
+            <LogOut size={20} />
+          </button>
+          
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 pr-10 md:pr-0">
             <div className="flex-1">
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-light luxury-font mb-2 text-right">
                 החשבון שלי
@@ -396,17 +413,17 @@ export default function AccountClient({
                 )}
               </div>
             </div>
+            {/* כפתור התנתק בדסקטופ */}
             <button
               type="button"
               onClick={handleLogout}
               onTouchStart={(e) => {
-                // וודא שה-touch event עובד במובייל
                 e.currentTarget.style.opacity = '0.7';
               }}
               onTouchEnd={(e) => {
                 e.currentTarget.style.opacity = '1';
               }}
-              className="w-full md:w-auto px-4 py-2.5 md:py-2 text-sm font-light text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors flex items-center justify-center gap-2 border border-gray-200 hover:border-gray-300 whitespace-nowrap touch-manipulation"
+              className="hidden md:flex px-4 py-2 text-sm font-light text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors items-center justify-center gap-2 border border-gray-200 hover:border-gray-300 whitespace-nowrap touch-manipulation"
               style={{ WebkitTapHighlightColor: 'transparent' }}
               dir="rtl"
             >
