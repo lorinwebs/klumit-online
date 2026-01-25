@@ -164,9 +164,34 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         }
 
         // הסשן נשמר אוטומטית ב-localStorage
+        // עדכן את הסטטוס מיד לפני רענון
+        if (onSuccess) {
+          onSuccess();
+        }
+        
+        // סגור את ה-modal
+        onClose();
+        
         // רענון הדף כדי לעדכן את הסטטוס
         router.refresh();
-        
+      } else {
+        // נשתמש ב-client-side verify כדי שהסשן יישמר מיד ב-localStorage
+        // זה מאפשר ל-components אחרים לזהות את ההתחברות מיד
+        const { data, error } = await supabase.auth.verifyOtp({
+          phone: phoneToVerify,
+          token: code,
+          type: 'sms',
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        if (!data?.session || !data?.user) {
+          throw new Error('אימות נכשל');
+        }
+
+        // הסשן נשמר אוטומטית ב-localStorage
         // קריאה ל-onSuccess אם קיים
         if (onSuccess) {
           onSuccess();
@@ -174,20 +199,9 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         
         // סגור את ה-modal
         onClose();
-      } else {
-        // בדפים אחרים, נשתמש ב-server action
-        const formData = new FormData();
-        formData.append('phone', phoneToVerify);
-        formData.append('token', code);
         
-        const result = await verifyOtpServer(null, formData);
-        
-        if (result?.error) {
-          throw new Error(result.error);
-        }
-
-        // אם יש redirect, זה אומר שההתחברות הצליחה
-        // (ה-redirect יקרה אוטומטית דרך Next.js)
+        // רענון הדף כדי לעדכן את הסטטוס
+        router.refresh();
       }
     } catch (err: any) {
       let errorMessage = 'קוד שגוי';

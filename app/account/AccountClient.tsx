@@ -337,14 +337,14 @@ export default function AccountClient({
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
       <Header />
-      <main id="main-content" className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16" role="main">
-        <div className="mb-12 lg:mb-16">
-          <div className="flex items-start justify-between gap-4">
+      <main id="main-content" className="flex-grow w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 lg:py-12" role="main">
+        <div className="mb-6 md:mb-8 lg:mb-12">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex-1">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-light luxury-font mb-2 text-right">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-light luxury-font mb-2 text-right">
                 החשבון שלי
               </h1>
-              <p className="text-sm md:text-base font-light text-gray-500 text-right">
+              <p className="text-xs md:text-sm lg:text-base font-light text-gray-500 text-right">
                 ניהול פרטים אישיים והזמנות
               </p>
               <div className="flex items-center gap-2 text-right mt-2">
@@ -386,8 +386,9 @@ export default function AccountClient({
                           setSyncingShopify(false);
                         }
                       }}
-                      className="text-xs font-light text-blue-600 hover:text-blue-800 underline disabled:text-gray-400 disabled:cursor-not-allowed"
+                      className="text-xs font-light text-blue-600 hover:text-blue-800 active:text-blue-900 underline disabled:text-gray-400 disabled:cursor-not-allowed touch-manipulation"
                       disabled={syncingShopify}
+                      style={{ WebkitTapHighlightColor: 'transparent' }}
                     >
                       {syncingShopify ? 'מחבר...' : 'חבר עכשיו'}
                     </button>
@@ -405,7 +406,7 @@ export default function AccountClient({
               onTouchEnd={(e) => {
                 e.currentTarget.style.opacity = '1';
               }}
-              className="px-4 py-2 text-sm font-light text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors flex items-center gap-2 border border-gray-200 hover:border-gray-300 whitespace-nowrap touch-manipulation"
+              className="w-full md:w-auto px-4 py-2.5 md:py-2 text-sm font-light text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors flex items-center justify-center gap-2 border border-gray-200 hover:border-gray-300 whitespace-nowrap touch-manipulation"
               style={{ WebkitTapHighlightColor: 'transparent' }}
               dir="rtl"
             >
@@ -415,27 +416,27 @@ export default function AccountClient({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
           {/* User Info - Left Column */}
-          <div className="lg:col-span-1">
-            <div className="bg-white border border-gray-200 p-6 lg:p-8 sticky top-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                    <UserIcon size={32} className="text-gray-400" />
+          <div className="lg:col-span-1 order-2 lg:order-1">
+            <div className="bg-white border border-gray-200 p-4 md:p-6 lg:p-8 lg:sticky lg:top-8">
+              <div className="flex items-start md:items-center justify-between mb-4 md:mb-6 gap-3">
+                <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <UserIcon size={24} className="md:w-8 md:h-8 text-gray-400" />
                   </div>
-                  <div className="text-right flex-1">
+                  <div className="text-right flex-1 min-w-0">
                     {!editing ? (
                       <>
                         {user.user_metadata?.first_name ? (
                           <>
-                            <h2 className="text-xl font-light luxury-font mb-1">
+                            <h2 className="text-lg md:text-xl font-light luxury-font mb-1 truncate">
                               {user.user_metadata?.first_name && user.user_metadata?.last_name
                                 ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
                                 : user.user_metadata.first_name}
                             </h2>
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-light text-gray-600">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-xs md:text-sm font-light text-gray-600 break-all">
                                 {user.email || user.user_metadata?.email || 'אין אימייל'}
                               </p>
                               {user.email && !user.email_confirmed_at && (
@@ -450,12 +451,13 @@ export default function AccountClient({
                           </>
                         ) : (
                           <div className="space-y-2">
-                            <h2 className="text-xl font-light luxury-font mb-1 text-gray-400">
+                            <h2 className="text-lg md:text-xl font-light luxury-font mb-1 text-gray-400 truncate">
                               {user.phone || 'משתמש חדש'}
                             </h2>
                             <button
                               onClick={() => setEditing(true)}
-                              className="text-sm font-light text-[#1a1a1a] hover:text-[#4a4a4a] underline underline-offset-2 flex items-center gap-1"
+                              className="text-xs md:text-sm font-light text-[#1a1a1a] hover:text-[#4a4a4a] underline underline-offset-2 flex items-center gap-1 touch-manipulation"
+                              style={{ WebkitTapHighlightColor: 'transparent' }}
                             >
                               <Edit2 size={14} />
                               השלם את הפרופיל שלך
@@ -469,26 +471,26 @@ export default function AccountClient({
                     ) : (
                       <form onSubmit={handleSave} className="space-y-4">
                         <div>
-                          <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                          <label className="block text-xs font-light mb-1.5 md:mb-1 text-right text-gray-600">
                             שם פרטי
                           </label>
                           <input
                             type="text"
                             value={formData.firstName}
                             onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                            className="w-full px-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                            className="w-full px-3 md:px-4 py-2.5 md:py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right touch-manipulation"
                             required
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                          <label className="block text-xs font-light mb-1.5 md:mb-1 text-right text-gray-600">
                             שם משפחה
                           </label>
                           <input
                             type="text"
                             value={formData.lastName}
                             onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                            className="w-full px-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                            className="w-full px-3 md:px-4 py-2.5 md:py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right touch-manipulation"
                             required
                           />
                         </div>
@@ -507,7 +509,7 @@ export default function AccountClient({
                                 setError('');
                               }}
                               disabled={!!(user.email && user.email_confirmed_at)}
-                              className="w-full pr-10 pl-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right disabled:bg-gray-50 disabled:cursor-not-allowed"
+                              className="w-full pr-10 pl-3 md:pl-4 py-2.5 md:py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right disabled:bg-gray-50 disabled:cursor-not-allowed touch-manipulation"
                               placeholder={user.email && user.email_confirmed_at ? 'אימייל מאומת - לא ניתן לערוך' : 'your@email.com'}
                             />
                           </div>
@@ -538,7 +540,7 @@ export default function AccountClient({
                                       const value = e.target.value.replace(/\D/g, '').slice(0, 6);
                                       setEmailVerificationCode(value);
                                     }}
-                                    className="flex-1 px-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-center tracking-widest"
+                                    className="flex-1 px-3 md:px-4 py-2.5 md:py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-center tracking-widest touch-manipulation"
                                     placeholder="000000"
                                     maxLength={6}
                                   />
@@ -575,7 +577,8 @@ export default function AccountClient({
                                       }
                                     }}
                                     disabled={verifyingEmail || emailVerificationCode.length !== 6}
-                                    className="px-4 py-2 bg-[#1a1a1a] text-white text-xs tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
+                                    className="px-4 py-2.5 md:py-2 bg-[#1a1a1a] text-white text-xs tracking-luxury uppercase font-light hover:bg-[#2a2a2a] active:bg-[#3a3a3a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap touch-manipulation"
+                                    style={{ WebkitTapHighlightColor: 'transparent' }}
                                   >
                                     {verifyingEmail ? 'מאמת...' : 'אמת'}
                                   </button>
@@ -602,7 +605,7 @@ export default function AccountClient({
                                 }
                                 setFormData({ ...formData, phone: value });
                               }}
-                              className={`w-full pr-10 pl-4 py-2 border bg-white font-light text-sm focus:outline-none transition-luxury text-right ${
+                              className={`w-full pr-10 pl-3 md:pl-4 py-2.5 md:py-2 border bg-white font-light text-sm focus:outline-none transition-luxury text-right touch-manipulation ${
                                 formData.phone && !/^(\+972|972|0)\d{8,9}$/.test(formData.phone.replace(/[\s\-]/g, ''))
                                   ? 'border-red-300 focus:border-red-500'
                                   : 'border-gray-200 focus:border-[#1a1a1a]'
@@ -638,24 +641,24 @@ export default function AccountClient({
                                   });
                                 }}
                                 placeholder="רחוב ומספר בית (או בחר מהרשימה)"
-                                className="w-full px-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                                className="w-full px-3 md:px-4 py-2.5 md:py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right touch-manipulation"
                               />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                               <div>
-                                <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                                <label className="block text-xs font-light mb-1.5 md:mb-1 text-right text-gray-600">
                                   עיר
                                 </label>
                                 <input
                                   type="text"
                                   value={formData.shippingCity}
                                   onChange={(e) => setFormData({ ...formData, shippingCity: e.target.value })}
-                                  className="w-full px-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                                  className="w-full px-3 md:px-4 py-2.5 md:py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right touch-manipulation"
                                   placeholder="עיר"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                                <label className="block text-xs font-light mb-1.5 md:mb-1 text-right text-gray-600">
                                   מיקוד
                                 </label>
                                 <input
@@ -665,7 +668,7 @@ export default function AccountClient({
                                     const value = e.target.value.replace(/\D/g, '').slice(0, 7);
                                     setFormData({ ...formData, shippingZipCode: value });
                                   }}
-                                  className={`w-full px-4 py-2 border bg-white font-light text-sm focus:outline-none transition-luxury text-right ${
+                                  className={`w-full px-3 md:px-4 py-2.5 md:py-2 border bg-white font-light text-sm focus:outline-none transition-luxury text-right touch-manipulation ${
                                     formData.shippingZipCode && formData.shippingZipCode.length > 0 && formData.shippingZipCode.length !== 7
                                       ? 'border-red-300 focus:border-red-500'
                                       : 'border-gray-200 focus:border-[#1a1a1a]'
@@ -677,28 +680,28 @@ export default function AccountClient({
                                 )}
                               </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                               <div>
-                                <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                                <label className="block text-xs font-light mb-1.5 md:mb-1 text-right text-gray-600">
                                   דירה
                                 </label>
                                 <input
                                   type="text"
                                   value={formData.shippingApartment}
                                   onChange={(e) => setFormData({ ...formData, shippingApartment: e.target.value })}
-                                  className="w-full px-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                                  className="w-full px-3 md:px-4 py-2.5 md:py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right touch-manipulation"
                                   placeholder="מספר דירה"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-light mb-1 text-right text-gray-600">
+                                <label className="block text-xs font-light mb-1.5 md:mb-1 text-right text-gray-600">
                                   קומה
                                 </label>
                                 <input
                                   type="text"
                                   value={formData.shippingFloor}
                                   onChange={(e) => setFormData({ ...formData, shippingFloor: e.target.value })}
-                                  className="w-full px-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
+                                  className="w-full px-3 md:px-4 py-2.5 md:py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right touch-manipulation"
                                   placeholder="מספר קומה"
                                 />
                               </div>
@@ -710,7 +713,7 @@ export default function AccountClient({
                               <textarea
                                 value={formData.shippingNotes}
                                 onChange={(e) => setFormData({ ...formData, shippingNotes: e.target.value })}
-                                className="w-full px-4 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right resize-none"
+                                className="w-full px-3 md:px-4 py-2.5 md:py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right resize-none touch-manipulation"
                                 placeholder="קוד ללובי, הוראות משלוח, הערות נוספות..."
                                 rows={3}
                               />
@@ -726,11 +729,12 @@ export default function AccountClient({
                             {error}
                           </div>
                         )}
-                        <div className="flex gap-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
                           <button
                             type="submit"
                             disabled={saving || !formData.firstName || !formData.lastName}
-                            className="flex-1 bg-[#1a1a1a] text-white py-2 px-4 text-xs tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed"
+                            className="flex-1 bg-[#1a1a1a] text-white py-3 md:py-2 px-4 text-xs md:text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] active:bg-[#3a3a3a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed touch-manipulation"
+                            style={{ WebkitTapHighlightColor: 'transparent' }}
                           >
                             {saving ? 'שומר...' : 'שמור'}
                           </button>
@@ -756,7 +760,8 @@ export default function AccountClient({
                               setFormData(restoredData);
                               setOriginalFormData(restoredData);
                             }}
-                            className="flex-1 border border-gray-300 text-gray-700 py-2 px-4 text-xs tracking-luxury uppercase font-light hover:border-[#1a1a1a] hover:text-[#1a1a1a] transition-luxury"
+                            className="flex-1 border border-gray-300 text-gray-700 py-3 md:py-2 px-4 text-xs md:text-sm tracking-luxury uppercase font-light hover:border-[#1a1a1a] hover:text-[#1a1a1a] active:bg-gray-50 transition-luxury touch-manipulation"
+                            style={{ WebkitTapHighlightColor: 'transparent' }}
                           >
                             ביטול
                           </button>
@@ -768,35 +773,36 @@ export default function AccountClient({
                 {!editing && user.user_metadata?.first_name && (
                   <button
                     onClick={() => setEditing(true)}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-colors touch-manipulation flex-shrink-0"
                     aria-label="ערוך פרופיל"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
-                    <Edit2 size={20} className="text-gray-600" />
+                    <Edit2 size={18} className="md:w-5 md:h-5 text-gray-600" />
                   </button>
                 )}
               </div>
 
               {!editing && (
-                <div className="space-y-4 pt-6 border-t border-gray-200">
-                  <div className="flex items-center gap-3 text-right">
-                    <Phone size={20} className="text-gray-400" />
-                    <span className="text-sm font-light text-gray-700">
+                <div className="space-y-3 md:space-y-4 pt-4 md:pt-6 border-t border-gray-200">
+                  <div className="flex items-center gap-2 md:gap-3 text-right">
+                    <Phone size={18} className="md:w-5 md:h-5 text-gray-400 flex-shrink-0" />
+                    <span className="text-xs md:text-sm font-light text-gray-700 break-all">
                       {user.phone || 'לא צוין'}
                     </span>
                   </div>
                   {(user.user_metadata?.shipping_address || user.user_metadata?.shipping_city || user.user_metadata?.shipping_zip_code) ? (
                     <div className="space-y-2 pt-2">
-                      <div className="flex items-start gap-3 text-right">
-                        <MapPin size={20} className="text-gray-400 mt-0.5" />
-                        <div className="flex-1">
+                      <div className="flex items-start gap-2 md:gap-3 text-right">
+                        <MapPin size={18} className="md:w-5 md:h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
                           <div className="text-xs font-light text-gray-500 mb-1">כתובת משלוח</div>
                           {user.user_metadata?.shipping_address && (
-                            <div className="text-sm font-light text-gray-700">
+                            <div className="text-xs md:text-sm font-light text-gray-700 break-words">
                               {user.user_metadata.shipping_address}
                             </div>
                           )}
                           {(user.user_metadata?.shipping_city || user.user_metadata?.shipping_zip_code) && (
-                            <div className="text-sm font-light text-gray-700">
+                            <div className="text-xs md:text-sm font-light text-gray-700">
                               {[user.user_metadata?.shipping_city, user.user_metadata?.shipping_zip_code].filter(Boolean).join(', ')}
                             </div>
                           )}
@@ -806,11 +812,12 @@ export default function AccountClient({
                   ) : user.user_metadata?.first_name && (
                     <button
                       onClick={() => setEditing(true)}
-                      className="flex items-start gap-3 text-right w-full group"
+                      className="flex items-start gap-2 md:gap-3 text-right w-full group touch-manipulation"
+                      style={{ WebkitTapHighlightColor: 'transparent' }}
                     >
-                      <MapPin size={20} className="text-gray-300 mt-0.5 group-hover:text-gray-400 transition-colors" />
+                      <MapPin size={18} className="md:w-5 md:h-5 text-gray-300 mt-0.5 group-hover:text-gray-400 transition-colors flex-shrink-0" />
                       <div className="flex-1">
-                        <div className="text-sm font-light text-gray-400 group-hover:text-gray-600 transition-colors">
+                        <div className="text-xs md:text-sm font-light text-gray-400 group-hover:text-gray-600 transition-colors">
                           הוסף כתובת משלוח
                         </div>
                         <div className="text-xs font-light text-gray-300 group-hover:text-gray-400 transition-colors">
@@ -820,9 +827,9 @@ export default function AccountClient({
                     </button>
                   )}
                   {shopifyCustomerId && (
-                    <div className="flex items-center gap-3 text-right">
-                      <Check size={20} className="text-green-600" />
-                      <span className="text-sm font-light text-gray-700">
+                    <div className="flex items-center gap-2 md:gap-3 text-right">
+                      <Check size={18} className="md:w-5 md:h-5 text-green-600 flex-shrink-0" />
+                      <span className="text-xs md:text-sm font-light text-gray-700">
                         מחובר ל-Shopify
                       </span>
                     </div>
@@ -833,49 +840,49 @@ export default function AccountClient({
           </div>
 
           {/* Orders Section - Right Column */}
-          <div className="lg:col-span-2">
-            <div className="bg-white border border-gray-200 p-6 lg:p-8">
-              <div className="flex items-center gap-3 mb-8">
-                <Package size={24} className="text-gray-400" />
-                <h2 className="text-2xl font-light luxury-font">ההזמנות שלי</h2>
+          <div className="lg:col-span-2 order-1 lg:order-2">
+            <div className="bg-white border border-gray-200 p-4 md:p-6 lg:p-8">
+              <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6 lg:mb-8">
+                <Package size={20} className="md:w-6 md:h-6 text-gray-400 flex-shrink-0" />
+                <h2 className="text-xl md:text-2xl font-light luxury-font">ההזמנות שלי</h2>
               </div>
               {loadingOrders ? (
-                <div className="flex justify-center items-center py-12">
-                  <p className="text-sm font-light text-gray-600 text-right">טוען הזמנות...</p>
+                <div className="flex justify-center items-center py-8 md:py-12">
+                  <p className="text-xs md:text-sm font-light text-gray-600 text-right">טוען הזמנות...</p>
                 </div>
               ) : orders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <Package size={48} className="text-gray-300 mb-4" />
-                  <p className="text-base font-light text-gray-500 text-right">
+                <div className="flex flex-col items-center justify-center py-12 md:py-16 text-center">
+                  <Package size={40} className="md:w-12 md:h-12 text-gray-300 mb-3 md:mb-4" />
+                  <p className="text-sm md:text-base font-light text-gray-500 text-right">
                     עדיין אין הזמנות
                   </p>
-                  <p className="text-sm font-light text-gray-400 mt-2 text-right">
+                  <p className="text-xs md:text-sm font-light text-gray-400 mt-2 text-right px-4">
                     ההזמנות שלך יופיעו כאן לאחר ביצוע רכישה
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   {orders.map((order) => (
                     <div
                       key={order.id}
-                      className="block border border-gray-200 p-5 lg:p-6 transition-all group"
+                      className="block border border-gray-200 p-4 md:p-5 lg:p-6 transition-all group"
                     >
-                      <div className="flex items-start gap-4 lg:gap-6">
+                      <div className="flex items-start gap-3 md:gap-4 lg:gap-6">
                         {order.lineItems.edges[0]?.node.image && (
-                          <div className="relative w-20 h-28 lg:w-24 lg:h-32 flex-shrink-0 bg-gray-100">
+                          <div className="relative w-16 h-20 md:w-20 md:h-28 lg:w-24 lg:h-32 flex-shrink-0 bg-gray-100">
                             <Image
                               src={order.lineItems.edges[0].node.image.url}
                               alt={order.lineItems.edges[0].node.image.altText || order.lineItems.edges[0].node.title}
                               fill
                               className="object-cover group-hover:scale-105 transition-transform duration-300"
-                              sizes="96px"
+                              sizes="(max-width: 768px) 64px, 96px"
                             />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-4 mb-3">
-                            <div>
-                              <h3 className="text-lg font-light text-[#1a1a1a] mb-1">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2 md:mb-3">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-base md:text-lg font-light text-[#1a1a1a] mb-1 break-words">
                                 הזמנה {order.name}
                               </h3>
                               <p className="text-xs text-gray-500">
@@ -886,13 +893,13 @@ export default function AccountClient({
                                 })}
                               </p>
                             </div>
-                            <span className="text-lg font-light text-[#1a1a1a] whitespace-nowrap">
+                            <span className="text-base md:text-lg font-light text-[#1a1a1a] whitespace-nowrap">
                               ₪{parseFloat(order.totalPriceSet.shopMoney.amount).toLocaleString('he-IL', { minimumFractionDigits: 2 })}
                             </span>
                           </div>
                           {order.lineItems.edges.length > 0 && (
-                            <div className="mb-3">
-                              <p className="text-sm font-light text-gray-700 mb-1">
+                            <div className="mb-2 md:mb-3">
+                              <p className="text-xs md:text-sm font-light text-gray-700 mb-1 break-words">
                                 {order.lineItems.edges[0].node.title}
                               </p>
                               {order.lineItems.edges.length > 1 && (
@@ -902,14 +909,14 @@ export default function AccountClient({
                               )}
                             </div>
                           )}
-                          <div className="flex items-center gap-4 text-xs text-gray-600 pt-3 border-t border-gray-100">
+                          <div className="flex flex-wrap items-center gap-2 md:gap-4 text-xs text-gray-600 pt-2 md:pt-3 border-t border-gray-100">
                             <span className="flex items-center gap-1">
                               <span className={`w-2 h-2 rounded-full ${
                                 order.displayFinancialStatus === 'PAID' ? 'bg-green-500' : 'bg-yellow-500'
                               }`} />
                               {order.displayFinancialStatus === 'PAID' ? 'שולם' : 'ממתין לתשלום'}
                             </span>
-                            <span>•</span>
+                            <span className="hidden sm:inline">•</span>
                             <span className="flex items-center gap-1">
                               <span className={`w-2 h-2 rounded-full ${
                                 order.displayFulfillmentStatus === 'FULFILLED' ? 'bg-blue-500' : 'bg-gray-400'

@@ -4,6 +4,9 @@ import { Analytics } from '@vercel/analytics/react';
 import { Suspense } from 'react';
 import AnalyticsProvider from '@/components/Analytics';
 import ChatWidgetWrapper from '@/components/ChatWidgetWrapper';
+import MembershipPopup from '@/components/MembershipPopup';
+import MembershipFloatingButton from '@/components/MembershipFloatingButton';
+import CouponModal from '@/components/CouponModal';
 import './globals.css';
 
 const assistant = Assistant({ 
@@ -240,6 +243,9 @@ export default function RootLayout({
         </Suspense>
         <Analytics />
         <ChatWidgetWrapper />
+        <MembershipPopup />
+        <MembershipFloatingButton />
+        <CouponModal />
       </body>
     </html>
   );
