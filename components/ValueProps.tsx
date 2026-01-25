@@ -43,18 +43,18 @@ export default function ValueProps() {
     <section className="bg-white text-[#1a1a1a] py-8 md:py-12 border-b border-black/5">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16">
         {/* Mobile - Grid Layout */}
-        <div className="md:hidden grid grid-cols-2 gap-6">
-          {props.map((prop, index) => {
+        <div className="md:hidden grid grid-cols-2 gap-4">
+          {props.slice(1, 5).map((prop, index) => {
             const content = (
-              <div className="flex flex-col items-center text-center gap-2">
+              <div className="flex flex-col items-center text-center gap-1">
                 {prop.whatsappLink ? (
-                  <WhatsAppIcon size={18} />
+                  <WhatsAppIcon size={16} />
                 ) : (
-                  <prop.icon size={18} className="text-[#1a1a1a] opacity-40" strokeWidth={1} />
+                  <prop.icon size={16} className="text-[#1a1a1a] opacity-40" strokeWidth={1} />
                 )}
-                <div className="space-y-0.5">
-                  <p className={`text-[10px] font-light tracking-[0.15em] uppercase ${prop.whatsappLink ? 'text-[#25D366]' : 'text-[#1a1a1a] opacity-80'}`}>{prop.title}</p>
-                  <p className={`text-[9px] font-light tracking-[0.1em] ${prop.whatsappLink ? 'text-[#25D366] opacity-80' : 'text-[#1a1a1a] opacity-50'}`}>{prop.subtitle}</p>
+                <div className="space-y-0">
+                  <p className={`text-[9px] font-light tracking-[0.1em] uppercase leading-tight ${prop.whatsappLink ? 'text-[#25D366]' : 'text-[#1a1a1a] opacity-80'}`}>{prop.title}</p>
+                  <p className={`text-[8px] font-light tracking-[0.08em] leading-tight ${prop.whatsappLink ? 'text-[#25D366] opacity-80' : 'text-[#1a1a1a] opacity-50'}`}>{prop.subtitle}</p>
                 </div>
               </div>
             );
