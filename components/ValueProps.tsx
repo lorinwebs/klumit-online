@@ -81,7 +81,7 @@ export default function ValueProps() {
         <div className="hidden md:grid md:grid-cols-5 gap-8 lg:gap-12">
           {props.map((prop, index) => {
             const content = (
-              <div className="flex flex-col items-center text-center gap-3">
+              <div className="flex flex-col items-center text-center gap-3 group cursor-pointer">
                 {prop.whatsappLink ? (
                   <WhatsAppIcon size={16} />
                 ) : (
@@ -89,7 +89,7 @@ export default function ValueProps() {
                 )}
                 <div className="space-y-1">
                   <p className={`text-[10px] font-light tracking-[0.2em] uppercase ${prop.whatsappLink ? 'text-[#25D366]' : 'text-[#1a1a1a] opacity-70'}`}>{prop.title}</p>
-                  <p className={`text-[9px] font-light tracking-[0.15em] ${prop.whatsappLink ? 'text-[#25D366] opacity-70' : 'text-[#1a1a1a] opacity-50'}`}>{prop.subtitle}</p>
+                  <p className={`text-[9px] font-light tracking-[0.15em] transition-all duration-300 group-hover:text-[11px] ${prop.whatsappLink ? 'text-[#25D366] opacity-70' : 'text-[#1a1a1a] opacity-50'}`}>{prop.subtitle}</p>
                 </div>
               </div>
             );
