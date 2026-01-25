@@ -848,9 +848,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                           onClick={handleAddToCart}
                           disabled={!currentVariant?.availableForSale || isMaxStock}
                           className="w-full bg-[#1a1a1a] text-white py-3 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-                          title={isMaxStock ? `מקסימום ${currentVariant?.quantityAvailable} יחידות במלאי` : undefined}
+                          title={isMaxStock ? `אזל המלאי (${currentVariant?.quantityAvailable} יחידות)` : undefined}
                         >
-                          {isMaxStock ? 'מקסימום במלאי' : 'הוסף לעגלה'}
+                          {isMaxStock ? 'אזל המלאי' : 'הוסף לעגלה'}
                         </button>
                       );
                     })()}
@@ -982,9 +982,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                         onClick={handleAddToCart}
                         disabled={!currentVariant?.availableForSale || isMaxStock}
                         className="w-full bg-[#1a1a1a] text-white py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-                        title={isMaxStock ? `מקסימום ${currentVariant?.quantityAvailable} יחידות במלאי` : undefined}
+                        title={isMaxStock ? `אזל המלאי (${currentVariant?.quantityAvailable} יחידות)` : undefined}
                       >
-                        {isMaxStock ? 'מקסימום במלאי' : 'הוסף לעגלה'}
+                        {isMaxStock ? 'אזל המלאי' : 'הוסף לעגלה'}
                       </button>
                     );
                   })()}
@@ -1117,9 +1117,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                   onClick={handleAddToCart}
                   disabled={!currentVariant?.availableForSale || isMaxStock}
                   className="bg-[#1a1a1a] text-white py-3 px-8 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury flex-shrink-0 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300"
-                  title={isMaxStock ? `מקסימום ${currentVariant?.quantityAvailable} יחידות במלאי` : undefined}
+                  title={isMaxStock ? `אזל המלאי (${currentVariant?.quantityAvailable} יחידות)` : undefined}
                 >
-                  {isMaxStock ? 'מקסימום במלאי' : 'הוסף לעגלה'}
+                  {isMaxStock ? 'אזל המלאי' : 'הוסף לעגלה'}
                 </button>
               );
             })()}

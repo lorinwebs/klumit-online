@@ -122,9 +122,9 @@ export default function ProductCard({
                 onClick={handleAddToCart}
                 disabled={!available || isMaxStock}
                 className="w-full py-2 text-[10px] tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label={isMaxStock ? `מקסימום ${quantityAvailable} יחידות במלאי` : `הוסף ${title} לסל הקניות`}
+                aria-label={isMaxStock ? `אזל המלאי (${quantityAvailable} יחידות)` : `הוסף ${title} לסל הקניות`}
               >
-                {isMaxStock ? 'מקסימום במלאי' : 'הוספה לסל'}
+                {isMaxStock ? 'אזל המלאי' : 'הוספה לסל'}
               </button>
             </div>
           </div>

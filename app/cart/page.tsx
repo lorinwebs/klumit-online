@@ -235,7 +235,7 @@ export default function CartPage() {
                         {/* Inventory Notice - מתחת לכפתורי כמות */}
                         {item.quantityAvailable !== undefined && item.quantity >= item.quantityAvailable && (
                           <span className="text-xs text-amber-600 font-light">
-                            מקסימום במלאי ({item.quantityAvailable} יחידות)
+                            אזל המלאי ({item.quantityAvailable} יחידות)
                           </span>
                         )}
                       </div>
