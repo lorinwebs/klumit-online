@@ -516,7 +516,31 @@ export const useCartStore = create<CartStore>()((set, get) => {
         // אם לא קיבלנו cartId חדש אבל יש לנו אחד קיים ויש פריטים, נשמור אותו
         saveCartIdToLocalStorage(cartId);
       }
+      
+      // טעינה מחדש מהשרת כדי לוודא שהמחיקה הסתיימה
+      // זה קריטי כדי למנוע מצב שבו הפריטים חוזרים כשטוענים את העגלה מחדש
+      updateInProgress = false; // חייבים לסיים לפני loadFromShopify
+      if (newCartId || cartId) {
+        // מחכים קצת כדי לוודא ש-Shopify סיים לעדכן
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        const loadedItems = await loadCartFromShopify(newCartId || cartId!);
+        // נעדכן את ה-state עם הנתונים מהשרת כדי לוודא שהמחיקה הסתיימה
+        if (loadedItems !== null) {
+          setItems(loadedItems);
+          if (loadedItems.length === 0) {
+            set({ cartId: null });
+            saveCartIdToLocalStorage(null);
+          } else {
+            set({ cartId: newCartId || cartId });
+            if (newCartId || cartId) {
+              saveCartIdToLocalStorage(newCartId || cartId);
+            }
+          }
+        }
+      }
     } catch (err) {
+      // במקרה שגיאה, נשאיר את המצב האופטימי (newItems)
     } finally {
       updateInProgress = false;
       set({ isUpdating: false });
