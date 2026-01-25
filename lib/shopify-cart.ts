@@ -510,13 +510,14 @@ async function syncCartToShopifyImpl(
     const shopifyLines = cartData.lines?.edges || [];
     
     // מפה: VariantID -> { LineID, Quantity }
-    const shopifyMap = new Map<string, { lineId: string, quantity: number }>();
+    const shopifyMap = new Map<string, { lineId: string, quantity: number, variantId: string }>();
     
     shopifyLines.forEach((edge: any) => {
       if (edge.node?.merchandise?.id) {
         shopifyMap.set(edge.node.merchandise.id, {
           lineId: edge.node.id,
-          quantity: edge.node.quantity
+          quantity: edge.node.quantity,
+          variantId: edge.node.merchandise.id
         });
       }
     });
@@ -527,6 +528,38 @@ async function syncCartToShopifyImpl(
       localMap.set(item.variantId, item.quantity);
     });
 
+    // Helper function למציאת פריט ב-shopifyMap לפי variantId (עם תמיכה בפורמטים שונים)
+    const findShopifyLine = (variantId: string): { lineId: string, quantity: number } | null => {
+      // נסה למצוא ישירות
+      const directMatch = shopifyMap.get(variantId);
+      if (directMatch) {
+        return { lineId: directMatch.lineId, quantity: directMatch.quantity };
+      }
+      
+      // אם לא מצאנו, נחפש עם השוואה לפי ID אמיתי
+      for (const [shopifyVariantId, shopifyLine] of shopifyMap.entries()) {
+        if (areIdsEqual(variantId, shopifyVariantId)) {
+          return { lineId: shopifyLine.lineId, quantity: shopifyLine.quantity };
+        }
+      }
+      
+      return null;
+    };
+
+    // Helper function לבדיקה אם variantId קיים ב-localMap (עם תמיכה בפורמטים שונים)
+    const existsInLocalMap = (variantId: string): boolean => {
+      if (localMap.has(variantId)) {
+        return true;
+      }
+      
+      for (const localVariantId of localMap.keys()) {
+        if (areIdsEqual(variantId, localVariantId)) {
+          return true;
+        }
+      }
+      
+      return false;
+    };
 
     const linesToAdd: Array<{ merchandiseId: string, quantity: number }> = [];
     const linesToUpdate: Array<{ id: string, quantity: number }> = [];
@@ -534,7 +567,7 @@ async function syncCartToShopifyImpl(
 
     // 1. בדוק כל פריט מקומי: האם להוסיף או לעדכן?
     items.forEach(item => {
-      const shopifyLine = shopifyMap.get(item.variantId);
+      const shopifyLine = findShopifyLine(item.variantId);
       
       if (shopifyLine) {
         // קיים גם בשופיפיי. האם הכמות שונה?
@@ -560,7 +593,7 @@ async function syncCartToShopifyImpl(
     // ואז נמחק הכל. אבל אם יש פריטים, נמחק רק את מה שלא קיים בלוקאלי
     if (items.length > 0) {
       shopifyMap.forEach((val, variantId) => {
-        if (!localMap.has(variantId)) {
+        if (!existsInLocalMap(variantId)) {
           linesToRemove.push(val.lineId);
         }
       });
