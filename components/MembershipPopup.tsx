@@ -25,9 +25,24 @@ export default function MembershipPopup() {
     }
   }, [pathname]);
 
-  const handleClose = () => {
+  const handleClose = async () => {
     setIsOpen(false);
     localStorage.setItem('hasSeenMembershipPopup', 'true');
+    
+    // שלח אירוע לטלגרם
+    try {
+      await fetch('/api/telegram/notify-membership-dismiss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : '',
+          pageUrl: typeof window !== 'undefined' ? window.location.href : '',
+        }),
+      });
+    } catch (error) {
+      // Silent fail - don't break the dismiss functionality
+      console.warn('Failed to send dismiss event to Telegram:', error);
+    }
   };
 
   const handleJoin = () => {
