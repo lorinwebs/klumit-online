@@ -67,6 +67,7 @@ export interface Translations {
   'products.resetFilters': string;
   'products.addToCartShort': string;
   'products.soldOut': string;
+  'products.quickView': string;
   
   // Membership
   'membership.topBar': string;
@@ -166,6 +167,7 @@ export const translations: Record<Language, Translations> = {
     'products.resetFilters': 'נקה סינונים',
     'products.addToCartShort': 'הוספה לסל',
     'products.soldOut': 'אזל מהמלאי',
+    'products.quickView': 'צפייה מהירה',
     
     // Membership
     'membership.topBar': 'הצטרפו למועדון הלקוחות ותקבלו',
@@ -264,6 +266,7 @@ export const translations: Record<Language, Translations> = {
     'products.resetFilters': 'Reset Filters',
     'products.addToCartShort': 'Add to Cart',
     'products.soldOut': 'Sold Out',
+    'products.quickView': 'Quick View',
     
     // Membership
     'membership.topBar': 'Join our customer club and get',
@@ -362,6 +365,7 @@ export const translations: Record<Language, Translations> = {
     'products.resetFilters': 'Сбросить фильтры',
     'products.addToCartShort': 'В корзину',
     'products.soldOut': 'Нет в наличии',
+    'products.quickView': 'Быстрый просмотр',
     
     // Membership
     'membership.topBar': 'Присоединяйтесь к клубу клиентов и получите',

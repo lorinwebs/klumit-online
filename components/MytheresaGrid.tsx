@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { SlidersHorizontal } from 'lucide-react';
@@ -36,6 +36,104 @@ interface MytheresaGridProps {
   category?: 'bags' | 'belts' | 'wallets' | 'all';
   maxProducts?: number;
   showViewAll?: boolean;
+}
+
+// Product Image Slider Component with Flash Effect
+function ProductImageSlider({ 
+  images, 
+  title,
+  handle 
+}: { 
+  images: Array<{ node: { url: string; altText: string | null } }>; 
+  title: string;
+  handle: string;
+}) {
+  const { t } = useLanguage();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const [imageOpacity, setImageOpacity] = useState(1);
+  const [quickViewHovered, setQuickViewHovered] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Only switch to next image on desktop when hovered and there are multiple images
+    if (isHovered && images.length > 1 && window.innerWidth >= 768 && currentImageIndex === 0) {
+      timeoutRef.current = setTimeout(() => {
+        // Subtle flash effect: fade out slightly
+        setImageOpacity(0.3);
+        
+        // After fade, change to next image and fade in
+        setTimeout(() => {
+          setCurrentImageIndex(1); // Only show next image, not all
+          setImageOpacity(1);
+        }, 200); // Flash duration
+        
+      }, 400); // Quick switch - 400ms after hover
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [isHovered, images.length, currentImageIndex]);
+
+  // Reset to first image when hover ends
+  useEffect(() => {
+    if (!isHovered) {
+      setImageOpacity(1);
+      setCurrentImageIndex(0);
+    }
+  }, [isHovered]);
+
+  return (
+    <div 
+      className="relative aspect-[3/4] bg-gray-100 mb-2 overflow-hidden group/image"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {images[currentImageIndex] ? (
+        <Image
+          key={currentImageIndex}
+          src={images[currentImageIndex].node.url}
+          alt={images[currentImageIndex].node.altText || title}
+          fill
+          className="object-cover group-hover:scale-105 transition-all duration-500"
+          style={{ 
+            opacity: imageOpacity,
+            transition: 'opacity 200ms ease-in-out, transform 500ms ease-out'
+          }}
+          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+          אין תמונה
+        </div>
+      )}
+      
+      {/* Quick View Button - Desktop Only */}
+      <div className="hidden md:block absolute inset-0 opacity-0 group-hover/image:opacity-100 transition-opacity duration-300">
+        <div className="absolute inset-0 bg-black/5" />
+        <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = `/products/${handle}`;
+            }}
+            onMouseEnter={() => setQuickViewHovered(true)}
+            onMouseLeave={() => setQuickViewHovered(false)}
+            className={`px-4 py-1.5 text-[10px] tracking-[0.15em] uppercase font-light border transition-all duration-300 ${
+              quickViewHovered 
+                ? 'bg-black text-white border-black' 
+                : 'bg-white text-black border-white'
+            }`}
+          >
+            {t('products.quickView') || 'צפייה מהירה'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function MytheresaGrid({ 
@@ -433,23 +531,12 @@ export default function MytheresaGrid({
                   </div>
                 )}
 
-                {/* Product Image */}
-                <div className="relative aspect-[3/4] bg-gray-100 mb-2 overflow-hidden">
-                  {product.images.edges[0] ? (
-                    <Image
-                      src={product.images.edges[0].node.url}
-                      alt={product.images.edges[0].node.altText || product.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                      אין תמונה
-                    </div>
-                  )}
-
-                </div>
+                {/* Product Image with Auto-Cycle on Hover */}
+                <ProductImageSlider 
+                  images={product.images.edges} 
+                  title={product.title}
+                  handle={product.handle}
+                />
 
                 {/* Product Info */}
                 <div className="space-y-1 text-center">
