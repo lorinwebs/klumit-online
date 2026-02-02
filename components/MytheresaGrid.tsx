@@ -153,7 +153,7 @@ export default function MytheresaGrid({
     return (
       <div className="min-h-screen bg-white">
         {/* Filters Bar Skeleton */}
-        <div className="sticky top-[186px] md:top-[170px] z-40 bg-white border-b border-gray-200">
+        <div className="sticky top-[168px] md:top-[170px] z-40 bg-white border-b border-gray-200">
           {/* Mobile: Grid */}
           <div className="grid grid-cols-2 md:hidden">
             <div className="h-12 border-l border-gray-200 bg-gray-100 animate-pulse" />
@@ -195,7 +195,7 @@ export default function MytheresaGrid({
       )}
 
       {/* Filters & Sort Bar - Sticky */}
-      <div className="sticky top-[138px] md:top-[122px] z-40 bg-white border-b border-gray-200">
+      <div className="sticky top-[168px] md:top-[170px] z-40 bg-white border-b border-gray-200">
         {/* Mobile: Full width grid */}
         <div className="grid grid-cols-2 md:hidden">
           {/* Filters Button - Full width */}

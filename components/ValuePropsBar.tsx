@@ -35,7 +35,7 @@ export default function ValuePropsBar() {
   ];
 
   return (
-    <div className="sticky top-[136px] md:top-[120px] z-30 bg-[#f8f8f8] border-b border-gray-200">
+    <div className="sticky top-[118px] md:top-[120px] z-30 bg-[#f8f8f8] border-b border-gray-200">
       <div className="max-w-7xl mx-auto">
         {/* Desktop: Horizontal */}
         <div className="hidden md:grid md:grid-cols-5 divide-x divide-gray-200">

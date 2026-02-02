@@ -35,7 +35,7 @@ export default function HeroMinimal({
               fill
               priority
               className="object-cover"
-              style={{ objectPosition: 'center 25%' }}
+              style={{ objectPosition: 'center 15%' }}
               sizes="100vw"
               quality={90}
             />
@@ -72,7 +72,7 @@ export default function HeroMinimal({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, delay: 0.2 }}
-              className="text-5xl md:text-6xl lg:text-7xl tracking-wide leading-tight text-white drop-shadow-2xl"
+              className="text-3xl md:text-6xl lg:text-7xl tracking-wide leading-tight text-white drop-shadow-2xl"
               style={{ 
                 fontFamily: 'Georgia, "Times New Roman", serif',
                 fontWeight: 100, 

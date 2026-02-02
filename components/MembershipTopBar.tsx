@@ -124,11 +124,11 @@ export default function MembershipTopBar() {
 
   return (
     <>
-      <div className="relative bg-[#1a1a1a] text-white py-3 px-4 text-center z-[70]">
+      <div className="relative bg-[#1a1a1a] text-white py-1.5 md:py-3 px-4 text-center z-[70]">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
           <button
             onClick={handleClick}
-            className="text-sm md:text-base font-light hover:underline cursor-pointer"
+            className="text-xs md:text-base font-light hover:underline cursor-pointer"
             dir="rtl"
           >
             הצטרפו למועדון הלקוחות ותקבלו <span className="font-medium">20%</span> בקניה ראשונה!
@@ -138,7 +138,7 @@ export default function MembershipTopBar() {
             className="absolute left-2 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors p-1"
             aria-label="סגור"
           >
-            <X size={18} />
+            <X size={14} className="md:w-[18px] md:h-[18px]" />
           </button>
         </div>
       </div>
