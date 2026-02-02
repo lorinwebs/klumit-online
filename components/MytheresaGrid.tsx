@@ -410,7 +410,7 @@ export default function MytheresaGrid({
             href="/products"
             className="inline-flex items-center gap-2 px-10 py-4 text-sm tracking-wider uppercase font-light bg-[#1a1a1a] text-white hover:bg-[#2a2a2a] transition-all duration-300"
           >
-            <span>ראה הכל ({sortedProducts.length} מוצרים)</span>
+            <span>לכל הקולקציה</span>
           </a>
         </div>
       )}
