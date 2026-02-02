@@ -79,12 +79,13 @@ async function fetchProducts(tab: TabType): Promise<Product[]> {
 }
 
 interface PageProps {
-  searchParams: Promise<{ tab?: string; vendor?: string }>;
+  searchParams: Promise<{ tab?: string; category?: string; vendor?: string }>;
 }
 
 export default async function ProductsPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const activeTab = (params.tab as TabType) || 'bags';
+  // Support both 'tab' and 'category' parameters
+  const activeTab = ((params.category || params.tab) as TabType) || 'bags';
   const selectedVendor = params.vendor || 'all';
   
   const products = await fetchProducts(activeTab);

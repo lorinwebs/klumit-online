@@ -8,6 +8,7 @@ import MembershipPopup from '@/components/MembershipPopup';
 import MembershipFloatingButton from '@/components/MembershipFloatingButton';
 import MembershipTopBar from '@/components/MembershipTopBar';
 import CouponModal from '@/components/CouponModal';
+import { LanguageProvider } from '@/lib/LanguageContext';
 import './globals.css';
 
 const assistant = Assistant({ 
@@ -234,20 +235,22 @@ export default function RootLayout({
         />
       </head>
       <body className={`${assistant.variable} ${cormorant.variable} font-sans overflow-x-hidden`}>
-        <MembershipTopBar />
-        <a href="#main-content" className="skip-to-main">
-          דלג לתוכן הראשי
-        </a>
-        <Suspense fallback={null}>
-          <AnalyticsProvider>
-            {children}
-          </AnalyticsProvider>
-        </Suspense>
-        <Analytics />
-        <ChatWidgetWrapper />
-        <MembershipPopup />
-        <MembershipFloatingButton />
-        <CouponModal />
+        <LanguageProvider>
+          <MembershipTopBar />
+          <a href="#main-content" className="skip-to-main">
+            דלג לתוכן הראשי
+          </a>
+          <Suspense fallback={null}>
+            <AnalyticsProvider>
+              {children}
+            </AnalyticsProvider>
+          </Suspense>
+          <Analytics />
+          <ChatWidgetWrapper />
+          <MembershipPopup />
+          <MembershipFloatingButton />
+          <CouponModal />
+        </LanguageProvider>
       </body>
     </html>
   );

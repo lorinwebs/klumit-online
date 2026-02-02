@@ -5,8 +5,10 @@ import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import LoginModal from './LoginModal';
 import { X } from 'lucide-react';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function MembershipTopBar() {
+  const { t } = useLanguage();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
@@ -124,21 +126,21 @@ export default function MembershipTopBar() {
 
   return (
     <>
-      <div className="relative bg-[#1a1a1a] text-white py-1.5 md:py-3 px-4 text-center z-[70]">
+      <div className="relative bg-red-600 text-white py-1 md:py-3 px-4 text-center z-[70]">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
           <button
             onClick={handleClick}
-            className="text-xs md:text-base font-light hover:underline cursor-pointer"
+            className="text-[10px] md:text-base font-light hover:underline cursor-pointer leading-tight"
             dir="rtl"
           >
-            הצטרפו למועדון הלקוחות ותקבלו <span className="font-medium">20%</span> בקניה ראשונה!
+            {t('membership.topBar')} <span className="font-medium">{t('membership.discount')}</span> בקניה ראשונה!
           </button>
           <button
             onClick={handleDismiss}
-            className="absolute left-2 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors p-1"
+            className="absolute left-1 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors p-0.5"
             aria-label="סגור"
           >
-            <X size={14} className="md:w-[18px] md:h-[18px]" />
+            <X size={12} className="md:w-[18px] md:h-[18px]" />
           </button>
         </div>
       </div>

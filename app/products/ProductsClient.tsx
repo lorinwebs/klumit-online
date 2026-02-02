@@ -3,6 +3,7 @@
 import { useMemo, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from '@/components/ProductCard';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface Product {
   id: string;
@@ -48,6 +49,7 @@ export default function ProductsClient({
   activeTab,
   initialVendor 
 }: ProductsClientProps) {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const prevTabRef = useRef(activeTab);
@@ -158,13 +160,13 @@ export default function ProductsClient({
       {/* Products Grid */}
       {filteredProducts.length === 0 ? (
         <div className="max-w-7xl mx-auto text-center py-20">
-          <p className="text-gray-400 font-light text-lg">לא נמצאו מוצרים בקטגוריה זו</p>
+          <p className="text-gray-400 font-light text-lg">{t('products.noProductsInCategory')}</p>
           {selectedVendor !== 'all' && (
             <button 
               onClick={() => handleVendorChange('all')}
               className="mt-4 text-sm underline text-gray-600 hover:text-black"
             >
-              נקה סינון
+              {t('products.resetFilters')}
             </button>
           )}
         </div>

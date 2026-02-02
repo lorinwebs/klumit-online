@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { SlidersHorizontal } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { shopifyClient, PRODUCTS_QUERY } from '@/lib/shopify';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface Product {
   id: string;
@@ -42,6 +43,7 @@ export default function MytheresaGrid({
   maxProducts,
   showViewAll = false,
 }: MytheresaGridProps) {
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'new' | 'price-low' | 'price-high'>('new');
@@ -129,18 +131,18 @@ export default function MytheresaGrid({
     ? products.filter(p => selectedVendors.has(p.vendor || 'KLUMIT'))
     : products;
 
-  // Sort products - NEW_ARRIVAL first only when sorting by 'new'
+  // Sort products - NEW_ARRIVAL always first regardless of sort
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     // Check for new_arrival tag (case insensitive)
     const aIsNew = a.tags?.some(tag => tag.toLowerCase() === 'new_arrival') || false;
     const bIsNew = b.tags?.some(tag => tag.toLowerCase() === 'new_arrival') || false;
     
-    // Only prioritize NEW_ARRIVAL when sorting by 'new'
+    // ALWAYS prioritize NEW_ARRIVAL products first
+    if (aIsNew && !bIsNew) return -1;
+    if (!aIsNew && bIsNew) return 1;
+    
+    // Then apply the selected sort
     if (sortBy === 'new') {
-      // NEW_ARRIVAL products come first
-      if (aIsNew && !bIsNew) return -1;
-      if (!aIsNew && bIsNew) return 1;
-      // Then sort by creation date
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     } else if (sortBy === 'price-low') {
       return parseFloat(a.priceRange.minVariantPrice.amount) - parseFloat(b.priceRange.minVariantPrice.amount);
@@ -153,7 +155,7 @@ export default function MytheresaGrid({
     return (
       <div className="min-h-screen bg-white">
         {/* Filters Bar Skeleton */}
-        <div className="sticky top-[168px] md:top-[170px] z-40 bg-white border-b border-gray-200">
+        <div className="sticky top-[160px] md:top-[170px] z-40 bg-white border-b border-gray-200">
           {/* Mobile: Grid */}
           <div className="grid grid-cols-2 md:hidden">
             <div className="h-12 border-l border-gray-200 bg-gray-100 animate-pulse" />
@@ -204,7 +206,7 @@ export default function MytheresaGrid({
             className="relative flex items-center justify-center gap-2 h-12 border-l border-gray-200 hover:bg-gray-50 transition-colors"
           >
             <SlidersHorizontal size={16} className="text-[#1a1a1a]" />
-            <span className="text-sm font-light tracking-wide">סינון</span>
+            <span className="text-sm font-light tracking-wide">{t('products.filter')}</span>
             {selectedVendors.size > 0 && (
               <span className="absolute top-2 left-2 w-2 h-2 bg-[#1a1a1a] rounded-full" />
             )}
@@ -215,7 +217,7 @@ export default function MytheresaGrid({
             onClick={() => setShowSort(!showSort)}
             className="flex items-center justify-center gap-2 h-12 hover:bg-gray-50 transition-colors"
           >
-            <span className="text-sm font-light tracking-wide">מיון</span>
+            <span className="text-sm font-light tracking-wide">{t('products.sort')}</span>
           </button>
         </div>
 
@@ -227,7 +229,7 @@ export default function MytheresaGrid({
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center gap-2 px-4 py-1.5 text-xs font-light tracking-wide border border-gray-300 hover:border-[#1a1a1a] transition-colors bg-white relative"
             >
-              <span>סינון</span>
+              <span>{t('products.filter')}</span>
               <SlidersHorizontal size={14} className="text-[#1a1a1a]" />
               {selectedVendors.size > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#1a1a1a] text-white text-[8px] flex items-center justify-center rounded-full">
@@ -274,7 +276,7 @@ export default function MytheresaGrid({
               onClick={() => setShowSort(!showSort)}
               className="flex items-center gap-2 px-4 py-1.5 text-xs font-light tracking-wide border border-gray-300 hover:border-[#1a1a1a] transition-colors bg-white"
             >
-              <span>מיון</span>
+              <span>{t('products.sort')}</span>
               <SlidersHorizontal size={14} className="text-[#1a1a1a]" />
             </button>
             
@@ -294,7 +296,7 @@ export default function MytheresaGrid({
                     sortBy === 'new' ? 'font-normal bg-gray-50' : 'font-light'
                   }`}
                 >
-                  חדשים ביותר
+                  {t('products.newest')}
                 </button>
                 <button
                   onClick={() => {
@@ -305,7 +307,7 @@ export default function MytheresaGrid({
                     sortBy === 'price-low' ? 'font-normal bg-gray-50' : 'font-light'
                   }`}
                 >
-                  מחיר: נמוך לגבוה
+                  {t('products.priceLowHigh')}
                 </button>
                 <button
                   onClick={() => {
@@ -316,7 +318,7 @@ export default function MytheresaGrid({
                     sortBy === 'price-high' ? 'font-normal bg-gray-50' : 'font-light'
                   }`}
                 >
-                  מחיר: גבוה לנמוך
+                  {t('products.priceHighLow')}
                 </button>
               </motion.div>
             )}
@@ -328,7 +330,7 @@ export default function MytheresaGrid({
               onClick={() => setSelectedVendors(new Set())}
               className="text-xs font-light text-gray-500 hover:text-[#1a1a1a] underline"
             >
-              נקה
+              {t('products.clear')}
             </button>
           )}
         </div>
@@ -380,7 +382,7 @@ export default function MytheresaGrid({
                 sortBy === 'new' ? 'font-normal bg-gray-50' : 'font-light'
               }`}
             >
-              חדשים ביותר
+              {t('products.newest')}
             </button>
             <button
               onClick={() => {
@@ -391,7 +393,7 @@ export default function MytheresaGrid({
                 sortBy === 'price-low' ? 'font-normal bg-gray-50' : 'font-light'
               }`}
             >
-              מחיר: נמוך לגבוה
+              {t('products.priceLowHigh')}
             </button>
             <button
               onClick={() => {
@@ -402,7 +404,7 @@ export default function MytheresaGrid({
                 sortBy === 'price-high' ? 'font-normal bg-gray-50' : 'font-light'
               }`}
             >
-              מחיר: גבוה לנמוך
+              {t('products.priceHighLow')}
             </button>
           </motion.div>
         )}
@@ -425,7 +427,7 @@ export default function MytheresaGrid({
                   <div className="mb-2">
                     <div className="inline-block bg-[#1a1a1a] px-2 py-1">
                       <span className="text-[9px] md:text-[10px] font-medium tracking-[0.2em] uppercase text-white">
-                        חדש!
+                        {t('products.newTag')}
                       </span>
                     </div>
                   </div>
@@ -472,20 +474,34 @@ export default function MytheresaGrid({
         {/* No Products */}
         {sortedProducts.length === 0 && (
           <div className="text-center py-16">
-            <p className="text-gray-500">לא נמצאו מוצרים</p>
+            <p className="text-gray-500">{t('products.noProducts')}</p>
           </div>
         )}
       </div>
 
-      {/* View All Button */}
-      {showViewAll && maxProducts && sortedProducts.length > maxProducts && (
-        <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-          <a
-            href="/products"
-            className="inline-flex items-center gap-2 px-10 py-4 text-sm tracking-wider uppercase font-light bg-[#1a1a1a] text-white hover:bg-[#2a2a2a] transition-all duration-300"
-          >
-            <span>לכל הקולקציה</span>
-          </a>
+      {/* Shop Categories Buttons */}
+      {showViewAll && maxProducts && (
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
+            <a
+              href="/products?tab=wallets"
+              className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-4 text-sm tracking-wider uppercase font-light bg-white text-[#1a1a1a] border-2 border-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white transition-all duration-300"
+            >
+              <span>{t('products.shopWallets')}</span>
+            </a>
+            <a
+              href="/products?tab=belts"
+              className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-4 text-sm tracking-wider uppercase font-light bg-white text-[#1a1a1a] border-2 border-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white transition-all duration-300"
+            >
+              <span>{t('products.shopBelts')}</span>
+            </a>
+            <a
+              href="/products?tab=bags"
+              className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-4 text-sm tracking-wider uppercase font-light bg-white text-[#1a1a1a] border-2 border-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white transition-all duration-300"
+            >
+              <span>{t('products.shopBags')}</span>
+            </a>
+          </div>
         </div>
       )}
     </div>

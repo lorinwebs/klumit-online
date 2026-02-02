@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface ImageZoomModalProps {
   images: Array<{
@@ -14,11 +15,13 @@ interface ImageZoomModalProps {
 }
 
 export default function ImageZoomModal({ images, initialIndex, onClose }: ImageZoomModalProps) {
+  const { t } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [touchStart, setTouchStart] = useState({ x: 0, y: 0, time: 0 });
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
   // Reset zoom and position when image changes
@@ -101,12 +104,21 @@ export default function ImageZoomModal({ images, initialIndex, onClose }: ImageZ
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (scale > 1 && e.touches.length === 1) {
-      setIsDragging(true);
-      setDragStart({
-        x: e.touches[0].clientX - position.x,
-        y: e.touches[0].clientY - position.y,
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      setTouchStart({
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now(),
       });
+      
+      if (scale > 1) {
+        setIsDragging(true);
+        setDragStart({
+          x: touch.clientX - position.x,
+          y: touch.clientY - position.y,
+        });
+      }
     }
   };
 
@@ -119,7 +131,28 @@ export default function ImageZoomModal({ images, initialIndex, onClose }: ImageZ
     }
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    // Handle swipe for image navigation when not zoomed
+    if (scale === 1 && images.length > 1 && e.changedTouches.length === 1) {
+      const touch = e.changedTouches[0];
+      const deltaX = touch.clientX - touchStart.x;
+      const deltaY = Math.abs(touch.clientY - touchStart.y);
+      const deltaTime = Date.now() - touchStart.time;
+      
+      // Swipe threshold: 50px horizontal movement, less than 100px vertical, within 300ms
+      const isSwipe = Math.abs(deltaX) > 50 && deltaY < 100 && deltaTime < 300;
+      
+      if (isSwipe) {
+        if (deltaX > 0) {
+          // Swipe right -> previous image (RTL)
+          handlePrevious();
+        } else {
+          // Swipe left -> next image (RTL)
+          handleNext();
+        }
+      }
+    }
+    
     setIsDragging(false);
   };
 
@@ -149,7 +182,7 @@ export default function ImageZoomModal({ images, initialIndex, onClose }: ImageZ
             }}
             disabled={scale <= 1}
             className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="הקטן"
+            aria-label={t('products.zoomOut')}
           >
             <ZoomOut size={20} className="text-white" />
           </button>
@@ -160,7 +193,7 @@ export default function ImageZoomModal({ images, initialIndex, onClose }: ImageZ
             }}
             disabled={scale >= 4}
             className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="הגדל"
+            aria-label={t('products.zoomIn')}
           >
             <ZoomIn size={20} className="text-white" />
           </button>
@@ -174,7 +207,7 @@ export default function ImageZoomModal({ images, initialIndex, onClose }: ImageZ
             onClose();
           }}
           className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
-          aria-label="סגור"
+          aria-label={t('products.close')}
         >
           <X size={24} className="text-white" />
         </button>
@@ -225,7 +258,7 @@ export default function ImageZoomModal({ images, initialIndex, onClose }: ImageZ
               handlePrevious();
             }}
             className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
-            aria-label="תמונה קודמת"
+            aria-label={t('products.previousImage')}
           >
             <ChevronRight size={32} className="text-white" />
           </button>
@@ -235,7 +268,7 @@ export default function ImageZoomModal({ images, initialIndex, onClose }: ImageZ
               handleNext();
             }}
             className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
-            aria-label="תמונה הבאה"
+            aria-label={t('products.nextImage')}
           >
             <ChevronLeft size={32} className="text-white" />
           </button>
@@ -250,9 +283,9 @@ export default function ImageZoomModal({ images, initialIndex, onClose }: ImageZ
       {/* Instructions */}
       {scale === 1 && (
         <div className="absolute bottom-4 right-4 text-white/70 text-xs space-y-1 text-right hidden md:block">
-          <p>לחץ + או - להגדלה/הקטנה</p>
-          <p>גלגל העכבר לזום</p>
-          <p>גרור להזזת התמונה</p>
+          <p>{t('products.zoomInstructions')}</p>
+          <p>{t('products.wheelZoom')}</p>
+          <p>{t('products.dragMove')}</p>
         </div>
       )}
     </div>

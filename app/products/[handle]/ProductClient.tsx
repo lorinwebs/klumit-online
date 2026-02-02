@@ -10,6 +10,7 @@ import ProductCard from '@/components/ProductCard';
 import Tooltip from '@/components/Tooltip';
 import ImageZoomModal from '@/components/ImageZoomModal';
 import { trackProductViewed, trackAddToCart } from '@/lib/analytics';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface Product {
   id: string;
@@ -61,6 +62,7 @@ interface ProductClientProps {
 }
 
 export default function ProductClient({ product, relatedProducts: initialRelatedProducts }: ProductClientProps) {
+  const { t } = useLanguage();
   const [selectedVariant, setSelectedVariant] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -392,7 +394,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       if (quantityAvailable !== undefined && quantityAvailable !== null) {
         // אם המלאי הוא 0 - חוסמים (אזל במלאי)
         if (quantityAvailable === 0) {
-          setStockMessage('אזל במלאי');
+          setStockMessage(t('products.outOfStock'));
           setShowStockToast(true);
           setTimeout(() => {
             setShowStockToast(false);
@@ -402,7 +404,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
         
         // אם הכמות החדשה גדולה מהמלאי הזמין - חוסמים
         if (newQuantity > quantityAvailable) {
-          setStockMessage(`יש רק ${quantityAvailable} יחידות במלאי`);
+          setStockMessage(`${t('products.stockWarning')} ${quantityAvailable} ${t('products.stockLeft')}`);
           setShowStockToast(true);
           setTimeout(() => {
             setShowStockToast(false);
@@ -618,7 +620,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     const currentQuantity = existingItem?.quantity || 0;
     const isMaxStock = currentVariant?.quantityAvailable !== undefined && 
                        currentQuantity >= currentVariant.quantityAvailable;
-    const tooltipText = isMaxStock ? `אזל המלאי (${currentVariant?.quantityAvailable} יחידות)` : undefined;
+    const tooltipText = isMaxStock ? `${t('products.outOfStock')} (${currentVariant?.quantityAvailable} ${t('products.units')})` : undefined;
     const isDisabled = !currentVariant?.availableForSale || isMaxStock || isAddingToCart;
     const button = (
       <button
@@ -633,9 +635,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
         {isAddingToCart ? (
           <>
             <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            נוסף לעגלה
+            {t('products.addedToCart')}
           </>
-        ) : isMaxStock ? 'אזל המלאי' : 'הוסף לעגלה'}
+        ) : isMaxStock ? t('products.outOfStock') : t('products.addToCart')}
       </button>
     );
     const addToCartButton = tooltipText ? (
@@ -652,7 +654,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
           className={`w-full border border-green-600 text-green-600 ${isMobile ? 'py-3 px-6' : 'py-4 px-6'} text-sm tracking-luxury uppercase font-light hover:bg-green-600 hover:text-white transition-luxury flex items-center justify-center gap-2`}
         >
           <Share2 size={18} />
-          שתפו בוואטסאפ
+          {t('products.shareViaWhatsApp')}
         </button>
       </div>
     );
@@ -804,7 +806,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     const currentQuantity = existingItem?.quantity || 0;
                     const isMaxStock = currentVariant?.quantityAvailable !== undefined && 
                                        currentQuantity >= currentVariant.quantityAvailable;
-                    const tooltipText = isMaxStock ? `אזל המלאי (${currentVariant?.quantityAvailable} יחידות)` : undefined;
+                    const tooltipText = isMaxStock ? `${t('products.outOfStock')} (${currentVariant?.quantityAvailable} ${t('products.units')})` : undefined;
                     const isDisabled = !currentVariant?.availableForSale || isMaxStock || isAddingToCart;
                     const button = (
                       <button
@@ -821,7 +823,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                             <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                             נוסף לעגלה
                           </>
-                        ) : isMaxStock ? 'אזל המלאי' : 'הוסף לעגלה'}
+                        ) : isMaxStock ? t('products.outOfStock') : t('products.addToCart')}
                       </button>
                     );
                     return tooltipText ? (
@@ -938,7 +940,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                   {hasColors && (
                     <div>
                       <label className="block text-xs font-light mb-2 tracking-luxury uppercase text-gray-600">
-                        צבע
+                        {t('products.color')}
                       </label>
                       <div className="flex flex-wrap gap-3">
                         {availableColors.map((color) => {
@@ -959,8 +961,8 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                                   : 'border-gray-200 opacity-60'
                               }`}
                               style={{ backgroundColor: colorHex }}
-                              title={isAvailable ? color : `${color} - אזל במלאי`}
-                              aria-label={isAvailable ? color : `${color} - אזל במלאי`}
+                              title={isAvailable ? color : `${color} - ${t('products.outOfStock')}`}
+                              aria-label={isAvailable ? color : `${color} - ${t('products.outOfStock')}`}
                             >
                               {!isAvailable && (
                                 <X 
@@ -1007,7 +1009,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                           )}
                         </p>
                       ) : (
-                        <p className="text-sm font-light text-gray-600">אזל במלאי</p>
+                        <p className="text-sm font-light text-gray-600">{t('products.outOfStock')}</p>
                       )}
                     </div>
                   )}
@@ -1041,7 +1043,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                 {hasColors && (
                   <div className="hidden md:block">
                     <label className="block text-sm font-light mb-3 tracking-luxury uppercase">
-                      צבע
+                      {t('products.color')}
                     </label>
                     <div className="flex flex-wrap gap-3">
                       {availableColors.map((color) => {
@@ -1127,9 +1129,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                       </p>
                     ) : (
                       <div className="space-y-2">
-                        <p className="text-sm font-light text-gray-600">אזל במלאי</p>
+                        <p className="text-sm font-light text-gray-600">{t('products.outOfStock')}</p>
                         <button className="text-xs font-light underline text-gray-600 hover:text-[#1a1a1a] transition-colors">
-                          הודיעו לי כשחוזר
+                          {t('products.notifyWhenBack')}
                         </button>
                       </div>
                     )}
@@ -1251,7 +1253,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
               const currentQuantity = existingItem?.quantity || 0;
               const isMaxStock = currentVariant?.quantityAvailable !== undefined && 
                                  currentQuantity >= currentVariant.quantityAvailable;
-              const tooltipText = isMaxStock ? `אזל המלאי (${currentVariant?.quantityAvailable} יחידות)` : undefined;
+              const tooltipText = isMaxStock ? `${t('products.outOfStock')} (${currentVariant?.quantityAvailable} ${t('products.units')})` : undefined;
               const isDisabled = !currentVariant?.availableForSale || isMaxStock || isAddingToCart;
               const button = (
                 <button

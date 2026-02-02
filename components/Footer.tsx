@@ -1,8 +1,12 @@
+'use client';
+
 import Link from 'next/link';
 import { Instagram, Facebook, MessageCircle, Mail, Phone, Printer } from 'lucide-react';
 import { ViewerCount } from './ViewerCount';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function Footer() {
+  const { t } = useLanguage();
   return (
     <footer className="bg-[#fdfcfb] border-t border-gray-200 mt-8 md:mt-20">
       <div className="max-w-7xl mx-auto px-4 py-6 md:py-16 md:py-20">
@@ -10,10 +14,10 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <h3 className="text-xl md:text-2xl font-light luxury-font mb-2 md:mb-4 text-[#1a1a1a]">
-              קלומית
+              {t('footer.brand')}
             </h3>
             <p className="text-xs md:text-sm font-light text-gray-600 leading-relaxed mb-3 md:mb-6">
-              יבואן בלעדי של תיקים יוקרתיים היישר מאיטליה
+              {t('footer.brandDesc')}
             </p>
             <div className="text-xs font-light text-[#c9a962] tracking-luxury mb-4">
               Renato Angi Venezia • Carlino Group
@@ -55,49 +59,49 @@ export default function Footer() {
           {/* Navigation */}
           <div>
             <h4 className="text-xs font-light tracking-luxury uppercase mb-3 md:mb-6 text-[#1a1a1a]">
-              ניווט
+              {t('footer.navigation')}
             </h4>
             <ul className="space-y-2 md:space-y-3">
               <li>
                 <Link href="/" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
-                  בית
+                  {t('footer.home')}
                 </Link>
               </li>
               <li>
                 <span className="text-sm font-light text-gray-600">
-                  מוצרים
+                  {t('footer.products')}
                 </span>
                 <ul className="mt-2 space-y-1">
                   <li>
                     <Link href="/products?tab=bags" className="text-xs font-light text-[#C19A6B] hover:text-[#a17d4f] transition-colors">
-                      תיקים
+                      {t('header.bags')}
                     </Link>
                   </li>
                   <li>
                     <Link href="/products?tab=belts" className="text-xs font-light text-[#C19A6B] hover:text-[#a17d4f] transition-colors">
-                      חגורות
+                      {t('header.belts')}
                     </Link>
                   </li>
                   <li>
                     <Link href="/products?tab=wallets" className="text-xs font-light text-[#C19A6B] hover:text-[#a17d4f] transition-colors">
-                      ארנקים
+                      {t('header.wallets')}
                     </Link>
                   </li>
                 </ul>
               </li>
               <li>
                 <Link href="/cart" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
-                  עגלת קניות
+                  {t('footer.cart')}
                 </Link>
               </li>
               <li>
                 <Link href="/account" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
-                  החשבון שלי
+                  {t('footer.myAccount')}
                 </Link>
               </li>
               <li>
                 <Link href="/about" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
-                  אודות
+                  {t('footer.about')}
                 </Link>
               </li>
             </ul>
@@ -106,32 +110,32 @@ export default function Footer() {
           {/* Customer Service */}
           <div>
             <h4 className="text-xs font-light tracking-luxury uppercase mb-3 md:mb-6 text-[#1a1a1a]">
-              שירות לקוחות
+              {t('footer.customerService')}
             </h4>
             <ul className="space-y-2 md:space-y-3">
               <li>
                 <Link href="/shipping" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
-                  משלוחים
+                  {t('footer.shipping')}
                 </Link>
               </li>
               <li>
                 <Link href="/returns" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
-                  החזרות
+                  {t('footer.returns')}
                 </Link>
               </li>
               <li>
                 <Link href="/terms" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
-                  תקנון
+                  {t('footer.terms')}
                 </Link>
               </li>
               <li>
                 <Link href="/privacy" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
-                  מדיניות פרטיות
+                  {t('footer.privacy')}
                 </Link>
               </li>
               <li>
                 <Link href="/accessibility" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
-                  נגישות
+                  {t('footer.accessibility')}
                 </Link>
               </li>
             </ul>
@@ -140,7 +144,7 @@ export default function Footer() {
           {/* Contact */}
           <div className="col-span-2 md:col-span-1">
             <h4 className="text-xs font-light tracking-luxury uppercase mb-3 md:mb-6 text-[#1a1a1a]">
-              יצירת קשר
+              {t('footer.contact')}
             </h4>
             
             {/* Mobile: Single line with icons and dividers */}
@@ -189,17 +193,17 @@ export default function Footer() {
               </li>
               <li className="inline-flex items-center gap-2 text-gray-500">
                 <Printer size={14} />
-                פקס: 03-5106781
+                {t('footer.fax')} 03-5106781
               </li>
             </ul>
             <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200">
               <p className="text-xs font-light text-gray-500 leading-relaxed mb-2 md:mb-3">
-                <span className="font-medium text-gray-600">כתובת:</span><br />
-                גאולה 45, תל אביב יפו 6330447
+                <span className="font-medium text-gray-600">{t('footer.address')}</span><br />
+                {t('footer.addressDetails')}
               </p>
               <p className="text-xs font-light text-gray-500 leading-relaxed hidden md:block">
-                שעות פעילות<br />
-                א׳-ה׳: 10:00-17:00
+                {t('footer.hours')}<br />
+                {t('footer.hoursDetails')}
               </p>
             </div>
           </div>
@@ -209,17 +213,17 @@ export default function Footer() {
         <div className="border-t border-gray-200 mt-6 md:mt-12 pt-4 md:pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
             <p className="text-xs font-light text-gray-500 text-center md:text-right">
-              &copy; {new Date().getFullYear()} כל הזכויות שמורות <span className="luxury-font text-[#1a1a1a]">קלומית בע&quot;מ</span>
+              &copy; {new Date().getFullYear()} {t('footer.copyright')} <span className="luxury-font text-[#1a1a1a]">{t('footer.brand')}</span>
             </p>
             <div className="flex gap-4 md:gap-6 text-xs font-light text-gray-500">
               <Link href="/terms" className="hover:text-[#1a1a1a] transition-colors">
-                תקנון
+                {t('footer.terms')}
               </Link>
               <Link href="/privacy" className="hover:text-[#1a1a1a] transition-colors">
-                פרטיות
+                {t('footer.privacy')}
               </Link>
               <Link href="/accessibility" className="hover:text-[#1a1a1a] transition-colors">
-                נגישות
+                {t('footer.accessibility')}
               </Link>
             </div>
           </div>

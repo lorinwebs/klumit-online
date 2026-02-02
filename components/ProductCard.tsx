@@ -8,6 +8,7 @@ import { useCartStore } from '@/store/cartStore';
 import { motion } from 'framer-motion';
 import Toast from './Toast';
 import { trackAddToCart } from '@/lib/analytics';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface ProductCardProps {
   id: string;
@@ -35,6 +36,7 @@ export default function ProductCard({
   onSale = false,
   originalPrice,
 }: ProductCardProps) {
+  const { t } = useLanguage();
   const addItem = useCartStore((state) => state.addItem);
   const items = useCartStore((state) => state.items);
   const [showToast, setShowToast] = useState(false);
@@ -113,8 +115,8 @@ export default function ProductCard({
               </div>
             )}
             {!available && (
-              <div className="absolute inset-0 bg-white/80 flex items-center justify-center" aria-label="מוצר אזל מהמלאי">
-                <span className="text-gray-600 font-light tracking-luxury uppercase text-xs">אזל מהמלאי</span>
+              <div className="absolute inset-0 bg-white/80 flex items-center justify-center" aria-label={t('products.soldOut')}>
+                <span className="text-gray-600 font-light tracking-luxury uppercase text-xs">{t('products.soldOut')}</span>
               </div>
             )}
             <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-white/98 border-t border-gray-100">
@@ -122,9 +124,9 @@ export default function ProductCard({
                 onClick={handleAddToCart}
                 disabled={!available || isMaxStock}
                 className="w-full py-2 text-[10px] tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label={isMaxStock ? `אזל המלאי (${quantityAvailable} יחידות)` : `הוסף ${title} לסל הקניות`}
+                aria-label={isMaxStock ? `${t('products.outOfStock')} (${quantityAvailable} ${t('products.units')})` : `${t('products.addToCart')} ${title}`}
               >
-                {isMaxStock ? 'אזל המלאי' : 'הוספה לסל'}
+                {isMaxStock ? t('products.outOfStock') : t('products.addToCartShort')}
               </button>
             </div>
           </div>
