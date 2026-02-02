@@ -55,6 +55,14 @@ function ProductImageSlider({
   const [quickViewHovered, setQuickViewHovered] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Preload second image for instant transition
+  useEffect(() => {
+    if (images.length > 1) {
+      const img = new window.Image();
+      img.src = images[1].node.url;
+    }
+  }, [images]);
+
   useEffect(() => {
     // Only switch to next image on desktop when hovered and there are multiple images
     if (isHovered && images.length > 1 && window.innerWidth >= 768 && currentImageIndex === 0) {
