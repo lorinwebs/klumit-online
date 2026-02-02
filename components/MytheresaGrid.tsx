@@ -219,10 +219,10 @@ export default function MytheresaGrid({
           </button>
         </div>
 
-        {/* Desktop: Original layout */}
-        <div className="hidden md:flex max-w-7xl mx-auto px-4 py-3 items-center justify-between">
-          {/* Left side - Filters Button */}
-          <div className="relative flex items-center gap-3">
+        {/* Desktop: Filters and Sort side by side */}
+        <div className="hidden md:flex max-w-7xl mx-auto px-4 py-3 items-center gap-3">
+          {/* Filters Button */}
+          <div className="relative">
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex items-center gap-2 px-4 py-1.5 text-xs font-light tracking-wide border border-gray-300 hover:border-[#1a1a1a] transition-colors bg-white relative"
@@ -236,18 +236,39 @@ export default function MytheresaGrid({
               )}
             </button>
             
-            {/* Clear filters - only show if filters are active */}
-            {selectedVendors.size > 0 && (
-              <button
-                onClick={() => setSelectedVendors(new Set())}
-                className="text-xs font-light text-gray-500 hover:text-[#1a1a1a] underline"
+            {/* Filters Dropdown - Desktop only */}
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute left-0 top-full mt-1 bg-white border border-gray-200 shadow-lg z-50 min-w-[200px] max-h-[400px] overflow-y-auto"
               >
-                נקה
-              </button>
+                <div className="p-2">
+                  <div className="text-[10px] font-light text-gray-500 px-2 py-2 border-b border-gray-100">
+                    מותגים
+                  </div>
+                  {uniqueVendors.map((vendor) => (
+                    <button
+                      key={vendor}
+                      onClick={() => toggleVendor(vendor)}
+                      className={`block w-full text-right px-4 py-2.5 text-xs hover:bg-gray-50 transition-colors ${
+                        selectedVendors.has(vendor) ? 'font-normal bg-gray-50' : 'font-light'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>{vendor}</span>
+                        {selectedVendors.has(vendor) && (
+                          <span className="text-[#1a1a1a]">✓</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
             )}
           </div>
 
-          {/* Right side - Sort Button */}
+          {/* Sort Button */}
           <div className="relative">
             <button
               onClick={() => setShowSort(!showSort)}
@@ -256,15 +277,68 @@ export default function MytheresaGrid({
               <span>מיון</span>
               <SlidersHorizontal size={14} className="text-[#1a1a1a]" />
             </button>
+            
+            {/* Sort Dropdown - Desktop only */}
+            {showSort && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute left-0 top-full mt-1 bg-white border border-gray-200 shadow-lg z-50 min-w-[200px]"
+              >
+                <button
+                  onClick={() => {
+                    setSortBy('new');
+                    setShowSort(false);
+                  }}
+                  className={`block w-full text-right px-4 py-2.5 text-xs hover:bg-gray-50 transition-colors ${
+                    sortBy === 'new' ? 'font-normal bg-gray-50' : 'font-light'
+                  }`}
+                >
+                  חדשים ביותר
+                </button>
+                <button
+                  onClick={() => {
+                    setSortBy('price-low');
+                    setShowSort(false);
+                  }}
+                  className={`block w-full text-right px-4 py-2.5 text-xs hover:bg-gray-50 transition-colors ${
+                    sortBy === 'price-low' ? 'font-normal bg-gray-50' : 'font-light'
+                  }`}
+                >
+                  מחיר: נמוך לגבוה
+                </button>
+                <button
+                  onClick={() => {
+                    setSortBy('price-high');
+                    setShowSort(false);
+                  }}
+                  className={`block w-full text-right px-4 py-2.5 text-xs hover:bg-gray-50 transition-colors ${
+                    sortBy === 'price-high' ? 'font-normal bg-gray-50' : 'font-light'
+                  }`}
+                >
+                  מחיר: גבוה לנמוך
+                </button>
+              </motion.div>
+            )}
           </div>
+          
+          {/* Clear filters - only show if filters are active */}
+          {selectedVendors.size > 0 && (
+            <button
+              onClick={() => setSelectedVendors(new Set())}
+              className="text-xs font-light text-gray-500 hover:text-[#1a1a1a] underline"
+            >
+              נקה
+            </button>
+          )}
         </div>
 
-        {/* Filters Dropdown */}
+        {/* Mobile Filters Dropdown */}
         {showFilters && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="absolute right-0 md:right-4 top-full bg-white border-t-0 md:border md:border-gray-200 md:mt-1 shadow-lg z-50 w-full md:w-auto md:min-w-[200px] max-h-[400px] overflow-y-auto"
+            className="md:hidden absolute right-0 top-full bg-white border-t-0 shadow-lg z-50 w-full max-h-[400px] overflow-y-auto"
           >
             <div className="p-2">
               <div className="text-[10px] font-light text-gray-500 px-2 py-2 border-b border-gray-100">
@@ -290,12 +364,12 @@ export default function MytheresaGrid({
           </motion.div>
         )}
 
-        {/* Sort Dropdown */}
+        {/* Mobile Sort Dropdown */}
         {showSort && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="absolute left-0 md:left-4 top-full bg-white border-t-0 md:border md:border-gray-200 md:mt-1 shadow-lg z-50 w-full md:w-auto md:min-w-[200px]"
+            className="md:hidden absolute left-0 top-full bg-white border-t-0 shadow-lg z-50 w-full"
           >
             <button
               onClick={() => {
