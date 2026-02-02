@@ -237,20 +237,23 @@ export default function MytheresaGrid({
     ? products.filter(p => selectedVendors.has(p.vendor || 'KLUMIT'))
     : products;
 
-  // Sort products - NEW_ARRIVAL always first regardless of sort
+  // Sort products
   const sortedProducts = [...filteredProducts].sort((a, b) => {
-    // Check for new_arrival tag (case insensitive)
-    const aIsNew = a.tags?.some(tag => tag.toLowerCase() === 'new_arrival') || false;
-    const bIsNew = b.tags?.some(tag => tag.toLowerCase() === 'new_arrival') || false;
-    
-    // ALWAYS prioritize NEW_ARRIVAL products first
-    if (aIsNew && !bIsNew) return -1;
-    if (!aIsNew && bIsNew) return 1;
-    
-    // Then apply the selected sort
+    // For "newest" sort, prioritize new_arrival tag first
     if (sortBy === 'new') {
+      const aIsNew = a.tags?.some(tag => tag.toLowerCase() === 'new_arrival') || false;
+      const bIsNew = b.tags?.some(tag => tag.toLowerCase() === 'new_arrival') || false;
+      
+      // If one is new and the other isn't, prioritize the new one
+      if (aIsNew && !bIsNew) return -1;
+      if (!aIsNew && bIsNew) return 1;
+      
+      // Otherwise sort by creation date
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    } else if (sortBy === 'price-low') {
+    } 
+    
+    // For price sorting, sort all products together regardless of new_arrival tag
+    if (sortBy === 'price-low') {
       return parseFloat(a.priceRange.minVariantPrice.amount) - parseFloat(b.priceRange.minVariantPrice.amount);
     } else {
       return parseFloat(b.priceRange.minVariantPrice.amount) - parseFloat(a.priceRange.minVariantPrice.amount);
