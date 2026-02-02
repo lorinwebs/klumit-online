@@ -27,6 +27,28 @@ export default function Header() {
     ru: '🇷🇺'
   };
 
+  const handleLanguageChange = async (newLanguage: 'he' | 'en' | 'ru') => {
+    setLanguage(newLanguage);
+    setLangDropdownOpen(false);
+
+    // Send Telegram notification only for English or Russian
+    if (newLanguage === 'en' || newLanguage === 'ru') {
+      try {
+        await fetch('/api/telegram/notify-language-change', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            language: newLanguage,
+            pageUrl: typeof window !== 'undefined' ? window.location.href : '',
+            userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : '',
+          }),
+        });
+      } catch (error) {
+        console.warn('Failed to send language change event to Telegram:', error);
+      }
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
     loadFromShopify().catch(() => {});
@@ -108,30 +130,21 @@ export default function Header() {
                 />
                 <div className="absolute top-full left-0 mt-2 bg-white border border-black/10 shadow-lg z-50 min-w-[120px]">
                   <button
-                    onClick={() => {
-                      setLanguage('he');
-                      setLangDropdownOpen(false);
-                    }}
+                    onClick={() => handleLanguageChange('he')}
                     className={`w-full text-right px-4 py-2.5 text-xs hover:bg-gray-50 transition-colors flex items-center gap-2 ${language === 'he' ? 'bg-gray-50' : ''}`}
                   >
                     <span className="text-base">{languageFlags.he}</span>
                     <span>עברית</span>
                   </button>
                   <button
-                    onClick={() => {
-                      setLanguage('en');
-                      setLangDropdownOpen(false);
-                    }}
+                    onClick={() => handleLanguageChange('en')}
                     className={`w-full text-right px-4 py-2.5 text-xs hover:bg-gray-50 transition-colors flex items-center gap-2 ${language === 'en' ? 'bg-gray-50' : ''}`}
                   >
                     <span className="text-base">{languageFlags.en}</span>
                     <span>English</span>
                   </button>
                   <button
-                    onClick={() => {
-                      setLanguage('ru');
-                      setLangDropdownOpen(false);
-                    }}
+                    onClick={() => handleLanguageChange('ru')}
                     className={`w-full text-right px-4 py-2.5 text-xs hover:bg-gray-50 transition-colors flex items-center gap-2 ${language === 'ru' ? 'bg-gray-50' : ''}`}
                   >
                     <span className="text-base">{languageFlags.ru}</span>
