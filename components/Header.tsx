@@ -59,21 +59,17 @@ export default function Header() {
         {/* מרכז - תפריט דסקטופ / לוגו במובייל */}
         <div className="flex items-center justify-center order-2">
           {/* תפריט דסקטופ - מינימליסטי, עם יותר אוויר */}
-          <nav className="hidden md:flex items-center justify-center gap-10 lg:gap-12" aria-label="תפריט ניווט ראשי">
-            <Link href="/products?tab=bags" className={`text-xs tracking-[0.25em] uppercase font-light transition-opacity duration-300 whitespace-nowrap ${isProductsPage && currentTab === 'bags' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`}>
+          <nav className="hidden md:flex items-center justify-center gap-10 lg:gap-12" aria-label="תפריט ניווט ראשי" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+            <Link href="/products?tab=bags" className={`text-xs tracking-[0.25em] uppercase transition-opacity duration-300 whitespace-nowrap ${isProductsPage && currentTab === 'bags' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} style={{ fontWeight: 100 }}>
               תיקים
             </Link>
             <span className="w-px h-3 bg-black/10 shrink-0" />
-            <Link href="/products?tab=belts" className={`text-xs tracking-[0.25em] uppercase font-light transition-opacity duration-300 whitespace-nowrap ${isProductsPage && currentTab === 'belts' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`}>
+            <Link href="/products?tab=belts" className={`text-xs tracking-[0.25em] uppercase transition-opacity duration-300 whitespace-nowrap ${isProductsPage && currentTab === 'belts' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} style={{ fontWeight: 100 }}>
               חגורות
             </Link>
             <span className="w-px h-3 bg-black/10 shrink-0" />
-            <Link href="/products?tab=wallets" className={`text-xs tracking-[0.25em] uppercase font-light transition-opacity duration-300 whitespace-nowrap ${isProductsPage && currentTab === 'wallets' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`}>
+            <Link href="/products?tab=wallets" className={`text-xs tracking-[0.25em] uppercase transition-opacity duration-300 whitespace-nowrap ${isProductsPage && currentTab === 'wallets' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} style={{ fontWeight: 100 }}>
               ארנקים
-            </Link>
-            <span className="w-px h-3 bg-black/10 shrink-0" />
-            <Link href="/about" className={`text-xs tracking-[0.25em] uppercase font-light transition-opacity duration-300 whitespace-nowrap ${pathname === '/about' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`}>
-              אודות
             </Link>
           </nav>
           
@@ -111,10 +107,11 @@ export default function Header() {
       </nav>
 
       {/* --- שורה תחתונה למובייל בלבד (פס קטגוריות) - מינימליסטי --- */}
-      <div className="md:hidden w-full flex items-center justify-center gap-6 h-10 border-t border-black/5 bg-white/95 backdrop-blur-sm">
+      <div className="md:hidden w-full flex items-center justify-center gap-6 h-10 border-t border-black/5 bg-white/95 backdrop-blur-sm" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
         <Link 
             href="/products?tab=bags" 
-            className={`flex items-center h-full text-[10px] font-light tracking-[0.2em] uppercase transition-opacity duration-300 ${isProductsPage && currentTab === 'bags' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`}
+            className={`flex items-center h-full text-[10px] tracking-[0.2em] uppercase transition-opacity duration-300 ${isProductsPage && currentTab === 'bags' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`}
+            style={{ fontWeight: 100 }}
         >
             תיקים
         </Link>
@@ -123,7 +120,8 @@ export default function Header() {
         
         <Link 
             href="/products?tab=belts" 
-            className={`flex items-center h-full text-[10px] font-light tracking-[0.2em] uppercase transition-opacity duration-300 ${isProductsPage && currentTab === 'belts' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`}
+            className={`flex items-center h-full text-[10px] tracking-[0.2em] uppercase transition-opacity duration-300 ${isProductsPage && currentTab === 'belts' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`}
+            style={{ fontWeight: 100 }}
         >
             חגורות
         </Link>
@@ -132,7 +130,8 @@ export default function Header() {
         
         <Link 
             href="/products?tab=wallets" 
-            className={`flex items-center h-full text-[10px] font-light tracking-[0.2em] uppercase transition-opacity duration-300 ${isProductsPage && currentTab === 'wallets' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`}
+            className={`flex items-center h-full text-[10px] tracking-[0.2em] uppercase transition-opacity duration-300 ${isProductsPage && currentTab === 'wallets' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`}
+            style={{ fontWeight: 100 }}
         >
             ארנקים
         </Link>
@@ -144,18 +143,15 @@ export default function Header() {
             id="mobile-menu" 
             className="md:hidden border-t border-black/5 bg-white/95 backdrop-blur-sm absolute w-full left-0 top-full h-[calc(100dvh-100%)] z-50 overflow-y-auto pb-20"
         >
-          <div className="flex flex-col gap-0 pt-6 text-center px-8">
-            <Link href="/products?tab=bags" className={`text-sm tracking-[0.25em] uppercase font-light border-b border-black/5 py-4 transition-opacity duration-300 ${isProductsPage && currentTab === 'bags' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} onClick={() => setMobileMenuOpen(false)}>
+          <div className="flex flex-col gap-0 pt-6 text-center px-8" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+            <Link href="/products?tab=bags" className={`text-sm tracking-[0.25em] uppercase border-b border-black/5 py-4 transition-opacity duration-300 ${isProductsPage && currentTab === 'bags' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} style={{ fontWeight: 100 }} onClick={() => setMobileMenuOpen(false)}>
               תיקים
             </Link>
-            <Link href="/products?tab=belts" className={`text-sm tracking-[0.25em] uppercase font-light border-b border-black/5 py-4 transition-opacity duration-300 ${isProductsPage && currentTab === 'belts' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} onClick={() => setMobileMenuOpen(false)}>
+            <Link href="/products?tab=belts" className={`text-sm tracking-[0.25em] uppercase border-b border-black/5 py-4 transition-opacity duration-300 ${isProductsPage && currentTab === 'belts' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} style={{ fontWeight: 100 }} onClick={() => setMobileMenuOpen(false)}>
               חגורות
             </Link>
-            <Link href="/products?tab=wallets" className={`text-sm tracking-[0.25em] uppercase font-light border-b border-black/5 py-4 transition-opacity duration-300 ${isProductsPage && currentTab === 'wallets' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} onClick={() => setMobileMenuOpen(false)}>
+            <Link href="/products?tab=wallets" className={`text-sm tracking-[0.25em] uppercase border-b border-black/5 py-4 transition-opacity duration-300 ${isProductsPage && currentTab === 'wallets' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} style={{ fontWeight: 100 }} onClick={() => setMobileMenuOpen(false)}>
               ארנקים
-            </Link>
-            <Link href="/about" className={`text-sm tracking-[0.25em] uppercase font-light border-b border-black/5 py-4 transition-opacity duration-300 ${pathname === '/about' ? 'text-[#1a1a1a] opacity-100' : 'text-[#1a1a1a] opacity-60 hover:opacity-100'}`} onClick={() => setMobileMenuOpen(false)}>
-              אודות
             </Link>
           </div>
         </nav>

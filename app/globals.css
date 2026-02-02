@@ -126,11 +126,11 @@ section:has([class*="bg-black"]) a:focus-visible,
     @apply bg-[#fdfcfb] text-[#1a1a1a];
     direction: rtl;
     text-align: right;
-    font-family: var(--font-assistant), 'Assistant', sans-serif;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   }
   
   h1, h2, h3, .luxury-font {
-    font-family: 'Ellinia', var(--font-cormorant), serif;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-weight: 300;
     letter-spacing: 0.02em;
   }
@@ -213,7 +213,7 @@ section:has([class*="bg-black"]) a:focus-visible,
   display: block;
   font-size: 0.875rem !important;
   font-weight: 300 !important;
-  font-family: 'Ellinia', var(--font-cormorant), serif !important;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
   letter-spacing: 0.15em !important;
   text-transform: uppercase !important;
   margin-bottom: 0.75rem !important;
@@ -232,7 +232,7 @@ section:has([class*="bg-black"]) a:focus-visible,
   display: block;
   font-size: 0.75rem !important;
   font-weight: 700 !important;
-  font-family: 'Assistant', sans-serif !important;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
   letter-spacing: 0.15em !important;
   text-transform: uppercase !important;
   color: #4b5563 !important;

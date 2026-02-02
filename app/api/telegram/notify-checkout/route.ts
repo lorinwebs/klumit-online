@@ -5,6 +5,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
+    // Don't send notifications from localhost
+    const host = request.headers.get('host') || '';
+    const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+    if (isLocalhost) {
+      console.log('Skipping Telegram notification (localhost)');
+      return NextResponse.json({ success: true, skipped: true });
+    }
+    
     const result = await notifyCheckoutVisit({
       userEmail: body.userEmail,
       userPhone: body.userPhone,

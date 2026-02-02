@@ -6,6 +6,7 @@ import AnalyticsProvider from '@/components/Analytics';
 import ChatWidgetWrapper from '@/components/ChatWidgetWrapper';
 import MembershipPopup from '@/components/MembershipPopup';
 import MembershipFloatingButton from '@/components/MembershipFloatingButton';
+import MembershipTopBar from '@/components/MembershipTopBar';
 import CouponModal from '@/components/CouponModal';
 import './globals.css';
 
@@ -233,6 +234,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${assistant.variable} ${cormorant.variable} font-sans overflow-x-hidden`}>
+        <MembershipTopBar />
         <a href="#main-content" className="skip-to-main">
           דלג לתוכן הראשי
         </a>

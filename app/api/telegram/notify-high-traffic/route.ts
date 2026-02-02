@@ -9,6 +9,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const viewerCount = body.viewerCount as number;
     
+    // Don't send notifications from localhost
+    const host = request.headers.get('host') || '';
+    const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+    if (isLocalhost) {
+      console.log('Skipping Telegram notification (localhost)');
+      return NextResponse.json({ success: true, skipped: true });
+    }
+    
     if (!viewerCount || viewerCount < 10) {
       return NextResponse.json({ success: false, error: 'Viewer count below threshold' }, { status: 400 });
     }

@@ -14,6 +14,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Don't send notifications from localhost
+    const isLocalhost = pageUrl?.includes('localhost') || pageUrl?.includes('127.0.0.1');
+    if (isLocalhost) {
+      console.log('Skipping Telegram notification (localhost)');
+      return NextResponse.json({ success: true, skipped: true });
+    }
+
     const result = await trackUserVisit({
       sessionId,
       pagePath,

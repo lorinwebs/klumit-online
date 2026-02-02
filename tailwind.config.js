@@ -15,8 +15,8 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-assistant)', 'Assistant', 'system-ui', 'sans-serif'],
-        serif: ['Cormorant Garamond', 'serif'],
+        sans: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+        serif: ['Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
       },
       screens: {
         'landscape': { 'raw': '(orientation: landscape) and (max-height: 500px)' },

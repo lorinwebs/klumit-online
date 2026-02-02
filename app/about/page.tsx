@@ -13,26 +13,9 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
+    <div className="min-h-screen flex flex-col bg-[#fdfcfb]" style={{ fontFamily: "'Ellinia', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
       <Header />
       <main id="main-content" className="flex-grow" role="main">
-        {/* Hero Section */}
-        <section className="relative py-12 border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="max-w-4xl mx-auto text-center">
-              <span className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-light mb-3 block">
-                About Klumit
-              </span>
-              <h1 className="text-4xl md:text-5xl font-light luxury-font text-[#1a1a1a] mb-4 leading-tight">
-                אודות קלומית (Klumit)
-              </h1>
-              <p className="text-base md:text-lg font-light text-gray-600 leading-relaxed max-w-2xl mx-auto">
-                יבואנים בלעדיים של תיקים יוקרתיים היישר מאיטליה
-              </p>
-            </div>
-          </div>
-        </section>
-
         {/* Story Section with Image */}
         <section className="py-12">
           <div className="max-w-7xl mx-auto px-4">
@@ -60,9 +43,6 @@ export default function AboutPage() {
                   המורשת שלנו
                 </h2>
                 <div className="space-y-4 text-base font-light text-gray-700 leading-relaxed">
-                  <p className="text-lg font-light text-gray-800 italic">
-                    למקום בו נמצאים הדברים החשובים לנו ביותר, נדרשת תשומת הלב הגדולה ביותר.
-                  </p>
                   <p>
                     סיפורה של חברת &quot;קלומית&quot;, בבעלות משה חייט, מתחיל לפני למעלה מ-40 שנה. כמי שצמח מתוך עולם האופנה הישראלי, זיהה משה את הצורך בחיבור בין הקהל המקומי לבין הסטנדרט הבינלאומי הגבוה ביותר – אומנות העור האיטלקית המסורתית.
                   </p>

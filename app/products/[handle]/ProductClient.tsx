@@ -3,11 +3,12 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { useCartStore } from '@/store/cartStore';
-import { ChevronLeft, ChevronRight, X, Share2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Share2, Maximize2 } from 'lucide-react';
 import Link from 'next/link';
 import Toast from '@/components/Toast';
 import ProductCard from '@/components/ProductCard';
 import Tooltip from '@/components/Tooltip';
+import ImageZoomModal from '@/components/ImageZoomModal';
 import { trackProductViewed, trackAddToCart } from '@/lib/analytics';
 
 interface Product {
@@ -69,6 +70,8 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const [showFloatingCart, setShowFloatingCart] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [relatedProducts] = useState<Product[]>(initialRelatedProducts);
+  const [showZoomModal, setShowZoomModal] = useState(false);
+  const [zoomImageIndex, setZoomImageIndex] = useState(0);
   const addItem = useCartStore((state) => state.addItem);
   const items = useCartStore((state) => state.items);
   const imageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -462,6 +465,12 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     }
   };
 
+  // Handle image click to open zoom modal
+  const handleImageClick = (index: number) => {
+    setZoomImageIndex(index);
+    setShowZoomModal(true);
+  };
+
   // Share to WhatsApp
   const handleShareWhatsApp = async () => {
     const productUrl = typeof window !== 'undefined' 
@@ -715,26 +724,33 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     </button>
                     {/* Main Image */}
                     <div 
-                      className={`relative bg-[#fdfcfb] overflow-hidden touch-none flex-shrink-0 transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}
+                      className={`relative bg-[#fdfcfb] overflow-hidden touch-none flex-shrink-0 transition-opacity cursor-pointer group ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}
                       style={{ width: '55%', maxWidth: '100%', aspectRatio: '2/3' }}
                       onTouchStart={handleTouchStart}
                       onTouchMove={handleTouchMove}
                       onTouchEnd={handleTouchEnd}
+                      onClick={() => handleImageClick(currentImageIndex)}
                       aria-live="polite"
                       aria-label={`תמונה ${currentImageIndex + 1} מתוך ${filteredImages.length}`}
                     >
                       {selectedImage && (
-                        <Image
-                          key={selectedImage}
-                          src={selectedImage}
-                          alt={`${product.title} - תמונה ${currentImageIndex + 1}`}
-                          fill
-                          className="object-contain select-none"
-                          priority
-                          loading="eager"
-                          draggable={false}
-                          sizes="(max-width: 768px) 70vw, 50vw"
-                        />
+                        <>
+                          <Image
+                            key={selectedImage}
+                            src={selectedImage}
+                            alt={`${product.title} - תמונה ${currentImageIndex + 1}`}
+                            fill
+                            className="object-contain select-none"
+                            priority
+                            loading="eager"
+                            draggable={false}
+                            sizes="(max-width: 768px) 70vw, 50vw"
+                          />
+                          {/* Zoom Icon */}
+                          <div className="absolute top-2 left-2 bg-black/50 p-1.5 rounded-full">
+                            <Maximize2 size={16} className="text-white" />
+                          </div>
+                        </>
                       )}
                     </div>
                     <button
@@ -755,21 +771,28 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                 {/* Main Image - Without arrows if only one image */}
                 {filteredImages.length === 1 && (
                   <div 
-                    className={`relative bg-[#fdfcfb] overflow-hidden mb-2 mx-auto touch-none transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}
+                    className={`relative bg-[#fdfcfb] overflow-hidden mb-2 mx-auto touch-none transition-opacity cursor-pointer group ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}
                     style={{ width: '55%', aspectRatio: '2/3' }}
+                    onClick={() => handleImageClick(0)}
                   >
                     {selectedImage && (
-                      <Image
-                        key={selectedImage}
-                        src={selectedImage}
-                        alt={product.title}
-                        fill
-                        className="object-contain select-none"
-                        priority
-                        loading="eager"
-                        draggable={false}
-                        sizes="(max-width: 768px) 70vw, 50vw"
-                      />
+                      <>
+                        <Image
+                          key={selectedImage}
+                          src={selectedImage}
+                          alt={product.title}
+                          fill
+                          className="object-contain select-none"
+                          priority
+                          loading="eager"
+                          draggable={false}
+                          sizes="(max-width: 768px) 70vw, 50vw"
+                        />
+                        {/* Zoom Icon */}
+                        <div className="absolute top-2 left-2 bg-black/50 p-1.5 rounded-full">
+                          <Maximize2 size={16} className="text-white" />
+                        </div>
+                      </>
                     )}
                   </div>
                 )}
@@ -851,7 +874,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                 style={{ height: 'calc(100vh - 120px)' }}
               >
                 <div className="space-y-4" style={{ width: '100%' }}>
-                  {filteredImages.map(({ node }) => (
+                  {filteredImages.map(({ node }, index) => (
                     <div
                       key={node.url}
                       ref={(el) => {
@@ -861,8 +884,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                         }
                         imageRefs.current[node.url] = el;
                       }}
-                      className="relative w-full bg-[#fdfcfb] overflow-hidden"
+                      className="relative w-full bg-[#fdfcfb] overflow-hidden cursor-pointer hover:opacity-90 transition-opacity group"
                       style={{ height: 'calc(100vh - 140px)' }}
+                      onClick={() => handleImageClick(index)}
                     >
                       <Image
                         src={node.url}
@@ -872,6 +896,10 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                         priority={selectedImage === node.url}
                         sizes="(max-width: 768px) 100vw, 50vw"
                       />
+                      {/* Zoom Icon - Appears on hover */}
+                      <div className="absolute top-4 left-4 bg-black/50 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Maximize2 size={20} className="text-white" />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1255,6 +1283,18 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       
       <Toast show={showToast} message="נוסף לעגלה" showViewCart={true} />
       <Toast show={showStockToast} message={stockMessage} showViewCart={false} type="warning" />
+      
+      {/* Image Zoom Modal */}
+      {showZoomModal && (
+        <ImageZoomModal
+          images={filteredImages.map(({ node }) => ({
+            url: node.url,
+            altText: node.altText,
+          }))}
+          initialIndex={zoomImageIndex}
+          onClose={() => setShowZoomModal(false)}
+        />
+      )}
     </>
   );
 }
