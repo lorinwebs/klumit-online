@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import LoginModal from './LoginModal';
 import { X } from 'lucide-react';
@@ -12,6 +12,7 @@ export default function MembershipFloatingButton() {
   const [isDismissed, setIsDismissed] = useState(false);
   const [showButton, setShowButton] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     let isMounted = true;
@@ -112,7 +113,8 @@ export default function MembershipFloatingButton() {
   };
 
   // אם המשתמש מחובר, עדיין בודקים, הכפתור נסגר, או שעדיין לא עברו 2 דקות - אל תציג את הכפתור
-  if (isLoggedIn === null || isLoggedIn || isDismissed || !showButton) {
+  // או אם אנחנו בדף מקיף חט - אל תציג את הכפתור
+  if (isLoggedIn === null || isLoggedIn || isDismissed || !showButton || pathname === '/mekif-chet-2007-reunion') {
     return null;
   }
 
