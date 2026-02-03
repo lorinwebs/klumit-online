@@ -1,213 +1,217 @@
+'use client';
+
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function TermsPage() {
+  const { t, language } = useLanguage();
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" dir={language === 'he' ? 'rtl' : 'ltr'}>
       <Header />
       <main id="main-content" className="flex-grow max-w-4xl mx-auto px-4 py-20" role="main">
         <h1 className="text-4xl md:text-5xl font-light luxury-font mb-12 text-right">
-          תקנון
+          {t('terms.title')}
         </h1>
         
         <div className="prose prose-lg max-w-none text-right space-y-8">
           <section>
-            <h2 className="text-2xl font-light luxury-font mb-4">הקדמה</h2>
+            <h2 className="text-2xl font-light luxury-font mb-4">{t('terms.introduction')}</h2>
             <p className="font-light leading-relaxed text-gray-700">
-              ברוכים הבאים לאתר קלומית. השימוש באתר זה כפוף לתנאים המפורטים להלן. שימוש באתר מהווה הסכמה מלאה לתנאים אלה.
+              {t('terms.introductionText')}
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-light luxury-font mb-4">שימוש באתר</h2>
+            <h2 className="text-2xl font-light luxury-font mb-4">{t('terms.websiteUse')}</h2>
             <p className="font-light leading-relaxed text-gray-700 mb-4">
-              אתם מתחייבים להשתמש באתר למטרות חוקיות בלבד ולא:
+              {t('terms.websiteUseText')}
             </p>
             <ul className="list-none space-y-3 font-light leading-relaxed text-gray-700">
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span>להפר זכויות יוצרים או זכויות קניין רוחני אחרות</span>
+                <span>{t('terms.websiteUseCopyright')}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span>להעלות או להפיץ תוכן מזיק, פוגעני או בלתי חוקי</span>
+                <span>{t('terms.websiteUseIllegal')}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span>לנסות לגשת לאזורים מוגנים באתר ללא הרשאה</span>
+                <span>{t('terms.websiteUseUnauthorized')}</span>
               </li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-2xl font-light luxury-font mb-4">הזמנות ותשלומים</h2>
+            <h2 className="text-2xl font-light luxury-font mb-4">{t('terms.orders')}</h2>
             <p className="font-light leading-relaxed text-gray-700 mb-4">
-              כל הזמנה באתר כפופה לאישור שלנו. אנו שומרים לעצמנו את הזכות לבטל הזמנה בכל עת, כולל במקרים של:
+              {t('terms.ordersText')}
             </p>
             <ul className="list-none space-y-3 font-light leading-relaxed text-gray-700">
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span>חוסר זמינות של המוצר</span>
+                <span>{t('terms.ordersUnavailable')}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span>שגיאה במחיר המוצר</span>
+                <span>{t('terms.ordersPriceError')}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span>בעיות טכניות או אבטחה</span>
+                <span>{t('terms.ordersTechnical')}</span>
               </li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-2xl font-light luxury-font mb-4">מחירים</h2>
+            <h2 className="text-2xl font-light luxury-font mb-4">{t('terms.prices')}</h2>
             <p className="font-light leading-relaxed text-gray-700">
-              כל המחירים באתר מצוינים בשקלים חדשים (₪) וכוללים מע&quot;מ, אלא אם צוין אחרת. אנו שומרים לעצמנו את הזכות לשנות מחירים בכל עת ללא הודעה מוקדמת.
+              {t('terms.pricesText')}
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-light luxury-font mb-4">זכויות יוצרים</h2>
+            <h2 className="text-2xl font-light luxury-font mb-4">{t('terms.copyright')}</h2>
             <p className="font-light leading-relaxed text-gray-700">
-              כל התוכן באתר, כולל טקסטים, תמונות, לוגואים ועיצוב, מוגן בזכויות יוצרים וקניין רוחני. אסור להעתיק, לשכפל או להשתמש בתוכן ללא רשות מפורשת בכתב.
+              {t('terms.copyrightText')}
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-light luxury-font mb-4">מדיניות אספקת המוצר/שירות</h2>
+            <h2 className="text-2xl font-light luxury-font mb-4">{t('terms.delivery')}</h2>
             <p className="font-light leading-relaxed text-gray-700 mb-4">
-              המוצרים יישלחו ללקוח באמצעות חברת שליחויות מוכרת. זמן המשלוח המקסימלי מהרגע שבו בוצעה הרכישה ועד הגעת המוצר ליעד הוא עד 14 ימי עסקים.
+              {t('terms.deliveryText')}
             </p>
             <p className="font-light leading-relaxed text-gray-700 mb-4">
-              משלוח חינם מוצע להזמנות מעל 500 ₪. משלוח עד הבית עולה 39 ₪ ומגיע תוך 2-5 ימי עסקים.
+              {t('terms.deliveryFree')}
             </p>
             <p className="font-light leading-relaxed text-gray-700">
-              לאחר ביצוע ההזמנה, תקבלו אימייל עם מספר מעקב למעקב אחר סטטוס המשלוח. לפרטים נוספים, עיינו בעמוד <Link href="/shipping" className="text-[#1a1a1a] underline hover:no-underline">משלוחים</Link>.
+              {t('terms.deliveryTracking')} <Link href="/shipping" className="text-[#1a1a1a] underline hover:no-underline">{t('terms.deliveryLink')}</Link>
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-light luxury-font mb-4">הגבלת ניל</h2>
+            <h2 className="text-2xl font-light luxury-font mb-4">{t('terms.ageLimit')}</h2>
             <p className="font-light leading-relaxed text-gray-700">
-              רכישה באשראי באתר זה מותרת רק למי שגילו 18 שנים ומעלה. בעת ביצוע רכישה, אתם מאשרים כי גילכם הוא 18 שנים ומעלה וכי יש לכם את הזכות החוקית לבצע את הרכישה. אנו שומרים לעצמנו את הזכות לבטל הזמנות אם יתברר שהרוכש אינו עומד בדרישות הגיל.
+              {t('terms.ageLimitText')}
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-light luxury-font mb-4">אחריות בית העסק</h2>
+            <h2 className="text-2xl font-light luxury-font mb-4">{t('terms.liability')}</h2>
             <p className="font-light leading-relaxed text-gray-700 mb-4">
-              אנו עושים כמיטב יכולתנו להציג מידע מדויק על המוצרים. עם זאת, איננו אחראים לשגיאות או אי-דיוקים במידע המוצג באתר.
+              {t('terms.liabilityText')}
             </p>
             <p className="font-light leading-relaxed text-gray-700 mb-4">
-              החברה ו/או מי מטעמה לא יהיו אחראים לכל נזק ישיר ו/או עקיף שיגרם כתוצאה משימוש בשירות ו/או שימוש במוצר שנרכש באתר, לרבות אך לא רק:
+              {t('terms.liabilityDisclaimer')}
             </p>
             <ul className="list-none space-y-3 font-light leading-relaxed text-gray-700 mb-4">
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span>נזקים הנובעים משימוש לא תקין במוצר</span>
+                <span>{t('terms.liabilityMisuse')}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span>נזקים הנובעים מאובדן מידע או נתונים</span>
+                <span>{t('terms.liabilityDataLoss')}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span>נזקים הנובעים מבעיות טכניות או תקלות באתר</span>
+                <span>{t('terms.liabilityTechnical')}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span>נזקים הנובעים מעיכובים במשלוח או אובדן משלוח</span>
+                <span>{t('terms.liabilityDelivery')}</span>
               </li>
             </ul>
             <p className="font-light leading-relaxed text-gray-700">
-              האחריות על המוצרים מוגבלת לתקופת האחריות שצוינה על ידי היצרן בלבד.
+              {t('terms.liabilityWarranty')}
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-light luxury-font mb-4">תנאים לביטול עסקה</h2>
+            <h2 className="text-2xl font-light luxury-font mb-4">{t('terms.cancellation')}</h2>
             <p className="font-light leading-relaxed text-gray-700 mb-4">
-              ביטול עסקה יתבצע על-פי חוק הגנת הצרכן, התשמ&quot;א-1981. ניתן לבטל עסקה בתוך 14 ימים מיום קבלת המוצר או מיום ביצוע הרכישה, לפי המאוחר מביניהם.
+              {t('terms.cancellationText')}
             </p>
             <p className="font-light leading-relaxed text-gray-700 mb-4">
-              על מנת לבטל עסקה, יש לשלוח הודעה בכתב (במייל או בדואר) לחברה. המוצר חייב להיות במצבו המקורי, ללא שימוש, עם כל התוויות והאריזה המקורית.
+              {t('terms.cancellationProcess')}
             </p>
             <p className="font-light leading-relaxed text-gray-700 mb-4">
-              לאחר ביטול העסקה, החברה תחזיר ללקוח את סכום התשלום בתוך 14 ימים מיום קבלת המוצר בחזרה או מיום קבלת ההודעה על הביטול, לפי המאוחר מביניהם.
+              {t('terms.cancellationRefund')}
             </p>
             <p className="font-light leading-relaxed text-gray-700">
-              עלויות המשלוח לא יוחזרו ללקוח, אלא אם בוטלה העסקה מסיבה הקשורה לחברה. לפרטים נוספים, עיינו בעמוד <Link href="/returns" className="text-[#1a1a1a] underline hover:no-underline">החזרות</Link>.
+              {t('terms.cancellationShipping')} <Link href="/returns" className="text-[#1a1a1a] underline hover:no-underline">{t('terms.cancellationLink')}</Link>
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-light luxury-font mb-4">מדיניות פרטיות</h2>
+            <h2 className="text-2xl font-light luxury-font mb-4">{t('terms.privacy')}</h2>
             <p className="font-light leading-relaxed text-gray-700 mb-4">
-              הגנת הפרטיות שלכם חשובה לנו. כל המידע שאתם מספקים לנו נשמר בצורה מאובטחת ומשמש רק למטרות הבאות:
+              {t('terms.privacyText')}
             </p>
             <ul className="list-none space-y-3 font-light leading-relaxed text-gray-700 mb-4">
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span>ביצוע והשלמת הזמנות</span>
+                <span>{t('terms.privacyOrder')}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span>שירות לקוחות ותמיכה</span>
+                <span>{t('terms.privacySupport')}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span>שליחת עדכונים והזמנות (רק אם הסכמתם לכך)</span>
+                <span>{t('terms.privacyUpdates')}</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-luxury-gold mt-1">•</span>
-                <span>שיפור החוויה באתר</span>
+                <span>{t('terms.privacyImprove')}</span>
               </li>
             </ul>
             <p className="font-light leading-relaxed text-gray-700 mb-4">
-              אנו לא נמכור, נשכיר או נשתף את המידע האישי שלכם עם צדדים שלישיים למטרות שיווקיות, אלא אם נדרש לעשות כן על פי חוק או אם קיבלנו את הסכמתכם המפורשת.
+              {t('terms.privacyNoShare')}
             </p>
             <p className="font-light leading-relaxed text-gray-700">
-              המידע נשמר במערכות מאובטחות ומוגנות. לפרטים נוספים, עיינו ב<Link href="/privacy" className="text-[#1a1a1a] underline hover:no-underline">מדיניות הפרטיות</Link> המלאה שלנו.
+              {t('terms.privacySecure')} <Link href="/privacy" className="text-[#1a1a1a] underline hover:no-underline">{t('terms.privacyLink')}</Link>
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-light luxury-font mb-4">שינויים בתקנון</h2>
+            <h2 className="text-2xl font-light luxury-font mb-4">{t('terms.changes')}</h2>
             <p className="font-light leading-relaxed text-gray-700">
-              אנו שומרים לעצמנו את הזכות לעדכן את התקנון בכל עת. שינויים ייכנסו לתוקף מייד עם פרסומם באתר. מומלץ לעיין בתקנון מעת לעת.
+              {t('terms.changesText')}
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-light luxury-font mb-4">דין שולט</h2>
+            <h2 className="text-2xl font-light luxury-font mb-4">{t('terms.law')}</h2>
             <p className="font-light leading-relaxed text-gray-700">
-              תקנון זה כפוף לחוקי מדינת ישראל. כל סכסוך הנובע משימוש באתר ייפתר בפני בתי המשפט המוסמכים בישראל.
+              {t('terms.lawText')}
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-light luxury-font mb-4">יצירת קשר</h2>
+            <h2 className="text-2xl font-light luxury-font mb-4">{t('terms.contact')}</h2>
             <div className="font-light leading-relaxed text-gray-700 space-y-3">
               <p>
-                לשאלות או הבהרות בנוגע לתקנון זה, אנא צרו קשר עם שירות הלקוחות שלנו:
+                {t('terms.contactText')}
               </p>
               <div className="space-y-2 text-sm">
                 <p>
-                  <strong>קלומית</strong>
+                  <strong>{t('terms.companyName')}</strong>
                 </p>
                 <p>
-                  כתובת: גאולה 45, תל אביב יפו 6330447
+                  {t('terms.address')}
                 </p>
                 <p>
-                  טלפון: <a href="tel:+97235178502" className="hover:text-[#1a1a1a] transition-colors">03-5178502</a>
+                  {t('terms.phone')}
                 </p>
                 <p>
-                  פקס: 03-5106781
+                  {t('terms.fax')}
                 </p>
                 <p>
-                  אימייל: <a href="mailto:klumitltd@gmail.com" className="hover:text-[#1a1a1a] transition-colors">klumitltd@gmail.com</a>
+                  {t('terms.email')}
                 </p>
               </div>
             </div>
@@ -218,5 +222,3 @@ export default function TermsPage() {
     </div>
   );
 }
-
-

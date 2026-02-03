@@ -133,7 +133,7 @@ export default function MembershipTopBar() {
             className="text-[10px] md:text-base font-light hover:underline cursor-pointer leading-tight"
             dir="rtl"
           >
-            {t('membership.topBar')} <span className="font-medium">{t('membership.discount')}</span> בקניה ראשונה!
+            {t('membership.topBar')} <span className="font-medium">{t('membership.discount')}</span> {t('membership.firstPurchase')}
           </button>
           <button
             onClick={handleDismiss}

@@ -11,6 +11,7 @@ import Tooltip from '@/components/Tooltip';
 import ImageZoomModal from '@/components/ImageZoomModal';
 import { trackProductViewed, trackAddToCart } from '@/lib/analytics';
 import { useLanguage } from '@/lib/LanguageContext';
+import { useTranslateHTML } from '@/lib/hooks/useTranslateHTML';
 
 interface Product {
   id: string;
@@ -62,7 +63,7 @@ interface ProductClientProps {
 }
 
 export default function ProductClient({ product, relatedProducts: initialRelatedProducts }: ProductClientProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [selectedVariant, setSelectedVariant] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -81,6 +82,12 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
   const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
+  
+  // Translate product description
+  const { translatedContent: translatedDescription } = useTranslateHTML(
+    product.descriptionHtml || product.description,
+    language
+  );
 
   // Type for variant node
   type VariantNode = Product['variants']['edges'][0]['node'];
@@ -611,8 +618,10 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     return cleaned || description;
   };
 
-  const firstLine = extractFirstLine(product.descriptionHtml || product.description);
-  const descriptionWithoutFirstLine = getDescriptionWithoutFirstLine(product.descriptionHtml || product.description);
+  // Use translated description
+  const descriptionToUse = translatedDescription || product.descriptionHtml || product.description;
+  const firstLine = extractFirstLine(descriptionToUse);
+  const descriptionWithoutFirstLine = getDescriptionWithoutFirstLine(descriptionToUse);
 
   // Render CTA buttons component (reusable)
   const renderCTAs = (isMobile: boolean = false) => {
@@ -821,7 +830,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                         {isAddingToCart ? (
                           <>
                             <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                            נוסף לעגלה
+                            {t('products.addingToCart')}
                           </>
                         ) : isMaxStock ? t('products.outOfStock') : t('products.addToCart')}
                       </button>
@@ -837,7 +846,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     className="w-full border border-green-600 text-green-600 py-3 px-6 text-sm tracking-luxury uppercase font-light hover:bg-green-600 hover:text-white transition-luxury flex items-center justify-center gap-2"
                   >
                     <Share2 size={18} />
-                    שתפו בוואטסאפ
+                    {t('products.shareViaWhatsApp')}
                   </button>
                 </div>
                 
@@ -933,7 +942,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     <p className="text-2xl font-light text-[#1a1a1a]">
                       ₪{price}
                     </p>
-                    <p className="text-xs font-light text-gray-500 mt-1">כולל מע״מ</p>
+                    <p className="text-xs font-light text-gray-500 mt-1">{t('products.includingVAT')}</p>
                   </div>
 
                   {/* Color Selection */}
@@ -1064,8 +1073,8 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                                 : 'border-gray-200 opacity-60'
                             }`}
                             style={{ backgroundColor: colorHex }}
-                            title={isAvailable ? color : `${color} - אזל במלאי`}
-                            aria-label={isAvailable ? color : `${color} - אזל במלאי`}
+                            title={isAvailable ? color : `${color} - ${t('products.outOfStock')}`}
+                            aria-label={isAvailable ? color : `${color} - ${t('products.outOfStock')}`}
                           >
                             {!isAvailable && (
                               <X 
@@ -1122,9 +1131,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                   <div className="hidden md:block pt-2">
                     {currentVariant.availableForSale ? (
                       <p className="text-sm font-light text-gray-700">
-                        במלאי
+                        {t('products.inStock')}
                         {currentVariant.quantityAvailable > 0 && (
-                          <span className="text-gray-500"> • {currentVariant.quantityAvailable} יחידות</span>
+                          <span className="text-gray-500"> • {currentVariant.quantityAvailable} {t('products.units')}</span>
                         )}
                       </p>
                     ) : (
@@ -1148,16 +1157,16 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                   )}
 
                   <div>
-                    <h3 className="text-sm font-light tracking-luxury uppercase mb-3 pb-3 border-b border-gray-200">משלוחים והחזרות</h3>
+                    <h3 className="text-sm font-light tracking-luxury uppercase mb-3 pb-3 border-b border-gray-200">{t('products.shippingAndReturns')}</h3>
                     <p className="text-sm font-light text-gray-700 mb-2">
-                      משלוח חינם מעל 500 ₪ • החזרה תוך 14 ימים
+                      {t('products.freeShippingOver')}
                     </p>
                     <div className="flex gap-4 text-xs">
                       <Link href="/shipping" className="underline text-gray-600 hover:text-[#1a1a1a]">
-                        משלוחים
+                        {t('products.shipping')}
                       </Link>
                       <Link href="/returns" className="underline text-gray-600 hover:text-[#1a1a1a]">
-                        החזרות
+                        {t('products.returns')}
                       </Link>
                     </div>
                   </div>
@@ -1173,13 +1182,13 @@ export default function ProductClient({ product, relatedProducts: initialRelated
             <div className="pt-16 mb-12 px-4">
               <div className="max-w-[1400px] mx-auto flex justify-between items-end">
                 <div className="space-y-2">
-                  <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light">Recommended</span>
+                  <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light">{t('products.recommended')}</span>
                   <h2 className="text-3xl md:text-5xl font-light luxury-font text-[#1a1a1a]">
-                    הקולקציה המשלימה
+                    {t('products.complementaryCollection')}
                   </h2>
                 </div>
                 <Link href="/products?tab=bags" className="text-sm border-b border-[#1a1a1a] pb-1 hover:opacity-60 transition-opacity">
-                  לכל המוצרים
+                  {t('products.allProducts')}
                 </Link>
               </div>
             </div>

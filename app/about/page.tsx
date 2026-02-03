@@ -1,19 +1,14 @@
+'use client';
+
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Image from 'next/image';
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'אודות קלומית',
-  description: 'קלומית - יבואן בלעדי בישראל של תיקי RENTAO ANGI ו-CARLINO GROUP. למעלה מ-40 שנה של ניסיון בייבוא תיקים יוקרתיים מאיטליה.',
-  alternates: {
-    canonical: 'https://www.klumit-online.co.il/about',
-  },
-};
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function AboutPage() {
+  const { t, language } = useLanguage();
   return (
-    <div className="min-h-screen flex flex-col bg-[#fdfcfb]" style={{ fontFamily: "'Ellinia', 'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
+    <div className="min-h-screen flex flex-col bg-[#fdfcfb]" style={{ fontFamily: "'Ellinia', 'Helvetica Neue', Helvetica, Arial, sans-serif" }} dir={language === 'he' ? 'rtl' : 'ltr'}>
       <Header />
       <main id="main-content" className="flex-grow" role="main">
         {/* Story Section with Image */}
@@ -24,7 +19,7 @@ export default function AboutPage() {
                 <div className="relative aspect-[4/2.25] rounded-lg overflow-hidden shadow-2xl">
                   <Image
                     src="/about-image-3.jpg"
-                    alt="משה חייט וללו קורילנו"
+                    alt={t('about.image1Alt')}
                     fill
                     className="object-cover"
                     style={{ objectPosition: 'center 30%' }}
@@ -32,25 +27,25 @@ export default function AboutPage() {
                   />
                 </div>
                 <p className="text-sm text-gray-600 text-center font-light italic">
-                  משה חייט וללו קורילנו, הנשיא של Carlino Group
+                  {t('about.image1Caption')}
                 </p>
               </div>
               <div className="text-right space-y-4 order-1 md:order-2">
                 <span className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-light block">
-                  Our Story
+                  {t('about.ourStory')}
                 </span>
                 <h2 className="text-3xl md:text-4xl font-light luxury-font text-[#1a1a1a] mb-4">
-                  המורשת שלנו
+                  {t('about.ourHeritage')}
                 </h2>
                 <div className="space-y-4 text-base font-light text-gray-700 leading-relaxed">
                   <p>
-                    סיפורה של חברת &quot;קלומית&quot;, בבעלות משה חייט, מתחיל לפני למעלה מ-40 שנה. כמי שצמח מתוך עולם האופנה הישראלי, זיהה משה את הצורך בחיבור בין הקהל המקומי לבין הסטנדרט הבינלאומי הגבוה ביותר – אומנות העור האיטלקית המסורתית.
+                    {t('about.heritageText1')}
                   </p>
                   <p>
-                    במהלך עשורים של פעילות, הפכה קלומית לאחת החברות הוותיקות והמוערכות בישראל בתחום ייבוא אביזרי האופנה. אנו מתמחים ביבוא של תיקים וארנקים ממותגים איטלקיים מובילים, מתוך אמונה שכל תיק הוא לא רק אביזר, אלא ביטוי של מורשת, איכות וסטייל אישי.
+                    {t('about.heritageText2')}
                   </p>
                   <p className="text-lg font-light text-gray-800 mt-6">
-                    המשפחה שלנו, התיק שלכם
+                    {t('about.ourFamily')}
                   </p>
                 </div>
               </div>
@@ -60,7 +55,7 @@ export default function AboutPage() {
               <div className="text-right space-y-4">
                 <div className="space-y-3 text-base font-light text-gray-700 leading-relaxed">
                   <p>
-                    כיבואנים הבלעדיים בישראל של מותגי RENTAO ANGI ו-CARLINO GROUP, אנו מביאים אליכם את מיטב האומנות האיטלקית – תיקים יוקרתיים המגיעים היישר מאיטליה. כל פריט משלב עיצוב אלגנטי וקלאסי, עור איטלקי משובח ואיכות ללא פשרות.
+                    {t('about.exclusiveText')}
                   </p>
                 </div>
               </div>
@@ -68,7 +63,7 @@ export default function AboutPage() {
                 <div className="relative aspect-[4/2.25] rounded-lg overflow-hidden shadow-2xl">
                   <Image
                     src="/about-image-2.jpg"
-                    alt="משה חייט"
+                    alt={t('about.image2Alt')}
                     fill
                     className="object-cover"
                     style={{ objectPosition: 'center 20%' }}
@@ -76,7 +71,7 @@ export default function AboutPage() {
                   />
                 </div>
                 <p className="text-sm text-gray-600 text-center font-light italic">
-                  משה חייט עם פליפו אנג'י הבן של Renato Angi והמנהל בפועל של החברה
+                  {t('about.image2Caption')}
                 </p>
               </div>
             </div>
@@ -86,7 +81,7 @@ export default function AboutPage() {
                 <div className="relative aspect-[4/2.25] rounded-lg overflow-hidden shadow-2xl">
                   <Image
                     src="/about-image-1.jpg"
-                    alt="משה חייט עם הבעלים של Renato Angi"
+                    alt={t('about.image3Alt')}
                     fill
                     className="object-cover"
                     style={{ objectPosition: 'center 30%' }}
@@ -94,13 +89,13 @@ export default function AboutPage() {
                   />
                 </div>
                 <p className="text-sm text-gray-600 text-center font-light italic">
-                  משה חייט עם רנטו האנגי הבעלים של Rento Angi   
+                  {t('about.image3Caption')}
                 </p>
               </div>
               <div className="text-right space-y-4 order-1 md:order-2">
                 <div className="space-y-3 text-base font-light text-gray-700 leading-relaxed">
                   <p>
-                    הקולקציות שלנו משקפות את המסורת האיטלקית העתיקה, המשולבת עם עיצוב עכשווי ופונקציונלי. כל פריט שאנו מייבאים עובר בחירה קפדנית כדי להבטיח איכות ללא פשרות.
+                    {t('about.collectionsText')}
                   </p>
                 </div>
               </div>
@@ -113,10 +108,10 @@ export default function AboutPage() {
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center mb-8">
               <span className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-light mb-3 block">
-                What Makes Us Unique
+                {t('about.whatMakesUsUnique')}
               </span>
               <h2 className="text-3xl md:text-4xl font-light luxury-font text-[#1a1a1a] mb-6">
-                מה שמייחד אותנו
+                {t('about.whatMakesUsUniqueTitle')}
               </h2>
             </div>
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -125,10 +120,10 @@ export default function AboutPage() {
                   01
                 </span>
                 <h3 className="text-xl md:text-2xl font-light luxury-font text-[#1a1a1a] mb-3">
-                  נבחרת מותגים
+                  {t('about.brandSelection')}
                 </h3>
                 <p className="text-sm md:text-base font-light text-gray-600 leading-relaxed">
-                  ייצוג בלעדי של בתי אופנה איטלקיים מובילים כמו <span className="font-medium text-amber-700 uppercase">RENATO ANGI</span> ו-<span className="font-medium text-amber-700 uppercase">CARLINO GROUP</span>.
+                  {t('about.brandSelectionText')}
                 </p>
               </div>
               <div className="text-right space-y-3 border-t border-gray-200 pt-6">
@@ -136,10 +131,10 @@ export default function AboutPage() {
                   02
                 </span>
                 <h3 className="text-xl md:text-2xl font-light luxury-font text-[#1a1a1a] mb-3">
-                  התאמה לצו האופנה
+                  {t('about.fashionAlignment')}
                 </h3>
                 <p className="text-sm md:text-base font-light text-gray-600 leading-relaxed">
-                  עדכון מתמיד של הקולקציות בהתאם למגמות הבינלאומיות, תוך שמירה על עיצוב קלאסי על-זמני.
+                  {t('about.fashionAlignmentText')}
                 </p>
               </div>
               <div className="text-right space-y-3 border-t border-gray-200 pt-6">
@@ -147,10 +142,10 @@ export default function AboutPage() {
                   03
                 </span>
                 <h3 className="text-xl md:text-2xl font-light luxury-font text-[#1a1a1a] mb-3">
-                  סטנדרט שירות
+                  {t('about.serviceStandard')}
                 </h3>
                 <p className="text-sm md:text-base font-light text-gray-600 leading-relaxed">
-                  הפצה רחבה לחנויות בוטיק ויוקרה, המבוססת על מקצועיות ואמינות ללא פשרות.
+                  {t('about.serviceStandardText')}
                 </p>
               </div>
             </div>
@@ -161,13 +156,13 @@ export default function AboutPage() {
         <section className="pt-12 pb-6">
           <div className="max-w-4xl mx-auto px-4 text-center">
             <span className="text-xs uppercase tracking-[0.3em] text-amber-600/70 font-light mb-3 block">
-              Our Commitment
+              {t('about.ourCommitment')}
             </span>
             <h2 className="text-3xl md:text-4xl font-light luxury-font text-[#1a1a1a] mb-4">
-              המחויבות שלנו
+              {t('about.ourCommitmentTitle')}
             </h2>
             <p className="text-base md:text-lg font-light text-gray-700 leading-relaxed">
-              אנו מתחייבים להעניק לך חווית קנייה יוצאת דופן ותיק שילווה אותך שנים רבות. כל תיק שאנו מייבאים הוא ביטוי לאהבתנו לאומנות העור ולמסורת האיטלקית המפוארת.
+              {t('about.commitmentText')}
             </p>
           </div>
         </section>
