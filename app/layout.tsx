@@ -172,8 +172,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="he" dir="rtl">
+    <html lang="he" dir="rtl" suppressHydrationWarning>
       <head>
+        {/* Set language and direction before hydration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var savedLang = localStorage.getItem('language');
+                  if (savedLang && ['he', 'en', 'ru'].includes(savedLang)) {
+                    document.documentElement.setAttribute('lang', savedLang);
+                    document.documentElement.setAttribute('dir', savedLang === 'he' ? 'rtl' : 'ltr');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         {/* Meta Pixel Code */}
         <script
           dangerouslySetInnerHTML={{

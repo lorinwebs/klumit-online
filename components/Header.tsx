@@ -58,7 +58,7 @@ export default function Header() {
   return (
     <header 
       className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm w-full border-b border-black/5"
-      dir="rtl"
+      dir={language === 'he' ? 'rtl' : 'ltr'}
       suppressHydrationWarning
     >
       {/* --- שורה עליונה: Grid 3 עמודות - מינימליסטי --- */}
