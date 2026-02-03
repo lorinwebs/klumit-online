@@ -292,6 +292,9 @@ export interface Translations {
   'membership.discount': string;
   'membership.firstPurchase': string;
   
+  // Accessibility Links
+  'skipToMain': string;
+  
   // Footer
   'footer.brand': string;
   'footer.brandDesc': string;
@@ -610,6 +613,9 @@ export const translations: Record<Language, Translations> = {
     'membership.discount': '20%',
     'membership.firstPurchase': 'בקניה ראשונה!',
     
+    // Accessibility Links
+    'skipToMain': 'דלג לתוכן הראשי',
+    
     // Footer
     'footer.brand': 'קלומית',
     'footer.brandDesc': 'יבואן בלעדי של תיקים יוקרתיים היישר מאיטליה',
@@ -927,6 +933,9 @@ export const translations: Record<Language, Translations> = {
     'membership.discount': '20%',
     'membership.firstPurchase': 'on your first purchase!',
     
+    // Accessibility Links
+    'skipToMain': 'Skip to main content',
+    
     // Footer
     'footer.brand': 'Klumit',
     'footer.brandDesc': 'Exclusive importer of luxury bags from Italy',
@@ -1243,6 +1252,9 @@ export const translations: Record<Language, Translations> = {
     'membership.topBar': 'Присоединяйтесь к клубу клиентов и получите',
     'membership.discount': '20%',
     'membership.firstPurchase': 'при первой покупке!',
+    
+    // Accessibility Links
+    'skipToMain': 'Перейти к основному контенту',
     
     // Footer
     'footer.brand': 'Klumit',

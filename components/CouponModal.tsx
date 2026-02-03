@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { X, Copy, Check } from 'lucide-react';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function CouponModal() {
+  const { language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const couponCode = 'FIRSTORDER20';
@@ -112,7 +114,7 @@ export default function CouponModal() {
       <div 
         className="bg-white w-full max-w-md mx-4 p-8 relative shadow-2xl" 
         onClick={(e) => e.stopPropagation()}
-        dir="rtl"
+        dir={language === 'he' ? 'rtl' : 'ltr'}
         role="document"
       >
         <button

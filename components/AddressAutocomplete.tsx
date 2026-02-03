@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface AddressAutocompleteProps {
   value: string;
@@ -23,6 +24,7 @@ export default function AddressAutocomplete({
   className = '',
   required = false,
 }: AddressAutocompleteProps) {
+  const { language } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -197,7 +199,7 @@ export default function AddressAutocomplete({
       placeholder={placeholder}
       className={className}
       required={required}
-      dir="rtl"
+      dir={language === 'he' ? 'rtl' : 'ltr'}
       autoComplete="off"
     />
   );

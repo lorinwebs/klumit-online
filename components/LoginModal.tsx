@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Phone, X } from 'lucide-react';
 import { verifyOtpServer } from '@/app/auth/actions';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface LoginModalProps {
 
 export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
   const router = useRouter();
+  const { language } = useLanguage();
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [step, setStep] = useState<'phone' | 'verify'>('phone');
@@ -241,7 +243,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       <div 
         className="bg-white w-full max-w-md mx-4 p-8 relative" 
         onClick={(e) => e.stopPropagation()}
-        dir="rtl"
+        dir={language === 'he' ? 'rtl' : 'ltr'}
         role="document"
       >
         <button

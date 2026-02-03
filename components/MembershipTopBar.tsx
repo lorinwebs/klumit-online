@@ -8,7 +8,7 @@ import { X } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
 
 export default function MembershipTopBar() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
@@ -131,7 +131,7 @@ export default function MembershipTopBar() {
           <button
             onClick={handleClick}
             className="text-[10px] md:text-base font-light hover:underline cursor-pointer leading-tight"
-            dir="rtl"
+            dir={language === 'he' ? 'rtl' : 'ltr'}
           >
             {t('membership.topBar')} <span className="font-medium">{t('membership.discount')}</span> {t('membership.firstPurchase')}
           </button>

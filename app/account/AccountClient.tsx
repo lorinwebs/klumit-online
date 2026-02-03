@@ -11,6 +11,7 @@ import Footer from '@/components/Footer';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
 import { User as UserIcon, Phone, Package, Check, Edit2, Mail, LogOut, MapPin } from 'lucide-react';
 import Image from 'next/image';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface Order {
   id: string;
@@ -43,6 +44,7 @@ export default function AccountClient({
   initialOrders = [], 
   initialShopifyCustomerId = null 
 }: AccountClientProps) {
+  const { language } = useLanguage();
   const [user, setUser] = useState<User>(initialUser);
   const [shopifyCustomerId, setShopifyCustomerId] = useState<string | null>(initialShopifyCustomerId);
   const [orders, setOrders] = useState<Order[]>(initialOrders);
@@ -425,7 +427,7 @@ export default function AccountClient({
               }}
               className="hidden md:flex px-4 py-2 text-sm font-light text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors items-center justify-center gap-2 border border-gray-200 hover:border-gray-300 whitespace-nowrap touch-manipulation"
               style={{ WebkitTapHighlightColor: 'transparent' }}
-              dir="rtl"
+              dir={language === 'he' ? 'rtl' : 'ltr'}
             >
               <span>התנתק</span>
               <LogOut size={16} />

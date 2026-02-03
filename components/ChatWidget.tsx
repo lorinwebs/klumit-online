@@ -7,8 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import LoginModal from '@/components/LoginModal';
 import Toast from '@/components/Toast';
 import { useChatWidget } from '@/lib/hooks/useChatWidget';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function ChatWidget() {
+  const { language } = useLanguage();
   const {
     isOpen,
     toggleChat,
@@ -115,7 +117,7 @@ export default function ChatWidget() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
             className="fixed right-6 bottom-6 z-[9999] w-96 max-w-[calc(100vw-3rem)] bg-white rounded-lg shadow-2xl flex flex-col max-h-[600px] h-[600px]"
-            dir="rtl"
+            dir={language === 'he' ? 'rtl' : 'ltr'}
           >
             {/* כותרת */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">

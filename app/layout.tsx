@@ -8,6 +8,7 @@ import MembershipPopup from '@/components/MembershipPopup';
 import MembershipFloatingButton from '@/components/MembershipFloatingButton';
 import MembershipTopBar from '@/components/MembershipTopBar';
 import CouponModal from '@/components/CouponModal';
+import SkipToMain from '@/components/SkipToMain';
 import { LanguageProvider } from '@/lib/LanguageContext';
 import './globals.css';
 
@@ -253,9 +254,7 @@ export default function RootLayout({
       <body className={`${assistant.variable} ${cormorant.variable} font-sans overflow-x-hidden`}>
         <LanguageProvider>
           <MembershipTopBar />
-          <a href="#main-content" className="skip-to-main">
-            דלג לתוכן הראשי
-          </a>
+          <SkipToMain />
           <Suspense fallback={null}>
             <AnalyticsProvider>
               {children}

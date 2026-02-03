@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 import LoginModal from './LoginModal';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function MembershipPopup() {
+  const { language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const router = useRouter();
@@ -67,7 +69,7 @@ export default function MembershipPopup() {
           <div 
             className="bg-white w-full max-w-md mx-4 p-8 relative shadow-2xl" 
             onClick={(e) => e.stopPropagation()}
-            dir="rtl"
+            dir={language === 'he' ? 'rtl' : 'ltr'}
             role="document"
           >
             <button

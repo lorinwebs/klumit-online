@@ -5,8 +5,10 @@ import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import LoginModal from './LoginModal';
 import { X } from 'lucide-react';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function MembershipFloatingButton() {
+  const { language } = useLanguage();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
@@ -125,7 +127,7 @@ export default function MembershipFloatingButton() {
           onClick={() => setShowLoginModal(true)}
           className="bg-gradient-to-r from-[#8B6914] to-[#c9a962] text-white px-6 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex flex-col items-center gap-1 group relative pr-8"
           aria-label="הצטרף למועדון החברים"
-          dir="rtl"
+          dir={language === 'he' ? 'rtl' : 'ltr'}
         >
           <button
             onClick={handleDismiss}
