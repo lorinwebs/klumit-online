@@ -77,17 +77,17 @@ export default function ValuePropsBar() {
         </div>
 
         {/* Mobile: Scrollable */}
-        <div className="md:hidden flex overflow-x-auto scrollbar-hide gap-0">
+        <div className="md:hidden flex overflow-x-auto scrollbar-hide gap-0 -mx-1">
           {props.map((prop, index) => {
             const Icon = prop.icon;
             const content = (
-              <div className="flex-shrink-0 flex items-center gap-1 py-2 px-2 border-l border-gray-200 last:border-l-0 min-w-[130px] max-w-[160px]">
-                <Icon size={12} className="text-[#1a1a1a] flex-shrink-0" strokeWidth={1.5} />
+              <div className="flex-shrink-0 flex items-center gap-1 py-2 px-1.5 border-l border-gray-200 last:border-l-0 min-w-[110px] max-w-[110px]">
+                <Icon size={11} className="text-[#1a1a1a] flex-shrink-0" strokeWidth={1.5} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-[7px] font-light uppercase tracking-wide text-[#1a1a1a] leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
+                  <p className="text-[6.5px] font-light uppercase tracking-wide text-[#1a1a1a] leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
                     {prop.title}
                   </p>
-                  <p className="text-[6px] font-light text-gray-600 mt-0.5 leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
+                  <p className="text-[5.5px] font-light text-gray-600 mt-0.5 leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
                     {prop.subtitle}
                   </p>
                 </div>
