@@ -126,21 +126,21 @@ export default function MembershipTopBar() {
 
   return (
     <>
-      <div className="relative bg-red-600 text-white py-0.5 md:py-3 px-4 text-center z-[70]">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
+      <div className="relative bg-red-600 text-white py-[2px] md:py-3 px-4 text-center z-[70]">
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 md:gap-4">
           <button
             onClick={handleClick}
-            className="text-[9px] md:text-base font-light hover:underline cursor-pointer leading-tight"
+            className="text-[8px] md:text-base font-light hover:underline cursor-pointer leading-tight py-[1px]"
             dir="rtl"
           >
             {t('membership.topBar')} <span className="font-medium">{t('membership.discount')}</span> בקניה ראשונה!
           </button>
           <button
             onClick={handleDismiss}
-            className="absolute left-1 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors p-0.5"
+            className="absolute left-0.5 md:left-1 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors p-0.5"
             aria-label="סגור"
           >
-            <X size={10} className="md:w-[18px] md:h-[18px]" />
+            <X size={9} className="md:w-[18px] md:h-[18px]" />
           </button>
         </div>
       </div>

@@ -76,40 +76,42 @@ export default function ValuePropsBar() {
           })}
         </div>
 
-        {/* Mobile: Scrollable */}
-        <div className="md:hidden flex overflow-x-auto scrollbar-hide gap-0 -mx-1">
-          {props.map((prop, index) => {
-            const Icon = prop.icon;
-            const content = (
-              <div className="flex-shrink-0 flex items-center gap-1 py-2 px-1.5 border-l border-gray-200 last:border-l-0 min-w-[110px] max-w-[110px]">
-                <Icon size={11} className="text-[#1a1a1a] flex-shrink-0" strokeWidth={1.5} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[6.5px] font-light uppercase tracking-wide text-[#1a1a1a] leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
-                    {prop.title}
-                  </p>
-                  <p className="text-[5.5px] font-light text-gray-600 mt-0.5 leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
-                    {prop.subtitle}
-                  </p>
+        {/* Mobile: Scrollable - Horizontal scroll without overlap */}
+        <div className="md:hidden overflow-x-auto overflow-y-hidden scrollbar-hide">
+          <div className="flex gap-0 min-w-max">
+            {props.map((prop, index) => {
+              const Icon = prop.icon;
+              const content = (
+                <div className="flex-shrink-0 flex items-center gap-1 py-2 px-2 border-l border-gray-200 first:border-l-0 w-[95px]">
+                  <Icon size={10} className="text-[#1a1a1a] flex-shrink-0" strokeWidth={1.5} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[6px] font-light uppercase tracking-wide text-[#1a1a1a] leading-[1.2] whitespace-nowrap overflow-hidden text-ellipsis">
+                      {prop.title}
+                    </p>
+                    <p className="text-[5px] font-light text-gray-600 mt-0.5 leading-[1.2] whitespace-nowrap overflow-hidden text-ellipsis">
+                      {prop.subtitle}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            );
-
-            if (prop.link && prop.external) {
-              return (
-                <Link
-                  key={index}
-                  href={prop.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                >
-                  {content}
-                </Link>
               );
-            }
 
-            return <div key={index}>{content}</div>;
-          })}
+              if (prop.link && prop.external) {
+                return (
+                  <Link
+                    key={index}
+                    href={prop.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    {content}
+                  </Link>
+                );
+              }
+
+              return <div key={index}>{content}</div>;
+            })}
+          </div>
         </div>
       </div>
     </div>
