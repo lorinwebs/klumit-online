@@ -82,13 +82,13 @@ export default function ValuePropsBar() {
             {props.map((prop, index) => {
               const Icon = prop.icon;
               const content = (
-                <div className="flex-shrink-0 flex items-center gap-1 py-2 px-2 border-l border-gray-200 first:border-l-0 w-[95px]">
-                  <Icon size={10} className="text-[#1a1a1a] flex-shrink-0" strokeWidth={1.5} />
+                <div className="flex-shrink-0 flex items-center gap-1 py-2 px-2 border-l border-gray-200 first:border-l-0 w-[100px]">
+                  <Icon size={11} className="text-[#1a1a1a] flex-shrink-0" strokeWidth={1.5} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[6px] font-light uppercase tracking-wide text-[#1a1a1a] leading-[1.2] whitespace-nowrap overflow-hidden text-ellipsis">
+                    <p className="text-[7px] font-light uppercase tracking-wide text-[#1a1a1a] leading-[1.2] whitespace-nowrap overflow-hidden text-ellipsis">
                       {prop.title}
                     </p>
-                    <p className="text-[5px] font-light text-gray-600 mt-0.5 leading-[1.2] whitespace-nowrap overflow-hidden text-ellipsis">
+                    <p className="text-[6px] font-light text-gray-600 mt-0.5 leading-[1.2] whitespace-nowrap overflow-hidden text-ellipsis">
                       {prop.subtitle}
                     </p>
                   </div>
