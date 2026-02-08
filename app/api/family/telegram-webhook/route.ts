@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-import { buildDailyScheduleMessage, sendToChat, editMessage } from '@/lib/telegram-family';
+import { buildDailyScheduleMessage, sendToChat, editMessage, notifyNewEvent } from '@/lib/telegram-family';
 
 export async function POST(request: NextRequest) {
   try {
@@ -229,6 +229,9 @@ async function handleAddEvent(chatId: string, text: string) {
     if (parsed.notes) msg += `\n📝 ${parsed.notes}`;
 
     await sendToChat(chatId, msg, [[{ text: '🗑 מחק אירוע', callback_data: `delete_event:${inserted.id}` }]]);
+
+    // Notify all family chat members
+    notifyNewEvent({ title: parsed.title, person: parsed.person, category: parsed.category, start_time: startTime, end_time: endTime, notes: parsed.notes || null }).catch(() => {});
   } catch {
     await sendToChat(chatId, '❌ שגיאה בעיבוד ההודעה');
   }
