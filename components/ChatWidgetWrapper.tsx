@@ -7,7 +7,7 @@ export default function ChatWidgetWrapper() {
   const pathname = usePathname();
   
   // Hide chat widget on austria, ischia, and reunion pages
-  if (pathname === '/austria' || pathname === '/ischia' || pathname === '/mekif-chet-2007-reunion') {
+  if (pathname === '/austria' || pathname === '/ischia' || pathname === '/mekif-chet-2007-reunion' || pathname?.startsWith('/family-schedule')) {
     return null;
   }
   

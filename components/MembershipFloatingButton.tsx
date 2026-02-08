@@ -116,7 +116,7 @@ export default function MembershipFloatingButton() {
 
   // אם המשתמש מחובר, עדיין בודקים, הכפתור נסגר, או שעדיין לא עברו 2 דקות - אל תציג את הכפתור
   // או אם אנחנו בדף מקיף חט - אל תציג את הכפתור
-  if (isLoggedIn === null || isLoggedIn || isDismissed || !showButton || pathname === '/mekif-chet-2007-reunion') {
+  if (isLoggedIn === null || isLoggedIn || isDismissed || !showButton || pathname === '/mekif-chet-2007-reunion' || pathname?.startsWith('/family-schedule')) {
     return null;
   }
 

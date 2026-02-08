@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { X, Copy, Check } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
 
 export default function CouponModal() {
   const { language } = useLanguage();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const couponCode = 'FIRSTORDER20';
@@ -101,7 +103,7 @@ export default function CouponModal() {
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || pathname?.startsWith('/family-schedule')) return null;
 
   return (
     <div 

@@ -15,7 +15,7 @@ export default function MembershipPopup() {
 
   useEffect(() => {
     // אל תציג את הפופ-אפ בדף מקיף ח'
-    if (pathname?.includes('/mekif-chet-2007-reunion')) {
+    if (pathname?.includes('/mekif-chet-2007-reunion') || pathname?.startsWith('/family-schedule')) {
       return;
     }
     

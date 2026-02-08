@@ -120,7 +120,7 @@ export default function MembershipTopBar() {
   };
 
   // אל תציג את הבר אם: מחובר, נסגר, עדיין בבדיקה, או בדף מקיף חט
-  if (isLoggedIn === null || isLoggedIn || isDismissed || pathname === '/mekif-chet-2007-reunion') {
+  if (isLoggedIn === null || isLoggedIn || isDismissed || pathname === '/mekif-chet-2007-reunion' || pathname?.startsWith('/family-schedule')) {
     return null;
   }
 
