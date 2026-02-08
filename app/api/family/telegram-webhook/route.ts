@@ -190,8 +190,18 @@ async function handleAddEvent(chatId: string, text: string) {
 
     const parsed = JSON.parse(jsonMatch[0]);
     const endDate = parsed.end_date || parsed.date;
-    const startTime = new Date(`${parsed.date}T${parsed.start_time}:00`).toISOString();
-    const endTime = new Date(`${endDate}T${parsed.end_time}:00`).toISOString();
+    // Calculate Israel timezone offset (handles DST automatically)
+    const ilOffset = (dt: string) => {
+      const d = new Date(dt);
+      const utc = d.toLocaleString('en-US', { timeZone: 'UTC' });
+      const il = d.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' });
+      return (new Date(il).getTime() - new Date(utc).getTime()) / 3600000;
+    };
+    const offsetH = ilOffset(new Date().toISOString());
+    const pad = (n: number) => `${n >= 0 ? '+' : '-'}${String(Math.abs(n)).padStart(2, '0')}:00`;
+    const tz = pad(offsetH);
+    const startTime = new Date(`${parsed.date}T${parsed.start_time}:00${tz}`).toISOString();
+    const endTime = new Date(`${endDate}T${parsed.end_time}:00${tz}`).toISOString();
 
     const supabase = createSupabaseAdminClient();
     const { data: inserted, error } = await supabase.from('family_events').insert({
