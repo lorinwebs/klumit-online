@@ -144,8 +144,11 @@ function getHoursRange(events: FamilyEvent[], expandStart = 0, expandEnd = 0): {
       const endMinutes = new Date(event.end_time).getMinutes();
       const eventEndHour = endMinutes > 0 ? endHour + 1 : endHour;
 
-      if (startHour < minHour) minHour = startHour;
-      if (eventEndHour > maxHour) maxHour = eventEndHour;
+      const actualMinHour = Math.min(startHour, endHour);
+      const actualMaxHour = Math.max(startHour, eventEndHour);
+
+      if (actualMinHour < minHour) minHour = actualMinHour;
+      if (actualMaxHour > maxHour) maxHour = actualMaxHour;
     });
   }
 
@@ -177,8 +180,8 @@ function EventBlock({ event, isConflict, compact = false, onClick, minHour = 6, 
 
   const startH = new Date(event.start_time).getHours() + new Date(event.start_time).getMinutes() / 60;
   const endH = new Date(event.end_time).getHours() + new Date(event.end_time).getMinutes() / 60;
-  const duration = endH - startH;
-  const top = (startH - minHour) * 60;
+  const duration = Math.abs(endH - startH);
+  const top = (Math.min(startH, endH) - minHour) * 60;
   const height = Math.max(duration * 60, 28);
 
   return (
@@ -477,25 +480,30 @@ function WeekView({ events, weekDates, conflicts, onCellClick, onEventClick, exp
     setDragOverCell(null);
   };
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const gridCols = isMobile ? '36px repeat(7, 1fr)' : '60px repeat(7, 1fr)';
+
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[600px]">
-        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-gray-200 sticky top-0 bg-white z-10">
-          <div className="p-1" />
+      <div>
+        {/* Day headers */}
+        <div className="border-b border-gray-200 sticky top-0 bg-white z-10" style={{ display: 'grid', gridTemplateColumns: gridCols }}>
+          <div className="p-0.5 md:p-1" />
           {weekDates.map((date, i) => {
             const isToday = isSameDay(date, today);
             return (
-              <div key={i} className={`p-1 md:p-2 text-center border-r border-gray-100 ${isToday ? 'bg-blue-50' : ''}`}>
-                <p className="text-[9px] md:text-[10px] text-gray-500">{DAYS_HE_SHORT[i]}</p>
-                <p className={`text-sm md:text-base font-semibold ${isToday ? 'bg-blue-500 text-white w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center mx-auto' : 'text-gray-900'}`}>{date.getDate()}</p>
+              <div key={i} className={`py-1 md:p-2 text-center border-r border-gray-100 ${isToday ? 'bg-blue-50' : ''}`}>
+                <p className="text-[9px] md:text-xs text-gray-500 leading-tight">{DAYS_HE_SHORT[i]}<span className="hidden md:inline"> {DAYS_HE[i]}</span></p>
+                <p className={`text-xs md:text-base font-semibold ${isToday ? 'bg-blue-500 text-white w-5 h-5 md:w-7 md:h-7 rounded-full flex items-center justify-center mx-auto text-[10px] md:text-base' : 'text-gray-900'}`}>{date.getDate()}</p>
               </div>
             );
           })}
         </div>
+        {/* Hour rows + events overlay */}
         <div className="relative">
           {hours.map(hour => (
-            <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-gray-50" style={{ height: '60px' }}>
-              <div className="text-[10px] md:text-[11px] text-gray-400 text-left pr-2 -mt-1.5">{String(hour).padStart(2, '0')}:00</div>
+            <div key={hour} className="border-b border-gray-50" style={{ display: 'grid', gridTemplateColumns: gridCols, height: '60px' }}>
+              <div className="text-[9px] md:text-[11px] text-gray-400 pt-0.5 leading-none text-center">{String(hour).padStart(2, '0')}:00</div>
               {weekDates.map((date, dayIdx) => {
                 const cellKey = `${date.toISOString()}-${hour}`;
                 const isDragOver = dragOverCell === cellKey;
@@ -510,7 +518,9 @@ function WeekView({ events, weekDates, conflicts, onCellClick, onEventClick, exp
               })}
             </div>
           ))}
-          <div className="absolute top-0 right-[60px] left-0 grid grid-cols-7 pointer-events-none" style={{ height: `${hours.length * 60}px` }}>
+          {/* Events overlay */}
+          <div style={{ position: 'absolute', top: 0, right: 0, left: 0, height: `${hours.length * 60}px`, display: 'grid', gridTemplateColumns: gridCols, pointerEvents: 'none' }}>
+            <div /> {/* spacer for hour column */}
             {weekDates.map((date, dayIdx) => (
               <div key={dayIdx} className="relative border-r border-gray-50">
                 {getEventsForDay(events, date).map(event => (
@@ -523,6 +533,7 @@ function WeekView({ events, weekDates, conflicts, onCellClick, onEventClick, exp
       </div>
     </div>
   );
+
 }
 
 // --- Day View ---
@@ -554,7 +565,7 @@ function DayView({ events, date, conflicts, onCellClick, onEventClick, expandSta
           const isDragOver = dragOverHour === hour;
           return (
             <div key={hour} className="flex border-b border-gray-50" style={{ height: '60px' }}>
-              <div className="w-[60px] text-[11px] text-gray-400 text-left pr-2 -mt-1.5 shrink-0">{String(hour).padStart(2, '0')}:00</div>
+              <div className="w-[60px] text-[11px] text-gray-400 text-center pt-0.5 leading-none shrink-0">{String(hour).padStart(2, '0')}:00</div>
               <div className={`flex-1 cursor-pointer hover:bg-blue-50/30 transition-colors ${isDragOver ? 'bg-blue-200/40 ring-2 ring-blue-400' : ''}`}
                 onClick={() => onCellClick(date, hour)}
                 onDragOver={(e) => { e.preventDefault(); setDragOverHour(hour); }}
@@ -564,7 +575,7 @@ function DayView({ events, date, conflicts, onCellClick, onEventClick, expandSta
             </div>
           );
         })}
-        <div className="absolute top-0 right-[60px] left-0" style={{ height: `${hours.length * 60}px` }}>
+        <div className="absolute top-0 left-0" style={{ right: '60px', height: `${hours.length * 60}px` }}>
           {dayEvents.map(event => (
             <EventBlock key={event.id} event={event} isConflict={conflicts.has(event.id)} onClick={() => onEventClick(event)} minHour={minHour} onDragStart={setDraggedEvent} />
           ))}
@@ -799,13 +810,22 @@ export default function FamilyScheduleClient() {
   const conflictCount = Math.floor(conflicts.size / 2);
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden" dir="rtl">
-      {/* Header */}
+    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden family-schedule-root" dir="rtl">
+      <style>{`
+        .family-schedule-root button,
+        .family-schedule-root a,
+        .family-schedule-root [role="button"] {
+          min-height: unset !important;
+          min-width: unset !important;
+        }
+      `}</style>
+      {/* Header - compact on mobile */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-3 md:px-6 py-3">
-          <div className="flex items-center justify-between mb-2">
+        <div className="max-w-7xl mx-auto px-2 md:px-6 py-2 md:py-3">
+          {/* Row 1: Title + desktop buttons */}
+          <div className="hidden md:flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <h1 className="text-lg md:text-xl font-bold text-gray-900">לוז משפחתי</h1>
+              <h1 className="text-xl font-bold text-gray-900">לוז משפחתי</h1>
               {conflictCount > 0 && (
                 <span className="flex items-center gap-1 bg-red-50 text-red-600 px-2 py-0.5 rounded-full text-[10px] font-medium">
                   <AlertTriangle size={10} /> {conflictCount} קונפליקטים
@@ -813,16 +833,34 @@ export default function FamilyScheduleClient() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setShowAnnouncementInput(true)} className="hidden md:flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+              <button onClick={() => setShowAnnouncementInput(true)} className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
                 <Megaphone size={14} /> הודעה
               </button>
-              <button onClick={() => openAdd()} className="hidden md:flex items-center gap-1.5 bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm">
+              <button onClick={() => openAdd()} className="flex items-center gap-1.5 bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm">
                 <Plus size={16} /> אירוע חדש
               </button>
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-2">
+          {/* Mobile: single compact row - nav + view toggle + date */}
+          <div className="md:hidden flex items-center justify-between gap-1">
+            <div className="flex items-center gap-0.5">
+              <button onClick={navigateForward} className="p-1.5 hover:bg-gray-100 rounded transition-colors"><ChevronRight size={18} className="text-gray-600" /></button>
+              <button onClick={navigateBack} className="p-1.5 hover:bg-gray-100 rounded transition-colors"><ChevronLeft size={18} className="text-gray-600" /></button>
+            </div>
+            <button onClick={() => setCurrentDate(new Date())} className="px-2 py-0.5 text-[11px] font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors shrink-0">היום</button>
+            <span className="text-sm font-semibold text-gray-900 truncate">{getTitle()}</span>
+            <div className="flex bg-gray-100 rounded-lg p-0.5 shrink-0">
+              {(['day', 'week', 'month'] as ViewMode[]).map(v => (
+                <button key={v} onClick={() => setView(v)} className={`px-2 py-0.5 rounded-md text-[10px] font-medium transition-all ${view === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}>
+                  {v === 'day' ? 'יום' : v === 'week' ? 'שבוע' : 'חודש'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop: nav + view toggle + filters */}
+          <div className="hidden md:flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
               <div className="flex bg-gray-100 rounded-lg p-0.5">
                 {(['day', 'week', 'month'] as ViewMode[]).map(v => (
@@ -836,21 +874,14 @@ export default function FamilyScheduleClient() {
               <button onClick={() => setCurrentDate(new Date())} className="px-2 py-0.5 text-[11px] font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors">היום</button>
               <span className="text-sm font-semibold text-gray-900">{getTitle()}</span>
             </div>
-            <div className="hidden md:block">
-              <FilterBar selectedPeople={selectedPeople} onTogglePerson={togglePerson} />
-            </div>
-          </div>
-
-          {/* Mobile filter */}
-          <div className="md:hidden mt-2">
             <FilterBar selectedPeople={selectedPeople} onTogglePerson={togglePerson} />
           </div>
         </div>
       </div>
 
-      {/* Announcements Board */}
+      {/* Announcements Board - desktop only inline, mobile hidden unless has items */}
       {(announcements.length > 0 || showAnnouncementInput) && (
-        <div className="max-w-7xl w-full mx-auto px-3 md:px-6 pt-2">
+        <div className="hidden md:block max-w-7xl w-full mx-auto px-3 md:px-6 pt-2">
           <div className="flex flex-wrap gap-2 items-center">
             {announcements.map(a => {
               const c = ANNOUNCEMENT_COLORS[a.color] || ANNOUNCEMENT_COLORS[0];
@@ -872,28 +903,27 @@ export default function FamilyScheduleClient() {
         </div>
       )}
 
-      {/* Body with floating nav arrows */}
+      {/* Body */}
       <div className="flex-1 min-h-0 flex items-stretch relative">
-        {/* Floating arrow - forward (right in RTL) */}
+        {/* Floating arrows - desktop only */}
         <button onClick={navigateForward} className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white border border-gray-200 shadow-md rounded-l-lg p-2 transition-all hover:shadow-lg">
           <ChevronRight size={20} className="text-gray-600" />
         </button>
-        {/* Floating arrow - back (left in RTL) */}
         <button onClick={navigateBack} className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white border border-gray-200 shadow-md rounded-r-lg p-2 transition-all hover:shadow-lg">
           <ChevronLeft size={20} className="text-gray-600" />
         </button>
 
         <div className="flex-1 min-h-0 max-w-7xl w-full mx-auto flex flex-col">
-          {/* Expand up button */}
+          {/* Expand up - desktop only */}
           {!loading && view !== 'month' && hoursInfo.canExpandStart && (
-            <div className="bg-white border-b border-gray-200 py-1.5 flex items-center justify-center md:rounded-t-lg">
+            <div className="hidden md:flex bg-white border-b border-gray-200 py-1.5 items-center justify-center md:rounded-t-lg">
               <button onClick={() => setExpandStart(s => s + 2)} className="bg-gray-50 hover:bg-gray-100 border border-gray-300 rounded-lg px-3 py-1.5 transition-all flex items-center gap-1.5 text-xs text-gray-700 font-medium">
                 <ChevronUp size={16} /> הוסף שעות מוקדם יותר
               </button>
             </div>
           )}
 
-          <div className="flex-1 min-h-0 bg-white border border-gray-200 shadow-sm overflow-auto">
+          <div className="flex-1 min-h-0 bg-white md:border md:border-gray-200 md:shadow-sm overflow-auto">
             {loading ? (
               <div className="flex items-center justify-center py-20"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
             ) : (
@@ -905,9 +935,9 @@ export default function FamilyScheduleClient() {
             )}
           </div>
 
-          {/* Expand down button */}
+          {/* Expand down - desktop only */}
           {!loading && view !== 'month' && hoursInfo.canExpandEnd && (
-            <div className="bg-white border-t border-gray-200 py-1.5 flex items-center justify-center md:rounded-b-lg">
+            <div className="hidden md:flex bg-white border-t border-gray-200 py-1.5 items-center justify-center md:rounded-b-lg">
               <button onClick={() => setExpandEnd(s => s + 2)} className="bg-gray-50 hover:bg-gray-100 border border-gray-300 rounded-lg px-3 py-1.5 transition-all flex items-center gap-1.5 text-xs text-gray-700 font-medium">
                 <ChevronDown size={16} /> הוסף שעות מאוחר יותר
               </button>
