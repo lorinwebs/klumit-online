@@ -5,7 +5,7 @@ import { ChevronRight, ChevronLeft, Plus, X, AlertTriangle, Sparkles, Loader2, T
 import {
   format, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks, addMonths, subMonths,
   isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay, getHours, getMinutes,
-  setHours, setMinutes, differenceInMinutes, isToday as isDateToday,
+  setHours, setMinutes, differenceInMinutes, isToday as isDateToday, startOfDay, endOfDay,
 } from 'date-fns';
 import { he } from 'date-fns/locale';
 
@@ -61,7 +61,13 @@ function getWeekDates(date: Date): Date[] {
 }
 
 function getEventsForDay(events: FamilyEvent[], day: Date): FamilyEvent[] {
-  return events.filter(e => isSameDay(new Date(e.start_time), day));
+  const dayStart = startOfDay(day).getTime();
+  const dayEnd = endOfDay(day).getTime();
+  return events.filter(e => {
+    const eStart = new Date(e.start_time).getTime();
+    const eEnd = new Date(e.end_time).getTime();
+    return eStart <= dayEnd && eEnd >= dayStart;
+  });
 }
 
 function findConflicts(events: FamilyEvent[]): Set<string> {
@@ -139,29 +145,59 @@ function layoutOverlappingEvents(events: FamilyEvent[], minHour: number): Layout
 }
 
 // --- Event Block (with overlap support) ---
-function EventBlock({ event, isConflict, compact = false, onClick, minHour = 6, col = 0, totalCols = 1, onDragStart }: {
+function EventBlock({ event, isConflict, compact = false, onClick, minHour = 6, col = 0, totalCols = 1, onDragStart, viewDay }: {
   event: FamilyEvent; isConflict: boolean; compact?: boolean; onClick?: () => void;
   minHour?: number; col?: number; totalCols?: number; onDragStart?: (e: FamilyEvent) => void;
+  viewDay?: Date;
 }) {
   const bg = CAT_BG[event.category] || CAT_BG['אחר'];
+  const evStart = new Date(event.start_time);
+  const evEnd = new Date(event.end_time);
+  const isMultiDay = !isSameDay(evStart, evEnd);
+  const isFirstDay = viewDay ? isSameDay(evStart, viewDay) : true;
+  const isLastDay = viewDay ? isSameDay(evEnd, viewDay) : true;
 
   if (compact) {
+    const timeLabel = isMultiDay
+      ? (isFirstDay ? fmtTime(event.start_time) : isLastDay ? `עד ${fmtTime(event.end_time)}` : 'כל היום')
+      : fmtTime(event.start_time);
     return (
       <button onClick={onClick} className="w-full text-right px-1.5 py-0.5 rounded text-[10px] leading-tight truncate hover:opacity-80 transition-opacity" style={{ backgroundColor: bg + '22', borderRight: `3px solid ${bg}`, color: bg }}>
-        <span className="font-medium">{fmtTime(event.start_time)}</span> {event.title}
+        <span className="font-medium">{timeLabel}</span> {event.title}
       </button>
     );
   }
 
-  const startH = getHours(new Date(event.start_time)) + getMinutes(new Date(event.start_time)) / 60;
-  const endH = getHours(new Date(event.end_time)) + getMinutes(new Date(event.end_time)) / 60;
-  const duration = Math.abs(endH - startH);
-  const top = (Math.min(startH, endH) - minHour) * 60;
+  // For multi-day events: first day shows start_time→end of day, last day shows start of day→end_time, middle days show full day
+  let displayStartH: number, displayEndH: number;
+  if (isMultiDay) {
+    if (isFirstDay) {
+      displayStartH = getHours(evStart) + getMinutes(evStart) / 60;
+      displayEndH = 23.99;
+    } else if (isLastDay) {
+      displayStartH = minHour;
+      displayEndH = getHours(evEnd) + getMinutes(evEnd) / 60;
+    } else {
+      displayStartH = minHour;
+      displayEndH = 23.99;
+    }
+  } else {
+    displayStartH = getHours(evStart) + getMinutes(evStart) / 60;
+    displayEndH = getHours(evEnd) + getMinutes(evEnd) / 60;
+  }
+
+  const duration = Math.abs(displayEndH - displayStartH);
+  const top = (Math.min(displayStartH, displayEndH) - minHour) * 60;
   const height = Math.max(duration * 60, 24);
 
   // Google Calendar style: events share width when overlapping
   const widthPct = 100 / totalCols;
   const rightPct = col * widthPct;
+
+  // Time label for multi-day
+  const timeStr = isMultiDay
+    ? (isFirstDay ? `${fmtTime(event.start_time)} →` : isLastDay ? `→ ${fmtTime(event.end_time)}` : 'כל היום')
+    : `${fmtTime(event.start_time)} - ${fmtTime(event.end_time)}`;
 
   return (
     <button
@@ -173,7 +209,7 @@ function EventBlock({ event, isConflict, compact = false, onClick, minHour = 6, 
     >
       {isConflict && <AlertTriangle size={9} className="absolute top-0.5 left-0.5 text-red-500" />}
       <p className="text-[10px] font-semibold truncate" style={{ color: bg }}>{event.title}</p>
-      {height > 28 && <p className="text-[9px] text-gray-500">{fmtTime(event.start_time)} - {fmtTime(event.end_time)}</p>}
+      {height > 28 && <p className="text-[9px] text-gray-500">{timeStr}</p>}
       {height > 44 && <span className={`inline-block text-[8px] px-1 rounded mt-0.5 ${PERSON_COLORS[event.person] || 'bg-gray-100 text-gray-800'}`}>{event.person}</span>}
     </button>
   );
@@ -212,7 +248,7 @@ function MobileDayView({ events, date, conflicts, onCellClick, onEventClick, min
         {/* Events */}
         <div className="absolute top-0 bottom-0" style={{ right: '48px', left: '4px' }}>
           {laid.map(ev => (
-            <EventBlock key={ev.id} event={ev} isConflict={conflicts.has(ev.id)} onClick={() => onEventClick(ev)} minHour={minHour} col={ev.col} totalCols={ev.totalCols} />
+            <EventBlock key={ev.id} event={ev} isConflict={conflicts.has(ev.id)} onClick={() => onEventClick(ev)} minHour={minHour} col={ev.col} totalCols={ev.totalCols} viewDay={date} />
           ))}
         </div>
         {/* Now indicator */}
@@ -314,7 +350,7 @@ function WeekView({ events, weekDates, conflicts, onCellClick, onEventClick, exp
             return (
               <div key={di} className="relative border-r border-gray-50">
                 {laid.map(ev => (
-                  <EventBlock key={ev.id} event={ev} isConflict={conflicts.has(ev.id)} onClick={() => onEventClick(ev)} minHour={minHour} col={ev.col} totalCols={ev.totalCols} onDragStart={setDraggedEvent} />
+                  <EventBlock key={ev.id} event={ev} isConflict={conflicts.has(ev.id)} onClick={() => onEventClick(ev)} minHour={minHour} col={ev.col} totalCols={ev.totalCols} onDragStart={setDraggedEvent} viewDay={d} />
                 ))}
               </div>
             );
@@ -357,7 +393,7 @@ function DesktopDayView({ events, date, conflicts, onCellClick, onEventClick, ex
         ))}
         <div className="absolute top-0 left-0" style={{ right: '60px', height: `${hours.length * 60}px` }}>
           {laid.map(ev => (
-            <EventBlock key={ev.id} event={ev} isConflict={conflicts.has(ev.id)} onClick={() => onEventClick(ev)} minHour={minHour} col={ev.col} totalCols={ev.totalCols} onDragStart={setDraggedEvent} />
+            <EventBlock key={ev.id} event={ev} isConflict={conflicts.has(ev.id)} onClick={() => onEventClick(ev)} minHour={minHour} col={ev.col} totalCols={ev.totalCols} onDragStart={setDraggedEvent} viewDay={date} />
           ))}
         </div>
       </div>
@@ -388,7 +424,7 @@ function MonthView({ events, currentDate, conflicts, onDayClick }: {
             <div key={i} className={`min-h-[80px] md:min-h-[100px] border-b border-r border-gray-100 p-1 cursor-pointer hover:bg-gray-50 ${!isCur ? 'bg-gray-50/50' : ''}`} onClick={() => onDayClick(d)}>
               <p className={`text-xs font-medium mb-1 ${isDateToday(d) ? 'bg-blue-500 text-white w-5 h-5 rounded-full flex items-center justify-center' : isCur ? 'text-gray-900' : 'text-gray-300'}`}>{d.getDate()}</p>
               <div className="space-y-0.5">
-                {dayEvts.slice(0, 3).map(ev => <EventBlock key={ev.id} event={ev} isConflict={conflicts.has(ev.id)} compact />)}
+                {dayEvts.slice(0, 3).map(ev => <EventBlock key={ev.id} event={ev} isConflict={conflicts.has(ev.id)} compact viewDay={d} />)}
                 {dayEvts.length > 3 && <p className="text-[9px] text-gray-400 text-center">+{dayEvts.length - 3}</p>}
               </div>
             </div>
@@ -770,9 +806,9 @@ export default function FamilyScheduleClient() {
         {/* Mobile navigation - swipe area with arrows */}
         {view === 'day' && (
           <div className="bg-white border-t border-gray-100 px-4 py-2 flex items-center justify-between">
-            <button onClick={navForward} className="p-2 hover:bg-gray-100 rounded-full"><ChevronRight size={24} className="text-gray-600" /></button>
+            <button onClick={navBack} className="p-2 hover:bg-gray-100 rounded-full"><ChevronRight size={24} className="text-gray-600" /></button>
             <span className="text-sm text-gray-500">{DAYS_HE[getDay(currentDate)]}</span>
-            <button onClick={navBack} className="p-2 hover:bg-gray-100 rounded-full"><ChevronLeft size={24} className="text-gray-600" /></button>
+            <button onClick={navForward} className="p-2 hover:bg-gray-100 rounded-full"><ChevronLeft size={24} className="text-gray-600" /></button>
           </div>
         )}
 
@@ -817,8 +853,8 @@ export default function FamilyScheduleClient() {
                   </button>
                 ))}
               </div>
-              <button onClick={navForward} className="p-1 hover:bg-gray-100 rounded"><ChevronRight size={16} className="text-gray-600" /></button>
-              <button onClick={navBack} className="p-1 hover:bg-gray-100 rounded"><ChevronLeft size={16} className="text-gray-600" /></button>
+              <button onClick={navBack} className="p-1 hover:bg-gray-100 rounded"><ChevronRight size={16} className="text-gray-600" /></button>
+              <button onClick={navForward} className="p-1 hover:bg-gray-100 rounded"><ChevronLeft size={16} className="text-gray-600" /></button>
               <button onClick={() => setCurrentDate(new Date())} className="px-2 py-0.5 text-[11px] font-medium text-blue-600 hover:bg-blue-50 rounded">היום</button>
               <span className="text-sm font-semibold text-gray-900">{getTitle()}</span>
             </div>
@@ -848,8 +884,8 @@ export default function FamilyScheduleClient() {
 
       {/* Body */}
       <div className="flex-1 min-h-0 flex items-stretch relative">
-        <button onClick={navForward} className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white border border-gray-200 shadow-md rounded-l-lg p-2"><ChevronRight size={20} className="text-gray-600" /></button>
-        <button onClick={navBack} className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white border border-gray-200 shadow-md rounded-r-lg p-2"><ChevronLeft size={20} className="text-gray-600" /></button>
+        <button onClick={navBack} className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white border border-gray-200 shadow-md rounded-l-lg p-2"><ChevronRight size={20} className="text-gray-600" /></button>
+        <button onClick={navForward} className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white border border-gray-200 shadow-md rounded-r-lg p-2"><ChevronLeft size={20} className="text-gray-600" /></button>
 
         <div className="flex-1 min-h-0 max-w-7xl w-full mx-auto flex flex-col">
           {!loading && view !== 'month' && hoursInfo.canExpandStart && (
