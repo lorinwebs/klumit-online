@@ -1,12 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-import { buildDailyScheduleMessage, sendToChat } from '@/lib/telegram-family';
+import { buildDailyScheduleMessage, sendToChat, editMessage } from '@/lib/telegram-family';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Telegram sends updates with message object
+    // Handle inline button callbacks (e.g. delete event)
+    const callback = body.callback_query;
+    if (callback) {
+      const cbChatId = String(callback.message.chat.id);
+      const cbMsgId = callback.message.message_id;
+      const cbData = callback.data as string;
+
+      if (cbData.startsWith('delete_event:')) {
+        const eventId = cbData.replace('delete_event:', '');
+        const supabase = createSupabaseAdminClient();
+        const { error } = await supabase.from('family_events').delete().eq('id', eventId);
+        if (error) {
+          await editMessage(cbChatId, cbMsgId, '❌ שגיאה במחיקה');
+        } else {
+          await editMessage(cbChatId, cbMsgId, '🗑 האירוע נמחק מהיומן');
+        }
+      }
+      return NextResponse.json({ ok: true });
+    }
+
     const message = body.message;
     if (!message || !message.text) {
       return NextResponse.json({ ok: true });
@@ -23,6 +42,10 @@ export async function POST(request: NextRequest) {
       await handleDaySchedule(chatId, tomorrow);
     } else if (text === '/week' || text === '/week@hayat_schedule_bot') {
       await handleWeek(chatId);
+    } else if (text === '/help' || text === '/help@hayat_schedule_bot' || text === '/start' || text === '/start@hayat_schedule_bot') {
+      await sendToChat(chatId, `🤖 <b>בוט היומן המשפחתי</b>\n\n📝 <b>להוספת אירוע:</b> פשוט כתבו בשפה חופשית\nלדוגמה: "אימון של לורין מחר ב-18:00"\n\n📋 <b>פקודות:</b>\n/today - לוז היום\n/tomorrow - לוז מחר\n/week - לוז שבועי\n/help - עזרה`);
+    } else if (!text.startsWith('/')) {
+      await handleAddEvent(chatId, text);
     }
 
     return NextResponse.json({ ok: true });
@@ -103,4 +126,100 @@ async function handleWeek(chatId: string) {
   message += `\n📊 סה"כ ${events.length} אירועים השבוע`;
 
   await sendToChat(chatId, message);
+}
+
+const AI_SYSTEM_PROMPT = `אתה עוזר לפענח טקסט חופשי לאירוע ביומן משפחתי.
+
+האנשים במשפחה: לורין, מור, רון, שי, שחר, כולם
+קטגוריות: אימון, חוג, עבודה, משפחה, טיסה, אחר
+
+כללים:
+- אם לא צוין שם, ברירת מחדל: כולם
+- אם לא צוינה קטגוריה, נסה להסיק. ברירת מחדל: אחר
+- אם לא צוין תאריך, השתמש בהיום (שים לב לאזור זמן ישראל)
+- אם לא צוינה שעת סיום, הוסף שעה לשעת ההתחלה
+- אם צוין יום בשבוע (למשל "יום שני"), חשב את התאריך הקרוב ביותר קדימה
+- החזר JSON בלבד
+
+פורמט תשובה (JSON בלבד):
+{
+  "title": "שם האירוע",
+  "person": "שם האדם",
+  "category": "קטגוריה",
+  "date": "YYYY-MM-DD",
+  "end_date": "YYYY-MM-DD",
+  "start_time": "HH:MM",
+  "end_time": "HH:MM",
+  "recurring": false,
+  "notes": ""
+}`;
+
+async function handleAddEvent(chatId: string, text: string) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    await sendToChat(chatId, '❌ שגיאה: חסר מפתח OpenAI');
+    return;
+  }
+
+  const now = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+  const dayName = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'][new Date().getDay()];
+
+  try {
+    await sendToChat(chatId, '🔄 מעבד...');
+
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: AI_SYSTEM_PROMPT + `\n\nהיום: ${now} (יום ${dayName})` },
+          { role: 'user', content: text },
+        ],
+        temperature: 0.1,
+        max_tokens: 300,
+      }),
+    });
+
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) { await sendToChat(chatId, '❌ לא הצלחתי להבין את ההודעה'); return; }
+
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) { await sendToChat(chatId, '❌ לא הצלחתי לפענח את האירוע'); return; }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    const endDate = parsed.end_date || parsed.date;
+    const startTime = new Date(`${parsed.date}T${parsed.start_time}:00`).toISOString();
+    const endTime = new Date(`${endDate}T${parsed.end_time}:00`).toISOString();
+
+    const supabase = createSupabaseAdminClient();
+    const { data: inserted, error } = await supabase.from('family_events').insert({
+      title: parsed.title,
+      person: parsed.person,
+      category: parsed.category,
+      start_time: startTime,
+      end_time: endTime,
+      recurring: parsed.recurring || false,
+      notes: parsed.notes || null,
+    }).select('id').single();
+
+    if (error) {
+      await sendToChat(chatId, `❌ שגיאה בשמירה: ${error.message}`);
+      return;
+    }
+
+    const DAYS_HE_L = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+    const evDay = DAYS_HE_L[new Date(parsed.date).getDay()];
+    const multiDay = parsed.end_date && parsed.end_date !== parsed.date;
+
+    let msg = `✅ <b>אירוע נוסף ליומן!</b>\n\n📌 <b>${parsed.title}</b>\n👤 ${parsed.person}\n🗓 יום ${evDay}, ${parsed.date}`;
+    if (multiDay) msg += ` עד ${parsed.end_date}`;
+    msg += `\n🕐 ${parsed.start_time} - ${parsed.end_time}`;
+    if (parsed.notes) msg += `\n📝 ${parsed.notes}`;
+
+    await sendToChat(chatId, msg, [[{ text: '🗑 מחק אירוע', callback_data: `delete_event:${inserted.id}` }]]);
+  } catch {
+    await sendToChat(chatId, '❌ שגיאה בעיבוד ההודעה');
+  }
 }

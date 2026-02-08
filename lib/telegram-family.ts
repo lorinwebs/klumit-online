@@ -136,14 +136,30 @@ export async function sendDailySchedule(events: Array<{
   return sendMessage(message);
 }
 
-export async function sendToChat(chatId: string, text: string): Promise<boolean> {
+export async function sendToChat(chatId: string, text: string, inlineKeyboard?: Array<Array<{ text: string; callback_data: string }>>): Promise<boolean> {
   if (!BOT_TOKEN) return false;
 
   try {
+    const payload: Record<string, unknown> = { chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true };
+    if (inlineKeyboard) payload.reply_markup = { inline_keyboard: inlineKeyboard };
     const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+      body: JSON.stringify(payload),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function editMessage(chatId: string, messageId: number, text: string): Promise<boolean> {
+  if (!BOT_TOKEN) return false;
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, message_id: messageId, text, parse_mode: 'HTML' }),
     });
     return res.ok;
   } catch {

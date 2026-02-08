@@ -3,7 +3,7 @@
 
 BOT_TOKEN="8492788377:AAEy7pE3PegmO6yuig_Ziu5ko1QyIVWxZ_A"
 # Replace with your actual domain
-WEBHOOK_URL="https://klumit-online.co.il/api/family/telegram-webhook"
+WEBHOOK_URL="https://klumit-online.vercel.app/api/family/telegram-webhook"
 
 echo "Setting up Telegram webhook for Family Schedule bot..."
 echo "Webhook URL: $WEBHOOK_URL"
