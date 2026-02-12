@@ -75,6 +75,7 @@ export async function notifyNewEvent(event: {
   start_time: string;
   end_time: string;
   notes?: string | null;
+  reminder_minutes?: number | null;
 }, excludeChatId?: string): Promise<boolean> {
   console.log('notifyNewEvent called:', event.title, excludeChatId ? `(excluding ${excludeChatId})` : '');
   
@@ -88,12 +89,30 @@ export async function notifyNewEvent(event: {
   const startDate = new Date(event.start_time);
   const dayName = DAYS_HE[startDate.getDay()];
 
-  const message = `📅 <b>אירוע חדש ביומן!</b>
+  let message = `📅 <b>אירוע חדש ביומן!</b>
 
 ${catEmoji} <b>${escapeHtml(event.title)}</b>
 ${personEmoji} ${escapeHtml(event.person)}
 🗓 יום ${dayName}, ${formatDate(event.start_time)}
-🕐 ${formatTime(event.start_time)} - ${formatTime(event.end_time)}${event.notes ? `\n📝 ${escapeHtml(event.notes)}` : ''}`;
+🕐 ${formatTime(event.start_time)} - ${formatTime(event.end_time)}`;
+
+  if (event.reminder_minutes) {
+    let reminderText = '';
+    if (event.reminder_minutes >= 1440) {
+      reminderText = 'יום לפני';
+    } else if (event.reminder_minutes >= 120) {
+      reminderText = `${event.reminder_minutes / 60} שעות לפני`;
+    } else if (event.reminder_minutes >= 60) {
+      reminderText = 'שעה לפני';
+    } else {
+      reminderText = `${event.reminder_minutes} דקות לפני`;
+    }
+    message += `\n⏰ תזכורת: ${reminderText}`;
+  }
+  
+  if (event.notes) {
+    message += `\n📝 ${escapeHtml(event.notes)}`;
+  }
 
   // Filter out the sender if excludeChatId is provided
   const targetChatIds = excludeChatId 

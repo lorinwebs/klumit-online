@@ -250,12 +250,25 @@ async function handleAddEvent(chatId: string, text: string) {
     let msg = `✅ <b>אירוע נוסף ליומן!</b>\n\n📌 <b>${parsed.title}</b>\n👤 ${parsed.person}\n🗓 יום ${evDay}, ${parsed.date}`;
     if (multiDay) msg += ` עד ${parsed.end_date}`;
     msg += `\n🕐 ${parsed.start_time} - ${parsed.end_time}`;
+    if (parsed.reminder_minutes) {
+      let reminderText = '';
+      if (parsed.reminder_minutes >= 1440) {
+        reminderText = 'יום לפני';
+      } else if (parsed.reminder_minutes >= 120) {
+        reminderText = `${parsed.reminder_minutes / 60} שעות לפני`;
+      } else if (parsed.reminder_minutes >= 60) {
+        reminderText = 'שעה לפני';
+      } else {
+        reminderText = `${parsed.reminder_minutes} דקות לפני`;
+      }
+      msg += `\n⏰ תזכורת: ${reminderText}`;
+    }
     if (parsed.notes) msg += `\n📝 ${parsed.notes}`;
 
     await sendToChat(chatId, msg, [[{ text: '🗑 מחק אירוע', callback_data: `delete_event:${inserted.id}` }]]);
 
     // Notify all family chat members (except the sender)
-    notifyNewEvent({ title: parsed.title, person: parsed.person, category: parsed.category, start_time: startTime, end_time: endTime, notes: parsed.notes || null }, chatId).catch((err) => {
+    notifyNewEvent({ title: parsed.title, person: parsed.person, category: parsed.category, start_time: startTime, end_time: endTime, notes: parsed.notes || null, reminder_minutes: parsed.reminder_minutes || null }, chatId).catch((err) => {
       console.error('Failed to send notification:', err);
     });
   } catch {

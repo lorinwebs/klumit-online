@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send Telegram notification (fire and forget)
-    notifyNewEvent({ title, person, category, start_time, end_time, notes }).catch(() => {});
+    notifyNewEvent({ title, person, category, start_time, end_time, notes, reminder_minutes }).catch(() => {});
 
     return NextResponse.json({ event: data });
   } catch {
