@@ -17,6 +17,11 @@ export default function MembershipTopBar() {
   useEffect(() => {
     let isMounted = true;
 
+    // Skip everything if on family-schedule or mekif-chet page
+    if (pathname?.startsWith('/family-schedule') || pathname === '/mekif-chet-2007-reunion') {
+      return;
+    }
+
     // בדוק אם המשתמש כבר סגר את הבר
     const dismissed = localStorage.getItem('membershipTopBarDismissed');
     if (dismissed === 'true') {
