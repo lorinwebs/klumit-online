@@ -35,11 +35,30 @@ startBtn.addEventListener('click', async () => {
     return;
   }
 
+  // Inject content script first (in case it wasn't loaded)
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ['content.js']
+    });
+  } catch (e) {
+    // Already injected, that's fine
+  }
+
+  await new Promise(r => setTimeout(r, 500));
+
   // Send message to content script
   chrome.tabs.sendMessage(tab.id, {
     action: 'addMembers',
     phones,
     delay
+  }, (response) => {
+    if (chrome.runtime.lastError) {
+      statusEl.textContent = '❌ שגיאת תקשורת עם הסקריפט. נסה לרענן את WhatsApp Web.';
+      startBtn.disabled = false;
+      startBtn.style.display = 'block';
+      stopBtn.style.display = 'none';
+    }
   });
 });
 

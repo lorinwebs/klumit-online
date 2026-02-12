@@ -2,7 +2,8 @@
 // Bot: @hayat_schedule_bot
 
 const BOT_TOKEN = process.env.TELEGRAM_CHAT_BOT_HAYAT_SCHEDULE;
-const CHAT_IDS = process.env.TELEGRAM_CHAT_ID_KLUMIT?.split(',').map(id => id.trim()) || [];
+// Use dedicated family schedule chat IDs if available, fallback to Klumit IDs
+const CHAT_IDS = (process.env.TELEGRAM_CHAT_ID_FAMILY || process.env.TELEGRAM_CHAT_ID_KLUMIT)?.split(',').map(id => id.trim()) || [];
 
 const DAYS_HE = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
@@ -37,7 +38,10 @@ function escapeHtml(text: string): string {
 }
 
 async function sendMessage(text: string): Promise<boolean> {
-  if (!BOT_TOKEN || CHAT_IDS.length === 0) return false;
+  if (!BOT_TOKEN || CHAT_IDS.length === 0) {
+    console.error('sendMessage: Missing BOT_TOKEN or CHAT_IDS', { hasToken: !!BOT_TOKEN, chatCount: CHAT_IDS.length });
+    return false;
+  }
 
   try {
     const results = await Promise.all(
@@ -47,11 +51,18 @@ async function sendMessage(text: string): Promise<boolean> {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true }),
         });
+        if (!res.ok) {
+          const err = await res.text();
+          console.error(`Failed to send to ${chatId}:`, err);
+        }
         return res.ok;
       })
     );
-    return results.every(r => r);
-  } catch {
+    const success = results.every(r => r);
+    console.log(`sendMessage: Sent to ${CHAT_IDS.length} chats, success: ${success}`);
+    return success;
+  } catch (error) {
+    console.error('sendMessage error:', error);
     return false;
   }
 }
@@ -65,6 +76,7 @@ export async function notifyNewEvent(event: {
   end_time: string;
   notes?: string | null;
 }): Promise<boolean> {
+  console.log('notifyNewEvent called:', event.title);
   const personEmoji = PERSON_EMOJI[event.person] || '👤';
   const catEmoji = CATEGORY_EMOJI[event.category] || '📌';
   const startDate = new Date(event.start_time);
