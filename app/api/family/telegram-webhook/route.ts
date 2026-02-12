@@ -27,11 +27,23 @@ export async function POST(request: NextRequest) {
     }
 
     const message = body.message;
-    if (!message || !message.text) {
+    if (!message) {
       return NextResponse.json({ ok: true });
     }
 
     const chatId = String(message.chat.id);
+
+    // Handle voice messages
+    if (message.voice) {
+      await handleVoiceMessage(chatId, message.voice.file_id);
+      return NextResponse.json({ ok: true });
+    }
+
+    // Handle text messages
+    if (!message.text) {
+      return NextResponse.json({ ok: true });
+    }
+
     const text = message.text.trim();
 
     if (text === '/today' || text === '/today@hayat_schedule_bot') {
@@ -43,7 +55,7 @@ export async function POST(request: NextRequest) {
     } else if (text === '/week' || text === '/week@hayat_schedule_bot') {
       await handleWeek(chatId);
     } else if (text === '/help' || text === '/help@hayat_schedule_bot' || text === '/start' || text === '/start@hayat_schedule_bot') {
-      await sendToChat(chatId, `🤖 <b>בוט היומן המשפחתי</b>\n\n📝 <b>להוספת אירוע:</b> פשוט כתבו בשפה חופשית\nלדוגמה: "אימון של לורין מחר ב-18:00"\n\n📋 <b>פקודות:</b>\n/today - לוז היום\n/tomorrow - לוז מחר\n/week - לוז שבועי\n/help - עזרה`);
+      await sendToChat(chatId, `🤖 <b>בוט היומן המשפחתי</b>\n\n📝 <b>להוספת אירוע:</b> פשוט כתבו בשפה חופשית או שלחו הודעה קולית\nלדוגמה: "אימון של לורין מחר ב-18:00"\n\n📋 <b>פקודות:</b>\n/today - לוז היום\n/tomorrow - לוז מחר\n/week - לוז שבועי\n/help - עזרה`);
     } else if (!text.startsWith('/')) {
       await handleAddEvent(chatId, text);
     }
@@ -234,5 +246,57 @@ async function handleAddEvent(chatId: string, text: string) {
     notifyNewEvent({ title: parsed.title, person: parsed.person, category: parsed.category, start_time: startTime, end_time: endTime, notes: parsed.notes || null }).catch(() => {});
   } catch {
     await sendToChat(chatId, '❌ שגיאה בעיבוד ההודעה');
+  }
+}
+
+async function handleVoiceMessage(chatId: string, fileId: string) {
+  const botToken = process.env.TELEGRAM_CHAT_BOT_HAYAT_SCHEDULE;
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!botToken || !apiKey) {
+    await sendToChat(chatId, '❌ שגיאה: חסרים מפתחות API');
+    return;
+  }
+
+  try {
+    await sendToChat(chatId, '🎤 מעבד הודעה קולית...');
+
+    // Get file path from Telegram
+    const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
+    const fileData = await fileRes.json();
+    if (!fileData.ok || !fileData.result.file_path) {
+      await sendToChat(chatId, '❌ לא הצלחתי להוריד את ההודעה הקולית');
+      return;
+    }
+
+    // Download the voice file
+    const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileData.result.file_path}`;
+    const audioRes = await fetch(fileUrl);
+    const audioBuffer = await audioRes.arrayBuffer();
+
+    // Transcribe with OpenAI Whisper
+    const formData = new FormData();
+    formData.append('file', new Blob([audioBuffer], { type: 'audio/ogg' }), 'voice.ogg');
+    formData.append('model', 'whisper-1');
+    formData.append('language', 'he');
+
+    const transcribeRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+      body: formData,
+    });
+
+    const transcription = await transcribeRes.json();
+    if (!transcription.text) {
+      await sendToChat(chatId, '❌ לא הצלחתי לתמלל את ההודעה הקולית');
+      return;
+    }
+
+    await sendToChat(chatId, `📝 תמלול: "${transcription.text}"`);
+
+    // Process the transcribed text as an event
+    await handleAddEvent(chatId, transcription.text);
+  } catch {
+    await sendToChat(chatId, '❌ שגיאה בעיבוד הודעה קולית');
   }
 }
