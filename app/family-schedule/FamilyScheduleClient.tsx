@@ -18,6 +18,7 @@ interface FamilyEvent {
 interface ParsedEvent {
   title: string; person: string; category: string; date: string;
   start_time: string; end_time: string; recurring: boolean; notes?: string;
+  reminder_minutes?: number | null;
 }
 type ViewMode = 'day' | 'week' | 'month';
 
@@ -495,6 +496,7 @@ function EventModal({ isOpen, onClose, onSave, onDelete, initialDate, initialHou
       if (p.start_time) setStartTime(p.start_time);
       if (p.end_time) setEndTime(p.end_time);
       if (p.recurring !== undefined) setRecurring(p.recurring);
+      if (p.reminder_minutes !== undefined && p.reminder_minutes !== null) setReminderMinutes(String(p.reminder_minutes));
       if (p.notes) setNotes(p.notes);
     } catch { setAiError('שגיאה בפענוח'); } finally { setAiLoading(false); }
   };
@@ -593,9 +595,16 @@ function EventModal({ isOpen, onClose, onSave, onDelete, initialDate, initialHou
               <RotateCcw size={12} /> חוזר כל שבוע
             </label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700">תזכורת</span>
+              <span className="text-sm text-gray-700">תזכורת בטלגרם 📱</span>
               <select value={reminderMinutes} onChange={e => setReminderMinutes(e.target.value)} className="border border-gray-300 rounded-lg px-2 py-1 text-sm bg-white">
-                <option value="">ללא</option><option value="15">15 דק&apos;</option><option value="30">30 דק&apos;</option><option value="60">שעה</option>
+                <option value="">ללא</option>
+                <option value="5">5 דק' לפני</option>
+                <option value="10">10 דק' לפני</option>
+                <option value="15">15 דק' לפני</option>
+                <option value="30">30 דק' לפני</option>
+                <option value="60">שעה לפני</option>
+                <option value="120">שעתיים לפני</option>
+                <option value="1440">יום לפני</option>
               </select>
             </div>
           </div>

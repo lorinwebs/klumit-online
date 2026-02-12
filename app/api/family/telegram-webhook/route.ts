@@ -151,6 +151,14 @@ const AI_SYSTEM_PROMPT = `אתה עוזר לפענח טקסט חופשי לאי�
 - אם לא צוין תאריך, השתמש בהיום (שים לב לאזור זמן ישראל)
 - אם לא צוינה שעת סיום, הוסף שעה לשעת ההתחלה
 - אם צוין יום בשבוע (למשל "יום שני"), חשב את התאריך הקרוב ביותר קדימה
+- זהה בקשות תזכורת: "תזכיר לי", "הזכר לי", "שלח תזכורת" וכו'
+  * 5 דקות לפני = 5
+  * 10 דקות לפני = 10
+  * 15 דקות לפני = 15
+  * 30 דקות לפני = 30
+  * שעה לפני = 60
+  * שעתיים לפני = 120
+  * יום לפני / 24 שעות לפני = 1440
 - החזר JSON בלבד
 
 פורמט תשובה (JSON בלבד):
@@ -163,6 +171,7 @@ const AI_SYSTEM_PROMPT = `אתה עוזר לפענח טקסט חופשי לאי�
   "start_time": "HH:MM",
   "end_time": "HH:MM",
   "recurring": false,
+  "reminder_minutes": null או מספר,
   "notes": ""
 }`;
 
@@ -223,6 +232,7 @@ async function handleAddEvent(chatId: string, text: string) {
       start_time: startTime,
       end_time: endTime,
       recurring: parsed.recurring || false,
+      reminder_minutes: parsed.reminder_minutes || null,
       notes: parsed.notes || null,
     }).select('id').single();
 

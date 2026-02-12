@@ -100,6 +100,7 @@ export function buildDailyScheduleMessage(events: Array<{
   start_time: string;
   end_time: string;
   notes?: string | null;
+  reminder_minutes?: number | null;
 }>, date: Date): string {
   const dayName = DAYS_HE[date.getDay()];
   const dateStr = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
@@ -114,7 +115,8 @@ export function buildDailyScheduleMessage(events: Array<{
   const lines = sorted.map(e => {
     const personEmoji = PERSON_EMOJI[e.person] || '👤';
     const catEmoji = CATEGORY_EMOJI[e.category] || '📌';
-    return `${formatTime(e.start_time)}-${formatTime(e.end_time)} ${catEmoji} <b>${escapeHtml(e.title)}</b> ${personEmoji} ${escapeHtml(e.person)}`;
+    const reminderIcon = e.reminder_minutes ? ' ⏰' : '';
+    return `${formatTime(e.start_time)}-${formatTime(e.end_time)} ${catEmoji} <b>${escapeHtml(e.title)}</b> ${personEmoji} ${escapeHtml(e.person)}${reminderIcon}`;
   });
 
   // Group by person for summary
@@ -163,6 +165,11 @@ export async function sendToChat(chatId: string, text: string, inlineKeyboard?: 
   } catch {
     return false;
   }
+}
+
+// Send to all family chat IDs
+export async function sendToAllChats(text: string): Promise<boolean> {
+  return sendMessage(text);
 }
 
 export async function editMessage(chatId: string, messageId: number, text: string): Promise<boolean> {
