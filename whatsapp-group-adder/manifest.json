@@ -3,7 +3,7 @@
   "name": "WhatsApp Message Sender",
   "version": "2.0",
   "description": "Send a private message to multiple phone numbers on WhatsApp Web",
-  "permissions": ["activeTab", "scripting", "tabs"],
+  "permissions": ["activeTab", "scripting"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": "icon.png"

@@ -7,8 +7,7 @@ const TELEGRAM_CHAT_IDS = process.env.TELEGRAM_CHAT_ID_KLUMIT?.split(',').map(id
 
 // Bot for tracking user visits
 // Bot: @Klumit_enteres_bot
-// Fallback to family schedule bot if visits bot token not set
-const TELEGRAM_BOT_TOKEN_VISITS = process.env.TELEGRAM_BOT_TOKEN_VISITS || process.env.TELEGRAM_CHAT_BOT_HAYAT_SCHEDULE || '8540786111:AAFP3pR0PW30KHz8YLAX97a0agQwm0K3nrM';
+const TELEGRAM_BOT_TOKEN_VISITS = process.env.TELEGRAM_BOT_TOKEN_VISITS || '8540786111:AAFP3pR0PW30KHz8YLAX97a0agQwm0K3nrM';
 
 // Get chat IDs for visits tracking - uses existing TELEGRAM_CHAT_ID_KLUMIT
 // TELEGRAM_CHAT_ID_VISITS is optional - if set, uses it; otherwise uses TELEGRAM_CHAT_ID_KLUMIT

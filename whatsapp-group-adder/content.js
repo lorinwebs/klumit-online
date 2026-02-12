@@ -51,9 +51,53 @@ function findSearchInput() {
   return null;
 }
 
+// Clear search input completely
+async function clearSearchInput(searchObj) {
+  const { el, type } = searchObj;
+  el.focus();
+  await sleep(100);
+
+  // Try clicking the X/clear button first
+  const allIcons = document.querySelectorAll('[data-icon]');
+  for (const icon of allIcons) {
+    const name = icon.getAttribute('data-icon');
+    const rect = icon.getBoundingClientRect();
+    if (rect.top > 50 && rect.top < 250 && rect.height > 0 &&
+        (name.includes('x') || name.includes('cancel') || name.includes('clear') || name.includes('close'))) {
+      const clickable = icon.closest('[role="button"], button, span') || icon;
+      clickable.click();
+      await sleep(500);
+      return;
+    }
+  }
+
+  // Manual clear: select all + delete
+  if (type === 'input') {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    setter.call(el, '');
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  } else {
+    el.focus();
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('delete', false, null);
+    el.textContent = '';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  await sleep(300);
+}
+
 // Type text into a search field
 async function typeInSearch(searchObj, text) {
   const { el, type } = searchObj;
+
+  // Always clear first
+  await clearSearchInput(searchObj);
+  await sleep(300);
+
   el.focus();
   await sleep(200);
 
@@ -241,6 +285,10 @@ async function sendMessages(phones, message, delaySeconds) {
     report('progress', { current: i + 1, total, text: `${i + 1}/${total}: פותח צ'אט עם ${phone}...` });
 
     try {
+      // 0. Go back first to ensure clean state (close any open chat/panel)
+      await goBack();
+      await sleep(500);
+
       // 1. Open New Chat
       const opened = await clickNewChat();
       if (!opened) {
@@ -259,7 +307,7 @@ async function sendMessages(phones, message, delaySeconds) {
         continue;
       }
 
-      // 3. Type phone number
+      // 3. Clear search and type phone number
       const typed = await typeInSearch(searchObj, phone);
       if (!typed) {
         console.log('[WA Sender] ❌ Cannot type number:', phone);

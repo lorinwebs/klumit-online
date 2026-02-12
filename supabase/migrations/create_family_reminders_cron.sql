@@ -10,7 +10,7 @@ select cron.schedule(
   $$
   select
     net.http_post(
-      url := 'https://klumit-online.co.il/api/family/check-reminders',
+      url := 'https://klumit-online.vercel.app/api/family/check-reminders',
       headers := '{"Content-Type": "application/json"}'::jsonb,
       body := '{}'::jsonb,
       timeout_milliseconds := 30000
