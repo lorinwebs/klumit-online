@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "WhatsApp Group Adder",
-  "version": "1.0",
-  "description": "Add multiple phone numbers to a WhatsApp Web group",
-  "permissions": ["activeTab", "scripting"],
+  "name": "WhatsApp Message Sender",
+  "version": "2.0",
+  "description": "Send a private message to multiple phone numbers on WhatsApp Web",
+  "permissions": ["activeTab", "scripting", "tabs"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": "icon.png"

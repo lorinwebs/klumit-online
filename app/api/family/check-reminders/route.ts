@@ -2,39 +2,56 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { sendToAllChats } from '@/lib/telegram-family';
 
+// Support both GET and POST for manual testing
+export async function GET(request: NextRequest) {
+  return handleCheckReminders();
+}
+
 export async function POST(request: NextRequest) {
+  return handleCheckReminders();
+}
+
+async function handleCheckReminders() {
   try {
     const supabase = createSupabaseAdminClient();
     
-    // Get current time in Israel timezone
-    const nowIL = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' });
-    const now = new Date(nowIL);
+    // Get current time (UTC)
+    const now = new Date();
+    console.log('[check-reminders] Current time (UTC):', now.toISOString());
     
     // Query events that:
     // 1. Have a reminder_minutes set
-    // 2. Start time is in the future
-    // 3. Reminder time is now or in the past (start_time - reminder_minutes <= now)
+    // 2. Start time is in the future (or recently passed - within 1 hour)
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
     
     const { data: events, error } = await supabase
       .from('family_events')
       .select('*')
       .not('reminder_minutes', 'is', null)
-      .gte('start_time', now.toISOString());
+      .gte('start_time', oneHourAgo.toISOString());
     
     if (error) {
       console.error('Error fetching events for reminders:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
+    console.log(`[check-reminders] Found ${events?.length || 0} events with reminders`);
+    
     const remindersToSend: any[] = [];
+    const nowMs = now.getTime();
     
     for (const event of events || []) {
       const startTime = new Date(event.start_time);
       const reminderTime = new Date(startTime.getTime() - (event.reminder_minutes * 60 * 1000));
       
-      // Check if reminder should be sent (within the last 5 minutes to avoid duplicates)
-      const timeDiff = now.getTime() - reminderTime.getTime();
-      if (timeDiff >= 0 && timeDiff < 5 * 60 * 1000) { // 0-5 minutes ago
+      // Check if reminder should be sent (within the last 6 minutes to have buffer)
+      const timeDiff = nowMs - reminderTime.getTime();
+      const timeDiffMinutes = timeDiff / (60 * 1000);
+      
+      console.log(`[check-reminders] Event: ${event.title}, Start: ${startTime.toISOString()}, Reminder: ${reminderTime.toISOString()}, Diff: ${timeDiffMinutes.toFixed(2)} minutes`);
+      
+      if (timeDiff >= 0 && timeDiff < 6 * 60 * 1000) { // 0-6 minutes ago
+        console.log(`[check-reminders] ✅ Sending reminder for: ${event.title}`);
         remindersToSend.push(event);
       }
     }

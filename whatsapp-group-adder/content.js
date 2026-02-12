@@ -2,88 +2,71 @@ let shouldStop = false;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function report(type, data) {
-  try { chrome.runtime.sendMessage({ type, ...data }); } catch(e) {}
+  try { chrome.runtime.sendMessage({ type, ...data }); } catch (e) {}
 }
 
-// Debug: log all interactive elements so we know what we're dealing with
-function debugInputs() {
-  console.log('[WA Adder] === DEBUG: All interactive elements ===');
-  document.querySelectorAll('input').forEach((el, i) => {
-    const r = el.getBoundingClientRect();
-    console.log(`[WA Adder] input[${i}]: type=${el.type} placeholder="${el.placeholder}" visible=${r.height > 0} top=${Math.round(r.top)}`);
-  });
-  document.querySelectorAll('[contenteditable="true"]').forEach((el, i) => {
-    const r = el.getBoundingClientRect();
-    console.log(`[WA Adder] editable[${i}]: tag=${el.tagName} role=${el.getAttribute('role')} data-tab=${el.getAttribute('data-tab')} top=${Math.round(r.top)} text="${el.innerText.substring(0, 20)}"`);
-  });
-  document.querySelectorAll('[role="textbox"]').forEach((el, i) => {
-    const r = el.getBoundingClientRect();
-    console.log(`[WA Adder] textbox[${i}]: tag=${el.tagName} editable=${el.contentEditable} top=${Math.round(r.top)}`);
-  });
-  console.log('[WA Adder] === END DEBUG ===');
+// ===== DOM HELPERS =====
+
+// Click the "New Chat" button (pencil icon at top)
+async function clickNewChat() {
+  // Try data-icon attributes
+  for (const name of ['new-chat-outline', 'new-chat', 'chat']) {
+    const icon = document.querySelector(`[data-icon="${name}"]`);
+    if (icon) {
+      const btn = icon.closest('button, [role="button"], div[tabindex]') || icon;
+      btn.click();
+      await sleep(800);
+      return true;
+    }
+  }
+  // Try aria-label
+  for (const el of document.querySelectorAll('[aria-label]')) {
+    const label = el.getAttribute('aria-label').toLowerCase();
+    if (label.includes('new chat') || label.includes('צ\'אט חדש') || label.includes('שיחה חדשה')) {
+      el.click();
+      await sleep(800);
+      return true;
+    }
+  }
+  return false;
 }
 
-// Find the search input in Add Member panel
+// Find search input in the New Chat panel
 function findSearchInput() {
-  // 1. Look for <input> with search placeholder
+  // Contenteditable divs near top of screen
+  for (const el of document.querySelectorAll('div[contenteditable="true"]')) {
+    const r = el.getBoundingClientRect();
+    if (r.top > 30 && r.top < 250 && r.height > 0 && r.height < 60) {
+      return { el, type: 'contenteditable' };
+    }
+  }
+  // Regular inputs
   for (const input of document.querySelectorAll('input')) {
     const ph = (input.placeholder || '').toLowerCase();
-    if (ph.includes('search') || ph.includes('name') || ph.includes('number') || ph.includes('חיפוש')) {
-      console.log('[WA Adder] ✅ Found <input> placeholder:', input.placeholder);
-      return { el: input, type: 'input' };
+    if (ph.includes('search') || ph.includes('חיפוש') || ph.includes('name') || ph.includes('number')) {
+      const r = input.getBoundingClientRect();
+      if (r.height > 0) return { el: input, type: 'input' };
     }
   }
-
-  // 2. Contenteditable with data-tab (WhatsApp uses data-tab for their inputs)
-  for (const el of document.querySelectorAll('div[contenteditable="true"][data-tab]')) {
-    const r = el.getBoundingClientRect();
-    if (r.top < 250 && r.height > 0) {
-      console.log('[WA Adder] ✅ Found contenteditable data-tab at top:', r.top);
-      return { el, type: 'contenteditable' };
-    }
-  }
-
-  // 3. Any role=textbox near the top
-  for (const el of document.querySelectorAll('[role="textbox"]')) {
-    const r = el.getBoundingClientRect();
-    if (r.top < 250 && r.height > 0 && r.height < 80) {
-      console.log('[WA Adder] ✅ Found textbox at top:', r.top);
-      return { el, type: 'contenteditable' };
-    }
-  }
-
   return null;
 }
 
-// Type text and verify it worked
-async function typeText(searchObj, text) {
+// Type text into a search field
+async function typeInSearch(searchObj, text) {
   const { el, type } = searchObj;
   el.focus();
   await sleep(200);
 
   if (type === 'input') {
-    // React native value setter
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
     setter.call(el, text);
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
     await sleep(300);
-    
-    if (el.value.includes(text.substring(0, 5))) return true;
-    
-    // Fallback: char by char with React setter
-    setter.call(el, '');
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    for (const ch of text) {
-      setter.call(el, el.value + ch);
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-      await sleep(20);
-    }
-    await sleep(200);
     return el.value.includes(text.substring(0, 5));
-  } 
-  
-  // contenteditable - ensure it's completely empty first
+  }
+
+  // contenteditable
   el.focus();
   const sel = window.getSelection();
   const range = document.createRange();
@@ -94,200 +77,247 @@ async function typeText(searchObj, text) {
   el.textContent = '';
   await sleep(100);
 
-  // Try textInput event
-  el.dispatchEvent(new InputEvent('textInput', {
-    bubbles: true, cancelable: true, data: text, view: window
-  }));
-  await sleep(300);
-  if ((el.innerText || '').includes(text.substring(0, 5))) return true;
-
-  // Try execCommand
-  document.execCommand('selectAll', false, null);
-  document.execCommand('delete', false, null);
+  // Try insertText
   document.execCommand('insertText', false, text);
   await sleep(300);
   if ((el.innerText || '').includes(text.substring(0, 5))) return true;
 
-  // Try direct + input event
-  el.innerText = text;
-  el.dispatchEvent(new Event('input', { bubbles: true }));
+  // Fallback: textInput event
+  el.dispatchEvent(new InputEvent('textInput', {
+    bubbles: true, cancelable: true, data: text, view: window
+  }));
   await sleep(300);
   return (el.innerText || '').includes(text.substring(0, 5));
 }
 
-// Clear the search input
-async function clearSearch(searchObj) {
-  const { el, type } = searchObj;
-
-  // Strategy 1: Find ANY X/close icon near top of page (the search box area)
-  const allIcons = document.querySelectorAll('[data-icon]');
-  for (const icon of allIcons) {
-    const name = icon.getAttribute('data-icon');
-    const rect = icon.getBoundingClientRect();
-    // X button should be near top (within search area) and have x-related name
-    if (rect.top > 50 && rect.top < 250 && rect.height > 0 &&
-        (name.includes('x') || name.includes('cancel') || name.includes('clear') || name.includes('close'))) {
-      console.log('[WA Adder] Found X icon:', name, 'at y:', Math.round(rect.top));
-      const clickable = icon.closest('[role="button"], button, span') || icon;
-      clickable.click();
-      await sleep(500);
-      return;
+// Click the first visible contact in search results
+function clickFirstContact() {
+  // role=listitem contacts
+  for (const item of document.querySelectorAll('div[role="listitem"]')) {
+    const r = item.getBoundingClientRect();
+    if (r.height > 0 && r.top > 150 && r.top < 700) {
+      item.click();
+      return true;
     }
   }
+  // role=option
+  for (const opt of document.querySelectorAll('[role="option"]')) {
+    const r = opt.getBoundingClientRect();
+    if (r.height > 0 && r.top > 150 && r.top < 700) {
+      opt.click();
+      return true;
+    }
+  }
+  // Any clickable row with the phone number text
+  for (const span of document.querySelectorAll('span[title]')) {
+    const r = span.getBoundingClientRect();
+    if (r.height > 0 && r.top > 150 && r.top < 700) {
+      const row = span.closest('div[role="listitem"], div[role="option"], div[tabindex]');
+      if (row) { row.click(); return true; }
+    }
+  }
+  return false;
+}
 
-  // Strategy 2: Find a visible × button by text near search
-  const buttons = document.querySelectorAll('button, [role="button"], span');
-  for (const btn of buttons) {
-    const rect = btn.getBoundingClientRect();
-    if (rect.top > 50 && rect.top < 250 && btn.textContent.trim() === '×') {
+// Find the message compose box (bottom of chat area)
+function findComposeBox() {
+  let best = null;
+  let bestTop = 0;
+  for (const el of document.querySelectorAll('div[contenteditable="true"]')) {
+    const r = el.getBoundingClientRect();
+    if (r.height > 0 && r.top > 300 && r.top > bestTop) {
+      best = el;
+      bestTop = r.top;
+    }
+  }
+  return best;
+}
+
+// Type message and click send
+async function typeMessageAndSend(message) {
+  // Wait for compose box
+  let compose = null;
+  for (let i = 0; i < 10; i++) {
+    compose = findComposeBox();
+    if (compose) break;
+    await sleep(500);
+  }
+  if (!compose) return false;
+
+  compose.focus();
+  await sleep(200);
+
+  // Clear
+  const sel = window.getSelection();
+  const range = document.createRange();
+  range.selectNodeContents(compose);
+  sel.removeAllRanges();
+  sel.addRange(range);
+  document.execCommand('delete', false, null);
+  await sleep(100);
+
+  // Type message - handle newlines with Shift+Enter
+  const lines = message.split('\n');
+  for (let j = 0; j < lines.length; j++) {
+    if (lines[j]) {
+      document.execCommand('insertText', false, lines[j]);
+      await sleep(50);
+    }
+    if (j < lines.length - 1) {
+      compose.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Enter', code: 'Enter', keyCode: 13, shiftKey: true, bubbles: true, cancelable: true
+      }));
+      compose.dispatchEvent(new KeyboardEvent('keypress', {
+        key: 'Enter', code: 'Enter', keyCode: 13, shiftKey: true, bubbles: true, cancelable: true
+      }));
+      compose.dispatchEvent(new KeyboardEvent('keyup', {
+        key: 'Enter', code: 'Enter', keyCode: 13, shiftKey: true, bubbles: true, cancelable: true
+      }));
+      await sleep(100);
+    }
+  }
+  await sleep(500);
+
+  // Verify something was typed
+  const text = compose.innerText || '';
+  if (text.length < 5) {
+    console.log('[WA Sender] Message not typed properly, trying fallback...');
+    compose.focus();
+    compose.dispatchEvent(new InputEvent('textInput', {
+      bubbles: true, cancelable: true, data: message.replace(/\n/g, ' '), view: window
+    }));
+    await sleep(500);
+  }
+
+  // Click send button
+  await sleep(300);
+  const sendIcon = document.querySelector('[data-icon="send"]');
+  if (sendIcon) {
+    const btn = sendIcon.closest('button, [role="button"], span') || sendIcon;
+    btn.click();
+    await sleep(1000);
+    return true;
+  }
+
+  // Fallback: press Enter
+  compose.dispatchEvent(new KeyboardEvent('keydown', {
+    key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true
+  }));
+  await sleep(1000);
+  return true;
+}
+
+// Go back / close the new chat panel
+async function goBack() {
+  for (const name of ['back', 'arrow-back', 'back-light']) {
+    const icon = document.querySelector(`[data-icon="${name}"]`);
+    if (icon) {
+      const btn = icon.closest('button, [role="button"], span') || icon;
       btn.click();
       await sleep(500);
       return;
     }
   }
-
-  // Strategy 3: Manual clear via select all + delete
-  el.focus();
-  await sleep(100);
-  
-  // Select all text and delete
-  const sel = window.getSelection();
-  const range = document.createRange();
-  range.selectNodeContents(el);
-  sel.removeAllRanges();
-  sel.addRange(range);
-  await sleep(50);
-  
-  // Delete selected
-  document.execCommand('delete', false, null);
-  await sleep(100);
-  
-  // Also set empty
-  el.textContent = '';
-  el.dispatchEvent(new InputEvent('textInput', {
-    bubbles: true, cancelable: true, data: '', view: window
-  }));
-  el.dispatchEvent(new Event('input', { bubbles: true }));
-
-  await sleep(400);
-  console.log('[WA Adder] After clear:', JSON.stringify(el.textContent));
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await sleep(500);
 }
 
-// Click the first selectable contact in results
-// The "Not in your contacts" section shows contacts with a fake checkbox div
-function clickFirstContact() {
-  // WhatsApp's contact rows in "Add member" are clickable divs
-  // Look for the contact row under search results
-  const listItems = document.querySelectorAll('div[role="listitem"]');
-  
-  for (const item of listItems) {
-    const rect = item.getBoundingClientRect();
-    // Must be visible and in the contacts area (below search box, above bottom)
-    if (rect.height > 0 && rect.top > 150 && rect.top < 700) {
-      console.log('[WA Adder] Clicking contact row at y:', Math.round(rect.top));
-      item.click();
-      return true;
-    }
-  }
+// ===== MAIN =====
 
-  // Fallback: try clicking any checkbox-like element  
-  const cb = document.querySelector('input[type="checkbox"]');
-  if (cb) { cb.click(); return true; }
-
-  // Fallback: role=option
-  const opt = document.querySelector('[role="option"]');
-  if (opt) { opt.click(); return true; }
-
-  return false;
-}
-
-// ========== MAIN ==========
-
-async function addMembersToGroup(phones, delaySeconds) {
+async function sendMessages(phones, message, delaySeconds) {
   shouldStop = false;
   const total = phones.length;
-  const results = { added: [], not_found: [], error: [] };
+  const results = { sent: [], failed: [] };
 
-  debugInputs(); // Log all elements for debugging
-
-  const searchObj = findSearchInput();
-  if (!searchObj) {
-    report('done', { text: '❌ לא מצאתי שדה חיפוש. פתח "Add member" ונסה שוב. בדוק Console.' });
-    return;
-  }
-
-  report('progress', { current: 0, total, text: `מתחיל (${searchObj.type})...` });
-
-  // Test typing with first number
-  console.log('[WA Adder] Testing type with first number...');
-  const testTyped = await typeText(searchObj, phones[0]);
-  console.log('[WA Adder] Test type result:', testTyped, '| Value:', searchObj.el.value || searchObj.el.innerText);
-  
-  if (!testTyped) {
-    report('done', { text: '❌ לא הצלחתי להקליד בשדה. בדוק Console ושלח לי את הלוגים.' });
-    return;
-  }
-  
-  // Clear the test
-  await clearSearch(searchObj);
-  await sleep(500);
+  report('progress', { current: 0, total, text: `מתחיל... ${total} מספרים` });
 
   for (let i = 0; i < phones.length; i++) {
     if (shouldStop) {
-      report('done', { text: `⛔ נעצר. ✅${results.added.length} ❌${results.not_found.length}` });
+      report('done', { text: `⛔ נעצר. נשלח: ${results.sent.length} | נכשל: ${results.failed.length}`, failed: results.failed });
       return;
     }
 
     const phone = phones[i];
-    report('progress', { current: i + 1, total, text: `${i + 1}/${total}: ${phone}...` });
+    report('progress', { current: i + 1, total, text: `${i + 1}/${total}: פותח צ'אט עם ${phone}...` });
 
     try {
-      // 1. Clear search
-      await clearSearch(searchObj);
-      await sleep(300);
+      // 1. Open New Chat
+      const opened = await clickNewChat();
+      if (!opened) {
+        console.log('[WA Sender] ❌ Cannot open new chat');
+        results.failed.push(phone);
+        continue;
+      }
+      await sleep(1000);
 
-      // 2. Type number
-      const typed = await typeText(searchObj, phone);
-      console.log(`[WA Adder] ${i + 1}/${total}: ${phone} typed=${typed}`);
-      if (!typed) { results.error.push(phone); continue; }
+      // 2. Find search input
+      const searchObj = findSearchInput();
+      if (!searchObj) {
+        console.log('[WA Sender] ❌ Search input not found');
+        results.failed.push(phone);
+        await goBack();
+        continue;
+      }
 
-      // 3. Wait 2 seconds for results
+      // 3. Type phone number
+      const typed = await typeInSearch(searchObj, phone);
+      if (!typed) {
+        console.log('[WA Sender] ❌ Cannot type number:', phone);
+        results.failed.push(phone);
+        await goBack();
+        continue;
+      }
+
+      // 4. Wait for search results
+      await sleep(2500);
+
+      // 5. Click on the contact
+      const clicked = clickFirstContact();
+      if (!clicked) {
+        console.log('[WA Sender] ❌ Contact not found:', phone);
+        results.failed.push(phone);
+        await goBack();
+        continue;
+      }
+
+      // 6. Wait for chat to open
       await sleep(2000);
 
-      // 4. Try to click the contact
-      const clicked = clickFirstContact();
-      if (clicked) {
-        results.added.push(phone);
-        console.log(`[WA Adder] ✅ ${phone}`);
-        await sleep(500); // let the selection register
+      // 7. Type message and send
+      const sent = await typeMessageAndSend(message);
+      if (sent) {
+        results.sent.push(phone);
+        console.log('[WA Sender] ✅', phone);
       } else {
-        results.not_found.push(phone);
-        console.log(`[WA Adder] ❌ ${phone}`);
+        results.failed.push(phone);
+        console.log('[WA Sender] ❌ Send failed:', phone);
       }
 
       report('progress', {
         current: i + 1, total,
-        text: `${i + 1}/${total}: ${phone} ${clicked ? '✅' : '❌'} | ✅${results.added.length} ❌${results.not_found.length}`
+        text: `${i + 1}/${total}: ${phone} ${sent ? '✅' : '❌'} | נשלח: ${results.sent.length} | נכשל: ${results.failed.length}`
       });
 
     } catch (err) {
-      console.error('[WA Adder]', phone, err);
-      results.error.push(phone);
+      console.error('[WA Sender]', phone, err);
+      results.failed.push(phone);
     }
 
-    // 5. Always clear and wait before next number
-    await clearSearch(searchObj);
+    // Delay before next
     if (i < phones.length - 1 && !shouldStop) {
       await sleep(delaySeconds * 1000);
     }
   }
 
-  report('done', { text: `✅ סיום! ✅${results.added.length} ❌${results.not_found.length} ⚠️${results.error.length}. לחץ V ירוק.` });
+  report('done', {
+    text: `✅ סיום! נשלח: ${results.sent.length} | נכשל: ${results.failed.length}`,
+    failed: results.failed
+  });
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.action === 'addMembers') {
-    addMembersToGroup(msg.phones, msg.delay);
+  if (msg.action === 'sendMessages') {
+    sendMessages(msg.phones, msg.message, msg.delay);
     sendResponse({ ok: true });
   }
   if (msg.action === 'stop') {
@@ -297,4 +327,4 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   return true;
 });
 
-console.log('[WA Adder] Content script loaded');
+console.log('[WA Sender] Content script loaded');
