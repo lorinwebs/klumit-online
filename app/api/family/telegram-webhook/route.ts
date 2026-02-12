@@ -54,8 +54,10 @@ export async function POST(request: NextRequest) {
       await handleDaySchedule(chatId, tomorrow);
     } else if (text === '/week' || text === '/week@hayat_schedule_bot') {
       await handleWeek(chatId);
+    } else if (text === '/site' || text === '/site@hayat_schedule_bot') {
+      await sendToChat(chatId, `🌐 <b>היומן המשפחתי באתר</b>\n\n📅 כניסה ליומן:\nhttps://klumit-online.co.il/family-schedule\n\n💡 באתר תוכלו לראות את כל האירועים, להוסיף ולערוך בקלות`);
     } else if (text === '/help' || text === '/help@hayat_schedule_bot' || text === '/start' || text === '/start@hayat_schedule_bot') {
-      await sendToChat(chatId, `🤖 <b>בוט היומן המשפחתי</b>\n\n📝 <b>להוספת אירוע:</b> פשוט כתבו בשפה חופשית או שלחו הודעה קולית\nלדוגמה: "אימון של לורין מחר ב-18:00"\n\n📋 <b>פקודות:</b>\n/today - לוז היום\n/tomorrow - לוז מחר\n/week - לוז שבועי\n/help - עזרה`);
+      await sendToChat(chatId, `🤖 <b>בוט היומן המשפחתי</b>\n\n📝 <b>להוספת אירוע:</b> פשוט כתבו בשפה חופשית או שלחו הודעה קולית\nלדוגמה: "אימון של לורין מחר ב-18:00"\n\n📋 <b>פקודות:</b>\n/today - לוז היום\n/tomorrow - לוז מחר\n/week - לוז שבועי\n/site - לינק ליומן באתר\n/help - עזרה`);
     } else if (!text.startsWith('/')) {
       await handleAddEvent(chatId, text);
     }
@@ -252,8 +254,8 @@ async function handleAddEvent(chatId: string, text: string) {
 
     await sendToChat(chatId, msg, [[{ text: '🗑 מחק אירוע', callback_data: `delete_event:${inserted.id}` }]]);
 
-    // Notify all family chat members
-    notifyNewEvent({ title: parsed.title, person: parsed.person, category: parsed.category, start_time: startTime, end_time: endTime, notes: parsed.notes || null }).catch((err) => {
+    // Notify all family chat members (except the sender)
+    notifyNewEvent({ title: parsed.title, person: parsed.person, category: parsed.category, start_time: startTime, end_time: endTime, notes: parsed.notes || null }, chatId).catch((err) => {
       console.error('Failed to send notification:', err);
     });
   } catch {

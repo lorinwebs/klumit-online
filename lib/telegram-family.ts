@@ -75,8 +75,14 @@ export async function notifyNewEvent(event: {
   start_time: string;
   end_time: string;
   notes?: string | null;
-}): Promise<boolean> {
-  console.log('notifyNewEvent called:', event.title);
+}, excludeChatId?: string): Promise<boolean> {
+  console.log('notifyNewEvent called:', event.title, excludeChatId ? `(excluding ${excludeChatId})` : '');
+  
+  if (!BOT_TOKEN || CHAT_IDS.length === 0) {
+    console.error('notifyNewEvent: Missing BOT_TOKEN or CHAT_IDS', { hasToken: !!BOT_TOKEN, chatCount: CHAT_IDS.length });
+    return false;
+  }
+
   const personEmoji = PERSON_EMOJI[event.person] || '👤';
   const catEmoji = CATEGORY_EMOJI[event.category] || '📌';
   const startDate = new Date(event.start_time);
@@ -89,7 +95,38 @@ ${personEmoji} ${escapeHtml(event.person)}
 🗓 יום ${dayName}, ${formatDate(event.start_time)}
 🕐 ${formatTime(event.start_time)} - ${formatTime(event.end_time)}${event.notes ? `\n📝 ${escapeHtml(event.notes)}` : ''}`;
 
-  return sendMessage(message);
+  // Filter out the sender if excludeChatId is provided
+  const targetChatIds = excludeChatId 
+    ? CHAT_IDS.filter(id => id !== excludeChatId)
+    : CHAT_IDS;
+
+  if (targetChatIds.length === 0) {
+    console.log('notifyNewEvent: No recipients after filtering');
+    return true; // Not an error - just no one to notify
+  }
+
+  try {
+    const results = await Promise.all(
+      targetChatIds.map(async (chatId) => {
+        const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML', disable_web_page_preview: true }),
+        });
+        if (!res.ok) {
+          const err = await res.text();
+          console.error(`Failed to send to ${chatId}:`, err);
+        }
+        return res.ok;
+      })
+    );
+    const success = results.every(r => r);
+    console.log(`notifyNewEvent: Sent to ${targetChatIds.length} chats, success: ${success}`);
+    return success;
+  } catch (error) {
+    console.error('notifyNewEvent error:', error);
+    return false;
+  }
 }
 
 // Build a daily schedule message for a given date
