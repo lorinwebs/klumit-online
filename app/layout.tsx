@@ -3,12 +3,7 @@ import { Assistant, Cormorant_Garamond } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import { Suspense } from 'react';
 import AnalyticsProvider from '@/components/Analytics';
-import ChatWidgetWrapper from '@/components/ChatWidgetWrapper';
-import MembershipPopup from '@/components/MembershipPopup';
-import MembershipFloatingButton from '@/components/MembershipFloatingButton';
-import MembershipTopBar from '@/components/MembershipTopBar';
-import CouponModal from '@/components/CouponModal';
-import SkipToMain from '@/components/SkipToMain';
+import ConditionalLayout from '@/components/ConditionalLayout';
 import { LanguageProvider } from '@/lib/LanguageContext';
 import './globals.css';
 
@@ -253,18 +248,14 @@ export default function RootLayout({
       </head>
       <body className={`${assistant.variable} ${cormorant.variable} font-sans overflow-x-hidden`}>
         <LanguageProvider>
-          <MembershipTopBar />
-          <SkipToMain />
-          <Suspense fallback={null}>
-            <AnalyticsProvider>
-              {children}
-            </AnalyticsProvider>
-          </Suspense>
-          <Analytics />
-          <ChatWidgetWrapper />
-          <MembershipPopup />
-          <MembershipFloatingButton />
-          <CouponModal />
+          <ConditionalLayout>
+            <Suspense fallback={null}>
+              <AnalyticsProvider>
+                {children}
+              </AnalyticsProvider>
+            </Suspense>
+            <Analytics />
+          </ConditionalLayout>
         </LanguageProvider>
       </body>
     </html>
