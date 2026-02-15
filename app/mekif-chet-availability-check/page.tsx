@@ -148,6 +148,15 @@ export default function AvailabilityCheckPage() {
               </span>
             </div>
             <a
+              href="https://forms.monday.com/forms/7855a1d41d202b4cb7742a4773c03930?r=euc1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-3 shadow-md hover:shadow-lg hover:from-green-700 hover:to-teal-700 transition-all duration-300 font-medium text-lg"
+            >
+              <Calendar size={22} />
+              מלא טופס זמינות
+            </a>
+            <a
               href="/mekif-chet-2007-reunion"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 font-medium text-lg"
             >
