@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users, MapPin, Sparkles, TrendingUp, Award, UserPlus, Calendar } from 'lucide-react';
+import { Users, MapPin, Sparkles, TrendingUp, Award, UserPlus, Calendar, DollarSign, CreditCard, Crown } from 'lucide-react';
 
 interface Participant {
   name: string;
@@ -15,6 +15,7 @@ interface Participant {
   notes?: string;
   wantsToHelp?: string;
   otherClass?: string;
+  paid?: boolean;
 }
 
 interface ReunionData {
@@ -126,6 +127,30 @@ export default function ReunionPage() {
   }
   
   const total = data?.total || 0;
+  
+  // חישוב כמה שילמו
+  const paidCount = Object.values(allClassesData)
+    .flat()
+    .filter(p => p.paid).length;
+  const paidPercentage = total > 0 ? Math.round((paidCount / total) * 100) : 0;
+  
+  // חישוב סכומים
+  const PRICE_PER_PERSON = 400;
+  const TARGET_PARTICIPANTS = 24;
+  const totalTargetAmount = TARGET_PARTICIPANTS * PRICE_PER_PERSON; // 9,600
+  const collectedAmount = paidCount * PRICE_PER_PERSON;
+  const remainingAmount = totalTargetAmount - collectedAmount;
+  
+  // מציאת הכיתה המובילה (עם הכי הרבה משתתפים ששילמו)
+  let leadingClass = '';
+  let maxPaidCount = 0;
+  Object.entries(allClassesData).forEach(([className, participants]) => {
+    const classPaidCount = participants.filter(p => p.paid).length;
+    if (classPaidCount > maxPaidCount && classPaidCount > 0) {
+      maxPaidCount = classPaidCount;
+      leadingClass = className;
+    }
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 py-8 md:py-12 px-4" dir="rtl">
@@ -146,38 +171,109 @@ export default function ReunionPage() {
             </h1>
             <div className="h-1 w-24 bg-gradient-to-r from-indigo-500 to-purple-500 mx-auto"></div>
           </div>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6">
-            <div className="inline-flex items-center gap-3 bg-white px-6 py-3 shadow-md border border-slate-200 hover:shadow-lg transition-all duration-300">
-              <Users className="text-indigo-600" size={28} />
-              <span className="text-2xl md:text-3xl font-light text-slate-800">
-                <span className="font-semibold text-indigo-600">{total}</span> נרשמו
-              </span>
+          <div className="flex flex-col items-center justify-center gap-4">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6">
+              <div className="inline-flex items-center gap-3 bg-white px-6 py-3 shadow-md border border-slate-200 hover:shadow-lg transition-all duration-300">
+                <Users className="text-indigo-600" size={28} />
+                <span className="text-2xl md:text-3xl font-light text-slate-800">
+                  <span className="font-semibold text-indigo-600">{total}</span> נרשמו
+                </span>
+              </div>
+              <a
+                href="https://forms.monday.com/forms/f2abc9fccb939b062aeb659cc4454b24?r=euc1"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 font-medium text-lg"
+              >
+                <UserPlus size={22} />
+                הרשמה למפגש
+              </a>
+              <a
+                href="/mekif-chet-availability-check"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-6 py-3 shadow-md hover:shadow-lg hover:from-blue-700 hover:to-cyan-700 transition-all duration-300 font-medium text-lg"
+              >
+                <Calendar size={22} />
+                בדיקת זמינות לתאריך
+              </a>
             </div>
+            
+            {/* Telegram Payment Link */}
             <a
-              href="https://forms.monday.com/forms/f2abc9fccb939b062aeb659cc4454b24?r=euc1"
+              href="https://links.payboxapp.com/uxwbirWIN0b"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 font-medium text-lg"
+              className="inline-flex items-center gap-2 px-8 py-3.5 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-lg rounded-lg"
+              style={{ 
+                backgroundColor: '#0088cc',
+                color: 'white'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#006ba3'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0088cc'}
             >
-              <UserPlus size={22} />
-              הרשמה למפגש
-            </a>
-            <a
-              href="/mekif-chet-availability-check"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-3 shadow-md hover:shadow-lg hover:from-green-700 hover:to-teal-700 transition-all duration-300 font-medium text-lg"
-            >
-              <Calendar size={22} />
-              בדיקת זמינות לתאריך
+              <CreditCard size={24} />
+              תשלום ₪400
             </a>
           </div>
         </div>
 
         {/* Welcome Message */}
         <div className="mb-10 md:mb-16 max-w-3xl mx-auto">
-          <div className="bg-white shadow-md p-6 md:p-8 border border-slate-200">
-            <p className="text-lg md:text-xl text-slate-700 leading-relaxed text-center font-light">
-              היי לכולם, החלטנו שהגיע הזמן ליצור מפגש, רק לנו (בלי בני זוג וילדים!!) לא להאמין כמה אנחנו זקנים וכמה זמן לא נפגשנו, יאללה תמלאו את הטופס ובקרוב נעדכן מתי זה קורה!
-            </p>
+          <div className="bg-white shadow-md border border-slate-200 overflow-hidden">
+            <div className="p-6 md:p-8">
+              <p className="text-lg md:text-xl text-slate-700 leading-relaxed text-center font-light">
+                היי לכולם, החלטנו שהגיע הזמן ליצור מפגש, רק לנו (בלי בני זוג וילדים!!) לא להאמין כמה אנחנו זקנים וכמה זמן לא נפגשנו, יאללה תמלאו את הטופס ובקרוב נעדכן מתי זה קורה!
+              </p>
+            </div>
+            
+            {/* Payment Stats */}
+            <div className="border-t border-slate-200 bg-gradient-to-br from-green-50 to-emerald-50 px-6 md:px-8 py-5">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-100 p-3 rounded-full">
+                    <DollarSign className="text-green-600" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600 font-medium">סטטוס תשלומים</p>
+                    <p className="text-2xl font-semibold text-green-700">
+                      {paidCount} מתוך {total} שילמו
+                    </p>
+                    {leadingClass && maxPaidCount > 0 && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <Crown className="text-yellow-600" size={14} fill="currentColor" />
+                        <p className="text-xs text-slate-600">
+                          <span className="font-semibold text-yellow-700">{leadingClass}</span> מובילה עם{' '}
+                          <span className="font-bold text-green-600">{maxPaidCount}</span> תשלומים
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  {/* Total Amount */}
+                  <div className="bg-white/70 backdrop-blur-sm border border-green-200 rounded-lg px-5 py-3">
+                    <p className="text-xs text-slate-600 mb-0.5">סה״כ נאסף</p>
+                    <p className="text-xl font-bold text-green-600">
+                      ₪{collectedAmount.toLocaleString('he-IL')}
+                    </p>
+                  </div>
+                  
+                  {/* Progress Bar */}
+                  <div className="w-full md:w-64">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-slate-600">התקדמות</span>
+                      <span className="text-sm font-bold text-green-600">{paidPercentage}%</span>
+                    </div>
+                    <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-1000 ease-out rounded-full"
+                        style={{ width: `${paidPercentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -185,21 +281,54 @@ export default function ReunionPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mb-12">
           {Object.entries(allClassesData).map(([className, participants], idx) => {
             const gradient = CLASS_GRADIENTS[className] || CLASS_GRADIENTS['לא צוין'];
+            const isLeading = className === leadingClass;
+            const classPaidCount = participants.filter(p => p.paid).length;
             
             return (
               <div
                 key={className}
-                className="group bg-white shadow-md overflow-hidden border border-slate-200 hover:shadow-lg transition-all duration-300"
+                className={`group bg-white shadow-md overflow-hidden border transition-all duration-300 ${
+                  isLeading 
+                    ? 'border-yellow-400 ring-4 ring-yellow-200 shadow-xl scale-105' 
+                    : 'border-slate-200 hover:shadow-lg'
+                }`}
                 style={{ animationDelay: `${idx * 50}ms` }}
               >
+                {/* Crown for Leading Class */}
+                {isLeading && (
+                  <div className="absolute -top-3 right-1/2 translate-x-1/2 z-10">
+                    <div className="bg-gradient-to-br from-yellow-400 to-amber-500 p-2 rounded-full shadow-lg border-4 border-white">
+                      <Crown className="text-yellow-900" size={24} fill="currentColor" />
+                    </div>
+                  </div>
+                )}
+                
                 {/* Class Header */}
-                <div className={`bg-gradient-to-br ${gradient.from} ${gradient.to} ${gradient.text} px-5 py-4 relative overflow-hidden`}>
+                <div className={`bg-gradient-to-br ${gradient.from} ${gradient.to} ${gradient.text} px-5 py-4 relative overflow-hidden ${isLeading ? 'pt-6' : ''}`}>
+                  {isLeading && (
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-400 animate-pulse"></div>
+                  )}
                   <div className="relative">
                     <div className="flex items-center justify-between mb-1">
-                      <h2 className="text-xl md:text-2xl font-semibold">{className}</h2>
-                      <span className="bg-white/30 px-3 py-1.5 text-sm font-semibold border border-white/40">
-                        {participants.length}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-xl md:text-2xl font-semibold">{className}</h2>
+                        {isLeading && (
+                          <span className="text-xs bg-yellow-300/30 text-yellow-100 px-2 py-0.5 rounded-full font-bold border border-yellow-400/40">
+                            מובילים! 🔥
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="bg-white/30 px-3 py-1.5 text-sm font-semibold border border-white/40">
+                          {participants.length}
+                        </span>
+                        {classPaidCount > 0 && (
+                          <span className="bg-green-500/30 px-2 py-0.5 text-xs font-semibold border border-green-400/40 flex items-center gap-1">
+                            <DollarSign size={12} />
+                            {classPaidCount}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {CLASS_NAMES[className] && (
                       <p className="text-sm opacity-90">{CLASS_NAMES[className]}</p>
@@ -213,10 +342,23 @@ export default function ReunionPage() {
                     participants.map((participant, index) => (
                       <div
                         key={index}
-                        className="bg-white p-3 border border-slate-200 hover:border-indigo-300 hover:shadow-sm transition-all duration-200 group/item"
+                        className={`p-3 border transition-all duration-200 group/item ${
+                          participant.paid 
+                            ? 'bg-green-50 border-green-300 hover:border-green-400 hover:shadow-sm' 
+                            : 'bg-white border-slate-200 hover:border-indigo-300 hover:shadow-sm'
+                        }`}
                       >
-                        <div className="font-medium text-slate-900 mb-1.5 group-hover/item:text-indigo-700 transition-colors">
-                          {index + 1}. {participant.name}
+                        <div className="flex items-center gap-2">
+                          {participant.paid && (
+                            <DollarSign className="text-green-600 shrink-0" size={18} />
+                          )}
+                          <div className={`font-medium mb-1.5 transition-colors flex-1 ${
+                            participant.paid 
+                              ? 'text-green-900 group-hover/item:text-green-700' 
+                              : 'text-slate-900 group-hover/item:text-indigo-700'
+                          }`}>
+                            {index + 1}. {participant.name}
+                          </div>
                         </div>
                         {participant.otherClass && (
                           <div className="text-xs text-slate-400 mt-1.5 italic bg-slate-50 px-2 py-1 inline-block">

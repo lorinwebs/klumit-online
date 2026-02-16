@@ -25,10 +25,12 @@ interface Participant {
   notes?: string;
   wantsToHelp?: string;
   otherClass?: string;
+  paid?: boolean;
 }
 
 const CLASS_COLUMN_ID = 'single_selectv1iuqqz'; // איזה כיתה היית?
 const OTHER_CLASS_COLUMN_ID = 'short_textuq6e9se6'; // אם בחרת אחר
+const PAID_COLUMN_ID = 'color_mm0m3qfz'; // שילם?
 
 export async function GET(request: NextRequest) {
   if (!MONDAY_API_KEY) {
@@ -52,7 +54,7 @@ export async function GET(request: NextRequest) {
               items {
                 id
                 name
-                column_values(ids: ["name", "${CLASS_COLUMN_ID}", "${OTHER_CLASS_COLUMN_ID}", "phonewmatatfo", "emailpm71o46m", "short_texthbssufi9", "single_selectp6t5jmo", "single_selectiapws1k", "single_selectgrjlcmm", "long_text1wz8do45", "single_selectpw3esvn"]) {
+                column_values(ids: ["name", "${CLASS_COLUMN_ID}", "${OTHER_CLASS_COLUMN_ID}", "${PAID_COLUMN_ID}", "phonewmatatfo", "emailpm71o46m", "short_texthbssufi9", "single_selectp6t5jmo", "single_selectiapws1k", "single_selectgrjlcmm", "long_text1wz8do45", "single_selectpw3esvn"]) {
                   id
                   text
                   value
@@ -107,6 +109,20 @@ export async function GET(request: NextRequest) {
         className = columns[OTHER_CLASS_COLUMN_ID];
       }
 
+      // Parse paid field - Monday status/color column
+      const paidValue = columns[PAID_COLUMN_ID];
+      let isPaid = false;
+      try {
+        if (paidValue) {
+          // Try parsing JSON (for value field)
+          const parsed = JSON.parse(paidValue);
+          isPaid = parsed.label === 'כן' || parsed.index === 1;
+        }
+      } catch {
+        // If parsing fails, check the text value directly
+        isPaid = paidValue === 'כן';
+      }
+
       return {
         name: item.name,
         className: className || 'לא צוין',
@@ -119,6 +135,7 @@ export async function GET(request: NextRequest) {
         notes: columns['long_text1wz8do45'] || '',
         wantsToHelp: columns['single_selectpw3esvn'] || '',
         otherClass: className === 'אחר' ? columns[OTHER_CLASS_COLUMN_ID] : undefined,
+        paid: isPaid,
       };
     });
 
@@ -131,6 +148,15 @@ export async function GET(request: NextRequest) {
         byClass[className] = [];
       }
       byClass[className].push(participant);
+    });
+
+    // מיון משתתפים בכל כיתה - שילמו ראשונים
+    Object.keys(byClass).forEach((className) => {
+      byClass[className].sort((a, b) => {
+        if (a.paid && !b.paid) return -1;
+        if (!a.paid && b.paid) return 1;
+        return 0;
+      });
     });
 
     // מיון כיתות: יב1-יב10, אחר, לא צוין

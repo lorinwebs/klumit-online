@@ -100,6 +100,44 @@ function getHoursRange(events: FamilyEvent[], expandS = 0, expandE = 0) {
   return { hours: Array.from({ length: mx - mn + 1 }, (_, i) => mn + i), minHour: mn, maxHour: mx, canExpandStart: mn > 0, canExpandEnd: mx < 23 };
 }
 
+// Get hours that have events (for collapsible view)
+function getActiveHoursForWeek(events: FamilyEvent[], weekDates: Date[]): Set<number> {
+  const activeHours = new Set<number>();
+  weekDates.forEach(day => {
+    const dayEvents = getEventsForDay(events, day);
+    dayEvents.forEach(e => {
+      const startH = getHours(new Date(e.start_time));
+      const endH = getHours(new Date(e.end_time));
+      const endM = getMinutes(new Date(e.end_time));
+      const actualEndH = endM > 0 ? endH + 1 : endH;
+      for (let h = startH; h <= actualEndH; h++) {
+        activeHours.add(h);
+      }
+    });
+  });
+  return activeHours;
+}
+
+// Group hours into active and collapsed ranges
+interface HourRange { type: 'active' | 'collapsed'; hours: number[]; }
+function groupHoursForDisplay(allHours: number[], activeHours: Set<number>): HourRange[] {
+  const ranges: HourRange[] = [];
+  let currentRange: HourRange | null = null;
+  
+  allHours.forEach(h => {
+    const isActive = activeHours.has(h);
+    if (!currentRange || currentRange.type !== (isActive ? 'active' : 'collapsed')) {
+      if (currentRange) ranges.push(currentRange);
+      currentRange = { type: isActive ? 'active' : 'collapsed', hours: [h] };
+    } else {
+      currentRange.hours.push(h);
+    }
+  });
+  
+  if (currentRange) ranges.push(currentRange);
+  return ranges;
+}
+
 // --- Overlap layout algorithm (Google Calendar style) ---
 interface LayoutEvent extends FamilyEvent { col: number; totalCols: number; }
 function layoutOverlappingEvents(events: FamilyEvent[], minHour: number): LayoutEvent[] {
@@ -223,41 +261,124 @@ function MobileDayView({ events, date, conflicts, onCellClick, onEventClick, min
   minHour: number; hours: number[];
 }) {
   const dayEvents = getEventsForDay(events, date);
+  const activeHours = new Set<number>();
+  dayEvents.forEach(e => {
+    const startH = getHours(new Date(e.start_time));
+    const endH = getHours(new Date(e.end_time));
+    const endM = getMinutes(new Date(e.end_time));
+    const actualEndH = endM > 0 ? endH + 1 : endH;
+    for (let h = startH; h <= actualEndH; h++) activeHours.add(h);
+  });
+  const hourRanges = groupHoursForDisplay(hours, activeHours);
   const laid = layoutOverlappingEvents(dayEvents, minHour);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [expandedRanges, setExpandedRanges] = useState<Set<number>>(new Set());
+
+  const toggleRange = (rangeIdx: number) => {
+    setExpandedRanges(prev => {
+      const next = new Set(prev);
+      next.has(rangeIdx) ? next.delete(rangeIdx) : next.add(rangeIdx);
+      return next;
+    });
+  };
+
+  // Calculate cumulative offsets
+  const hourToOffset = new Map<number, number>();
+  let cumulativeOffset = 0;
+  hourRanges.forEach((range, idx) => {
+    const isExpanded = expandedRanges.has(idx);
+    if (range.type === 'collapsed' && !isExpanded) {
+      range.hours.forEach(h => hourToOffset.set(h, cumulativeOffset));
+      cumulativeOffset += 20;
+    } else {
+      range.hours.forEach(h => {
+        hourToOffset.set(h, cumulativeOffset);
+        cumulativeOffset += 60;
+      });
+    }
+  });
 
   // Auto scroll to first event or 8am
   useEffect(() => {
     if (scrollRef.current) {
       const firstEvent = dayEvents.length > 0 ? Math.min(...dayEvents.map(e => getHours(new Date(e.start_time)))) : 8;
-      const scrollTo = Math.max(0, (firstEvent - minHour - 1) * 60);
-      scrollRef.current.scrollTop = scrollTo;
+      const scrollTo = hourToOffset.get(firstEvent) || 0;
+      scrollRef.current.scrollTop = Math.max(0, scrollTo - 60);
     }
-  }, [date, dayEvents, minHour]);
+  }, [date, dayEvents]);
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-auto bg-white">
-      <div className="relative" style={{ height: `${hours.length * 60}px` }}>
+      <div className="relative" style={{ height: `${cumulativeOffset}px` }}>
         {/* Hour lines */}
-        {hours.map(hour => (
-          <div key={hour} className="absolute w-full border-b border-gray-100 flex" style={{ top: `${(hour - minHour) * 60}px`, height: '60px' }}
-            onClick={() => onCellClick(date, hour)}>
-            <div className="w-12 text-[11px] text-gray-400 text-left pl-2 pt-0.5 shrink-0">{String(hour).padStart(2, '0')}:00</div>
-            <div className="flex-1 border-r border-gray-100" />
-          </div>
-        ))}
+        {hourRanges.map((range, rangeIdx) => {
+          const isExpanded = expandedRanges.has(rangeIdx);
+          if (range.type === 'collapsed' && !isExpanded) {
+            const offset = hourToOffset.get(range.hours[0]) || 0;
+            return (
+              <div key={`range-${rangeIdx}`} className="absolute w-full border-b border-gray-100 bg-gray-50/50 flex" style={{ top: `${offset}px`, height: '20px' }}
+                onClick={() => toggleRange(rangeIdx)}>
+                <div className="w-12 text-[9px] text-gray-400 flex items-center justify-center shrink-0"><ChevronDown size={12} /></div>
+                <div className="flex-1 flex items-center justify-center border-r border-gray-100">
+                  <span className="text-[9px] text-gray-400">{range.hours[0]}:00 - {range.hours[range.hours.length - 1]}:00</span>
+                </div>
+              </div>
+            );
+          }
+          
+          return range.hours.map(hour => {
+            const offset = hourToOffset.get(hour) || 0;
+            return (
+              <div key={hour} className="absolute w-full border-b border-gray-100 flex" style={{ top: `${offset}px`, height: '60px' }}
+                onClick={() => onCellClick(date, hour)}>
+                <div className="w-12 text-[11px] text-gray-400 text-left pl-2 pt-0.5 shrink-0 flex flex-col items-center">
+                  <span>{String(hour).padStart(2, '0')}:00</span>
+                  {range.type === 'collapsed' && isExpanded && (
+                    <button onClick={(e) => { e.stopPropagation(); toggleRange(rangeIdx); }} className="text-gray-400 hover:text-gray-600 mt-0.5">
+                      <ChevronUp size={10} />
+                    </button>
+                  )}
+                </div>
+                <div className="flex-1 border-r border-gray-100" />
+              </div>
+            );
+          });
+        })}
         {/* Events */}
         <div className="absolute top-0 bottom-0" style={{ right: '48px', left: '4px' }}>
-          {laid.map(ev => (
-            <EventBlock key={ev.id} event={ev} isConflict={conflicts.has(ev.id)} onClick={() => onEventClick(ev)} minHour={minHour} col={ev.col} totalCols={ev.totalCols} viewDay={date} />
-          ))}
+          {laid.map(ev => {
+            const startH = getHours(new Date(ev.start_time)) + getMinutes(new Date(ev.start_time)) / 60;
+            const endH = getHours(new Date(ev.end_time)) + getMinutes(new Date(ev.end_time)) / 60;
+            const startOffset = hourToOffset.get(Math.floor(startH)) || 0;
+            const endOffset = hourToOffset.get(Math.floor(endH)) || 0;
+            const top = startOffset + ((startH % 1) * 60);
+            const height = Math.max(endOffset - startOffset + ((endH % 1) * 60) - ((startH % 1) * 60), 24);
+            const widthPct = 100 / ev.totalCols;
+            const rightPct = ev.col * widthPct;
+            const bg = CAT_BG[ev.category] || CAT_BG['אחר'];
+            
+            return (
+              <button
+                key={ev.id}
+                onClick={() => onEventClick(ev)}
+                style={{ top: `${top}px`, height: `${height}px`, right: `${rightPct}%`, width: `${widthPct - 1}%`, backgroundColor: bg + '18', borderRight: `3px solid ${bg}` }}
+                className={`absolute rounded-md px-1 py-0.5 overflow-hidden cursor-pointer transition-all hover:shadow-md ${conflicts.has(ev.id) ? 'ring-2 ring-red-400 ring-offset-1' : ''}`}
+              >
+                {conflicts.has(ev.id) && <AlertTriangle size={9} className="absolute top-0.5 left-0.5 text-red-500" />}
+                <p className="text-[10px] font-semibold truncate" style={{ color: bg }}>{ev.title}</p>
+                {height > 28 && <p className="text-[9px] text-gray-500">{fmtTime(ev.start_time)} - {fmtTime(ev.end_time)}</p>}
+                {height > 44 && <span className={`inline-block text-[8px] px-1 rounded mt-0.5 ${PERSON_COLORS[ev.person] || 'bg-gray-100 text-gray-800'}`}>{ev.person}</span>}
+              </button>
+            );
+          })}
         </div>
         {/* Now indicator */}
         {isDateToday(date) && (() => {
           const now = new Date();
-          const nowMin = (getHours(now) + getMinutes(now) / 60 - minHour) * 60;
-          if (nowMin < 0 || nowMin > hours.length * 60) return null;
-          return <div className="absolute left-0 right-0 z-10 flex items-center" style={{ top: `${nowMin}px` }}>
+          const nowH = getHours(now) + getMinutes(now) / 60;
+          const nowOffset = (hourToOffset.get(Math.floor(nowH)) || 0) + ((nowH % 1) * 60);
+          if (nowOffset < 0 || nowOffset > cumulativeOffset) return null;
+          return <div className="absolute left-0 right-0 z-10 flex items-center" style={{ top: `${nowOffset}px` }}>
             <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
             <div className="flex-1 border-t border-red-500" />
           </div>;
@@ -301,14 +422,41 @@ function WeekView({ events, weekDates, conflicts, onCellClick, onEventClick, exp
   onEventDrop?: (e: FamilyEvent, d: Date, h: number) => void;
 }) {
   const { hours, minHour } = getHoursRange(events, expandStart, expandEnd);
+  const activeHours = getActiveHoursForWeek(events, weekDates);
+  const hourRanges = groupHoursForDisplay(hours, activeHours);
   const [draggedEvent, setDraggedEvent] = useState<FamilyEvent | null>(null);
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
+  const [expandedRanges, setExpandedRanges] = useState<Set<number>>(new Set());
   const gridCols = '60px repeat(7, 1fr)';
 
   const handleDrop = (d: Date, h: number) => {
     if (draggedEvent && onEventDrop) onEventDrop(draggedEvent, d, h);
     setDraggedEvent(null); setDragOverCell(null);
   };
+
+  const toggleRange = (rangeIdx: number) => {
+    setExpandedRanges(prev => {
+      const next = new Set(prev);
+      next.has(rangeIdx) ? next.delete(rangeIdx) : next.add(rangeIdx);
+      return next;
+    });
+  };
+
+  // Calculate cumulative offsets for event positioning
+  const hourToOffset = new Map<number, number>();
+  let cumulativeOffset = 0;
+  hourRanges.forEach((range, idx) => {
+    const isExpanded = expandedRanges.has(idx);
+    if (range.type === 'collapsed' && !isExpanded) {
+      range.hours.forEach(h => hourToOffset.set(h, cumulativeOffset));
+      cumulativeOffset += 20;
+    } else {
+      range.hours.forEach(h => {
+        hourToOffset.set(h, cumulativeOffset);
+        cumulativeOffset += 60;
+      });
+    }
+  });
 
   return (
     <div className="overflow-auto h-full">
@@ -327,32 +475,79 @@ function WeekView({ events, weekDates, conflicts, onCellClick, onEventClick, exp
       </div>
       {/* Grid */}
       <div className="relative">
-        {hours.map(h => (
-          <div key={h} className="border-b border-gray-50" style={{ display: 'grid', gridTemplateColumns: gridCols, height: '60px' }}>
-            <div className="text-[11px] text-gray-400 text-center pt-0.5">{String(h).padStart(2, '0')}:00</div>
-            {weekDates.map((d, di) => {
-              const key = `${d.toISOString()}-${h}`;
-              return (
-                <div key={di} className={`border-r border-gray-50 cursor-pointer hover:bg-blue-50/30 ${isDateToday(d) ? 'bg-blue-50/20' : ''} ${dragOverCell === key ? 'bg-blue-200/40' : ''}`}
-                  onClick={() => onCellClick(d, h)}
-                  onDragOver={(e) => { e.preventDefault(); setDragOverCell(key); }}
-                  onDragLeave={() => setDragOverCell(null)}
-                  onDrop={(e) => { e.preventDefault(); handleDrop(d, h); }} />
-              );
-            })}
-          </div>
-        ))}
+        {hourRanges.map((range, rangeIdx) => {
+          const isExpanded = expandedRanges.has(rangeIdx);
+          if (range.type === 'collapsed' && !isExpanded) {
+            return (
+              <div key={`range-${rangeIdx}`} className="border-b border-gray-100 bg-gray-50/50" style={{ display: 'grid', gridTemplateColumns: gridCols, height: '20px' }}>
+                <button onClick={() => toggleRange(rangeIdx)} className="text-[9px] text-gray-400 hover:text-gray-600 flex items-center justify-center">
+                  <ChevronDown size={12} />
+                </button>
+                <div className="col-span-7 flex items-center justify-center border-r border-gray-100">
+                  <span className="text-[9px] text-gray-400">{range.hours[0]}:00 - {range.hours[range.hours.length - 1]}:00</span>
+                </div>
+              </div>
+            );
+          }
+          
+          return range.hours.map(h => (
+            <div key={h} className="border-b border-gray-50" style={{ display: 'grid', gridTemplateColumns: gridCols, height: '60px' }}>
+              <div className="text-[11px] text-gray-400 text-center pt-0.5 flex flex-col items-center">
+                <span>{String(h).padStart(2, '0')}:00</span>
+                {range.type === 'collapsed' && isExpanded && (
+                  <button onClick={() => toggleRange(rangeIdx)} className="text-gray-400 hover:text-gray-600 mt-0.5">
+                    <ChevronUp size={10} />
+                  </button>
+                )}
+              </div>
+              {weekDates.map((d, di) => {
+                const key = `${d.toISOString()}-${h}`;
+                return (
+                  <div key={di} className={`border-r border-gray-50 cursor-pointer hover:bg-blue-50/30 ${isDateToday(d) ? 'bg-blue-50/20' : ''} ${dragOverCell === key ? 'bg-blue-200/40' : ''}`}
+                    onClick={() => onCellClick(d, h)}
+                    onDragOver={(e) => { e.preventDefault(); setDragOverCell(key); }}
+                    onDragLeave={() => setDragOverCell(null)}
+                    onDrop={(e) => { e.preventDefault(); handleDrop(d, h); }} />
+                );
+              })}
+            </div>
+          ));
+        })}
         {/* Events overlay */}
-        <div style={{ position: 'absolute', top: 0, right: 0, left: 0, height: `${hours.length * 60}px`, display: 'grid', gridTemplateColumns: gridCols, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', top: 0, right: 0, left: 0, height: `${cumulativeOffset}px`, display: 'grid', gridTemplateColumns: gridCols, pointerEvents: 'none' }}>
           <div />
           {weekDates.map((d, di) => {
             const dayEvts = getEventsForDay(events, d);
             const laid = layoutOverlappingEvents(dayEvts, minHour);
             return (
               <div key={di} className="relative border-r border-gray-50">
-                {laid.map(ev => (
-                  <EventBlock key={ev.id} event={ev} isConflict={conflicts.has(ev.id)} onClick={() => onEventClick(ev)} minHour={minHour} col={ev.col} totalCols={ev.totalCols} onDragStart={setDraggedEvent} viewDay={d} />
-                ))}
+                {laid.map(ev => {
+                  const startH = getHours(new Date(ev.start_time)) + getMinutes(new Date(ev.start_time)) / 60;
+                  const endH = getHours(new Date(ev.end_time)) + getMinutes(new Date(ev.end_time)) / 60;
+                  const startOffset = hourToOffset.get(Math.floor(startH)) || 0;
+                  const endOffset = hourToOffset.get(Math.floor(endH)) || 0;
+                  const top = startOffset + ((startH % 1) * 60);
+                  const height = Math.max(endOffset - startOffset + ((endH % 1) * 60) - ((startH % 1) * 60), 24);
+                  const widthPct = 100 / ev.totalCols;
+                  const rightPct = ev.col * widthPct;
+                  const bg = CAT_BG[ev.category] || CAT_BG['אחר'];
+                  
+                  return (
+                    <button
+                      key={ev.id}
+                      draggable
+                      onDragStart={(e) => { e.stopPropagation(); setDraggedEvent(ev); }}
+                      onClick={() => onEventClick(ev)}
+                      style={{ top: `${top}px`, height: `${height}px`, right: `${rightPct}%`, width: `${widthPct - 1}%`, backgroundColor: bg + '18', borderRight: `3px solid ${bg}` }}
+                      className={`absolute rounded-md px-1 py-0.5 overflow-hidden cursor-pointer transition-all hover:shadow-md pointer-events-auto ${conflicts.has(ev.id) ? 'ring-2 ring-red-400 ring-offset-1' : ''}`}
+                    >
+                      {conflicts.has(ev.id) && <AlertTriangle size={9} className="absolute top-0.5 left-0.5 text-red-500" />}
+                      <p className="text-[10px] font-semibold truncate" style={{ color: bg }}>{ev.title}</p>
+                      {height > 28 && <p className="text-[9px] text-gray-500">{fmtTime(ev.start_time)} - {fmtTime(ev.end_time)}</p>}
+                      {height > 44 && <span className={`inline-block text-[8px] px-1 rounded mt-0.5 ${PERSON_COLORS[ev.person] || 'bg-gray-100 text-gray-800'}`}>{ev.person}</span>}
+                    </button>
+                  );
+                })}
               </div>
             );
           })}
@@ -371,9 +566,43 @@ function DesktopDayView({ events, date, conflicts, onCellClick, onEventClick, ex
 }) {
   const dayEvents = getEventsForDay(events, date);
   const { hours, minHour } = getHoursRange(dayEvents, expandStart, expandEnd);
+  const activeHours = new Set<number>();
+  dayEvents.forEach(e => {
+    const startH = getHours(new Date(e.start_time));
+    const endH = getHours(new Date(e.end_time));
+    const endM = getMinutes(new Date(e.end_time));
+    const actualEndH = endM > 0 ? endH + 1 : endH;
+    for (let h = startH; h <= actualEndH; h++) activeHours.add(h);
+  });
+  const hourRanges = groupHoursForDisplay(hours, activeHours);
   const laid = layoutOverlappingEvents(dayEvents, minHour);
   const [draggedEvent, setDraggedEvent] = useState<FamilyEvent | null>(null);
   const [dragOverHour, setDragOverHour] = useState<number | null>(null);
+  const [expandedRanges, setExpandedRanges] = useState<Set<number>>(new Set());
+
+  const toggleRange = (rangeIdx: number) => {
+    setExpandedRanges(prev => {
+      const next = new Set(prev);
+      next.has(rangeIdx) ? next.delete(rangeIdx) : next.add(rangeIdx);
+      return next;
+    });
+  };
+
+  // Calculate cumulative offsets for event positioning
+  const hourToOffset = new Map<number, number>();
+  let cumulativeOffset = 0;
+  hourRanges.forEach((range, idx) => {
+    const isExpanded = expandedRanges.has(idx);
+    if (range.type === 'collapsed' && !isExpanded) {
+      range.hours.forEach(h => hourToOffset.set(h, cumulativeOffset));
+      cumulativeOffset += 20;
+    } else {
+      range.hours.forEach(h => {
+        hourToOffset.set(h, cumulativeOffset);
+        cumulativeOffset += 60;
+      });
+    }
+  });
 
   return (
     <div className="overflow-auto h-full">
@@ -382,20 +611,67 @@ function DesktopDayView({ events, date, conflicts, onCellClick, onEventClick, ex
         <p className="text-xl font-semibold text-gray-900">{format(date, 'd/M')}</p>
       </div>
       <div className="relative">
-        {hours.map(h => (
-          <div key={h} className="flex border-b border-gray-50" style={{ height: '60px' }}>
-            <div className="w-[60px] text-[11px] text-gray-400 text-center pt-0.5 shrink-0">{String(h).padStart(2, '0')}:00</div>
-            <div className={`flex-1 cursor-pointer hover:bg-blue-50/30 ${dragOverHour === h ? 'bg-blue-200/40' : ''}`}
-              onClick={() => onCellClick(date, h)}
-              onDragOver={(e) => { e.preventDefault(); setDragOverHour(h); }}
-              onDragLeave={() => setDragOverHour(null)}
-              onDrop={(e) => { e.preventDefault(); if (draggedEvent && onEventDrop) onEventDrop(draggedEvent, date, h); setDraggedEvent(null); setDragOverHour(null); }} />
-          </div>
-        ))}
-        <div className="absolute top-0 left-0" style={{ right: '60px', height: `${hours.length * 60}px` }}>
-          {laid.map(ev => (
-            <EventBlock key={ev.id} event={ev} isConflict={conflicts.has(ev.id)} onClick={() => onEventClick(ev)} minHour={minHour} col={ev.col} totalCols={ev.totalCols} onDragStart={setDraggedEvent} viewDay={date} />
-          ))}
+        {hourRanges.map((range, rangeIdx) => {
+          const isExpanded = expandedRanges.has(rangeIdx);
+          if (range.type === 'collapsed' && !isExpanded) {
+            return (
+              <div key={`range-${rangeIdx}`} className="flex border-b border-gray-100 bg-gray-50/50" style={{ height: '20px' }}>
+                <button onClick={() => toggleRange(rangeIdx)} className="w-[60px] text-[9px] text-gray-400 hover:text-gray-600 flex items-center justify-center shrink-0">
+                  <ChevronDown size={12} />
+                </button>
+                <div className="flex-1 flex items-center justify-center">
+                  <span className="text-[9px] text-gray-400">{range.hours[0]}:00 - {range.hours[range.hours.length - 1]}:00</span>
+                </div>
+              </div>
+            );
+          }
+          
+          return range.hours.map(h => (
+            <div key={h} className="flex border-b border-gray-50" style={{ height: '60px' }}>
+              <div className="w-[60px] text-[11px] text-gray-400 text-center pt-0.5 shrink-0 flex flex-col items-center">
+                <span>{String(h).padStart(2, '0')}:00</span>
+                {range.type === 'collapsed' && isExpanded && (
+                  <button onClick={() => toggleRange(rangeIdx)} className="text-gray-400 hover:text-gray-600 mt-0.5">
+                    <ChevronUp size={10} />
+                  </button>
+                )}
+              </div>
+              <div className={`flex-1 cursor-pointer hover:bg-blue-50/30 ${dragOverHour === h ? 'bg-blue-200/40' : ''}`}
+                onClick={() => onCellClick(date, h)}
+                onDragOver={(e) => { e.preventDefault(); setDragOverHour(h); }}
+                onDragLeave={() => setDragOverHour(null)}
+                onDrop={(e) => { e.preventDefault(); if (draggedEvent && onEventDrop) onEventDrop(draggedEvent, date, h); setDraggedEvent(null); setDragOverHour(null); }} />
+            </div>
+          ));
+        })}
+        <div className="absolute top-0 left-0" style={{ right: '60px', height: `${cumulativeOffset}px` }}>
+          {laid.map(ev => {
+            const startH = getHours(new Date(ev.start_time)) + getMinutes(new Date(ev.start_time)) / 60;
+            const endH = getHours(new Date(ev.end_time)) + getMinutes(new Date(ev.end_time)) / 60;
+            const startOffset = hourToOffset.get(Math.floor(startH)) || 0;
+            const endOffset = hourToOffset.get(Math.floor(endH)) || 0;
+            const top = startOffset + ((startH % 1) * 60);
+            const height = Math.max(endOffset - startOffset + ((endH % 1) * 60) - ((startH % 1) * 60), 24);
+            const widthPct = 100 / ev.totalCols;
+            const rightPct = ev.col * widthPct;
+            const bg = CAT_BG[ev.category] || CAT_BG['אחר'];
+            
+            return (
+              <button
+                key={ev.id}
+                draggable
+                onDragStart={(e) => { e.stopPropagation(); setDraggedEvent(ev); }}
+                onClick={() => onEventClick(ev)}
+                style={{ top: `${top}px`, height: `${height}px`, right: `${rightPct}%`, width: `${widthPct - 1}%`, backgroundColor: bg + '18', borderRight: `3px solid ${bg}` }}
+                className={`absolute rounded-md px-1 py-0.5 overflow-hidden cursor-pointer transition-all hover:shadow-md pointer-events-auto ${conflicts.has(ev.id) ? 'ring-2 ring-red-400 ring-offset-1' : ''}`}
+              >
+                {conflicts.has(ev.id) && <AlertTriangle size={9} className="absolute top-0.5 left-0.5 text-red-500" />}
+                <p className="text-[10px] font-semibold truncate" style={{ color: bg }}>{ev.title}</p>
+                {height > 28 && <p className="text-[9px] text-gray-500">{fmtTime(ev.start_time)} - {fmtTime(ev.end_time)}</p>}
+                {height > 44 && <span className={`inline-block text-[8px] px-1 rounded mt-0.5 ${PERSON_COLORS[ev.person] || 'bg-gray-100 text-gray-800'}`}>{ev.person}</span>}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
