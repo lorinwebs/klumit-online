@@ -199,7 +199,7 @@ export default function ReunionPage() {
             
             {/* Telegram Payment Link */}
             <a
-              href="https://links.payboxapp.com/uxwbirWIN0b"
+              href="https://links.payboxapp.com/ROF2GSCOP0b"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-8 py-3.5 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-lg rounded-lg"
