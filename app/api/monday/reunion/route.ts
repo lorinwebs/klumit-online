@@ -103,11 +103,15 @@ export async function GET(request: NextRequest) {
         return acc;
       }, {} as Record<string, string>);
 
-      // קביעת כיתה - אם יש "אחר" עם ערך, להשתמש בו, אחרת להשתמש בערך מה-dropdown
-      let className = columns[CLASS_COLUMN_ID] || '';
-      if (className === 'אחר' && columns[OTHER_CLASS_COLUMN_ID]) {
-        className = columns[OTHER_CLASS_COLUMN_ID];
-      }
+      // קביעת כיתה
+      const originalClassName = columns[CLASS_COLUMN_ID] || '';
+      const otherClassValue = columns[OTHER_CLASS_COLUMN_ID] || '';
+      
+      // מיפוי "לא זוכר\ת" מ-Monday ל-"אחר" ב-UI (שים לב ל-backslash)
+      const normalizedClassName = originalClassName.trim();
+      const className = (normalizedClassName === 'לא זוכר\\ת' || normalizedClassName === 'לא זוכרת' || normalizedClassName === 'לא זוכרות' || normalizedClassName === 'אחר') 
+        ? 'אחר' 
+        : (normalizedClassName || 'לא צוין');
 
       // Parse paid field - Monday status/color column
       const paidValue = columns[PAID_COLUMN_ID];
@@ -125,7 +129,7 @@ export async function GET(request: NextRequest) {
 
       return {
         name: item.name,
-        className: className || 'לא צוין',
+        className: className,
         phone: columns['phonewmatatfo'] || '',
         email: columns['emailpm71o46m'] || '',
         city: columns['short_texthbssufi9'] || '',
@@ -134,7 +138,7 @@ export async function GET(request: NextRequest) {
         meetingStyle: columns['single_selectgrjlcmm'] || '',
         notes: columns['long_text1wz8do45'] || '',
         wantsToHelp: columns['single_selectpw3esvn'] || '',
-        otherClass: className === 'אחר' ? columns[OTHER_CLASS_COLUMN_ID] : undefined,
+        otherClass: (normalizedClassName === 'אחר' || normalizedClassName === 'לא זוכר\\ת' || normalizedClassName === 'לא זוכרת' || normalizedClassName === 'לא זוכרות') && otherClassValue ? otherClassValue : undefined,
         paid: isPaid,
       };
     });
