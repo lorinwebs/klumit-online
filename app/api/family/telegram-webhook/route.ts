@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { buildDailyScheduleMessage, sendToChat, editMessage, notifyNewEvent } from '@/lib/telegram-family';
 
+// Store editing state: chatId -> { eventId, originalEvent }
+const editingState = new Map<string, { eventId: string; originalEvent: any }>();
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Handle inline button callbacks (e.g. delete event)
+    // Handle inline button callbacks (e.g. delete event, edit event)
     const callback = body.callback_query;
     if (callback) {
       const cbChatId = String(callback.message.chat.id);
@@ -22,6 +25,27 @@ export async function POST(request: NextRequest) {
         } else {
           await editMessage(cbChatId, cbMsgId, '🗑 האירוע נמחק מהיומן');
         }
+      } else if (cbData.startsWith('edit_event:')) {
+        const eventId = cbData.replace('edit_event:', '');
+        const supabase = createSupabaseAdminClient();
+        const { data: event } = await supabase.from('family_events').select('*').eq('id', eventId).single();
+        if (event) {
+          // Store the event being edited
+          editingState.set(cbChatId, { eventId, originalEvent: event });
+          
+          const eventDate = new Date(event.start_time).toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' });
+          const startTime = new Date(event.start_time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem' });
+          const endTime = new Date(event.end_time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem' });
+          
+          await editMessage(cbChatId, cbMsgId, callback.message.text + '\n\n✏️ מצב עריכה - כתבו את האירוע המעודכן');
+          await sendToChat(cbChatId, `✏️ <b>עריכת אירוע</b>\n\nכתבו את הפרטים המעודכנים (או שלחו הודעה קולית/תמונה):\n\n<b>האירוע הנוכחי:</b>\n📌 ${event.title}\n👤 ${event.person}\n🗓 ${eventDate}\n🕐 ${startTime} - ${endTime}\n\n💡 האירוע הישן יימחק אוטומטית אחרי הוספת האירוע החדש.\n\nלביטול - שלחו /cancel`, [[
+            { text: '❌ ביטול עריכה', callback_data: `cancel_edit:${eventId}` }
+          ]]);
+        }
+      } else if (cbData.startsWith('cancel_edit:')) {
+        const eventId = cbData.replace('cancel_edit:', '');
+        editingState.delete(cbChatId);
+        await editMessage(cbChatId, cbMsgId, 'ביטול עריכה - האירוע נשמר כמו שהיה');
       }
       return NextResponse.json({ ok: true });
     }
@@ -36,6 +60,14 @@ export async function POST(request: NextRequest) {
     // Handle voice messages
     if (message.voice) {
       await handleVoiceMessage(chatId, message.voice.file_id);
+      return NextResponse.json({ ok: true });
+    }
+
+    // Handle photo messages
+    if (message.photo && message.photo.length > 0) {
+      // Get the largest photo
+      const photo = message.photo[message.photo.length - 1];
+      await handlePhotoMessage(chatId, photo.file_id, message.caption);
       return NextResponse.json({ ok: true });
     }
 
@@ -56,8 +88,15 @@ export async function POST(request: NextRequest) {
       await handleWeek(chatId);
     } else if (text === '/site' || text === '/site@hayat_schedule_bot') {
       await sendToChat(chatId, `🌐 <b>היומן המשפחתי באתר</b>\n\n📅 כניסה ליומן:\nhttps://klumit-online.co.il/family-schedule\n\n💡 באתר תוכלו לראות את כל האירועים, להוסיף ולערוך בקלות`);
+    } else if (text === '/cancel' || text === '/cancel@hayat_schedule_bot') {
+      if (editingState.has(chatId)) {
+        editingState.delete(chatId);
+        await sendToChat(chatId, '❌ ביטול עריכה - האירוע נשמר כמו שהיה');
+      } else {
+        await sendToChat(chatId, 'אין עריכה פעילה לביטול');
+      }
     } else if (text === '/help' || text === '/help@hayat_schedule_bot' || text === '/start' || text === '/start@hayat_schedule_bot') {
-      await sendToChat(chatId, `🤖 <b>בוט היומן המשפחתי</b>\n\n📝 <b>להוספת אירוע:</b> פשוט כתבו בשפה חופשית או שלחו הודעה קולית\nלדוגמה: "אימון של לורין מחר ב-18:00"\n\n📋 <b>פקודות:</b>\n/today - לוז היום\n/tomorrow - לוז מחר\n/week - לוז שבועי\n/site - לינק ליומן באתר\n/help - עזרה`);
+      await sendToChat(chatId, `🤖 <b>בוט היומן המשפחתי</b>\n\n📝 <b>להוספת אירוע:</b>\n• כתבו בשפה חופשית\n• שלחו הודעה קולית 🎤\n• שלחו תמונה של לוז/הזמנה 📸\nלדוגמה: "אימון של לורין מחר ב-18:00"\n\n✏️ <b>לעריכה/מחיקה:</b>\nאחרי הוספת אירוע תקבלו כפתורים לעריכה ומחיקה\n\n📋 <b>פקודות:</b>\n/today - לוז היום\n/tomorrow - לוז מחר\n/week - לוז שבועי\n/site - לינק ליומן באתר\n/cancel - ביטול עריכה\n/help - עזרה`);
     } else if (!text.startsWith('/')) {
       await handleAddEvent(chatId, text);
     }
@@ -227,6 +266,10 @@ async function handleAddEvent(chatId: string, text: string) {
     const endTime = new Date(`${endDate}T${parsed.end_time}:00${tz}`).toISOString();
 
     const supabase = createSupabaseAdminClient();
+    
+    // Check if we're editing an existing event
+    const editingInfo = editingState.get(chatId);
+    
     const { data: inserted, error } = await supabase.from('family_events').insert({
       title: parsed.title,
       person: parsed.person,
@@ -243,11 +286,19 @@ async function handleAddEvent(chatId: string, text: string) {
       return;
     }
 
+    // If we were editing an event, delete the old one now
+    if (editingInfo) {
+      await supabase.from('family_events').delete().eq('id', editingInfo.eventId);
+      editingState.delete(chatId);
+    }
+
     const DAYS_HE_L = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
     const evDay = DAYS_HE_L[new Date(parsed.date).getDay()];
     const multiDay = parsed.end_date && parsed.end_date !== parsed.date;
 
-    let msg = `✅ <b>אירוע נוסף ליומן!</b>\n\n📌 <b>${parsed.title}</b>\n👤 ${parsed.person}\n🗓 יום ${evDay}, ${parsed.date}`;
+    let msg = editingInfo 
+      ? `✅ <b>אירוע עודכן ביומן!</b>\n\n📌 <b>${parsed.title}</b>\n👤 ${parsed.person}\n🗓 יום ${evDay}, ${parsed.date}`
+      : `✅ <b>אירוע נוסף ליומן!</b>\n\n📌 <b>${parsed.title}</b>\n👤 ${parsed.person}\n🗓 יום ${evDay}, ${parsed.date}`;
     if (multiDay) msg += ` עד ${parsed.end_date}`;
     msg += `\n🕐 ${parsed.start_time} - ${parsed.end_time}`;
     if (parsed.reminder_minutes) {
@@ -265,7 +316,12 @@ async function handleAddEvent(chatId: string, text: string) {
     }
     if (parsed.notes) msg += `\n📝 ${parsed.notes}`;
 
-    await sendToChat(chatId, msg, [[{ text: '🗑 מחק אירוע', callback_data: `delete_event:${inserted.id}` }]]);
+    await sendToChat(chatId, msg, [
+      [
+        { text: '✏️ ערוך אירוע', callback_data: `edit_event:${inserted.id}` },
+        { text: '🗑 מחק אירוע', callback_data: `delete_event:${inserted.id}` }
+      ]
+    ]);
 
     // Notify all family chat members (except the sender)
     notifyNewEvent({ title: parsed.title, person: parsed.person, category: parsed.category, start_time: startTime, end_time: endTime, notes: parsed.notes || null, reminder_minutes: parsed.reminder_minutes || null }, chatId).catch((err) => {
@@ -325,5 +381,80 @@ async function handleVoiceMessage(chatId: string, fileId: string) {
     await handleAddEvent(chatId, transcription.text);
   } catch {
     await sendToChat(chatId, '❌ שגיאה בעיבוד הודעה קולית');
+  }
+}
+
+async function handlePhotoMessage(chatId: string, fileId: string, caption?: string) {
+  const botToken = process.env.TELEGRAM_CHAT_BOT_HAYAT_SCHEDULE;
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!botToken || !apiKey) {
+    await sendToChat(chatId, '❌ שגיאה: חסרים מפתחות API');
+    return;
+  }
+
+  try {
+    await sendToChat(chatId, '📸 מעבד תמונה...');
+
+    // Get file path from Telegram
+    const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
+    const fileData = await fileRes.json();
+    if (!fileData.ok || !fileData.result.file_path) {
+      await sendToChat(chatId, '❌ לא הצלחתי להוריד את התמונה');
+      return;
+    }
+
+    // Get the photo URL
+    const photoUrl = `https://api.telegram.org/file/bot${botToken}/${fileData.result.file_path}`;
+
+    // Use OpenAI Vision API to extract text/info from the image
+    const visionRes = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'אתה עוזר שמפענח תמונות ומחלץ מהן מידע על אירועים. תחלץ תאריכים, שעות, שמות, מקומות וכל מידע רלוונטי. החזר את המידע בעברית בצורה ברורה.'
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: caption || 'מה כתוב בתמונה? חלץ מידע על אירועים, תאריכים, שעות ופרטים רלוונטיים.'
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: photoUrl
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 500
+      })
+    });
+
+    const visionData = await visionRes.json();
+    const extractedText = visionData.choices?.[0]?.message?.content;
+    
+    if (!extractedText) {
+      await sendToChat(chatId, '❌ לא הצלחתי לפענח את התמונה');
+      return;
+    }
+
+    await sendToChat(chatId, `📝 מה מצאתי בתמונה:\n${extractedText}`);
+
+    // Process the extracted text as an event
+    await handleAddEvent(chatId, extractedText);
+  } catch (error) {
+    console.error('Photo processing error:', error);
+    await sendToChat(chatId, '❌ שגיאה בעיבוד התמונה');
   }
 }
