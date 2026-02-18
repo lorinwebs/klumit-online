@@ -96,9 +96,9 @@ export async function POST(request: NextRequest) {
         await sendToChat(chatId, 'אין עריכה פעילה לביטול');
       }
     } else if (text === '/help' || text === '/help@hayat_schedule_bot' || text === '/start' || text === '/start@hayat_schedule_bot') {
-      await sendToChat(chatId, `🤖 <b>בוט היומן המשפחתי</b>\n\n📝 <b>להוספת אירוע:</b>\n• כתבו בשפה חופשית\n• שלחו הודעה קולית 🎤\n• שלחו תמונה של לוז/הזמנה 📸\nלדוגמה: "אימון של לורין מחר ב-18:00"\n\n✏️ <b>לעריכה/מחיקה:</b>\nאחרי הוספת אירוע תקבלו כפתורים לעריכה ומחיקה\n\n📋 <b>פקודות:</b>\n/today - לוז היום\n/tomorrow - לוז מחר\n/week - לוז שבועי\n/site - לינק ליומן באתר\n/cancel - ביטול עריכה\n/help - עזרה`);
+      await sendToChat(chatId, `🤖 <b>בוט היומן המשפחתי</b>\n\n📝 <b>להוספת אירוע:</b>\n• כתבו בשפה חופשית\n• שלחו הודעה קולית 🎤\n• שלחו תמונה של לוז/הזמנה 📸\nלדוגמה: "אימון של לורין מחר ב-18:00"\n\n🔍 <b>לשאילתות:</b>\n• "מה יש לי ב-1.3?"\n• "מה יש לי ביום שלישי?"\n• "מה יש לי מחר?"\n\n✏️ <b>לעריכה:</b>\n• "תזיז את הפיאלטיס מרביעי לחמישי באותה שעה"\n• "שנה את האימון של לורין למחר ב-17:00"\n• או השתמשו בכפתורים אחרי הוספת אירוע\n\n📋 <b>פקודות:</b>\n/today - לוז היום\n/tomorrow - לוז מחר\n/week - לוז שבועי\n/site - לינק ליומן באתר\n/cancel - ביטול עריכה\n/help - עזרה`);
     } else if (!text.startsWith('/')) {
-      await handleAddEvent(chatId, text);
+      await handleFreeText(chatId, text);
     }
 
     return NextResponse.json({ ok: true });
@@ -456,5 +456,277 @@ async function handlePhotoMessage(chatId: string, fileId: string, caption?: stri
   } catch (error) {
     console.error('Photo processing error:', error);
     await sendToChat(chatId, '❌ שגיאה בעיבוד התמונה');
+  }
+}
+
+// Handle free text - determine if it's a query, edit, or add event
+async function handleFreeText(chatId: string, text: string) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    await sendToChat(chatId, '❌ שגיאה: חסר מפתח OpenAI');
+    return;
+  }
+
+  try {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { 
+            role: 'system', 
+            content: `קבע מה סוג הפעולה שהמשתמש מבקש. החזר רק אחד מהערכים הבאים:
+- "query" - אם המשתמש שואל על אירועים (מה יש ב..., מה יש לי ב..., תראה לי מה יש ב...)
+- "edit" - אם המשתמש מבקש לערוך/להזיז/לשנות אירוע קיים (תזיז את..., שנה את..., העבר את..., תעדכן את...)
+- "add" - בכל מקרה אחר (הוספת אירוע חדש)
+
+החזר JSON בלבד: {"action": "query|edit|add"}` 
+          },
+          { role: 'user', content: text },
+        ],
+        temperature: 0.1,
+        max_tokens: 50,
+      }),
+    });
+
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) { 
+      await handleAddEvent(chatId, text);
+      return; 
+    }
+
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) { 
+      await handleAddEvent(chatId, text);
+      return; 
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    
+    if (parsed.action === 'query') {
+      await handleQuery(chatId, text);
+    } else if (parsed.action === 'edit') {
+      await handleEditCommand(chatId, text);
+    } else {
+      await handleAddEvent(chatId, text);
+    }
+  } catch (error) {
+    console.error('Free text classification error:', error);
+    await handleAddEvent(chatId, text);
+  }
+}
+
+// Handle query - "מה יש לי ב-1.3?"
+async function handleQuery(chatId: string, text: string) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    await sendToChat(chatId, '❌ שגיאה: חסר מפתח OpenAI');
+    return;
+  }
+
+  const now = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+  const dayName = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'][new Date().getDay()];
+
+  try {
+    await sendToChat(chatId, '🔍 מחפש...');
+
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { 
+            role: 'system', 
+            content: `חלץ את התאריך שהמשתמש שואל עליו. החזר JSON בלבד:
+{"date": "YYYY-MM-DD"}
+
+היום: ${now} (יום ${dayName})
+אם צוין יום בשבוע (למשל "יום שני"), חשב את התאריך הקרוב ביותר קדימה.` 
+          },
+          { role: 'user', content: text },
+        ],
+        temperature: 0.1,
+        max_tokens: 100,
+      }),
+    });
+
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) { 
+      await sendToChat(chatId, '❌ לא הצלחתי להבין איזה תאריך');
+      return; 
+    }
+
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) { 
+      await sendToChat(chatId, '❌ לא הצלחתי להבין איזה תאריך');
+      return; 
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    const queryDate = new Date(parsed.date);
+    
+    await handleDaySchedule(chatId, queryDate);
+  } catch (error) {
+    console.error('Query handling error:', error);
+    await sendToChat(chatId, '❌ שגיאה בחיפוש');
+  }
+}
+
+// Handle edit command - "תזיז את הפיאלטיס מרביעי לחמישי"
+async function handleEditCommand(chatId: string, text: string) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    await sendToChat(chatId, '❌ שגיאה: חסר מפתח OpenAI');
+    return;
+  }
+
+  const now = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+  const dayName = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'][new Date().getDay()];
+
+  try {
+    await sendToChat(chatId, '🔄 מעבד בקשת עריכה...');
+
+    // First, extract what event to find and what to change
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { 
+            role: 'system', 
+            content: `חלץ את פרטי העריכה מהבקשה. החזר JSON בלבד:
+{
+  "search_title": "שם האירוע לחפש (למשל: פיאלטיס, אימון, וכו')",
+  "from_day": "יום מקור (שם היום או תאריך YYYY-MM-DD או null)",
+  "to_day": "יום יעד (שם היום או תאריך YYYY-MM-DD או null)",
+  "new_time": "שעה חדשה HH:MM או null",
+  "new_person": "שם חדש או null"
+}
+
+היום: ${now} (יום ${dayName})
+אם צוין יום בשבוע, החזר את שם היום בעברית (ראשון, שני, שלישי, רביעי, חמישי, שישי, שבת).` 
+          },
+          { role: 'user', content: text },
+        ],
+        temperature: 0.1,
+        max_tokens: 200,
+      }),
+    });
+
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) { 
+      await sendToChat(chatId, '❌ לא הצלחתי להבין את בקשת העריכה');
+      return; 
+    }
+
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) { 
+      await sendToChat(chatId, '❌ לא הצלחתי להבין את בקשת העריכה');
+      return; 
+    }
+
+    const editRequest = JSON.parse(jsonMatch[0]);
+    
+    // Find the event
+    const supabase = createSupabaseAdminClient();
+    
+    // Calculate date range to search
+    let startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7); // Search last 7 days
+    let endDate = new Date();
+    endDate.setDate(endDate.getDate() + 30); // Search next 30 days
+    
+    // If from_day is specified, narrow the search
+    if (editRequest.from_day) {
+      const dayMap: Record<string, number> = {
+        'ראשון': 0, 'שני': 1, 'שלישי': 2, 'רביעי': 3, 'חמישי': 4, 'שישי': 5, 'שבת': 6
+      };
+      
+      if (dayMap[editRequest.from_day] !== undefined) {
+        // Find next occurrence of this day
+        const today = new Date();
+        const targetDay = dayMap[editRequest.from_day];
+        const daysUntil = (targetDay - today.getDay() + 7) % 7;
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() + daysUntil);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(startDate);
+        endDate.setHours(23, 59, 59, 999);
+      }
+    }
+
+    const { data: events } = await supabase
+      .from('family_events')
+      .select('*')
+      .gte('start_time', startDate.toISOString())
+      .lte('start_time', endDate.toISOString())
+      .ilike('title', `%${editRequest.search_title}%`)
+      .order('start_time', { ascending: true })
+      .limit(1);
+
+    if (!events || events.length === 0) {
+      await sendToChat(chatId, `❌ לא מצאתי אירוע "${editRequest.search_title}"`);
+      return;
+    }
+
+    const event = events[0];
+    
+    // Calculate new date/time
+    let newStartTime = new Date(event.start_time);
+    let newEndTime = new Date(event.end_time);
+    
+    // Change day if requested
+    if (editRequest.to_day) {
+      const dayMap: Record<string, number> = {
+        'ראשון': 0, 'שני': 1, 'שלישי': 2, 'רביעי': 3, 'חמישי': 4, 'שישי': 5, 'שבת': 6
+      };
+      
+      if (dayMap[editRequest.to_day] !== undefined) {
+        const currentDay = newStartTime.getDay();
+        const targetDay = dayMap[editRequest.to_day];
+        const dayDiff = (targetDay - currentDay + 7) % 7 || 7; // If same day, move to next week
+        newStartTime.setDate(newStartTime.getDate() + dayDiff);
+        newEndTime.setDate(newEndTime.getDate() + dayDiff);
+      }
+    }
+    
+    // Change time if requested
+    if (editRequest.new_time) {
+      const [hours, minutes] = editRequest.new_time.split(':').map(Number);
+      const duration = newEndTime.getTime() - new Date(event.start_time).getTime();
+      newStartTime.setHours(hours, minutes, 0, 0);
+      newEndTime = new Date(newStartTime.getTime() + duration);
+    }
+    
+    // Update the event
+    const { error } = await supabase
+      .from('family_events')
+      .update({
+        start_time: newStartTime.toISOString(),
+        end_time: newEndTime.toISOString(),
+        person: editRequest.new_person || event.person,
+      })
+      .eq('id', event.id);
+
+    if (error) {
+      await sendToChat(chatId, `❌ שגיאה בעדכון: ${error.message}`);
+      return;
+    }
+
+    const DAYS_HE = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+    const newDay = DAYS_HE[newStartTime.getDay()];
+    const newTime = newStartTime.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem' });
+    const newDate = newStartTime.toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' });
+    
+    await sendToChat(chatId, `✅ <b>אירוע עודכן!</b>\n\n📌 ${event.title}\n👤 ${editRequest.new_person || event.person}\n🗓 יום ${newDay}, ${newDate}\n🕐 ${newTime}`);
+  } catch (error) {
+    console.error('Edit command error:', error);
+    await sendToChat(chatId, '❌ שגיאה בעריכה');
   }
 }
