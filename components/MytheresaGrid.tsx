@@ -158,6 +158,11 @@ export default function MytheresaGrid({
   const [selectedVendors, setSelectedVendors] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    setSelectedVendors(new Set());
+    setShowFilters(false);
+  }, [category]);
+
+  useEffect(() => {
     async function fetchProducts() {
       try {
         const data = await shopifyClient.request<{
@@ -352,7 +357,7 @@ export default function MytheresaGrid({
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute left-0 top-full mt-1 bg-white border border-gray-200 shadow-lg z-50 min-w-[200px] max-h-[400px] overflow-y-auto"
+                className="absolute right-0 top-full mt-1 bg-white border border-gray-200 shadow-lg z-50 min-w-[200px] max-h-[400px] overflow-y-auto"
               >
                 <div className="p-2">
                   <div className="text-[10px] font-light text-gray-500 px-2 py-2 border-b border-gray-100">
@@ -394,7 +399,7 @@ export default function MytheresaGrid({
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute left-0 top-full mt-1 bg-white border border-gray-200 shadow-lg z-50 min-w-[200px]"
+                className="absolute right-0 top-full mt-1 bg-white border border-gray-200 shadow-lg z-50 min-w-[200px]"
               >
                 <button
                   onClick={() => {
