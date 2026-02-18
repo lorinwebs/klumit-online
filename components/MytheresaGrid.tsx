@@ -311,7 +311,7 @@ export default function MytheresaGrid({
       )}
 
       {/* Filters & Sort Bar - Sticky */}
-      <div className="sticky top-[168px] md:top-[170px] z-40 bg-white border-b border-gray-200">
+      <div className={`sticky ${showViewAll ? 'top-[168px] md:top-[170px]' : 'top-[96px] md:top-[70px]'} z-40 bg-white border-b border-gray-200`}>
         {/* Mobile: Full width grid */}
         <div className="grid grid-cols-2 md:hidden">
           {/* Filters Button - Full width */}
@@ -582,31 +582,35 @@ export default function MytheresaGrid({
         )}
       </div>
 
-      {/* Shop Categories Buttons */}
-      {showViewAll && maxProducts && (
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
-            <a
-              href="/products?tab=wallets"
-              className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-4 text-sm tracking-wider uppercase font-light bg-white text-[#1a1a1a] border-2 border-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white transition-all duration-300"
-            >
-              <span>{t('products.shopWallets')}</span>
-            </a>
-            <a
-              href="/products?tab=belts"
-              className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-4 text-sm tracking-wider uppercase font-light bg-white text-[#1a1a1a] border-2 border-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white transition-all duration-300"
-            >
-              <span>{t('products.shopBelts')}</span>
-            </a>
+      {/* Shop Categories Buttons - Homepage: all 3, Category pages: other 2 */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
+          {(showViewAll || category !== 'bags') && (
             <a
               href="/products?tab=bags"
               className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-4 text-sm tracking-wider uppercase font-light bg-white text-[#1a1a1a] border-2 border-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white transition-all duration-300"
             >
               <span>{t('products.shopBags')}</span>
             </a>
-          </div>
+          )}
+          {(showViewAll || category !== 'belts') && (
+            <a
+              href="/products?tab=belts"
+              className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-4 text-sm tracking-wider uppercase font-light bg-white text-[#1a1a1a] border-2 border-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white transition-all duration-300"
+            >
+              <span>{t('products.shopBelts')}</span>
+            </a>
+          )}
+          {(showViewAll || category !== 'wallets') && (
+            <a
+              href="/products?tab=wallets"
+              className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-4 text-sm tracking-wider uppercase font-light bg-white text-[#1a1a1a] border-2 border-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white transition-all duration-300"
+            >
+              <span>{t('products.shopWallets')}</span>
+            </a>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

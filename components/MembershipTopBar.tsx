@@ -12,6 +12,7 @@ export default function MembershipTopBar() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [messageIndex, setMessageIndex] = useState(0);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -86,6 +87,13 @@ export default function MembershipTopBar() {
     };
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMessageIndex((prev) => (prev === 0 ? 1 : 0));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleClick = async () => {
     // שלח אירוע לטלגרם שלחצו על הבר
     try {
@@ -132,14 +140,30 @@ export default function MembershipTopBar() {
   return (
     <>
       <div className="relative bg-red-600 text-white py-[3px] md:py-3 px-4 text-center z-[70]">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 md:gap-4">
-          <button
-            onClick={handleClick}
-            className="text-[10px] md:text-base font-light hover:underline cursor-pointer leading-tight"
-            dir={language === 'he' ? 'rtl' : 'ltr'}
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 md:gap-4 relative overflow-hidden" style={{ minHeight: '1.5em' }}>
+          <div
+            className="transition-opacity duration-500 absolute inset-0 flex items-center justify-center"
+            style={{ opacity: messageIndex === 0 ? 1 : 0, pointerEvents: messageIndex === 0 ? 'auto' : 'none' }}
           >
-            {t('membership.topBar')} <span className="font-medium">{t('membership.discount')}</span> {t('membership.firstPurchase')}
-          </button>
+            <button
+              onClick={handleClick}
+              className="text-[10px] md:text-base font-light hover:underline cursor-pointer leading-tight"
+              dir={language === 'he' ? 'rtl' : 'ltr'}
+            >
+              {t('membership.topBar')} <span className="font-medium">{t('membership.discount')}</span> {t('membership.firstPurchase')}
+            </button>
+          </div>
+          <div
+            className="transition-opacity duration-500 absolute inset-0 flex items-center justify-center"
+            style={{ opacity: messageIndex === 1 ? 1 : 0, pointerEvents: messageIndex === 1 ? 'auto' : 'none' }}
+          >
+            <span
+              className="text-[10px] md:text-base font-light leading-tight"
+              dir={language === 'he' ? 'rtl' : 'ltr'}
+            >
+              משלוח חינם בקנייה מעל ₪250
+            </span>
+          </div>
           <button
             onClick={handleDismiss}
             className="absolute left-0.5 md:left-1 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors p-0.5"

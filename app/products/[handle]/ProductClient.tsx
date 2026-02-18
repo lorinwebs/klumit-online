@@ -75,6 +75,10 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const [relatedProducts] = useState<Product[]>(initialRelatedProducts);
   const [showZoomModal, setShowZoomModal] = useState(false);
   const [zoomImageIndex, setZoomImageIndex] = useState(0);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterConsent, setNewsletterConsent] = useState(false);
+  const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [newsletterError, setNewsletterError] = useState('');
   const addItem = useCartStore((state) => state.addItem);
   const items = useCartStore((state) => state.items);
   const imageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -480,6 +484,32 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     setShowZoomModal(true);
   };
 
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail || !newsletterConsent) return;
+    
+    setNewsletterStatus('loading');
+    setNewsletterError('');
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: newsletterEmail }),
+      });
+      if (res.ok) {
+        setNewsletterStatus('success');
+        setNewsletterEmail('');
+        setNewsletterConsent(false);
+      } else {
+        setNewsletterStatus('error');
+        setNewsletterError('אירעה שגיאה, נסו שוב');
+      }
+    } catch {
+      setNewsletterStatus('error');
+      setNewsletterError('אירעה שגיאה, נסו שוב');
+    }
+  };
+
   // Share to WhatsApp
   const handleShareWhatsApp = async () => {
     const productUrl = typeof window !== 'undefined' 
@@ -717,99 +747,30 @@ export default function ProductClient({ product, relatedProducts: initialRelated
             <div className="md:sticky md:top-32">
               {/* Mobile - Image Gallery */}
               <div className="md:hidden mb-1">
-                {/* Navigation Arrows - Outside image */}
-                {filteredImages.length > 1 && (
-                  <div className="flex items-center justify-center gap-4 mb-2 w-full">
-                    <button
-                      onClick={() => {
-                        const newIndex = currentImageIndex === 0 
-                          ? filteredImages.length - 1 
-                          : currentImageIndex - 1;
-                        setCurrentImageIndex(newIndex);
-                        setSelectedImage(filteredImages[newIndex].node.url);
-                      }}
-                      className="bg-white/90 hover:bg-white rounded-full p-2 shadow-md transition-all border border-gray-200 flex-shrink-0"
-                      aria-label="Previous image"
+                {/* Mobile - Vertical stack of all images */}
+                <div className={`flex flex-col gap-1 ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}>
+                  {filteredImages.map(({ node }, index) => (
+                    <div
+                      key={node.url}
+                      className="relative bg-[#fdfcfb] w-full cursor-pointer"
+                      style={{ aspectRatio: '2/3' }}
+                      onClick={() => handleImageClick(index)}
                     >
-                      <ChevronRight size={20} className="text-[#1a1a1a]" />
-                    </button>
-                    {/* Main Image */}
-                    <div 
-                      className={`relative bg-[#fdfcfb] overflow-hidden touch-none flex-shrink-0 transition-opacity cursor-pointer group ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}
-                      style={{ width: '55%', maxWidth: '100%', aspectRatio: '2/3' }}
-                      onTouchStart={handleTouchStart}
-                      onTouchMove={handleTouchMove}
-                      onTouchEnd={handleTouchEnd}
-                      onClick={() => handleImageClick(currentImageIndex)}
-                      aria-live="polite"
-                      aria-label={`תמונה ${currentImageIndex + 1} מתוך ${filteredImages.length}`}
-                    >
-                      {selectedImage && (
-                        <>
-                          <Image
-                            key={selectedImage}
-                            src={selectedImage}
-                            alt={`${product.title} - תמונה ${currentImageIndex + 1}`}
-                            fill
-                            className="object-contain select-none"
-                            priority
-                            loading="eager"
-                            draggable={false}
-                            sizes="(max-width: 768px) 70vw, 50vw"
-                          />
-                          {/* Zoom Icon */}
-                          <div className="absolute top-2 left-2 bg-black/50 p-1.5 rounded-full">
-                            <Maximize2 size={16} className="text-white" />
-                          </div>
-                        </>
-                      )}
+                      <Image
+                        src={node.url}
+                        alt={`${product.title} - תמונה ${index + 1}`}
+                        fill
+                        className="object-contain"
+                        priority={index === 0}
+                        loading={index === 0 ? 'eager' : 'lazy'}
+                        sizes="100vw"
+                      />
                     </div>
-                    <button
-                      onClick={() => {
-                        const newIndex = currentImageIndex === filteredImages.length - 1 
-                          ? 0 
-                          : currentImageIndex + 1;
-                        setCurrentImageIndex(newIndex);
-                        setSelectedImage(filteredImages[newIndex].node.url);
-                      }}
-                      className="bg-white/90 hover:bg-white rounded-full p-2 shadow-md transition-all border border-gray-200 flex-shrink-0"
-                      aria-label="Next image"
-                    >
-                      <ChevronLeft size={20} className="text-[#1a1a1a]" />
-                    </button>
-                  </div>
-                )}
-                {/* Main Image - Without arrows if only one image */}
-                {filteredImages.length === 1 && (
-                  <div 
-                    className={`relative bg-[#fdfcfb] overflow-hidden mb-2 mx-auto touch-none transition-opacity cursor-pointer group ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}
-                    style={{ width: '55%', aspectRatio: '2/3' }}
-                    onClick={() => handleImageClick(0)}
-                  >
-                    {selectedImage && (
-                      <>
-                        <Image
-                          key={selectedImage}
-                          src={selectedImage}
-                          alt={product.title}
-                          fill
-                          className="object-contain select-none"
-                          priority
-                          loading="eager"
-                          draggable={false}
-                          sizes="(max-width: 768px) 70vw, 50vw"
-                        />
-                        {/* Zoom Icon */}
-                        <div className="absolute top-2 left-2 bg-black/50 p-1.5 rounded-full">
-                          <Maximize2 size={16} className="text-white" />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
+                  ))}
+                </div>
                 
-                {/* Mobile - Add to Cart & WhatsApp Buttons - Above thumbnails */}
-                <div className="md:hidden mb-4 px-4 space-y-2">
+                {/* Mobile - Add to Cart & WhatsApp Buttons */}
+                <div className="md:hidden mb-4 px-4 space-y-2 mt-4">
                   {(() => {
                     const existingItem = items.find((i) => i.variantId === currentVariant?.id);
                     const currentQuantity = existingItem?.quantity || 0;
@@ -849,34 +810,6 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     {t('products.shareViaWhatsApp')}
                   </button>
                 </div>
-                
-                {/* Thumbnail Images - Scrollable */}
-                {filteredImages.length > 1 && (
-                  <div className={`flex gap-2 overflow-x-auto pb-2 scrollbar-hide justify-center w-full transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}>
-                    {filteredImages.map(({ node }, index) => (
-                      <button
-                        key={node.url}
-                        onClick={() => {
-                          setSelectedImage(node.url);
-                          setCurrentImageIndex(index);
-                        }}
-                        className={`relative flex-shrink-0 w-16 h-16 overflow-hidden border-2 transition-all ${
-                          selectedImage === node.url
-                            ? 'border-[#1a1a1a] opacity-100'
-                            : 'border-gray-200 opacity-60'
-                        }`}
-                      >
-                        <Image
-                          src={node.url}
-                          alt={node.altText || product.title}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
               {/* Desktop - Scrollable images */}
               <div 
@@ -923,7 +856,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
             <div className="md:sticky md:top-32">
               {/* Mobile - Sticky Price & CTA Section */}
               <div className="md:hidden sticky top-0 bg-[#fdfcfb] z-10 pb-3 border-b border-gray-200 mb-4 -mt-2 w-full">
-                <div className="text-right space-y-3 pt-2 w-full">
+                <div className="text-center space-y-3 pt-2 w-full">
                   {/* Title */}
                   <div>
                     <h1 className="text-xl font-light luxury-font leading-tight">
@@ -951,7 +884,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                       <label className="block text-xs font-light mb-2 tracking-luxury uppercase text-gray-600">
                         {t('products.color')}
                       </label>
-                      <div className="flex flex-wrap gap-3">
+                      <div className="flex flex-wrap gap-3 justify-center">
                         {availableColors.map((color) => {
                           const isSelected = currentColor === color;
                           const variantsForColor = colorMap.get(color) || [];
@@ -1176,40 +1109,61 @@ export default function ProductClient({ product, relatedProducts: initialRelated
           </div>
         </div>
 
-        {/* Related Products Section - Infinite Luxury Edition */}
+        {/* Related Products Section */}
         {relatedProducts.length > 0 && (
           <section className="mt-24 pb-20 bg-white overflow-hidden border-t border-gray-100">
             <div className="pt-16 mb-12 px-4">
-              <div className="max-w-[1400px] mx-auto flex justify-between items-end">
-                <div className="space-y-2">
-                  <span className="text-xs uppercase tracking-[0.3em] text-gray-400 font-light">{t('products.recommended')}</span>
-                  <h2 className="text-3xl md:text-5xl font-light luxury-font text-[#1a1a1a]">
-                    {t('products.complementaryCollection')}
-                  </h2>
-                </div>
-                <Link href="/products?tab=bags" className="text-sm border-b border-[#1a1a1a] pb-1 hover:opacity-60 transition-opacity">
-                  {t('products.allProducts')}
-                </Link>
+              <div className="max-w-[1400px] mx-auto text-center">
+                <h2 className="text-2xl md:text-5xl font-light luxury-font text-[#1a1a1a] tracking-[0.15em] uppercase">
+                  YOU MAY ALSO LIKE
+                </h2>
               </div>
             </div>
 
-            {/* Infinite Marquee Container */}
-            <div className="relative group">
-              {/* Overlay Gradients לטשטוש בצדדים (נותן מראה יוקרתי) */}
-              <div className="absolute inset-y-0 left-0 w-20 md:w-40 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-              <div className="absolute inset-y-0 right-0 w-20 md:w-40 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+            {/* Mobile: 2x2 Grid */}
+            <div className="md:hidden px-4">
+              <div className="grid grid-cols-2 gap-3">
+                {relatedProducts.slice(0, 4).map((relatedProduct) => {
+                  const firstImage = relatedProduct.images.edges[0]?.node;
+                  return (
+                    <Link key={relatedProduct.id} href={`/products/${relatedProduct.handle}`} className="block">
+                      <div className="relative aspect-[3/4] overflow-hidden bg-[#f9f9f9]">
+                        {firstImage?.url && (
+                          <Image
+                            src={firstImage.url}
+                            alt={relatedProduct.title}
+                            fill
+                            className="object-cover"
+                            sizes="50vw"
+                          />
+                        )}
+                      </div>
+                      <div className="mt-3 text-center space-y-1">
+                        <h3 className="text-xs font-light tracking-tight text-gray-900 line-clamp-2">
+                          {relatedProduct.title}
+                        </h3>
+                        <p className="text-xs font-medium text-gray-500">
+                          ₪{formatPrice(relatedProduct.priceRange.minVariantPrice.amount)}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
 
+            {/* Desktop: Infinite Marquee */}
+            <div className="hidden md:block relative group">
+              <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+              <div className="absolute inset-y-0 right-0 w-40 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
               <div className="flex overflow-hidden" dir="ltr">
-                {/* אנחנו משכפלים את המערך כדי ליצור רצף אינסופי */}
                 <div className="flex animate-marquee py-4" style={{ width: 'max-content', flexShrink: 0 }}>
                   {[...relatedProducts, ...relatedProducts, ...relatedProducts].map((relatedProduct, index) => {
-                    const firstVariant = relatedProduct.variants.edges[0]?.node;
                     const firstImage = relatedProduct.images.edges[0]?.node;
-
                     return (
                       <div 
                         key={`${relatedProduct.id}-${index}`} 
-                        className="w-[280px] md:w-[400px] px-3 md:px-6 transition-transform duration-500 hover:-translate-y-2"
+                        className="w-[400px] px-6 transition-transform duration-500 hover:-translate-y-2"
                       >
                         <Link href={`/products/${relatedProduct.handle}`} className="block group/item">
                           <div className="relative aspect-[3/4] overflow-hidden bg-[#f9f9f9]">
@@ -1219,19 +1173,17 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                                 alt={relatedProduct.title}
                                 fill
                                 className="object-cover transition-transform duration-700 group-hover/item:scale-105"
-                                sizes="(max-width: 768px) 280px, 400px"
+                                sizes="400px"
                               />
                             )}
-                            {/* Hover Quick Add Overlay */}
                             <div className="absolute inset-0 bg-black/5 opacity-0 group-hover/item:opacity-100 transition-opacity flex items-end p-6">
                               <button className="w-full bg-white text-black py-3 text-xs uppercase tracking-widest translate-y-4 group-hover/item:translate-y-0 transition-transform duration-500">
                                 צפייה מהירה
                               </button>
                             </div>
                           </div>
-                          
                           <div className="mt-6 text-right space-y-1">
-                            <h3 className="text-sm md:text-base font-light tracking-tight text-gray-900">
+                            <h3 className="text-base font-light tracking-tight text-gray-900">
                               {relatedProduct.title}
                             </h3>
                             <p className="text-sm font-medium text-gray-500">
@@ -1247,6 +1199,59 @@ export default function ProductClient({ product, relatedProducts: initialRelated
             </div>
           </section>
         )}
+
+        {/* Newsletter Signup Section */}
+        <section className="py-12 px-4 bg-white border-t border-gray-100">
+          <div className="max-w-md mx-auto text-center">
+            {newsletterStatus === 'success' ? (
+              <div className="space-y-3">
+                <p className="text-lg font-light text-[#1a1a1a]">תודה שנרשמת!</p>
+                <p className="text-sm font-light text-gray-500">נשלח אליך עדכונים והטבות בקרוב.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleNewsletterSubmit} className="space-y-5">
+                <p className="text-sm font-light text-gray-700 leading-relaxed">
+                  10% הנחה ברכישה הבאה, בהצטרפות לניוזלטר, בכפוף לתקנון.
+                </p>
+
+                <label className="flex items-start gap-2 cursor-pointer text-right">
+                  <input
+                    type="checkbox"
+                    checked={newsletterConsent}
+                    onChange={(e) => setNewsletterConsent(e.target.checked)}
+                    className="mt-1 w-4 h-4 accent-[#1a1a1a] flex-shrink-0"
+                  />
+                  <span className="text-xs font-light text-gray-600 leading-relaxed">
+                    אני מאשר/ת קבלת חומרים פרסומיים
+                  </span>
+                </label>
+
+                <div className="flex border border-gray-300 overflow-hidden">
+                  <input
+                    type="email"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    placeholder="EMAIL"
+                    required
+                    className="flex-1 px-4 py-3 text-sm font-light bg-white focus:outline-none text-left"
+                    dir="ltr"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newsletterConsent || !newsletterEmail || newsletterStatus === 'loading'}
+                    className="px-6 py-3 bg-[#1a1a1a] text-white text-xs tracking-wider uppercase font-light hover:bg-[#2a2a2a] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex-shrink-0"
+                  >
+                    {newsletterStatus === 'loading' ? '...' : 'SIGN UP'}
+                  </button>
+                </div>
+
+                {newsletterError && (
+                  <p className="text-xs text-red-600 font-light">{newsletterError}</p>
+                )}
+              </form>
+            )}
+          </div>
+        </section>
       </main>
       
       {/* Floating Add to Cart - Mobile only */}

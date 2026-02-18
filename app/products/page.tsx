@@ -1,7 +1,6 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MytheresaGrid from '@/components/MytheresaGrid';
-import ValuePropsBar from '@/components/ValuePropsBar';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -26,7 +25,6 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <ValuePropsBar />
       <main id="main-content" className="flex-grow" role="main">
         <MytheresaGrid category={activeTab} showViewAll={false} />
       </main>

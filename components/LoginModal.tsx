@@ -21,6 +21,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
   const [step, setStep] = useState<'phone' | 'verify'>('phone');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [e164Phone, setE164Phone] = useState(''); // שמור את המספר המנורמל ב-E.164
 
   // פונקציה לניקוי מספר טלפון - רק ספרות
@@ -36,7 +37,8 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       setCode('');
       setStep('phone');
       setError('');
-      setE164Phone(''); // נקה את המספר המנורמל
+      setMarketingConsent(false);
+      setE164Phone('');
     }
   }, [isOpen]);
 
@@ -255,7 +257,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         </button>
 
         <h2 id="login-modal-title" className="text-2xl md:text-3xl font-light luxury-font mb-6 text-right">
-          התחברות
+          הצטרפות למועדון הלקוחות
         </h2>
 
         {step === 'phone' ? (
@@ -286,9 +288,22 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
               </div>
             )}
 
+            <label className="flex items-start gap-2 cursor-pointer text-right">
+              <input
+                type="checkbox"
+                checked={marketingConsent}
+                onChange={(e) => setMarketingConsent(e.target.checked)}
+                className="mt-1 w-4 h-4 accent-[#1a1a1a] flex-shrink-0"
+                required
+              />
+              <span className="text-xs font-light text-gray-600 leading-relaxed">
+                אני מסכימ/ה לקבל מידע וחומר שיווקי בהתאם לתנאי השימוש באתר
+              </span>
+            </label>
+
             <button
               type="submit"
-              disabled={loading || !phone.trim()}
+              disabled={loading || !phone.trim() || !marketingConsent}
               className="w-full bg-[#1a1a1a] text-white py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               {loading ? 'שולח קוד...' : 'שלח קוד אימות'}

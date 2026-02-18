@@ -134,14 +134,17 @@ export default function MembershipFloatingButton() {
           aria-label="הצטרף למועדון החברים"
           dir={language === 'he' ? 'rtl' : 'ltr'}
         >
-          <button
-            onClick={handleDismiss}
-            className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => handleDismiss(e as unknown as React.MouseEvent)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleDismiss(e as unknown as React.MouseEvent); }}
+            className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors cursor-pointer"
             aria-label="סגור"
             dir="ltr"
           >
             <X size={14} className="text-white" />
-          </button>
+          </span>
           <span className="text-sm md:text-base font-light tracking-luxury uppercase whitespace-nowrap">
             מועדון חברים - 20% לקניה ראשונה
           </span>
