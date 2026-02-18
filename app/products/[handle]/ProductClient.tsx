@@ -62,6 +62,75 @@ interface ProductClientProps {
   relatedProducts: Product[];
 }
 
+function RelatedProductCard({ relatedProduct, formatPrice }: { relatedProduct: Product; formatPrice: (p: string) => string }) {
+  const [imgIndex, setImgIndex] = useState(0);
+  const images = relatedProduct.images.edges;
+  const hasMultipleImages = images.length > 1;
+
+  return (
+    <div className="related-card flex-shrink-0 snap-start w-[calc(50%-8px)] md:w-[calc(25%-12px)]">
+      <div className="relative aspect-[3/4] overflow-hidden bg-[#f9f9f9] group">
+        <div className="absolute inset-0 flex items-center justify-center z-0">
+          <div className="w-5 h-5 border-2 border-gray-300 border-t-[#1a1a1a] rounded-full animate-spin" />
+        </div>
+        <Link href={`/products/${relatedProduct.handle}`} className="block w-full h-full relative z-[1]">
+          {images[imgIndex]?.node.url && (
+            <Image
+              src={images[imgIndex].node.url}
+              alt={relatedProduct.title}
+              fill
+              className="object-cover transition-opacity duration-300"
+              sizes="(max-width: 768px) 45vw, 23vw"
+            />
+          )}
+        </Link>
+        {hasMultipleImages && (
+          <>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setImgIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+              }}
+              className="absolute left-1 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white shadow rounded-full w-7 h-7 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
+              aria-label="Previous image"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setImgIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+              }}
+              className="absolute right-1 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white shadow rounded-full w-7 h-7 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
+              aria-label="Next image"
+            >
+              <ChevronRight size={16} />
+            </button>
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+              {images.slice(0, 5).map((_, i) => (
+                <span
+                  key={i}
+                  className={`block w-1.5 h-1.5 rounded-full transition-colors ${i === imgIndex ? 'bg-[#1a1a1a]' : 'bg-gray-300'}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+      <Link href={`/products/${relatedProduct.handle}`} className="block mt-3 text-center space-y-1">
+        <h3 className="text-xs md:text-sm font-light tracking-tight text-gray-900 line-clamp-2">
+          {relatedProduct.title}
+        </h3>
+        <p className="text-xs md:text-sm font-medium text-gray-500">
+          ₪{formatPrice(relatedProduct.priceRange.minVariantPrice.amount)}
+        </p>
+      </Link>
+    </div>
+  );
+}
+
 export default function ProductClient({ product, relatedProducts: initialRelatedProducts }: ProductClientProps) {
   const { t, language } = useLanguage();
   const [selectedVariant, setSelectedVariant] = useState<string>('');
@@ -83,6 +152,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const items = useCartStore((state) => state.items);
   const imageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const relatedScrollRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
   const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
@@ -703,18 +773,17 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     <>
 
       <main id="main-content" className="flex-grow max-w-[1400px] mx-auto px-4 pt-0 pb-16 md:py-20 w-full overflow-x-hidden" role="main">
-        <div className="grid grid-cols-12 gap-6 md:gap-8 items-start">
+        <div className="grid grid-cols-12 gap-4 md:gap-6 items-start">
           {/* Left Side - Thumbnail Images (Desktop only) */}
-          <div className="hidden md:block col-span-2 order-3">
+          <div className="hidden md:block col-span-1 order-3">
             {filteredImages.length > 0 && (
-              <div className={`flex flex-col gap-3 transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}>
+              <div className={`flex flex-col gap-2 transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}>
                 {filteredImages.map(({ node }, index) => (
                   <button
                     key={node.url}
                     onClick={() => {
                       setSelectedImage(node.url);
                       setCurrentImageIndex(index);
-                      // Scroll to image in center container
                       const imageElement = imageRefs.current[node.url];
                       if (imageElement && scrollContainerRef.current) {
                         imageElement.scrollIntoView({
@@ -723,7 +792,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                         });
                       }
                     }}
-                    className={`relative w-full aspect-square overflow-hidden border transition-luxury ${
+                    className={`relative w-full aspect-[3/4] overflow-hidden border transition-luxury ${
                       selectedImage === node.url
                         ? 'border-[#1a1a1a] ring-2 ring-[#1a1a1a] ring-opacity-20 opacity-100'
                         : 'border-gray-200 hover:border-gray-400 opacity-60 hover:opacity-80'
@@ -734,7 +803,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                       alt={node.altText || product.title}
                       fill
                       className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 16vw"
+                      sizes="8vw"
                     />
                   </button>
                 ))}
@@ -743,7 +812,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
           </div>
 
           {/* Center - Main Image (Scrollable on Desktop, Carousel on Mobile) */}
-          <div className="col-span-12 md:col-span-6 order-1 md:order-2">
+          <div className="col-span-12 md:col-span-7 order-1 md:order-2">
             <div className="md:sticky md:top-32">
               {/* Mobile - Image Gallery */}
               <div className="md:hidden mb-1">
@@ -756,11 +825,14 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                       style={{ aspectRatio: '2/3' }}
                       onClick={() => handleImageClick(index)}
                     >
+                      <div className="absolute inset-0 flex items-center justify-center z-0">
+                        <div className="w-6 h-6 border-2 border-gray-300 border-t-[#1a1a1a] rounded-full animate-spin" />
+                      </div>
                       <Image
                         src={node.url}
                         alt={`${product.title} - תמונה ${index + 1}`}
                         fill
-                        className="object-contain"
+                        className="object-contain z-[1]"
                         priority={index === 0}
                         loading={index === 0 ? 'eager' : 'lazy'}
                         sizes="100vw"
@@ -817,31 +889,32 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                 className={`hidden md:block overflow-y-auto transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''} scrollbar-hide`}
                 style={{ height: 'calc(100vh - 120px)' }}
               >
-                <div className="space-y-4" style={{ width: '100%' }}>
+                <div className="space-y-2" style={{ width: '100%' }}>
                   {filteredImages.map(({ node }, index) => (
                     <div
                       key={node.url}
                       ref={(el) => {
-                        // Clean up old ref
                         if (imageRefs.current[node.url] && imageRefs.current[node.url] !== el) {
                           delete imageRefs.current[node.url];
                         }
                         imageRefs.current[node.url] = el;
                       }}
                       className="relative w-full bg-[#fdfcfb] overflow-hidden cursor-pointer hover:opacity-90 transition-opacity group"
-                      style={{ height: 'calc(100vh - 140px)' }}
+                      style={{ aspectRatio: '3/4' }}
                       onClick={() => handleImageClick(index)}
                     >
+                      <div className="absolute inset-0 flex items-center justify-center z-0">
+                        <div className="w-6 h-6 border-2 border-gray-300 border-t-[#1a1a1a] rounded-full animate-spin" />
+                      </div>
                       <Image
                         src={node.url}
                         alt={node.altText || product.title}
                         fill
-                        className="object-contain"
+                        className="object-contain z-[1]"
                         priority={selectedImage === node.url}
-                        sizes="(max-width: 768px) 100vw, 50vw"
+                        sizes="60vw"
                       />
-                      {/* Zoom Icon - Appears on hover */}
-                      <div className="absolute top-4 left-4 bg-black/50 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute top-4 left-4 bg-black/50 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-[2]">
                         <Maximize2 size={20} className="text-white" />
                       </div>
                     </div>
@@ -1120,81 +1193,44 @@ export default function ProductClient({ product, relatedProducts: initialRelated
               </div>
             </div>
 
-            {/* Mobile: 2x2 Grid */}
-            <div className="md:hidden px-4">
-              <div className="grid grid-cols-2 gap-3">
-                {relatedProducts.slice(0, 4).map((relatedProduct) => {
-                  const firstImage = relatedProduct.images.edges[0]?.node;
-                  return (
-                    <Link key={relatedProduct.id} href={`/products/${relatedProduct.handle}`} className="block">
-                      <div className="relative aspect-[3/4] overflow-hidden bg-[#f9f9f9]">
-                        {firstImage?.url && (
-                          <Image
-                            src={firstImage.url}
-                            alt={relatedProduct.title}
-                            fill
-                            className="object-cover"
-                            sizes="50vw"
-                          />
-                        )}
-                      </div>
-                      <div className="mt-3 text-center space-y-1">
-                        <h3 className="text-xs font-light tracking-tight text-gray-900 line-clamp-2">
-                          {relatedProduct.title}
-                        </h3>
-                        <p className="text-xs font-medium text-gray-500">
-                          ₪{formatPrice(relatedProduct.priceRange.minVariantPrice.amount)}
-                        </p>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Desktop: Infinite Marquee */}
-            <div className="hidden md:block relative group">
-              <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-              <div className="absolute inset-y-0 right-0 w-40 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-              <div className="flex overflow-hidden" dir="ltr">
-                <div className="flex animate-marquee py-4" style={{ width: 'max-content', flexShrink: 0 }}>
-                  {[...relatedProducts, ...relatedProducts, ...relatedProducts].map((relatedProduct, index) => {
-                    const firstImage = relatedProduct.images.edges[0]?.node;
-                    return (
-                      <div 
-                        key={`${relatedProduct.id}-${index}`} 
-                        className="w-[400px] px-6 transition-transform duration-500 hover:-translate-y-2"
-                      >
-                        <Link href={`/products/${relatedProduct.handle}`} className="block group/item">
-                          <div className="relative aspect-[3/4] overflow-hidden bg-[#f9f9f9]">
-                            {firstImage?.url && (
-                              <Image
-                                src={firstImage.url}
-                                alt={relatedProduct.title}
-                                fill
-                                className="object-cover transition-transform duration-700 group-hover/item:scale-105"
-                                sizes="400px"
-                              />
-                            )}
-                            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover/item:opacity-100 transition-opacity flex items-end p-6">
-                              <button className="w-full bg-white text-black py-3 text-xs uppercase tracking-widest translate-y-4 group-hover/item:translate-y-0 transition-transform duration-500">
-                                צפייה מהירה
-                              </button>
-                            </div>
-                          </div>
-                          <div className="mt-6 text-right space-y-1">
-                            <h3 className="text-base font-light tracking-tight text-gray-900">
-                              {relatedProduct.title}
-                            </h3>
-                            <p className="text-sm font-medium text-gray-500">
-                              ₪{formatPrice(relatedProduct.priceRange.minVariantPrice.amount)}
-                            </p>
-                          </div>
-                        </Link>
-                      </div>
-                    );
-                  })}
-                </div>
+            {/* Product Cards Grid - 4 visible, scrollable, each with its own image carousel */}
+            <div className="relative px-4 md:px-8 max-w-[1400px] mx-auto">
+              <button
+                onClick={() => {
+                  if (relatedScrollRef.current) {
+                    const cardWidth = relatedScrollRef.current.querySelector('.related-card')?.clientWidth || 300;
+                    relatedScrollRef.current.scrollBy({ left: -(cardWidth + 16), behavior: 'smooth' });
+                  }
+                }}
+                className="absolute left-0 md:left-2 top-[35%] -translate-y-1/2 z-10 bg-white/90 shadow-md rounded-full w-9 h-9 flex items-center justify-center hover:bg-white transition-colors"
+                aria-label="Previous products"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={() => {
+                  if (relatedScrollRef.current) {
+                    const cardWidth = relatedScrollRef.current.querySelector('.related-card')?.clientWidth || 300;
+                    relatedScrollRef.current.scrollBy({ left: cardWidth + 16, behavior: 'smooth' });
+                  }
+                }}
+                className="absolute right-0 md:right-2 top-[35%] -translate-y-1/2 z-10 bg-white/90 shadow-md rounded-full w-9 h-9 flex items-center justify-center hover:bg-white transition-colors"
+                aria-label="Next products"
+              >
+                <ChevronRight size={20} />
+              </button>
+              <div
+                ref={relatedScrollRef}
+                className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {relatedProducts.slice(0, 12).map((relatedProduct) => (
+                  <RelatedProductCard
+                    key={relatedProduct.id}
+                    relatedProduct={relatedProduct}
+                    formatPrice={formatPrice}
+                  />
+                ))}
               </div>
             </div>
           </section>

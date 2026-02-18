@@ -107,12 +107,27 @@ const jsonLd = {
         '@type': 'ImageObject',
         url: `${siteUrl}/hero-venice.jpg`,
       },
-      contactPoint: {
-        '@type': 'ContactPoint',
-        telephone: '+972-3-5178502',
-        contactType: 'customer service',
-        availableLanguage: ['Hebrew', 'English'],
-      },
+      foundingDate: '1984',
+      email: 'klumitltd@gmail.com',
+      brand: [
+        { '@type': 'Brand', name: 'Renato Angi Venezia' },
+        { '@type': 'Brand', name: 'Carlino Group' },
+        { '@type': 'Brand', name: 'Mario Valentino' },
+      ],
+      contactPoint: [
+        {
+          '@type': 'ContactPoint',
+          telephone: '+972-3-5178502',
+          contactType: 'customer service',
+          availableLanguage: ['Hebrew', 'English'],
+        },
+        {
+          '@type': 'ContactPoint',
+          telephone: '+972-54-2600177',
+          contactType: 'sales',
+          availableLanguage: ['Hebrew', 'English'],
+        },
+      ],
       address: {
         '@type': 'PostalAddress',
         streetAddress: 'גאולה 45',
@@ -129,16 +144,24 @@ const jsonLd = {
       '@id': `${siteUrl}/#website`,
       url: siteUrl,
       name: 'קלומית - Klumit',
-      description: 'יבואן בלעדי בישראל לתיקי RENTAO ANGI ו-CARLINO GROUP',
+      description: 'יבואן בלעדי בישראל לתיקי עור איטלקיים יוקרתיים - Renato Angi Venezia, Carlino Group. תיקים, חגורות וארנקים מעור איטלקי מאז 1984.',
       publisher: { '@id': `${siteUrl}/#organization` },
       inLanguage: 'he-IL',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: `${siteUrl}/products?q={search_term_string}`,
+        'query-input': 'required name=search_term_string',
+      },
     },
     {
       '@type': 'Store',
       '@id': `${siteUrl}/#store`,
-      name: 'קלומית',
+      name: 'קלומית - תיקי עור איטלקיים',
       image: `${siteUrl}/hero-venice.jpg`,
+      description: 'חנות תיקי עור יוקרתיים מאיטליה. יבואן בלעדי של Renato Angi Venezia ו-Carlino Group מאז 1984. תיקים, חגורות וארנקים מעור איטלקי אמיתי.',
       priceRange: '₪₪₪',
+      currenciesAccepted: 'ILS',
+      paymentAccepted: 'Cash, Credit Card, Bit, PayPal',
       address: {
         '@type': 'PostalAddress',
         streetAddress: 'גאולה 45',
@@ -152,12 +175,63 @@ const jsonLd = {
         longitude: 34.7731,
       },
       telephone: '+972-3-5178502',
+      email: 'klumitltd@gmail.com',
       openingHoursSpecification: {
         '@type': 'OpeningHoursSpecification',
         dayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'],
         opens: '10:00',
         closes: '17:00',
       },
+      areaServed: [
+        { '@type': 'City', name: 'תל אביב' },
+        { '@type': 'Country', name: 'IL' },
+      ],
+    },
+    {
+      '@type': 'FAQPage',
+      '@id': `${siteUrl}/#faq`,
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'האם התיקים עשויים מעור אמיתי?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'כן! כל התיקים שלנו עשויים מעור איטלקי אמיתי 100%. אנחנו יבואנים בלעדיים מאיטליה מאז 1984 ומתמחים בתיקי עור איכותיים בעבודת יד.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'האם יש משלוח חינם?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'כן! משלוח חינם בכל הזמנה מעל ₪250. משלוח מהיר תוך 3-5 ימי עסקים לכל רחבי הארץ.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'האם אפשר לראות את התיקים בחנות פיזית?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'בהחלט! החנות שלנו ממוקמת ברחוב גאולה 45, תל אביב. פתוח א\'-ה\' בין השעות 10:00-17:00. מומלץ לתאם פגישה בטלפון 054-2600177.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'מה מדיניות ההחזרות?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'ניתן להחזיר מוצרים תוך 14 יום מקבלת ההזמנה, בתנאי שהמוצר לא נעשה בו שימוש ובאריזתו המקורית. החזרה בחנות הפיזית או באמצעות שליח.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'מה ההטבה לחברי מועדון?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'חברי מועדון הלקוחות של קלומית מקבלים 20% הנחה על הקנייה הראשונה, גישה מוקדמת למבצעים והטבות בלעדיות לאורך כל השנה.',
+          },
+        },
+      ],
     },
   ],
 };

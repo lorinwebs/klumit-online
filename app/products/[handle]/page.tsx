@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { shopifyClient, PRODUCT_QUERY, PRODUCTS_QUERY } from '@/lib/shopify';
 import ProductClient from './ProductClient';
+import { generateProductJsonLd, generateBreadcrumbJsonLd } from '@/lib/seo';
 
 interface Product {
   id: string;
@@ -124,10 +125,39 @@ export default async function ProductPage({ params }: PageProps) {
       // Continue without related products
     }
 
+    const product = productData.product;
+    const firstVariant = product.variants.edges[0]?.node;
+    const productJsonLd = generateProductJsonLd({
+      title: product.title,
+      description: product.description,
+      handle: product.handle,
+      images: product.images.edges.map((e) => ({ url: e.node.url, altText: e.node.altText || undefined })),
+      brand: firstVariant?.title !== 'Default Title' ? undefined : undefined,
+      sku: firstVariant?.id,
+      price: product.priceRange.minVariantPrice.amount,
+      currency: product.priceRange.minVariantPrice.currencyCode,
+      available: firstVariant?.availableForSale ?? true,
+      productType: '',
+    });
+
+    const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+      { name: 'בית', url: 'https://www.klumit-online.co.il' },
+      { name: 'מוצרים', url: 'https://www.klumit-online.co.il/products' },
+      { name: product.title, url: `https://www.klumit-online.co.il/products/${handle}` },
+    ]);
+
     return (
       <div className="min-h-screen flex flex-col bg-[#fdfcfb] overflow-x-hidden">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        />
         <Header />
-        <ProductClient product={productData.product} relatedProducts={relatedProducts} />
+        <ProductClient product={product} relatedProducts={relatedProducts} />
         <Footer />
       </div>
     );
