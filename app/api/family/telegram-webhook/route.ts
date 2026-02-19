@@ -4,6 +4,80 @@ import { buildDailyScheduleMessage, sendToChat, editMessage, notifyNewEvent } fr
 
 // Store editing state: chatId -> { eventId, originalEvent }
 const editingState = new Map<string, { eventId: string; originalEvent: any }>();
+const ISRAEL_TZ = 'Asia/Jerusalem';
+const DAYS_HE = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+
+function getIsraelDayIndex(date: Date = new Date()): number {
+  const weekdayEn = new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone: ISRAEL_TZ }).format(date);
+  const map: Record<string, number> = {
+    Sunday: 0,
+    Monday: 1,
+    Tuesday: 2,
+    Wednesday: 3,
+    Thursday: 4,
+    Friday: 5,
+    Saturday: 6,
+  };
+  return map[weekdayEn] ?? date.getUTCDay();
+}
+
+function getIsraelNowContext() {
+  const now = new Date();
+  const ymd = now.toLocaleDateString('en-CA', { timeZone: ISRAEL_TZ });
+  const dayName = DAYS_HE[getIsraelDayIndex(now)];
+  return { ymd, dayName };
+}
+
+function getDayIndexFromYmd(ymd: string): number {
+  // Noon UTC avoids timezone-edge date rollover when deriving weekday from YYYY-MM-DD.
+  return new Date(`${ymd}T12:00:00Z`).getUTCDay();
+}
+
+function getDayIndexFromIsoInIsrael(isoDateTime: string): number {
+  return getIsraelDayIndex(new Date(isoDateTime));
+}
+
+async function handleDeleteEvents(chatId: string, text?: string) {
+  const supabase = createSupabaseAdminClient();
+  const nowIso = new Date().toISOString();
+  let query = supabase
+    .from('family_events')
+    .select('id,title,person,start_time')
+    .gte('start_time', nowIso)
+    .order('start_time', { ascending: true })
+    .limit(20);
+
+  const filterText = (text || '')
+    .replace(/\/delete(@\w+)?/g, '')
+    .replace(/מחק(י|ו)?/g, '')
+    .replace(/אירוע(ים)?/g, '')
+    .replace(/את/g, '')
+    .trim();
+
+  if (filterText) {
+    query = query.ilike('title', `%${filterText}%`);
+  }
+
+  const { data: events, error } = await query;
+
+  if (error) {
+    await sendToChat(chatId, '❌ שגיאה בטעינת אירועים למחיקה');
+    return;
+  }
+
+  if (!events || events.length === 0) {
+    await sendToChat(chatId, filterText ? `לא נמצאו אירועים למחיקה עבור "${filterText}"` : 'אין אירועים עתידיים למחיקה');
+    return;
+  }
+
+  const rows = events.map((event) => {
+    const date = new Date(event.start_time).toLocaleDateString('he-IL', { timeZone: ISRAEL_TZ });
+    const time = new Date(event.start_time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: ISRAEL_TZ });
+    return [{ text: `🗑 ${event.title} | ${date} ${time}`, callback_data: `delete_event:${event.id}` }];
+  });
+
+  await sendToChat(chatId, `🗑 <b>מחק אירועים</b>\n\nבחרו אירוע למחיקה:`, rows);
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -86,6 +160,8 @@ export async function POST(request: NextRequest) {
       await handleDaySchedule(chatId, tomorrow);
     } else if (text === '/week' || text === '/week@hayat_schedule_bot') {
       await handleWeek(chatId);
+    } else if (text === '/delete' || text === '/delete@hayat_schedule_bot') {
+      await handleDeleteEvents(chatId, text);
     } else if (text === '/site' || text === '/site@hayat_schedule_bot') {
       await sendToChat(chatId, `🌐 <b>היומן המשפחתי באתר</b>\n\n📅 כניסה ליומן:\nhttps://klumit-online.co.il/family-schedule\n\n💡 באתר תוכלו לראות את כל האירועים, להוסיף ולערוך בקלות`);
     } else if (text === '/cancel' || text === '/cancel@hayat_schedule_bot') {
@@ -96,7 +172,7 @@ export async function POST(request: NextRequest) {
         await sendToChat(chatId, 'אין עריכה פעילה לביטול');
       }
     } else if (text === '/help' || text === '/help@hayat_schedule_bot' || text === '/start' || text === '/start@hayat_schedule_bot') {
-      await sendToChat(chatId, `🤖 <b>בוט היומן המשפחתי</b>\n\n📝 <b>להוספת אירוע:</b>\n• כתבו בשפה חופשית\n• שלחו הודעה קולית 🎤\n• שלחו תמונה של לוז/הזמנה 📸\nלדוגמה: "אימון של לורין מחר ב-18:00"\n\n🔍 <b>לשאילתות:</b>\n• "מה יש לי ב-1.3?"\n• "מה יש לי ביום שלישי?"\n• "מה יש לי מחר?"\n\n✏️ <b>לעריכה:</b>\n• "תזיז את הפיאלטיס מרביעי לחמישי באותה שעה"\n• "שנה את האימון של לורין למחר ב-17:00"\n• או השתמשו בכפתורים אחרי הוספת אירוע\n\n📋 <b>פקודות:</b>\n/today - לוז היום\n/tomorrow - לוז מחר\n/week - לוז שבועי\n/site - לינק ליומן באתר\n/cancel - ביטול עריכה\n/help - עזרה`);
+      await sendToChat(chatId, `🤖 <b>בוט היומן המשפחתי</b>\n\n📝 <b>להוספת אירוע:</b>\n• כתבו בשפה חופשית\n• שלחו הודעה קולית 🎤\n• שלחו תמונה של לוז/הזמנה 📸\nלדוגמה: "אימון של לורין מחר ב-18:00"\n\n🔍 <b>לשאילתות:</b>\n• "מה יש לי ב-1.3?"\n• "מה יש לי ביום שלישי?"\n• "מה יש לי מחר?"\n\n✏️ <b>לעריכה:</b>\n• "תזיז את הפיאלטיס מרביעי לחמישי באותה שעה"\n• "שנה את האימון של לורין למחר ב-17:00"\n• או השתמשו בכפתורים אחרי הוספת אירוע\n\n🗑 <b>למחיקה:</b>\n• "מחק את האימון של לורין"\n• /delete להצגת אירועים למחיקה\n\n📋 <b>פקודות:</b>\n/today - לוז היום\n/tomorrow - לוז מחר\n/week - לוז שבועי\n/delete - מחיקת אירועים\n/site - לינק ליומן באתר\n/cancel - ביטול עריכה\n/help - עזרה`);
     } else if (!text.startsWith('/')) {
       await handleFreeText(chatId, text);
     }
@@ -135,8 +211,9 @@ async function handleWeek(chatId: string) {
   const supabase = createSupabaseAdminClient();
 
   const today = new Date();
+  const israelDayIndex = getIsraelDayIndex(today);
   const sunday = new Date(today);
-  sunday.setDate(today.getDate() - today.getDay());
+  sunday.setDate(today.getDate() - israelDayIndex);
   sunday.setHours(0, 0, 0, 0);
   const saturday = new Date(sunday);
   saturday.setDate(sunday.getDate() + 6);
@@ -158,7 +235,7 @@ async function handleWeek(chatId: string) {
 
   const byDay: Record<number, typeof events> = {};
   events.forEach(e => {
-    const day = new Date(e.start_time).getDay();
+    const day = getDayIndexFromIsoInIsrael(e.start_time);
     if (!byDay[day]) byDay[day] = [];
     byDay[day].push(e);
   });
@@ -192,6 +269,8 @@ const AI_SYSTEM_PROMPT = `אתה עוזר לפענח טקסט חופשי לאי�
 - אם לא צוין תאריך, השתמש בהיום (שים לב לאזור זמן ישראל)
 - אם לא צוינה שעת סיום, הוסף שעה לשעת ההתחלה
 - אם צוין יום בשבוע (למשל "יום שני"), חשב את התאריך הקרוב ביותר קדימה
+- "ראשון" הוא יום ראשון (Sunday), "שני" הוא יום שני (Monday) וכן הלאה. אין לפרש את זה כמספר סידורי.
+- אם המשתמש ציין כמה ימי שבוע בהודעה אחת (למשל "בראשון וגם בשני"), יש ליצור אירוע נפרד לכל יום ולשייך לכל אחד את התאריך הנכון.
 - אם מדובר באירוע יום מלא ("כל היום", "יום מלא", "full day", "all day") החזר "all_day": true
 - אם מדובר בטווח תאריכים בלי שעות מפורשות, החזר שעות הגיוניות (למשל 08:00 עד 20:00)
 - זהה בקשות תזכורת: "תזכיר לי", "הזכר לי", "שלח תזכורת" וכו'
@@ -234,8 +313,7 @@ async function handleAddEvent(chatId: string, text: string) {
     return;
   }
 
-  const now = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
-  const dayName = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'][new Date().getDay()];
+  const { ymd: now, dayName } = getIsraelNowContext();
 
   try {
     await sendToChat(chatId, '🔄 מעבד...');
@@ -289,7 +367,6 @@ async function handleAddEvent(chatId: string, text: string) {
       return;
     }
 
-    const DAYS_HE_L = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
     const insertedEvents: Array<{ id: string; event: any; startTime: string; endTime: string; isAllDay: boolean }> = [];
 
     for (const eventData of validEvents) {
@@ -369,7 +446,7 @@ async function handleAddEvent(chatId: string, text: string) {
     if (insertedEvents.length === 1) {
       const one = insertedEvents[0];
       const eventData = one.event;
-      const evDay = DAYS_HE_L[new Date(eventData.date).getDay()];
+      const evDay = DAYS_HE[getDayIndexFromYmd(eventData.date)];
       const multiDay = eventData.end_date && eventData.end_date !== eventData.date;
 
       let msg = editingInfo
@@ -406,7 +483,7 @@ async function handleAddEvent(chatId: string, text: string) {
     let summary = `✅ <b>נוספו ${insertedEvents.length} אירועים ליומן!</b>\n`;
     insertedEvents.forEach((item, index) => {
       const ev = item.event;
-      const evDay = DAYS_HE_L[new Date(ev.date).getDay()];
+      const evDay = DAYS_HE[getDayIndexFromYmd(ev.date)];
       summary += `\n${index + 1}. 📌 <b>${ev.title}</b>\n👤 ${ev.person}\n🗓 יום ${evDay}, ${ev.date}\n🕐 ${item.isAllDay ? 'כל היום' : `${ev.start_time} - ${ev.end_time}`}`;
     });
     await sendToChat(chatId, summary);
@@ -563,9 +640,10 @@ async function handleFreeText(chatId: string, text: string) {
             content: `קבע מה סוג הפעולה שהמשתמש מבקש. החזר רק אחד מהערכים הבאים:
 - "query" - אם המשתמש שואל על אירועים (מה יש ב..., מה יש לי ב..., תראה לי מה יש ב...)
 - "edit" - אם המשתמש מבקש לערוך/להזיז/לשנות אירוע קיים (תזיז את..., שנה את..., העבר את..., תעדכן את...)
+- "delete" - אם המשתמש מבקש למחוק אירוע/ים (מחק את..., תבטל את..., תוריד מהיומן...)
 - "add" - בכל מקרה אחר (הוספת אירוע חדש)
 
-החזר JSON בלבד: {"action": "query|edit|add"}` 
+החזר JSON בלבד: {"action": "query|edit|delete|add"}` 
           },
           { role: 'user', content: text },
         ],
@@ -593,6 +671,8 @@ async function handleFreeText(chatId: string, text: string) {
       await handleQuery(chatId, text);
     } else if (parsed.action === 'edit') {
       await handleEditCommand(chatId, text);
+    } else if (parsed.action === 'delete') {
+      await handleDeleteEvents(chatId, text);
     } else {
       await handleAddEvent(chatId, text);
     }
@@ -610,8 +690,7 @@ async function handleQuery(chatId: string, text: string) {
     return;
   }
 
-  const now = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
-  const dayName = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'][new Date().getDay()];
+  const { ymd: now, dayName } = getIsraelNowContext();
 
   try {
     await sendToChat(chatId, '🔍 מחפש...');
@@ -668,8 +747,7 @@ async function handleEditCommand(chatId: string, text: string) {
     return;
   }
 
-  const now = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
-  const dayName = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'][new Date().getDay()];
+  const { ymd: now, dayName } = getIsraelNowContext();
 
   try {
     await sendToChat(chatId, '🔄 מעבד בקשת עריכה...');
@@ -736,7 +814,7 @@ async function handleEditCommand(chatId: string, text: string) {
         // Find next occurrence of this day
         const today = new Date();
         const targetDay = dayMap[editRequest.from_day];
-        const daysUntil = (targetDay - today.getDay() + 7) % 7;
+        const daysUntil = (targetDay - getIsraelDayIndex(today) + 7) % 7;
         startDate = new Date(today);
         startDate.setDate(today.getDate() + daysUntil);
         startDate.setHours(0, 0, 0, 0);
@@ -772,7 +850,7 @@ async function handleEditCommand(chatId: string, text: string) {
       };
       
       if (dayMap[editRequest.to_day] !== undefined) {
-        const currentDay = newStartTime.getDay();
+        const currentDay = getDayIndexFromIsoInIsrael(newStartTime.toISOString());
         const targetDay = dayMap[editRequest.to_day];
         const dayDiff = (targetDay - currentDay + 7) % 7 || 7; // If same day, move to next week
         newStartTime.setDate(newStartTime.getDate() + dayDiff);
@@ -803,10 +881,9 @@ async function handleEditCommand(chatId: string, text: string) {
       return;
     }
 
-    const DAYS_HE = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-    const newDay = DAYS_HE[newStartTime.getDay()];
-    const newTime = newStartTime.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem' });
-    const newDate = newStartTime.toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' });
+    const newDay = DAYS_HE[getDayIndexFromIsoInIsrael(newStartTime.toISOString())];
+    const newTime = newStartTime.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: ISRAEL_TZ });
+    const newDate = newStartTime.toLocaleDateString('he-IL', { timeZone: ISRAEL_TZ });
     
     await sendToChat(chatId, `✅ <b>אירוע עודכן!</b>\n\n📌 ${event.title}\n👤 ${editRequest.new_person || event.person}\n🗓 יום ${newDay}, ${newDate}\n🕐 ${newTime}`);
   } catch (error) {
