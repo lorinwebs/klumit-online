@@ -192,6 +192,8 @@ const AI_SYSTEM_PROMPT = `אתה עוזר לפענח טקסט חופשי לאי�
 - אם לא צוין תאריך, השתמש בהיום (שים לב לאזור זמן ישראל)
 - אם לא צוינה שעת סיום, הוסף שעה לשעת ההתחלה
 - אם צוין יום בשבוע (למשל "יום שני"), חשב את התאריך הקרוב ביותר קדימה
+- אם מדובר באירוע יום מלא ("כל היום", "יום מלא", "full day", "all day") החזר "all_day": true
+- אם מדובר בטווח תאריכים בלי שעות מפורשות, החזר שעות הגיוניות (למשל 08:00 עד 20:00)
 - זהה בקשות תזכורת: "תזכיר לי", "הזכר לי", "שלח תזכורת" וכו'
   * 5 דקות לפני = 5
   * 10 דקות לפני = 10
@@ -211,9 +213,18 @@ const AI_SYSTEM_PROMPT = `אתה עוזר לפענח טקסט חופשי לאי�
   "end_date": "YYYY-MM-DD",
   "start_time": "HH:MM",
   "end_time": "HH:MM",
+  "all_day": false,
   "recurring": false,
   "reminder_minutes": null או מספר,
   "notes": ""
+}
+
+אם יש כמה אירועים באותה הודעה, החזר:
+{
+  "events": [
+    { ... אירוע בפורמט הנ"ל ... },
+    { ... אירוע נוסף ... }
+  ]
 }`;
 
 async function handleAddEvent(chatId: string, text: string) {
@@ -251,7 +262,14 @@ async function handleAddEvent(chatId: string, text: string) {
     if (!jsonMatch) { await sendToChat(chatId, '❌ לא הצלחתי לפענח את האירוע'); return; }
 
     const parsed = JSON.parse(jsonMatch[0]);
-    const endDate = parsed.end_date || parsed.date;
+    const parsedEvents = Array.isArray(parsed?.events) ? parsed.events : [parsed];
+    const fullDayRegex = /(כל היום|יום מלא|full day|all day)/i;
+    const textRequestsFullDay = fullDayRegex.test(text);
+    const validEvents = parsedEvents.filter((e: any) => e?.title && e?.date);
+    if (validEvents.length === 0) {
+      await sendToChat(chatId, '❌ לא הצלחתי לפענח אירועים מההודעה');
+      return;
+    }
     // Calculate Israel timezone offset (handles DST automatically)
     const ilOffset = (dt: string) => {
       const d = new Date(dt);
@@ -262,28 +280,84 @@ async function handleAddEvent(chatId: string, text: string) {
     const offsetH = ilOffset(new Date().toISOString());
     const pad = (n: number) => `${n >= 0 ? '+' : '-'}${String(Math.abs(n)).padStart(2, '0')}:00`;
     const tz = pad(offsetH);
-    const startTime = new Date(`${parsed.date}T${parsed.start_time}:00${tz}`).toISOString();
-    const endTime = new Date(`${endDate}T${parsed.end_time}:00${tz}`).toISOString();
-
     const supabase = createSupabaseAdminClient();
     
     // Check if we're editing an existing event
     const editingInfo = editingState.get(chatId);
-    
-    const { data: inserted, error } = await supabase.from('family_events').insert({
-      title: parsed.title,
-      person: parsed.person,
-      category: parsed.category,
-      start_time: startTime,
-      end_time: endTime,
-      recurring: parsed.recurring || false,
-      reminder_minutes: parsed.reminder_minutes || null,
-      notes: parsed.notes || null,
-    }).select('id').single();
-
-    if (error) {
-      await sendToChat(chatId, `❌ שגיאה בשמירה: ${error.message}`);
+    if (editingInfo && validEvents.length !== 1) {
+      await sendToChat(chatId, '❌ במצב עריכה אפשר לשלוח אירוע אחד בלבד');
       return;
+    }
+
+    const DAYS_HE_L = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+    const insertedEvents: Array<{ id: string; event: any; startTime: string; endTime: string; isAllDay: boolean }> = [];
+
+    for (const eventData of validEvents) {
+      const endDate = eventData.end_date || eventData.date;
+      const isRange = endDate !== eventData.date;
+      const isAllDay = Boolean(eventData.all_day) || textRequestsFullDay || fullDayRegex.test(`${eventData.title || ''} ${eventData.notes || ''}`);
+
+      let normalizedStartTime = eventData.start_time;
+      let normalizedEndTime = eventData.end_time;
+
+      if (isAllDay) {
+        normalizedStartTime = '00:00';
+        normalizedEndTime = '23:59';
+      } else {
+        const missingTimes = !normalizedStartTime || !normalizedEndTime;
+        const midnightRange = normalizedStartTime === '00:00' && normalizedEndTime === '00:00';
+
+        // For date ranges without explicit times, use practical default hours
+        if (missingTimes || midnightRange) {
+          if (isRange) {
+            normalizedStartTime = '08:00';
+            normalizedEndTime = '20:00';
+          } else {
+            normalizedStartTime = '09:00';
+            normalizedEndTime = '10:00';
+          }
+        }
+      }
+
+      const startTime = new Date(`${eventData.date}T${normalizedStartTime}:00${tz}`).toISOString();
+      const endTime = new Date(`${endDate}T${normalizedEndTime}:00${tz}`).toISOString();
+
+      const { data: inserted, error } = await supabase.from('family_events').insert({
+        title: eventData.title,
+        person: eventData.person,
+        category: eventData.category,
+        start_time: startTime,
+        end_time: endTime,
+        recurring: eventData.recurring || false,
+        reminder_minutes: eventData.reminder_minutes || null,
+        notes: eventData.notes || null,
+      }).select('id').single();
+
+      if (error) {
+        await sendToChat(chatId, `❌ שגיאה בשמירה: ${error.message}`);
+        return;
+      }
+
+      insertedEvents.push({
+        id: inserted.id,
+        event: { ...eventData, start_time: normalizedStartTime, end_time: normalizedEndTime, end_date: endDate },
+        startTime,
+        endTime,
+        isAllDay,
+      });
+
+      // Notify all family chat members (except the sender)
+      notifyNewEvent({
+        title: eventData.title,
+        person: eventData.person,
+        category: eventData.category,
+        start_time: startTime,
+        end_time: endTime,
+        notes: eventData.notes || null,
+        reminder_minutes: eventData.reminder_minutes || null,
+      }, chatId).catch((err) => {
+        console.error('Failed to send notification:', err);
+      });
     }
 
     // If we were editing an event, delete the old one now
@@ -292,41 +366,50 @@ async function handleAddEvent(chatId: string, text: string) {
       editingState.delete(chatId);
     }
 
-    const DAYS_HE_L = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-    const evDay = DAYS_HE_L[new Date(parsed.date).getDay()];
-    const multiDay = parsed.end_date && parsed.end_date !== parsed.date;
+    if (insertedEvents.length === 1) {
+      const one = insertedEvents[0];
+      const eventData = one.event;
+      const evDay = DAYS_HE_L[new Date(eventData.date).getDay()];
+      const multiDay = eventData.end_date && eventData.end_date !== eventData.date;
 
-    let msg = editingInfo 
-      ? `✅ <b>אירוע עודכן ביומן!</b>\n\n📌 <b>${parsed.title}</b>\n👤 ${parsed.person}\n🗓 יום ${evDay}, ${parsed.date}`
-      : `✅ <b>אירוע נוסף ליומן!</b>\n\n📌 <b>${parsed.title}</b>\n👤 ${parsed.person}\n🗓 יום ${evDay}, ${parsed.date}`;
-    if (multiDay) msg += ` עד ${parsed.end_date}`;
-    msg += `\n🕐 ${parsed.start_time} - ${parsed.end_time}`;
-    if (parsed.reminder_minutes) {
-      let reminderText = '';
-      if (parsed.reminder_minutes >= 1440) {
-        reminderText = 'יום לפני';
-      } else if (parsed.reminder_minutes >= 120) {
-        reminderText = `${parsed.reminder_minutes / 60} שעות לפני`;
-      } else if (parsed.reminder_minutes >= 60) {
-        reminderText = 'שעה לפני';
-      } else {
-        reminderText = `${parsed.reminder_minutes} דקות לפני`;
+      let msg = editingInfo
+        ? `✅ <b>אירוע עודכן ביומן!</b>\n\n📌 <b>${eventData.title}</b>\n👤 ${eventData.person}\n🗓 יום ${evDay}, ${eventData.date}`
+        : `✅ <b>אירוע נוסף ליומן!</b>\n\n📌 <b>${eventData.title}</b>\n👤 ${eventData.person}\n🗓 יום ${evDay}, ${eventData.date}`;
+      if (multiDay) msg += ` עד ${eventData.end_date}`;
+      msg += one.isAllDay
+        ? `\n🕐 כל היום`
+        : `\n🕐 ${eventData.start_time} - ${eventData.end_time}`;
+      if (eventData.reminder_minutes) {
+        let reminderText = '';
+        if (eventData.reminder_minutes >= 1440) {
+          reminderText = 'יום לפני';
+        } else if (eventData.reminder_minutes >= 120) {
+          reminderText = `${eventData.reminder_minutes / 60} שעות לפני`;
+        } else if (eventData.reminder_minutes >= 60) {
+          reminderText = 'שעה לפני';
+        } else {
+          reminderText = `${eventData.reminder_minutes} דקות לפני`;
+        }
+        msg += `\n⏰ תזכורת: ${reminderText}`;
       }
-      msg += `\n⏰ תזכורת: ${reminderText}`;
+      if (eventData.notes) msg += `\n📝 ${eventData.notes}`;
+
+      await sendToChat(chatId, msg, [
+        [
+          { text: '✏️ ערוך אירוע', callback_data: `edit_event:${one.id}` },
+          { text: '🗑 מחק אירוע', callback_data: `delete_event:${one.id}` }
+        ]
+      ]);
+      return;
     }
-    if (parsed.notes) msg += `\n📝 ${parsed.notes}`;
 
-    await sendToChat(chatId, msg, [
-      [
-        { text: '✏️ ערוך אירוע', callback_data: `edit_event:${inserted.id}` },
-        { text: '🗑 מחק אירוע', callback_data: `delete_event:${inserted.id}` }
-      ]
-    ]);
-
-    // Notify all family chat members (except the sender)
-    notifyNewEvent({ title: parsed.title, person: parsed.person, category: parsed.category, start_time: startTime, end_time: endTime, notes: parsed.notes || null, reminder_minutes: parsed.reminder_minutes || null }, chatId).catch((err) => {
-      console.error('Failed to send notification:', err);
+    let summary = `✅ <b>נוספו ${insertedEvents.length} אירועים ליומן!</b>\n`;
+    insertedEvents.forEach((item, index) => {
+      const ev = item.event;
+      const evDay = DAYS_HE_L[new Date(ev.date).getDay()];
+      summary += `\n${index + 1}. 📌 <b>${ev.title}</b>\n👤 ${ev.person}\n🗓 יום ${evDay}, ${ev.date}\n🕐 ${item.isAllDay ? 'כל היום' : `${ev.start_time} - ${ev.end_time}`}`;
     });
+    await sendToChat(chatId, summary);
   } catch {
     await sendToChat(chatId, '❌ שגיאה בעיבוד ההודעה');
   }
@@ -377,8 +460,8 @@ async function handleVoiceMessage(chatId: string, fileId: string) {
 
     await sendToChat(chatId, `📝 תמלול: "${transcription.text}"`);
 
-    // Process the transcribed text as an event
-    await handleAddEvent(chatId, transcription.text);
+    // Process transcribed text via the unified free-text handler
+    await handleFreeText(chatId, transcription.text);
   } catch {
     await sendToChat(chatId, '❌ שגיאה בעיבוד הודעה קולית');
   }
@@ -449,10 +532,11 @@ async function handlePhotoMessage(chatId: string, fileId: string, caption?: stri
       return;
     }
 
-    await sendToChat(chatId, `📝 מה מצאתי בתמונה:\n${extractedText}`);
+    // Avoid sending raw extracted text (may break Telegram HTML/length limits)
+    await sendToChat(chatId, '📝 זיהיתי מידע בתמונה, מעבד ליומן...');
 
-    // Process the extracted text as an event
-    await handleAddEvent(chatId, extractedText);
+    // Process extracted text via the unified free-text handler
+    await handleFreeText(chatId, extractedText);
   } catch (error) {
     console.error('Photo processing error:', error);
     await sendToChat(chatId, '❌ שגיאה בעיבוד התמונה');
