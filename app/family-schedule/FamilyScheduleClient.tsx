@@ -928,6 +928,11 @@ export default function FamilyScheduleClient() {
   const [editEvent, setEditEvent] = useState<FamilyEvent | null>(null);
   const [selectedPeople, setSelectedPeople] = useState(new Set(PEOPLE));
   const [isMobile, setIsMobile] = useState(false);
+  const [pendingUndoDelete, setPendingUndoDelete] = useState<{ event: FamilyEvent; secondsLeft: number } | null>(null);
+  const pendingDeleteRef = useRef<FamilyEvent | null>(null);
+  const deleteTimeoutRef = useRef<number | null>(null);
+  const deleteIntervalRef = useRef<number | null>(null);
+  const deleteDeadlineRef = useRef<number>(0);
 
   // Announcements
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -992,7 +997,10 @@ export default function FamilyScheduleClient() {
   };
   const delAnn = async (id: string) => { await fetch(`/api/family/announcements/${id}`, { method: 'DELETE' }); await fetchAnn(); };
 
-  const filteredEvents = useMemo(() => events.filter(e => selectedPeople.has(e.person) || (e.person === 'כולם' && selectedPeople.size > 0)), [events, selectedPeople]);
+  const filteredEvents = useMemo(() => {
+    const pendingId = pendingUndoDelete?.event.id;
+    return events.filter(e => (selectedPeople.has(e.person) || (e.person === 'כולם' && selectedPeople.size > 0)) && e.id !== pendingId);
+  }, [events, selectedPeople, pendingUndoDelete]);
   const conflicts = useMemo(() => findConflicts(filteredEvents), [filteredEvents]);
   const weekDates = useMemo(() => getWeekDates(currentDate), [currentDate]);
 
@@ -1021,7 +1029,63 @@ export default function FamilyScheduleClient() {
     else await fetch('/api/family/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     await fetchEvents();
   };
-  const handleDelete = async (id: string) => { await fetch(`/api/family/events/${id}`, { method: 'DELETE' }); await fetchEvents(); };
+  const clearPendingDeleteTimers = () => {
+    if (deleteTimeoutRef.current !== null) {
+      window.clearTimeout(deleteTimeoutRef.current);
+      deleteTimeoutRef.current = null;
+    }
+    if (deleteIntervalRef.current !== null) {
+      window.clearInterval(deleteIntervalRef.current);
+      deleteIntervalRef.current = null;
+    }
+  };
+  const commitDeleteNow = async (id: string) => {
+    await fetch(`/api/family/events/${id}`, { method: 'DELETE' });
+    await fetchEvents();
+  };
+  const handleDelete = async (id: string) => {
+    if (pendingDeleteRef.current) {
+      const prevPending = pendingDeleteRef.current;
+      clearPendingDeleteTimers();
+      pendingDeleteRef.current = null;
+      setPendingUndoDelete(null);
+      await commitDeleteNow(prevPending.id);
+    }
+
+    const target = events.find(e => e.id === id) || editEvent;
+    if (!target) {
+      await commitDeleteNow(id);
+      return;
+    }
+
+    pendingDeleteRef.current = target;
+    deleteDeadlineRef.current = Date.now() + 10000;
+    setPendingUndoDelete({ event: target, secondsLeft: 10 });
+    setEvents(prev => prev.filter(e => e.id !== id));
+
+    deleteTimeoutRef.current = window.setTimeout(async () => {
+      const pending = pendingDeleteRef.current;
+      clearPendingDeleteTimers();
+      pendingDeleteRef.current = null;
+      setPendingUndoDelete(null);
+      if (pending) await commitDeleteNow(pending.id);
+    }, 10000);
+
+    deleteIntervalRef.current = window.setInterval(() => {
+      const msLeft = Math.max(0, deleteDeadlineRef.current - Date.now());
+      const secondsLeft = Math.ceil(msLeft / 1000);
+      setPendingUndoDelete(prev => (prev ? { ...prev, secondsLeft } : null));
+    }, 250);
+  };
+  const handleUndoDelete = () => {
+    const pending = pendingDeleteRef.current;
+    if (!pending) return;
+    clearPendingDeleteTimers();
+    pendingDeleteRef.current = null;
+    setPendingUndoDelete(null);
+    setEvents(prev => [...prev, pending].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()));
+  };
+  useEffect(() => () => clearPendingDeleteTimers(), []);
   const handleDrop = async (ev: FamilyEvent, newDate: Date, newHour: number) => {
     const dur = differenceInMinutes(new Date(ev.end_time), new Date(ev.start_time));
     const ns = setMinutes(setHours(newDate, newHour), 0);
@@ -1052,7 +1116,15 @@ export default function FamilyScheduleClient() {
           <div className="flex items-center gap-2">
             <span className="text-base font-semibold text-gray-900">{getTitle()}</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-0.5">
+              <button onClick={navBack} className="p-1.5 hover:bg-gray-100 rounded-full" aria-label="קודם">
+                <ChevronRight size={18} className="text-gray-600" />
+              </button>
+              <button onClick={navForward} className="p-1.5 hover:bg-gray-100 rounded-full" aria-label="הבא">
+                <ChevronLeft size={18} className="text-gray-600" />
+              </button>
+            </div>
             <button onClick={() => setCurrentDate(new Date())} className="px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded">היום</button>
             <div className="flex bg-gray-100 rounded-lg p-0.5">
               {(['day', 'week', 'month'] as ViewMode[]).map(v => (
@@ -1088,12 +1160,10 @@ export default function FamilyScheduleClient() {
           </>
         )}
 
-        {/* Mobile navigation - swipe area with arrows */}
+        {/* Mobile navigation helper (day name) */}
         {view === 'day' && (
-          <div className="bg-white border-t border-gray-100 px-4 py-2 flex items-center justify-between">
-            <button onClick={navBack} className="p-2 hover:bg-gray-100 rounded-full"><ChevronRight size={24} className="text-gray-600" /></button>
+          <div className="bg-white border-t border-gray-100 px-4 py-1.5 flex items-center justify-center">
             <span className="text-sm text-gray-500">{DAYS_HE[getDay(currentDate)]}</span>
-            <button onClick={navForward} className="p-2 hover:bg-gray-100 rounded-full"><ChevronLeft size={24} className="text-gray-600" /></button>
           </div>
         )}
 
@@ -1103,6 +1173,12 @@ export default function FamilyScheduleClient() {
         </button>
 
         <EventModal isOpen={showModal} onClose={() => setShowModal(false)} onSave={handleSave} onDelete={handleDelete} initialDate={modalDate} initialHour={modalHour} editEvent={editEvent} categories={categories} onAddCategory={addCustomCat} />
+        {pendingUndoDelete && (
+          <div className="fixed bottom-4 right-1/2 translate-x-1/2 z-50 bg-gray-900 text-white rounded-xl shadow-xl px-3 py-2 flex items-center gap-3">
+            <span className="text-xs">האירוע "{pendingUndoDelete.event.title}" נמחק ({pendingUndoDelete.secondsLeft})</span>
+            <button onClick={handleUndoDelete} className="text-xs font-semibold text-blue-300 hover:text-blue-200">UNDO</button>
+          </div>
+        )}
       </div>
     );
   }
@@ -1196,6 +1272,12 @@ export default function FamilyScheduleClient() {
       </div>
 
       <EventModal isOpen={showModal} onClose={() => setShowModal(false)} onSave={handleSave} onDelete={handleDelete} initialDate={modalDate} initialHour={modalHour} editEvent={editEvent} categories={categories} onAddCategory={addCustomCat} />
+      {pendingUndoDelete && (
+        <div className="fixed bottom-4 right-1/2 translate-x-1/2 z-50 bg-gray-900 text-white rounded-xl shadow-xl px-3 py-2 flex items-center gap-3">
+          <span className="text-xs">האירוע "{pendingUndoDelete.event.title}" נמחק ({pendingUndoDelete.secondsLeft})</span>
+          <button onClick={handleUndoDelete} className="text-xs font-semibold text-blue-300 hover:text-blue-200">UNDO</button>
+        </div>
+      )}
     </div>
   );
 }
