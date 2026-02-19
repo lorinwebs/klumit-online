@@ -167,13 +167,30 @@ export default async function BlogPostPage({ params }: PageProps) {
           </h1>
 
           {/* Body */}
+          <style dangerouslySetInnerHTML={{ __html: `
+            .blog-content { font-size: 1.05rem; line-height: 1.9; color: #374151; }
+            .blog-content h1 { font-size: 2rem; font-weight: 300; color: #1a1a1a; margin: 2.5rem 0 1rem; line-height: 1.3; }
+            .blog-content h2 { font-size: 1.5rem; font-weight: 400; color: #1a1a1a; margin: 2rem 0 0.75rem; line-height: 1.35; }
+            .blog-content h3 { font-size: 1.25rem; font-weight: 500; color: #1a1a1a; margin: 1.75rem 0 0.5rem; line-height: 1.4; }
+            .blog-content p { margin: 0 0 1.25rem; }
+            .blog-content a { color: #c9a962; text-decoration: none; transition: color 0.2s; }
+            .blog-content a:hover { color: #a17d4f; text-decoration: underline; }
+            .blog-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 1.5rem auto; display: block; }
+            .blog-content ul, .blog-content ol { padding-right: 1.5rem; margin: 1rem 0; }
+            .blog-content li { margin: 0.4rem 0; }
+            .blog-content ul li { list-style-type: disc; }
+            .blog-content ol li { list-style-type: decimal; }
+            .blog-content strong, .blog-content b { font-weight: 600; color: #1a1a1a; }
+            .blog-content em, .blog-content i { font-style: italic; }
+            .blog-content blockquote { border-right: 3px solid #c9a962; padding: 0.75rem 1.25rem; margin: 1.5rem 0; color: #6b7280; background: #fafaf9; border-radius: 4px; }
+            .blog-content hr { border: none; border-top: 1px solid #e5e7eb; margin: 2rem 0; }
+            .blog-content table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+            .blog-content th, .blog-content td { border: 1px solid #e5e7eb; padding: 0.5rem 0.75rem; text-align: right; }
+            .blog-content th { background: #f9fafb; font-weight: 500; }
+            .blog-content iframe, .blog-content video { max-width: 100%; margin: 1.5rem auto; display: block; border-radius: 8px; }
+          `}} />
           <div
-            className="prose prose-lg max-w-none font-light text-gray-700 leading-relaxed
-              prose-headings:font-light prose-headings:text-[#1a1a1a] prose-headings:luxury-font
-              prose-a:text-[#c9a962] prose-a:no-underline hover:prose-a:underline
-              prose-img:rounded-lg prose-img:mx-auto
-              prose-strong:font-medium prose-strong:text-[#1a1a1a]
-              prose-blockquote:border-[#c9a962] prose-blockquote:text-gray-500 prose-blockquote:font-light"
+            className="blog-content max-w-none"
             dir="rtl"
             dangerouslySetInnerHTML={{ __html: article.contentHtml }}
           />
