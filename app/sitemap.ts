@@ -16,6 +16,19 @@ const SITEMAP_PRODUCTS_QUERY = `
   }
 `;
 
+const SITEMAP_ARTICLES_QUERY = `
+  query getSitemapArticles($first: Int!) {
+    articles(first: $first, sortKey: PUBLISHED_AT, reverse: true) {
+      edges {
+        node {
+          handle
+          publishedAt
+        }
+      }
+    }
+  }
+`;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     {
@@ -90,5 +103,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Failed to fetch products for sitemap:', error);
   }
 
-  return [...staticPages, ...productPages];
+  let blogPages: MetadataRoute.Sitemap = [];
+  try {
+    const data = await shopifyClient.request<{
+      articles: { edges: Array<{ node: { handle: string; publishedAt: string } }> };
+    }>(SITEMAP_ARTICLES_QUERY, { first: 100 });
+
+    blogPages = [
+      {
+        url: `${BASE_URL}/blog`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      },
+      ...data.articles.edges.map(({ node }) => ({
+        url: `${BASE_URL}/blog/${node.handle}`,
+        lastModified: new Date(node.publishedAt),
+        changeFrequency: 'monthly' as const,
+        priority: 0.6,
+      })),
+    ];
+  } catch (error) {
+    console.error('Failed to fetch articles for sitemap:', error);
+  }
+
+  return [...staticPages, ...productPages, ...blogPages];
 }

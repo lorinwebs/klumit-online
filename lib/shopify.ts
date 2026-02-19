@@ -417,6 +417,60 @@ export const UPDATE_CART_DISCOUNT_CODES_MUTATION = `
   }
 `;
 
+export const ARTICLES_QUERY = `
+  query getArticles($first: Int!) {
+    articles(first: $first, sortKey: PUBLISHED_AT, reverse: true) {
+      edges {
+        node {
+          id
+          title
+          handle
+          excerpt
+          publishedAt
+          image {
+            url
+            altText
+          }
+          blog {
+            handle
+          }
+          authorV2 {
+            name
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const ARTICLE_BY_HANDLE_QUERY = `
+  query getArticleByHandle($handle: String!) {
+    articles(first: 1, query: $handle) {
+      edges {
+        node {
+          id
+          title
+          handle
+          contentHtml
+          excerpt
+          publishedAt
+          image {
+            url
+            altText
+          }
+          authorV2 {
+            name
+          }
+          blog {
+            handle
+            title
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const GET_CART_QUERY = `
   query getCart($id: ID!) {
     cart(id: $id) {

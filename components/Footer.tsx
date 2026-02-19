@@ -138,6 +138,11 @@ export default function Footer() {
                   {t('footer.accessibility')}
                 </Link>
               </li>
+              <li>
+                <Link href="/blog" className="text-sm font-light text-gray-600 hover:text-[#1a1a1a] transition-colors">
+                  {t('footer.magazine')}
+                </Link>
+              </li>
             </ul>
           </div>
           

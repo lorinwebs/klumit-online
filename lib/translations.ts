@@ -311,6 +311,7 @@ export interface Translations {
   'footer.terms': string;
   'footer.privacy': string;
   'footer.accessibility': string;
+  'footer.magazine': string;
   'footer.viewersNow': string;
   'footer.viewersOnSite': string;
   'footer.copyright': string;
@@ -633,6 +634,7 @@ export const translations: Record<Language, Translations> = {
     'footer.terms': 'תקנון',
     'footer.privacy': 'מדיניות פרטיות',
     'footer.accessibility': 'נגישות',
+    'footer.magazine': 'המגזין',
     'footer.viewersNow': 'צופים כעת',
     'footer.viewersOnSite': 'צופים באתר',
     'footer.copyright': 'כל הזכויות שמורות',
@@ -954,6 +956,7 @@ export const translations: Record<Language, Translations> = {
     'footer.terms': 'Terms',
     'footer.privacy': 'Privacy Policy',
     'footer.accessibility': 'Accessibility',
+    'footer.magazine': 'Magazine',
     'footer.viewersNow': 'viewers now',
     'footer.viewersOnSite': 'viewing now',
     'footer.copyright': 'All rights reserved',
@@ -1275,6 +1278,7 @@ export const translations: Record<Language, Translations> = {
     'footer.terms': 'Условия',
     'footer.privacy': 'Конфиденциальность',
     'footer.accessibility': 'Доступность',
+    'footer.magazine': 'Журнал',
     'footer.viewersNow': 'просматривают',
     'footer.viewersOnSite': 'смотрят сейчас',
     'footer.copyright': 'Все права защищены',
