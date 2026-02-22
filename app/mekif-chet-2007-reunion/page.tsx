@@ -141,14 +141,16 @@ export default function ReunionPage() {
   const collectedAmount = paidCount * PRICE_PER_PERSON;
   const remainingAmount = totalTargetAmount - collectedAmount;
   
-  // מציאת הכיתה המובילה (עם הכי הרבה משתתפים ששילמו)
-  let leadingClass = '';
+  // מציאת הכיתות המובילות (עם הכי הרבה משתתפים ששילמו)
+  let leadingClasses: string[] = [];
   let maxPaidCount = 0;
   Object.entries(allClassesData).forEach(([className, participants]) => {
     const classPaidCount = participants.filter(p => p.paid).length;
     if (classPaidCount > maxPaidCount && classPaidCount > 0) {
       maxPaidCount = classPaidCount;
-      leadingClass = className;
+      leadingClasses = [className];
+    } else if (classPaidCount === maxPaidCount && classPaidCount > 0) {
+      leadingClasses.push(className);
     }
   });
 
@@ -237,11 +239,12 @@ export default function ReunionPage() {
                     <p className="text-2xl font-semibold text-green-700">
                       {paidCount} מתוך {total} שילמו
                     </p>
-                    {leadingClass && maxPaidCount > 0 && (
+                    {leadingClasses.length > 0 && maxPaidCount > 0 && (
                       <div className="flex items-center gap-1.5 mt-1.5">
                         <Crown className="text-yellow-600" size={14} fill="currentColor" />
                         <p className="text-xs text-slate-600">
-                          <span className="font-semibold text-yellow-700">{leadingClass}</span> מובילה עם{' '}
+                          <span className="font-semibold text-yellow-700">{leadingClasses.join(', ')}</span>{' '}
+                          {leadingClasses.length > 1 ? 'מובילות' : 'מובילה'} עם{' '}
                           <span className="font-bold text-green-600">{maxPaidCount}</span> תשלומים
                         </p>
                       </div>
@@ -281,7 +284,7 @@ export default function ReunionPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mb-12">
           {Object.entries(allClassesData).map(([className, participants], idx) => {
             const gradient = CLASS_GRADIENTS[className] || CLASS_GRADIENTS['לא צוין'];
-            const isLeading = className === leadingClass;
+            const isLeading = leadingClasses.includes(className);
             const classPaidCount = participants.filter(p => p.paid).length;
             
             return (
