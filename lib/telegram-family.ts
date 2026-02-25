@@ -37,6 +37,45 @@ function escapeHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function getTargetChatIds(excludeChatId?: string): string[] {
+  return excludeChatId ? CHAT_IDS.filter(id => id !== excludeChatId) : CHAT_IDS;
+}
+
+async function sendMessageToTargets(text: string, targetChatIds: string[], source: string): Promise<boolean> {
+  if (!BOT_TOKEN || CHAT_IDS.length === 0) {
+    console.error(`${source}: Missing BOT_TOKEN or CHAT_IDS`, { hasToken: !!BOT_TOKEN, chatCount: CHAT_IDS.length });
+    return false;
+  }
+
+  if (targetChatIds.length === 0) {
+    console.log(`${source}: No recipients after filtering`);
+    return true;
+  }
+
+  try {
+    const results = await Promise.all(
+      targetChatIds.map(async (chatId) => {
+        const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+        });
+        if (!res.ok) {
+          const err = await res.text();
+          console.error(`Failed to send to ${chatId}:`, err);
+        }
+        return res.ok;
+      })
+    );
+    const success = results.every(r => r);
+    console.log(`${source}: Sent to ${targetChatIds.length} chats, success: ${success}`);
+    return success;
+  } catch (error) {
+    console.error(`${source} error:`, error);
+    return false;
+  }
+}
+
 async function sendMessage(text: string): Promise<boolean> {
   if (!BOT_TOKEN || CHAT_IDS.length === 0) {
     console.error('sendMessage: Missing BOT_TOKEN or CHAT_IDS', { hasToken: !!BOT_TOKEN, chatCount: CHAT_IDS.length });
@@ -78,11 +117,6 @@ export async function notifyNewEvent(event: {
   reminder_minutes?: number | null;
 }, excludeChatId?: string): Promise<boolean> {
   console.log('notifyNewEvent called:', event.title, excludeChatId ? `(excluding ${excludeChatId})` : '');
-  
-  if (!BOT_TOKEN || CHAT_IDS.length === 0) {
-    console.error('notifyNewEvent: Missing BOT_TOKEN or CHAT_IDS', { hasToken: !!BOT_TOKEN, chatCount: CHAT_IDS.length });
-    return false;
-  }
 
   const personEmoji = PERSON_EMOJI[event.person] || '👤';
   const catEmoji = CATEGORY_EMOJI[event.category] || '📌';
@@ -114,38 +148,56 @@ ${personEmoji} ${escapeHtml(event.person)}
     message += `\n📝 ${escapeHtml(event.notes)}`;
   }
 
-  // Filter out the sender if excludeChatId is provided
-  const targetChatIds = excludeChatId 
-    ? CHAT_IDS.filter(id => id !== excludeChatId)
-    : CHAT_IDS;
+  const targetChatIds = getTargetChatIds(excludeChatId);
+  return sendMessageToTargets(message, targetChatIds, 'notifyNewEvent');
+}
 
-  if (targetChatIds.length === 0) {
-    console.log('notifyNewEvent: No recipients after filtering');
-    return true; // Not an error - just no one to notify
+type ConflictEvent = {
+  title: string;
+  person: string;
+  category: string;
+  start_time: string;
+  end_time: string;
+};
+
+function formatConflictEventLine(event: ConflictEvent): string {
+  const personEmoji = PERSON_EMOJI[event.person] || '👤';
+  const catEmoji = CATEGORY_EMOJI[event.category] || '📌';
+  const startDate = new Date(event.start_time);
+  const dayName = DAYS_HE[startDate.getDay()];
+
+  return `${catEmoji} <b>${escapeHtml(event.title)}</b> ${personEmoji} ${escapeHtml(event.person)}\n🗓 יום ${dayName}, ${formatDate(event.start_time)}\n🕐 ${formatTime(event.start_time)} - ${formatTime(event.end_time)}`;
+}
+
+// Notify when a newly created event overlaps with existing events
+export async function notifyEventConflict(newEvent: ConflictEvent, overlappingEvents: ConflictEvent[], excludeChatId?: string): Promise<boolean> {
+  if (!overlappingEvents.length) return true;
+
+  const overlapLines = overlappingEvents
+    .slice(0, 5)
+    .map((event, index) => `${index + 1}. ${formatConflictEventLine(event)}`)
+    .join('\n\n');
+  const extraCount = Math.max(0, overlappingEvents.length - 5);
+
+  let message = `⚠️ <b>נוצר קונפליקט ביומן המשפחתי</b>\n\n<b>אירוע חדש:</b>\n${formatConflictEventLine(newEvent)}\n\n<b>מתנגש עם:</b>\n${overlapLines}`;
+  if (extraCount > 0) {
+    message += `\n\nועוד ${extraCount} אירועים נוספים.`;
   }
 
-  try {
-    const results = await Promise.all(
-      targetChatIds.map(async (chatId) => {
-        const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML', disable_web_page_preview: true }),
-        });
-        if (!res.ok) {
-          const err = await res.text();
-          console.error(`Failed to send to ${chatId}:`, err);
-        }
-        return res.ok;
-      })
-    );
-    const success = results.every(r => r);
-    console.log(`notifyNewEvent: Sent to ${targetChatIds.length} chats, success: ${success}`);
-    return success;
-  } catch (error) {
-    console.error('notifyNewEvent error:', error);
-    return false;
-  }
+  const targetChatIds = getTargetChatIds(excludeChatId);
+  return sendMessageToTargets(message, targetChatIds, 'notifyEventConflict');
+}
+
+export async function notifyEventUpdated(previousEvent: ConflictEvent, updatedEvent: ConflictEvent, excludeChatId?: string): Promise<boolean> {
+  const message = `✏️ <b>אירוע עודכן ביומן המשפחתי</b>\n\n<b>לפני:</b>\n${formatConflictEventLine(previousEvent)}\n\n<b>אחרי:</b>\n${formatConflictEventLine(updatedEvent)}`;
+  const targetChatIds = getTargetChatIds(excludeChatId);
+  return sendMessageToTargets(message, targetChatIds, 'notifyEventUpdated');
+}
+
+export async function notifyEventDeleted(event: ConflictEvent, excludeChatId?: string): Promise<boolean> {
+  const message = `🗑 <b>אירוע נמחק מהיומן המשפחתי</b>\n\n${formatConflictEventLine(event)}`;
+  const targetChatIds = getTargetChatIds(excludeChatId);
+  return sendMessageToTargets(message, targetChatIds, 'notifyEventDeleted');
 }
 
 // Build a daily schedule message for a given date

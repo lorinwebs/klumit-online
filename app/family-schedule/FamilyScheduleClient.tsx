@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { ChevronRight, ChevronLeft, Plus, X, AlertTriangle, Sparkles, Loader2, Trash2, RotateCcw, Megaphone, ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, X, AlertTriangle, Sparkles, Loader2, Trash2, RotateCcw, Megaphone, ChevronUp, ChevronDown, Filter } from 'lucide-react';
 import {
   format, startOfWeek, endOfWeek, addDays, addWeeks, subWeeks, addMonths, subMonths,
   isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay, getHours, getMinutes,
@@ -26,8 +26,19 @@ type ViewMode = 'day' | 'week' | 'month';
 const PEOPLE = ['לורין', 'מור', 'רון', 'שי', 'שחר', 'כולם'];
 const DEFAULT_CATEGORIES = ['אימון', 'חוג', 'עבודה', 'משפחה', 'אחר'];
 
-const CAT_BG: Record<string, string> = {
-  'אימון': '#3b82f6', 'חוג': '#a855f7', 'עבודה': '#10b981', 'משפחה': '#f97316', 'אחר': '#6b7280',
+const PERSON_BG: Record<string, string> = {
+  'לורין': '#ec4899',
+  'מור': '#3b82f6',
+  'רון': '#f59e0b',
+  'שי': '#22c55e',
+  'שחר': '#8b5cf6',
+  'כולם': '#6366f1',
+};
+const PERSON_EMOJI: Record<string, string> = {
+  'לורין': '👩', 'מור': '👨', 'רון': '👧', 'שי': '👧', 'שחר': '👧', 'כולם': '👨‍👩‍👧‍👧',
+};
+const CATEGORY_EMOJI: Record<string, string> = {
+  'אימון': '🏋️', 'חוג': '🎨', 'עבודה': '💼', 'משפחה': '👨‍👩‍👧‍👧', 'אחר': '📌',
 };
 const PERSON_COLORS: Record<string, string> = {
   'לורין': 'bg-pink-100 text-pink-800', 'מור': 'bg-sky-100 text-sky-800',
@@ -49,6 +60,14 @@ const ANNOUNCEMENT_COLORS = [
 ];
 
 interface Announcement { id: string; text: string; color: number; created_at: string; }
+
+function getPersonColor(person: string): string {
+  return PERSON_BG[person] || '#6b7280';
+}
+
+function isMultiDayEvent(event: FamilyEvent): boolean {
+  return !isSameDay(new Date(event.start_time), new Date(event.end_time));
+}
 
 // --- Helpers ---
 function fmtTime(iso: string) {
@@ -84,6 +103,19 @@ function findConflicts(events: FamilyEvent[]): Set<string> {
   return ids;
 }
 
+function findConflictPairs(events: FamilyEvent[]): [FamilyEvent, FamilyEvent][] {
+  const pairs: [FamilyEvent, FamilyEvent][] = [];
+  for (let i = 0; i < events.length; i++) {
+    for (let j = i + 1; j < events.length; j++) {
+      const a = events[i], b = events[j];
+      if (a.person !== b.person && a.person !== 'כולם' && b.person !== 'כולם') continue;
+      const [as, ae, bs, be] = [new Date(a.start_time).getTime(), new Date(a.end_time).getTime(), new Date(b.start_time).getTime(), new Date(b.end_time).getTime()];
+      if (as < be && bs < ae) pairs.push([a, b]);
+    }
+  }
+  return pairs;
+}
+
 function getHoursRange(events: FamilyEvent[], expandS = 0, expandE = 0) {
   let mn = 8, mx = 18;
   if (events.length > 0) {
@@ -100,7 +132,6 @@ function getHoursRange(events: FamilyEvent[], expandS = 0, expandE = 0) {
   return { hours: Array.from({ length: mx - mn + 1 }, (_, i) => mn + i), minHour: mn, maxHour: mx, canExpandStart: mn > 0, canExpandEnd: mx < 23 };
 }
 
-// Get hours that have events (for collapsible view)
 function getActiveHoursForWeek(events: FamilyEvent[], weekDates: Date[]): Set<number> {
   const activeHours = new Set<number>();
   weekDates.forEach(day => {
@@ -110,20 +141,16 @@ function getActiveHoursForWeek(events: FamilyEvent[], weekDates: Date[]): Set<nu
       const endH = getHours(new Date(e.end_time));
       const endM = getMinutes(new Date(e.end_time));
       const actualEndH = endM > 0 ? endH + 1 : endH;
-      for (let h = startH; h <= actualEndH; h++) {
-        activeHours.add(h);
-      }
+      for (let h = startH; h <= actualEndH; h++) activeHours.add(h);
     });
   });
   return activeHours;
 }
 
-// Group hours into active and collapsed ranges
 interface HourRange { type: 'active' | 'collapsed'; hours: number[]; }
 function groupHoursForDisplay(allHours: number[], activeHours: Set<number>): HourRange[] {
   const ranges: HourRange[] = [];
   let currentRange: HourRange | null = null;
-  
   allHours.forEach(h => {
     const isActive = activeHours.has(h);
     if (!currentRange || currentRange.type !== (isActive ? 'active' : 'collapsed')) {
@@ -133,12 +160,11 @@ function groupHoursForDisplay(allHours: number[], activeHours: Set<number>): Hou
       currentRange.hours.push(h);
     }
   });
-  
   if (currentRange) ranges.push(currentRange);
   return ranges;
 }
 
-// --- Overlap layout algorithm (Google Calendar style) ---
+// --- Overlap layout algorithm ---
 interface LayoutEvent extends FamilyEvent { col: number; totalCols: number; }
 function layoutOverlappingEvents(events: FamilyEvent[], minHour: number): LayoutEvent[] {
   if (events.length === 0) return [];
@@ -147,7 +173,6 @@ function layoutOverlappingEvents(events: FamilyEvent[], minHour: number): Layout
   const groups: FamilyEvent[][] = [];
   let currentGroup: FamilyEvent[] = [sorted[0]];
   let groupEnd = new Date(sorted[0].end_time).getTime();
-
   for (let i = 1; i < sorted.length; i++) {
     const evStart = new Date(sorted[i].start_time).getTime();
     if (evStart < groupEnd) {
@@ -160,109 +185,189 @@ function layoutOverlappingEvents(events: FamilyEvent[], minHour: number): Layout
     }
   }
   groups.push(currentGroup);
-
   for (const group of groups) {
     const columns: FamilyEvent[][] = [];
     for (const ev of group) {
       let placed = false;
       for (let c = 0; c < columns.length; c++) {
         const lastInCol = columns[c][columns[c].length - 1];
-        if (new Date(lastInCol.end_time).getTime() <= new Date(ev.start_time).getTime()) {
-          columns[c].push(ev);
-          placed = true;
-          break;
-        }
+        if (new Date(lastInCol.end_time).getTime() <= new Date(ev.start_time).getTime()) { columns[c].push(ev); placed = true; break; }
       }
       if (!placed) columns.push([ev]);
     }
     const totalCols = columns.length;
-    columns.forEach((col, colIdx) => {
-      col.forEach(ev => result.push({ ...ev, col: colIdx, totalCols }));
-    });
+    columns.forEach((col, colIdx) => { col.forEach(ev => result.push({ ...ev, col: colIdx, totalCols })); });
   }
   return result;
 }
 
-// --- Event Block (with overlap support) ---
-function EventBlock({ event, isConflict, compact = false, onClick, minHour = 6, col = 0, totalCols = 1, onDragStart, viewDay }: {
-  event: FamilyEvent; isConflict: boolean; compact?: boolean; onClick?: () => void;
-  minHour?: number; col?: number; totalCols?: number; onDragStart?: (e: FamilyEvent) => void;
-  viewDay?: Date;
+// --- Now Indicator ---
+function NowIndicator({ hourToOffset, cumulativeOffset }: { hourToOffset: Map<number, number>; cumulativeOffset: number }) {
+  const now = new Date();
+  if (!isDateToday(now)) return null;
+  const nowH = getHours(now) + getMinutes(now) / 60;
+  const baseOffset = hourToOffset.get(Math.floor(nowH));
+  if (baseOffset === undefined) return null;
+  const nowOffset = baseOffset + ((nowH % 1) * 60);
+  if (nowOffset < 0 || nowOffset > cumulativeOffset) return null;
+  return (
+    <div className="absolute left-0 right-0 z-10 flex items-center pointer-events-none" style={{ top: `${nowOffset}px` }}>
+      <div className="w-2.5 h-2.5 rounded-full bg-red-500 -ml-1 shadow-sm" />
+      <div className="flex-1 border-t-2 border-red-500" />
+    </div>
+  );
+}
+
+// --- All-Day / Multi-Day Banner (Google Calendar style) ---
+function AllDayBanner({ events, conflicts, onEventClick }: {
+  events: FamilyEvent[]; conflicts: Set<string>; onEventClick: (e: FamilyEvent) => void;
 }) {
-  const bg = CAT_BG[event.category] || CAT_BG['אחר'];
+  if (events.length === 0) return null;
+  return (
+    <div className="border-b border-gray-200 bg-gray-50/40 px-1 py-1 space-y-0.5">
+      {events.map(ev => {
+        const color = getPersonColor(ev.person);
+        return (
+          <button key={ev.id} onClick={() => onEventClick(ev)}
+            className={`w-full text-right px-2 py-1 rounded-md text-[11px] font-medium truncate hover:opacity-80 transition-opacity flex items-center gap-1.5 ${conflicts.has(ev.id) ? 'ring-1 ring-red-400' : ''}`}
+            style={{ backgroundColor: color + '20', color }}>
+            <span className="w-1.5 h-full min-h-[14px] rounded-full shrink-0" style={{ backgroundColor: color }} />
+            {PERSON_EMOJI[ev.person] || '👤'} {ev.title}
+            <span className="text-[9px] opacity-70 mr-auto">{fmtTime(ev.start_time)} - {fmtTime(ev.end_time)}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// --- Conflict Panel ---
+function ConflictPanel({ isOpen, onClose, conflictPairs, onEventClick }: {
+  isOpen: boolean; onClose: () => void;
+  conflictPairs: [FamilyEvent, FamilyEvent][];
+  onEventClick: (e: FamilyEvent) => void;
+}) {
+  useEffect(() => {
+    if (isOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex" onClick={onClose}>
+      <div className="flex-1 bg-black/30 backdrop-blur-sm" />
+      <div className="w-full max-w-md bg-white shadow-2xl flex flex-col animate-slide-in-right" dir="rtl" onClick={e => e.stopPropagation()}>
+        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+              <AlertTriangle size={16} className="text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900">{conflictPairs.length} קונפליקטים</h3>
+              <p className="text-xs text-gray-500">אירועים חופפים לאותו אדם</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-full"><X size={20} className="text-gray-500" /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
+          {conflictPairs.length === 0 && (
+            <div className="text-center py-12 text-gray-400">
+              <AlertTriangle size={32} className="mx-auto mb-2 opacity-30" />
+              <p className="text-sm">אין קונפליקטים כרגע</p>
+            </div>
+          )}
+          {conflictPairs.map(([a, b], idx) => {
+            const colorA = getPersonColor(a.person);
+            const colorB = getPersonColor(b.person);
+            return (
+              <div key={idx} className="rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                <button onClick={() => { onEventClick(a); onClose(); }} className="w-full text-right p-3 hover:bg-gray-50 transition-colors flex items-start gap-3">
+                  <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: colorA }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{a.title}</p>
+                    <p className="text-xs text-gray-500">{PERSON_EMOJI[a.person] || '👤'} {a.person} &middot; {fmtTime(a.start_time)} - {fmtTime(a.end_time)}</p>
+                  </div>
+                </button>
+                <div className="px-3 flex items-center gap-2">
+                  <div className="flex-1 border-t border-dashed border-red-200" />
+                  <span className="text-[10px] text-red-400 font-medium shrink-0">חפיפה</span>
+                  <div className="flex-1 border-t border-dashed border-red-200" />
+                </div>
+                <button onClick={() => { onEventClick(b); onClose(); }} className="w-full text-right p-3 hover:bg-gray-50 transition-colors flex items-start gap-3">
+                  <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: colorB }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{b.title}</p>
+                    <p className="text-xs text-gray-500">{PERSON_EMOJI[b.person] || '👤'} {b.person} &middot; {fmtTime(b.start_time)} - {fmtTime(b.end_time)}</p>
+                  </div>
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <style>{`@keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}.animate-slide-in-right{animation:slideInRight .2s ease-out}`}</style>
+    </div>
+  );
+}
+
+// --- Inline event rendering helper used in WeekView / DayView ---
+function renderInlineEvent(ev: LayoutEvent, opts: {
+  top: number; height: number; rightPct: number; widthPct: number;
+  isConflict: boolean; onClick: () => void;
+  draggable?: boolean; onDragStart?: (e: React.DragEvent) => void;
+}) {
+  const color = getPersonColor(ev.person);
+  const catEmoji = CATEGORY_EMOJI[ev.category] || '';
+  return (
+    <button
+      key={ev.id}
+      draggable={opts.draggable}
+      onDragStart={opts.onDragStart}
+      onClick={opts.onClick}
+      style={{ top: `${opts.top}px`, height: `${opts.height}px`, right: `${opts.rightPct}%`, width: `${opts.widthPct - 1}%`, backgroundColor: color + '18', borderRight: `3px solid ${color}` }}
+      className={`absolute rounded-lg px-1.5 py-0.5 overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] pointer-events-auto ${opts.isConflict ? 'ring-2 ring-red-400 ring-offset-1' : ''}`}
+    >
+      {opts.isConflict && <span className="absolute top-0.5 left-0.5 w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
+      <p className="text-[11px] font-semibold truncate" style={{ color }}>{catEmoji ? `${catEmoji} ` : ''}{ev.title}</p>
+      {opts.height > 30 && <p className="text-[10px] text-gray-500">{fmtTime(ev.start_time)} - {fmtTime(ev.end_time)}</p>}
+      {opts.height > 48 && <span className="inline-block text-[9px] px-1.5 py-0.5 rounded-full mt-0.5 font-medium" style={{ backgroundColor: color + '20', color }}>{ev.person}</span>}
+    </button>
+  );
+}
+
+// --- Event Block (compact mode for month view) ---
+function EventBlockCompact({ event, isConflict, onClick, viewDay }: {
+  event: FamilyEvent; isConflict: boolean; onClick?: () => void; viewDay?: Date;
+}) {
+  const color = getPersonColor(event.person);
   const evStart = new Date(event.start_time);
   const evEnd = new Date(event.end_time);
   const isMultiDay = !isSameDay(evStart, evEnd);
   const isFirstDay = viewDay ? isSameDay(evStart, viewDay) : true;
   const isLastDay = viewDay ? isSameDay(evEnd, viewDay) : true;
-
-  if (compact) {
-    const timeLabel = isMultiDay
-      ? (isFirstDay ? fmtTime(event.start_time) : isLastDay ? `עד ${fmtTime(event.end_time)}` : 'כל היום')
-      : fmtTime(event.start_time);
-    return (
-      <button onClick={onClick} className="w-full text-right px-1.5 py-0.5 rounded text-[10px] leading-tight truncate hover:opacity-80 transition-opacity" style={{ backgroundColor: bg + '22', borderRight: `3px solid ${bg}`, color: bg }}>
-        <span className="font-medium">{timeLabel}</span> {event.title}
-      </button>
-    );
-  }
-
-  // For multi-day events: first day shows start_time→end of day, last day shows start of day→end_time, middle days show full day
-  let displayStartH: number, displayEndH: number;
-  if (isMultiDay) {
-    if (isFirstDay) {
-      displayStartH = getHours(evStart) + getMinutes(evStart) / 60;
-      displayEndH = 23.99;
-    } else if (isLastDay) {
-      displayStartH = minHour;
-      displayEndH = getHours(evEnd) + getMinutes(evEnd) / 60;
-    } else {
-      displayStartH = minHour;
-      displayEndH = 23.99;
-    }
-  } else {
-    displayStartH = getHours(evStart) + getMinutes(evStart) / 60;
-    displayEndH = getHours(evEnd) + getMinutes(evEnd) / 60;
-  }
-
-  const duration = Math.abs(displayEndH - displayStartH);
-  const top = (Math.min(displayStartH, displayEndH) - minHour) * 60;
-  const height = Math.max(duration * 60, 24);
-
-  // Google Calendar style: events share width when overlapping
-  const widthPct = 100 / totalCols;
-  const rightPct = col * widthPct;
-
-  // Time label for multi-day
-  const timeStr = isMultiDay
-    ? (isFirstDay ? `${fmtTime(event.start_time)} →` : isLastDay ? `→ ${fmtTime(event.end_time)}` : 'כל היום')
-    : `${fmtTime(event.start_time)} - ${fmtTime(event.end_time)}`;
-
+  const timeLabel = isMultiDay
+    ? (isFirstDay ? fmtTime(event.start_time) : isLastDay ? `עד ${fmtTime(event.end_time)}` : 'כל היום')
+    : fmtTime(event.start_time);
   return (
-    <button
-      draggable
-      onDragStart={(e) => { e.stopPropagation(); onDragStart?.(event); }}
-      onClick={onClick}
-      style={{ top: `${top}px`, height: `${height}px`, right: `${rightPct}%`, width: `${widthPct - 1}%`, backgroundColor: bg + '18', borderRight: `3px solid ${bg}` }}
-      className={`absolute rounded-md px-1 py-0.5 overflow-hidden cursor-pointer transition-all hover:shadow-md pointer-events-auto ${isConflict ? 'ring-2 ring-red-400 ring-offset-1' : ''}`}
-    >
-      {isConflict && <AlertTriangle size={9} className="absolute top-0.5 left-0.5 text-red-500" />}
-      <p className="text-[10px] font-semibold truncate" style={{ color: bg }}>{event.title}</p>
-      {height > 28 && <p className="text-[9px] text-gray-500">{timeStr}</p>}
-      {height > 44 && <span className={`inline-block text-[8px] px-1 rounded mt-0.5 ${PERSON_COLORS[event.person] || 'bg-gray-100 text-gray-800'}`}>{event.person}</span>}
+    <button onClick={onClick} className={`w-full text-right px-1.5 py-0.5 rounded text-[10px] leading-tight truncate hover:opacity-80 transition-opacity ${isConflict ? 'ring-1 ring-red-400' : ''}`} style={{ backgroundColor: color + '20', borderRight: `3px solid ${color}`, color }}>
+      <span className="font-medium">{timeLabel}</span> {event.title}
     </button>
   );
 }
 
-// --- Mobile Day View (Google Calendar style) ---
+// --- Mobile Day View ---
 function MobileDayView({ events, date, conflicts, onCellClick, onEventClick, minHour, hours }: {
   events: FamilyEvent[]; date: Date; conflicts: Set<string>;
   onCellClick: (d: Date, h: number) => void; onEventClick: (e: FamilyEvent) => void;
   minHour: number; hours: number[];
 }) {
   const dayEvents = getEventsForDay(events, date);
+  const multiDayEvents = dayEvents.filter(isMultiDayEvent);
+  const timedEvents = dayEvents.filter(e => !isMultiDayEvent(e));
   const activeHours = new Set<number>();
-  dayEvents.forEach(e => {
+  timedEvents.forEach(e => {
     const startH = getHours(new Date(e.start_time));
     const endH = getHours(new Date(e.end_time));
     const endM = getMinutes(new Date(e.end_time));
@@ -270,19 +375,11 @@ function MobileDayView({ events, date, conflicts, onCellClick, onEventClick, min
     for (let h = startH; h <= actualEndH; h++) activeHours.add(h);
   });
   const hourRanges = groupHoursForDisplay(hours, activeHours);
-  const laid = layoutOverlappingEvents(dayEvents, minHour);
+  const laid = layoutOverlappingEvents(timedEvents, minHour);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [expandedRanges, setExpandedRanges] = useState<Set<number>>(new Set());
+  const toggleRange = (rangeIdx: number) => { setExpandedRanges(prev => { const next = new Set(prev); next.has(rangeIdx) ? next.delete(rangeIdx) : next.add(rangeIdx); return next; }); };
 
-  const toggleRange = (rangeIdx: number) => {
-    setExpandedRanges(prev => {
-      const next = new Set(prev);
-      next.has(rangeIdx) ? next.delete(rangeIdx) : next.add(rangeIdx);
-      return next;
-    });
-  };
-
-  // Calculate cumulative offsets
   const hourToOffset = new Map<number, number>();
   let cumulativeOffset = 0;
   hourRanges.forEach((range, idx) => {
@@ -291,14 +388,10 @@ function MobileDayView({ events, date, conflicts, onCellClick, onEventClick, min
       range.hours.forEach(h => hourToOffset.set(h, cumulativeOffset));
       cumulativeOffset += 20;
     } else {
-      range.hours.forEach(h => {
-        hourToOffset.set(h, cumulativeOffset);
-        cumulativeOffset += 60;
-      });
+      range.hours.forEach(h => { hourToOffset.set(h, cumulativeOffset); cumulativeOffset += 60; });
     }
   });
 
-  // Auto scroll to first event or 8am
   useEffect(() => {
     if (scrollRef.current) {
       const firstEvent = dayEvents.length > 0 ? Math.min(...dayEvents.map(e => getHours(new Date(e.start_time)))) : 8;
@@ -309,15 +402,14 @@ function MobileDayView({ events, date, conflicts, onCellClick, onEventClick, min
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-auto bg-white">
+      <AllDayBanner events={multiDayEvents} conflicts={conflicts} onEventClick={onEventClick} />
       <div className="relative" style={{ height: `${cumulativeOffset}px` }}>
-        {/* Hour lines */}
         {hourRanges.map((range, rangeIdx) => {
           const isExpanded = expandedRanges.has(rangeIdx);
           if (range.type === 'collapsed' && !isExpanded) {
             const offset = hourToOffset.get(range.hours[0]) || 0;
             return (
-              <div key={`range-${rangeIdx}`} className="absolute w-full border-b border-gray-100 bg-gray-50/50 flex" style={{ top: `${offset}px`, height: '20px' }}
-                onClick={() => toggleRange(rangeIdx)}>
+              <div key={`range-${rangeIdx}`} className="absolute w-full border-b border-gray-100 bg-gray-50/50 flex" style={{ top: `${offset}px`, height: '20px' }} onClick={() => toggleRange(rangeIdx)}>
                 <div className="w-12 text-[9px] text-gray-400 flex items-center justify-center shrink-0"><ChevronDown size={12} /></div>
                 <div className="flex-1 flex items-center justify-center border-r border-gray-100">
                   <span className="text-[9px] text-gray-400">{range.hours[0]}:00 - {range.hours[range.hours.length - 1]}:00</span>
@@ -325,18 +417,14 @@ function MobileDayView({ events, date, conflicts, onCellClick, onEventClick, min
               </div>
             );
           }
-          
           return range.hours.map(hour => {
             const offset = hourToOffset.get(hour) || 0;
             return (
-              <div key={hour} className="absolute w-full border-b border-gray-100 flex" style={{ top: `${offset}px`, height: '60px' }}
-                onClick={() => onCellClick(date, hour)}>
+              <div key={hour} className="absolute w-full border-b border-gray-100 flex" style={{ top: `${offset}px`, height: '60px' }} onClick={() => onCellClick(date, hour)}>
                 <div className="w-12 text-[11px] text-gray-400 text-left pl-2 pt-0.5 shrink-0 flex flex-col items-center">
                   <span>{String(hour).padStart(2, '0')}:00</span>
                   {range.type === 'collapsed' && isExpanded && (
-                    <button onClick={(e) => { e.stopPropagation(); toggleRange(rangeIdx); }} className="text-gray-400 hover:text-gray-600 mt-0.5">
-                      <ChevronUp size={10} />
-                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); toggleRange(rangeIdx); }} className="text-gray-400 hover:text-gray-600 mt-0.5"><ChevronUp size={10} /></button>
                   )}
                 </div>
                 <div className="flex-1 border-r border-gray-100" />
@@ -344,7 +432,6 @@ function MobileDayView({ events, date, conflicts, onCellClick, onEventClick, min
             );
           });
         })}
-        {/* Events */}
         <div className="absolute top-0 bottom-0" style={{ right: '48px', left: '4px' }}>
           {laid.map(ev => {
             const startH = getHours(new Date(ev.start_time)) + getMinutes(new Date(ev.start_time)) / 60;
@@ -353,42 +440,16 @@ function MobileDayView({ events, date, conflicts, onCellClick, onEventClick, min
             const endOffset = hourToOffset.get(Math.floor(endH)) || 0;
             const top = startOffset + ((startH % 1) * 60);
             const height = Math.max(endOffset - startOffset + ((endH % 1) * 60) - ((startH % 1) * 60), 24);
-            const widthPct = 100 / ev.totalCols;
-            const rightPct = ev.col * widthPct;
-            const bg = CAT_BG[ev.category] || CAT_BG['אחר'];
-            
-            return (
-              <button
-                key={ev.id}
-                onClick={() => onEventClick(ev)}
-                style={{ top: `${top}px`, height: `${height}px`, right: `${rightPct}%`, width: `${widthPct - 1}%`, backgroundColor: bg + '18', borderRight: `3px solid ${bg}` }}
-                className={`absolute rounded-md px-1 py-0.5 overflow-hidden cursor-pointer transition-all hover:shadow-md ${conflicts.has(ev.id) ? 'ring-2 ring-red-400 ring-offset-1' : ''}`}
-              >
-                {conflicts.has(ev.id) && <AlertTriangle size={9} className="absolute top-0.5 left-0.5 text-red-500" />}
-                <p className="text-[10px] font-semibold truncate" style={{ color: bg }}>{ev.title}</p>
-                {height > 28 && <p className="text-[9px] text-gray-500">{fmtTime(ev.start_time)} - {fmtTime(ev.end_time)}</p>}
-                {height > 44 && <span className={`inline-block text-[8px] px-1 rounded mt-0.5 ${PERSON_COLORS[ev.person] || 'bg-gray-100 text-gray-800'}`}>{ev.person}</span>}
-              </button>
-            );
+            return renderInlineEvent(ev, { top, height, rightPct: ev.col * (100 / ev.totalCols), widthPct: 100 / ev.totalCols, isConflict: conflicts.has(ev.id), onClick: () => onEventClick(ev) });
           })}
         </div>
-        {/* Now indicator */}
-        {isDateToday(date) && (() => {
-          const now = new Date();
-          const nowH = getHours(now) + getMinutes(now) / 60;
-          const nowOffset = (hourToOffset.get(Math.floor(nowH)) || 0) + ((nowH % 1) * 60);
-          if (nowOffset < 0 || nowOffset > cumulativeOffset) return null;
-          return <div className="absolute left-0 right-0 z-10 flex items-center" style={{ top: `${nowOffset}px` }}>
-            <div className="w-2 h-2 rounded-full bg-red-500 -ml-1" />
-            <div className="flex-1 border-t border-red-500" />
-          </div>;
-        })()}
+        {isDateToday(date) && <NowIndicator hourToOffset={hourToOffset} cumulativeOffset={cumulativeOffset} />}
       </div>
     </div>
   );
 }
 
-// --- Mobile Week Strip (Google Calendar style) ---
+// --- Mobile Week Strip ---
 function MobileWeekStrip({ weekDates, currentDate, onSelectDate, events }: {
   weekDates: Date[]; currentDate: Date; onSelectDate: (d: Date) => void; events: FamilyEvent[];
 }) {
@@ -421,28 +482,17 @@ function WeekView({ events, weekDates, conflicts, onCellClick, onEventClick, exp
   expandStart: number; expandEnd: number;
   onEventDrop?: (e: FamilyEvent, d: Date, h: number) => void;
 }) {
-  const { hours, minHour } = getHoursRange(events, expandStart, expandEnd);
-  const activeHours = getActiveHoursForWeek(events, weekDates);
+  const timedEvents = events.filter(e => !isMultiDayEvent(e));
+  const { hours, minHour } = getHoursRange(timedEvents, expandStart, expandEnd);
+  const activeHours = getActiveHoursForWeek(timedEvents, weekDates);
   const hourRanges = groupHoursForDisplay(hours, activeHours);
   const [draggedEvent, setDraggedEvent] = useState<FamilyEvent | null>(null);
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
   const [expandedRanges, setExpandedRanges] = useState<Set<number>>(new Set());
   const gridCols = '60px repeat(7, 1fr)';
+  const handleDrop = (d: Date, h: number) => { if (draggedEvent && onEventDrop) onEventDrop(draggedEvent, d, h); setDraggedEvent(null); setDragOverCell(null); };
+  const toggleRange = (rangeIdx: number) => { setExpandedRanges(prev => { const next = new Set(prev); next.has(rangeIdx) ? next.delete(rangeIdx) : next.add(rangeIdx); return next; }); };
 
-  const handleDrop = (d: Date, h: number) => {
-    if (draggedEvent && onEventDrop) onEventDrop(draggedEvent, d, h);
-    setDraggedEvent(null); setDragOverCell(null);
-  };
-
-  const toggleRange = (rangeIdx: number) => {
-    setExpandedRanges(prev => {
-      const next = new Set(prev);
-      next.has(rangeIdx) ? next.delete(rangeIdx) : next.add(rangeIdx);
-      return next;
-    });
-  };
-
-  // Calculate cumulative offsets for event positioning
   const hourToOffset = new Map<number, number>();
   let cumulativeOffset = 0;
   hourRanges.forEach((range, idx) => {
@@ -451,53 +501,74 @@ function WeekView({ events, weekDates, conflicts, onCellClick, onEventClick, exp
       range.hours.forEach(h => hourToOffset.set(h, cumulativeOffset));
       cumulativeOffset += 20;
     } else {
-      range.hours.forEach(h => {
-        hourToOffset.set(h, cumulativeOffset);
-        cumulativeOffset += 60;
-      });
+      range.hours.forEach(h => { hourToOffset.set(h, cumulativeOffset); cumulativeOffset += 60; });
     }
   });
 
   return (
     <div className="overflow-auto h-full">
-      {/* Day headers */}
-      <div className="border-b border-gray-200 sticky top-0 bg-white z-10" style={{ display: 'grid', gridTemplateColumns: gridCols }}>
-        <div />
-        {weekDates.map((d, i) => {
-          const today = isDateToday(d);
+      <div className="border-b border-gray-200 sticky top-0 bg-white z-10">
+        <div style={{ display: 'grid', gridTemplateColumns: gridCols }}>
+          <div />
+          {weekDates.map((d, i) => {
+            const today = isDateToday(d);
+            const dayEventCount = getEventsForDay(events, d).length;
+            return (
+              <div key={i} className={`py-2.5 text-center border-r border-gray-100 ${today ? 'bg-blue-50/60' : ''}`}>
+                <p className={`text-xs font-medium ${today ? 'text-blue-600' : 'text-gray-500'}`}>{DAYS_HE[i]}</p>
+                <p className={`text-lg font-bold mt-0.5 ${today ? 'bg-blue-500 text-white w-9 h-9 rounded-full flex items-center justify-center mx-auto' : 'text-gray-900'}`}>{d.getDate()}</p>
+                {dayEventCount > 0 && !today && <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mx-auto mt-1" />}
+              </div>
+            );
+          })}
+        </div>
+        {/* Multi-day event banners */}
+        {(() => {
+          const hasAny = weekDates.some(d => getEventsForDay(events, d).some(isMultiDayEvent));
+          if (!hasAny) return null;
           return (
-            <div key={i} className={`py-2 text-center border-r border-gray-100 ${today ? 'bg-blue-50' : ''}`}>
-              <p className="text-xs text-gray-500">{DAYS_HE[i]}</p>
-              <p className={`text-base font-semibold ${today ? 'bg-blue-500 text-white w-7 h-7 rounded-full flex items-center justify-center mx-auto' : 'text-gray-900'}`}>{d.getDate()}</p>
+            <div className="border-t border-gray-100 bg-gray-50/30" style={{ display: 'grid', gridTemplateColumns: gridCols }}>
+              <div className="text-[9px] text-gray-400 flex items-center justify-center py-0.5">כל היום</div>
+              {weekDates.map((d, i) => {
+                const mdEvents = getEventsForDay(events, d).filter(isMultiDayEvent);
+                return (
+                  <div key={i} className="border-r border-gray-100 px-0.5 py-0.5 space-y-0.5">
+                    {mdEvents.map(ev => {
+                      const color = getPersonColor(ev.person);
+                      return (
+                        <button key={ev.id} onClick={() => onEventClick(ev)}
+                          className={`w-full text-right px-1.5 py-0.5 rounded text-[10px] font-medium truncate hover:opacity-80 transition-opacity pointer-events-auto ${conflicts.has(ev.id) ? 'ring-1 ring-red-400' : ''}`}
+                          style={{ backgroundColor: color + '25', color, borderRight: `2px solid ${color}` }}>
+                          {ev.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
           );
-        })}
+        })()}
       </div>
-      {/* Grid */}
       <div className="relative">
         {hourRanges.map((range, rangeIdx) => {
           const isExpanded = expandedRanges.has(rangeIdx);
           if (range.type === 'collapsed' && !isExpanded) {
             return (
               <div key={`range-${rangeIdx}`} className="border-b border-gray-100 bg-gray-50/50" style={{ display: 'grid', gridTemplateColumns: gridCols, height: '20px' }}>
-                <button onClick={() => toggleRange(rangeIdx)} className="text-[9px] text-gray-400 hover:text-gray-600 flex items-center justify-center">
-                  <ChevronDown size={12} />
-                </button>
+                <button onClick={() => toggleRange(rangeIdx)} className="text-[9px] text-gray-400 hover:text-gray-600 flex items-center justify-center"><ChevronDown size={12} /></button>
                 <div className="col-span-7 flex items-center justify-center border-r border-gray-100">
                   <span className="text-[9px] text-gray-400">{range.hours[0]}:00 - {range.hours[range.hours.length - 1]}:00</span>
                 </div>
               </div>
             );
           }
-          
           return range.hours.map(h => (
             <div key={h} className="border-b border-gray-50" style={{ display: 'grid', gridTemplateColumns: gridCols, height: '60px' }}>
               <div className="text-[11px] text-gray-400 text-center pt-0.5 flex flex-col items-center">
                 <span>{String(h).padStart(2, '0')}:00</span>
                 {range.type === 'collapsed' && isExpanded && (
-                  <button onClick={() => toggleRange(rangeIdx)} className="text-gray-400 hover:text-gray-600 mt-0.5">
-                    <ChevronUp size={10} />
-                  </button>
+                  <button onClick={() => toggleRange(rangeIdx)} className="text-gray-400 hover:text-gray-600 mt-0.5"><ChevronUp size={10} /></button>
                 )}
               </div>
               {weekDates.map((d, di) => {
@@ -513,14 +584,16 @@ function WeekView({ events, weekDates, conflicts, onCellClick, onEventClick, exp
             </div>
           ));
         })}
-        {/* Events overlay */}
         <div style={{ position: 'absolute', top: 0, right: 0, left: 0, height: `${cumulativeOffset}px`, display: 'grid', gridTemplateColumns: gridCols, pointerEvents: 'none' }}>
-          <div />
+          <div className="relative">
+            <NowIndicator hourToOffset={hourToOffset} cumulativeOffset={cumulativeOffset} />
+          </div>
           {weekDates.map((d, di) => {
-            const dayEvts = getEventsForDay(events, d);
+            const dayEvts = getEventsForDay(timedEvents, d);
             const laid = layoutOverlappingEvents(dayEvts, minHour);
             return (
               <div key={di} className="relative border-r border-gray-50">
+                {isDateToday(d) && <NowIndicator hourToOffset={hourToOffset} cumulativeOffset={cumulativeOffset} />}
                 {laid.map(ev => {
                   const startH = getHours(new Date(ev.start_time)) + getMinutes(new Date(ev.start_time)) / 60;
                   const endH = getHours(new Date(ev.end_time)) + getMinutes(new Date(ev.end_time)) / 60;
@@ -528,25 +601,7 @@ function WeekView({ events, weekDates, conflicts, onCellClick, onEventClick, exp
                   const endOffset = hourToOffset.get(Math.floor(endH)) || 0;
                   const top = startOffset + ((startH % 1) * 60);
                   const height = Math.max(endOffset - startOffset + ((endH % 1) * 60) - ((startH % 1) * 60), 24);
-                  const widthPct = 100 / ev.totalCols;
-                  const rightPct = ev.col * widthPct;
-                  const bg = CAT_BG[ev.category] || CAT_BG['אחר'];
-                  
-                  return (
-                    <button
-                      key={ev.id}
-                      draggable
-                      onDragStart={(e) => { e.stopPropagation(); setDraggedEvent(ev); }}
-                      onClick={() => onEventClick(ev)}
-                      style={{ top: `${top}px`, height: `${height}px`, right: `${rightPct}%`, width: `${widthPct - 1}%`, backgroundColor: bg + '18', borderRight: `3px solid ${bg}` }}
-                      className={`absolute rounded-md px-1 py-0.5 overflow-hidden cursor-pointer transition-all hover:shadow-md pointer-events-auto ${conflicts.has(ev.id) ? 'ring-2 ring-red-400 ring-offset-1' : ''}`}
-                    >
-                      {conflicts.has(ev.id) && <AlertTriangle size={9} className="absolute top-0.5 left-0.5 text-red-500" />}
-                      <p className="text-[10px] font-semibold truncate" style={{ color: bg }}>{ev.title}</p>
-                      {height > 28 && <p className="text-[9px] text-gray-500">{fmtTime(ev.start_time)} - {fmtTime(ev.end_time)}</p>}
-                      {height > 44 && <span className={`inline-block text-[8px] px-1 rounded mt-0.5 ${PERSON_COLORS[ev.person] || 'bg-gray-100 text-gray-800'}`}>{ev.person}</span>}
-                    </button>
-                  );
+                  return renderInlineEvent(ev, { top, height, rightPct: ev.col * (100 / ev.totalCols), widthPct: 100 / ev.totalCols, isConflict: conflicts.has(ev.id), onClick: () => onEventClick(ev), draggable: true, onDragStart: (e) => { e.stopPropagation(); setDraggedEvent(ev); } });
                 })}
               </div>
             );
@@ -565,9 +620,11 @@ function DesktopDayView({ events, date, conflicts, onCellClick, onEventClick, ex
   onEventDrop?: (e: FamilyEvent, d: Date, h: number) => void;
 }) {
   const dayEvents = getEventsForDay(events, date);
-  const { hours, minHour } = getHoursRange(dayEvents, expandStart, expandEnd);
+  const multiDayEvents = dayEvents.filter(isMultiDayEvent);
+  const timedEvents = dayEvents.filter(e => !isMultiDayEvent(e));
+  const { hours, minHour } = getHoursRange(timedEvents, expandStart, expandEnd);
   const activeHours = new Set<number>();
-  dayEvents.forEach(e => {
+  timedEvents.forEach(e => {
     const startH = getHours(new Date(e.start_time));
     const endH = getHours(new Date(e.end_time));
     const endM = getMinutes(new Date(e.end_time));
@@ -575,20 +632,12 @@ function DesktopDayView({ events, date, conflicts, onCellClick, onEventClick, ex
     for (let h = startH; h <= actualEndH; h++) activeHours.add(h);
   });
   const hourRanges = groupHoursForDisplay(hours, activeHours);
-  const laid = layoutOverlappingEvents(dayEvents, minHour);
+  const laid = layoutOverlappingEvents(timedEvents, minHour);
   const [draggedEvent, setDraggedEvent] = useState<FamilyEvent | null>(null);
   const [dragOverHour, setDragOverHour] = useState<number | null>(null);
   const [expandedRanges, setExpandedRanges] = useState<Set<number>>(new Set());
+  const toggleRange = (rangeIdx: number) => { setExpandedRanges(prev => { const next = new Set(prev); next.has(rangeIdx) ? next.delete(rangeIdx) : next.add(rangeIdx); return next; }); };
 
-  const toggleRange = (rangeIdx: number) => {
-    setExpandedRanges(prev => {
-      const next = new Set(prev);
-      next.has(rangeIdx) ? next.delete(rangeIdx) : next.add(rangeIdx);
-      return next;
-    });
-  };
-
-  // Calculate cumulative offsets for event positioning
   const hourToOffset = new Map<number, number>();
   let cumulativeOffset = 0;
   hourRanges.forEach((range, idx) => {
@@ -597,10 +646,7 @@ function DesktopDayView({ events, date, conflicts, onCellClick, onEventClick, ex
       range.hours.forEach(h => hourToOffset.set(h, cumulativeOffset));
       cumulativeOffset += 20;
     } else {
-      range.hours.forEach(h => {
-        hourToOffset.set(h, cumulativeOffset);
-        cumulativeOffset += 60;
-      });
+      range.hours.forEach(h => { hourToOffset.set(h, cumulativeOffset); cumulativeOffset += 60; });
     }
   });
 
@@ -610,30 +656,26 @@ function DesktopDayView({ events, date, conflicts, onCellClick, onEventClick, ex
         <p className="text-sm text-gray-500">{DAYS_HE[getDay(date)]}</p>
         <p className="text-xl font-semibold text-gray-900">{format(date, 'd/M')}</p>
       </div>
+      <AllDayBanner events={multiDayEvents} conflicts={conflicts} onEventClick={onEventClick} />
       <div className="relative">
         {hourRanges.map((range, rangeIdx) => {
           const isExpanded = expandedRanges.has(rangeIdx);
           if (range.type === 'collapsed' && !isExpanded) {
             return (
               <div key={`range-${rangeIdx}`} className="flex border-b border-gray-100 bg-gray-50/50" style={{ height: '20px' }}>
-                <button onClick={() => toggleRange(rangeIdx)} className="w-[60px] text-[9px] text-gray-400 hover:text-gray-600 flex items-center justify-center shrink-0">
-                  <ChevronDown size={12} />
-                </button>
+                <button onClick={() => toggleRange(rangeIdx)} className="w-[60px] text-[9px] text-gray-400 hover:text-gray-600 flex items-center justify-center shrink-0"><ChevronDown size={12} /></button>
                 <div className="flex-1 flex items-center justify-center">
                   <span className="text-[9px] text-gray-400">{range.hours[0]}:00 - {range.hours[range.hours.length - 1]}:00</span>
                 </div>
               </div>
             );
           }
-          
           return range.hours.map(h => (
             <div key={h} className="flex border-b border-gray-50" style={{ height: '60px' }}>
               <div className="w-[60px] text-[11px] text-gray-400 text-center pt-0.5 shrink-0 flex flex-col items-center">
                 <span>{String(h).padStart(2, '0')}:00</span>
                 {range.type === 'collapsed' && isExpanded && (
-                  <button onClick={() => toggleRange(rangeIdx)} className="text-gray-400 hover:text-gray-600 mt-0.5">
-                    <ChevronUp size={10} />
-                  </button>
+                  <button onClick={() => toggleRange(rangeIdx)} className="text-gray-400 hover:text-gray-600 mt-0.5"><ChevronUp size={10} /></button>
                 )}
               </div>
               <div className={`flex-1 cursor-pointer hover:bg-blue-50/30 ${dragOverHour === h ? 'bg-blue-200/40' : ''}`}
@@ -645,6 +687,7 @@ function DesktopDayView({ events, date, conflicts, onCellClick, onEventClick, ex
           ));
         })}
         <div className="absolute top-0 left-0" style={{ right: '60px', height: `${cumulativeOffset}px` }}>
+          {isDateToday(date) && <NowIndicator hourToOffset={hourToOffset} cumulativeOffset={cumulativeOffset} />}
           {laid.map(ev => {
             const startH = getHours(new Date(ev.start_time)) + getMinutes(new Date(ev.start_time)) / 60;
             const endH = getHours(new Date(ev.end_time)) + getMinutes(new Date(ev.end_time)) / 60;
@@ -652,25 +695,7 @@ function DesktopDayView({ events, date, conflicts, onCellClick, onEventClick, ex
             const endOffset = hourToOffset.get(Math.floor(endH)) || 0;
             const top = startOffset + ((startH % 1) * 60);
             const height = Math.max(endOffset - startOffset + ((endH % 1) * 60) - ((startH % 1) * 60), 24);
-            const widthPct = 100 / ev.totalCols;
-            const rightPct = ev.col * widthPct;
-            const bg = CAT_BG[ev.category] || CAT_BG['אחר'];
-            
-            return (
-              <button
-                key={ev.id}
-                draggable
-                onDragStart={(e) => { e.stopPropagation(); setDraggedEvent(ev); }}
-                onClick={() => onEventClick(ev)}
-                style={{ top: `${top}px`, height: `${height}px`, right: `${rightPct}%`, width: `${widthPct - 1}%`, backgroundColor: bg + '18', borderRight: `3px solid ${bg}` }}
-                className={`absolute rounded-md px-1 py-0.5 overflow-hidden cursor-pointer transition-all hover:shadow-md pointer-events-auto ${conflicts.has(ev.id) ? 'ring-2 ring-red-400 ring-offset-1' : ''}`}
-              >
-                {conflicts.has(ev.id) && <AlertTriangle size={9} className="absolute top-0.5 left-0.5 text-red-500" />}
-                <p className="text-[10px] font-semibold truncate" style={{ color: bg }}>{ev.title}</p>
-                {height > 28 && <p className="text-[9px] text-gray-500">{fmtTime(ev.start_time)} - {fmtTime(ev.end_time)}</p>}
-                {height > 44 && <span className={`inline-block text-[8px] px-1 rounded mt-0.5 ${PERSON_COLORS[ev.person] || 'bg-gray-100 text-gray-800'}`}>{ev.person}</span>}
-              </button>
-            );
+            return renderInlineEvent(ev, { top, height, rightPct: ev.col * (100 / ev.totalCols), widthPct: 100 / ev.totalCols, isConflict: conflicts.has(ev.id), onClick: () => onEventClick(ev), draggable: true, onDragStart: (e) => { e.stopPropagation(); setDraggedEvent(ev); } });
           })}
         </div>
       </div>
@@ -701,7 +726,7 @@ function MonthView({ events, currentDate, conflicts, onDayClick }: {
             <div key={i} className={`min-h-[80px] md:min-h-[100px] border-b border-r border-gray-100 p-1 cursor-pointer hover:bg-gray-50 ${!isCur ? 'bg-gray-50/50' : ''}`} onClick={() => onDayClick(d)}>
               <p className={`text-xs font-medium mb-1 ${isDateToday(d) ? 'bg-blue-500 text-white w-5 h-5 rounded-full flex items-center justify-center' : isCur ? 'text-gray-900' : 'text-gray-300'}`}>{d.getDate()}</p>
               <div className="space-y-0.5">
-                {dayEvts.slice(0, 3).map(ev => <EventBlock key={ev.id} event={ev} isConflict={conflicts.has(ev.id)} compact viewDay={d} />)}
+                {dayEvts.slice(0, 3).map(ev => <EventBlockCompact key={ev.id} event={ev} isConflict={conflicts.has(ev.id)} viewDay={d} />)}
                 {dayEvts.length > 3 && <p className="text-[9px] text-gray-400 text-center">+{dayEvts.length - 3}</p>}
               </div>
             </div>
@@ -797,7 +822,6 @@ function EventModal({ isOpen, onClose, onSave, onDelete, initialDate, initialHou
     try { await onDelete(editEvent.id); onClose(); } finally { setDeleting(false); }
   };
 
-  // Lock body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -824,9 +848,9 @@ function EventModal({ isOpen, onClose, onSave, onDelete, initialDate, initialHou
           <h3 className="text-base font-semibold text-gray-900">{editEvent ? 'עריכת אירוע' : 'אירוע חדש'}</h3>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full"><X size={20} className="text-gray-500" /></button>
         </div>
-        <div className="px-5 py-4 space-y-3">
+        <div className="px-5 py-4 space-y-4">
           {!editEvent && (
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 border border-blue-100">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-3 border border-blue-100">
               <div className="flex items-center gap-1.5 mb-2"><Sparkles size={14} className="text-blue-500" /><span className="text-xs font-medium text-blue-700">הוספה חכמה</span></div>
               <div className="flex gap-2">
                 <input type="text" value={aiText} onChange={e => setAiText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAiParse()} className="flex-1 border border-blue-200 rounded-lg px-3 py-2 text-sm outline-none bg-white" placeholder='למשל: "מור כדורסל יום שני 19:00"' />
@@ -837,63 +861,97 @@ function EventModal({ isOpen, onClose, onSave, onDelete, initialDate, initialHou
               {aiError && <p className="text-xs text-red-500 mt-1">{aiError}</p>}
             </div>
           )}
-          <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm outline-none" placeholder="כותרת האירוע" />
+          <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300 transition-all" placeholder="כותרת האירוע" />
+
+          {/* Person selector as avatar chips */}
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-2">למי?</p>
+            <div className="flex flex-wrap gap-2">
+              {PEOPLE.map(p => {
+                const color = getPersonColor(p);
+                const isSelected = person === p;
+                return (
+                  <button key={p} onClick={() => setPerson(p)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border-2 ${isSelected ? 'shadow-sm' : 'border-transparent bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                    style={isSelected ? { borderColor: color, backgroundColor: color + '15', color } : undefined}>
+                    <span className="text-sm">{PERSON_EMOJI[p] || '👤'}</span> {p}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Category selector as pills */}
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-2">קטגוריה</p>
+            <div className="flex flex-wrap gap-2">
+              {categories.map(c => (
+                <button key={c} onClick={() => setCategory(c)}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${category === c ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                  {CATEGORY_EMOJI[c] && <span>{CATEGORY_EMOJI[c]}</span>} {c}
+                </button>
+              ))}
+              {!showNewCat ? (
+                <button onClick={() => setShowNewCat(true)} className="px-2.5 py-1.5 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"><Plus size={14} /></button>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <input type="text" value={newCatName} onChange={e => setNewCatName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newCatName.trim()) { onAddCategory(newCatName.trim()); setCategory(newCatName.trim()); setNewCatName(''); setShowNewCat(false); } }} autoFocus className="border border-gray-300 rounded-full px-3 py-1 text-xs outline-none w-24" placeholder="חדשה..." />
+                  <button onClick={() => { setShowNewCat(false); setNewCatName(''); }} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
-            <select value={person} onChange={e => setPerson(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none bg-white">
-              {PEOPLE.map(p => <option key={p} value={p}>{p}</option>)}
-            </select>
-            {!showNewCat ? (
-              <div className="flex gap-1">
-                <select value={category} onChange={e => setCategory(e.target.value)} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none bg-white">
-                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <button type="button" onClick={() => setShowNewCat(true)} className="px-2 border border-gray-300 rounded-lg hover:bg-gray-50"><Plus size={16} className="text-gray-600" /></button>
-              </div>
-            ) : (
-              <div className="flex gap-1">
-                <input type="text" value={newCatName} onChange={e => setNewCatName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newCatName.trim()) { onAddCategory(newCatName.trim()); setCategory(newCatName.trim()); setNewCatName(''); setShowNewCat(false); } }} autoFocus className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none" placeholder="קטגוריה חדשה" />
-                <button onClick={() => { setShowNewCat(false); setNewCatName(''); }} className="px-2 border border-gray-300 rounded-lg hover:bg-gray-50"><X size={16} className="text-gray-600" /></button>
-              </div>
-            )}
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-1">מתאריך</p>
+              <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); if (endDate && e.target.value > endDate) setEndDate(e.target.value); }} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-1">עד תאריך</p>
+              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200" />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <input type="date" value={startDate} onChange={e => { setStartDate(e.target.value); if (endDate && e.target.value > endDate) setEndDate(e.target.value); }} className="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none" />
-            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} className="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none" />
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-1">שעת התחלה</p>
+              <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-1">שעת סיום</p>
+              <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-200" />
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none" />
-            <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none" />
-          </div>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none resize-none" rows={2} placeholder="הערות (אופציונלי)" />
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none resize-none focus:ring-2 focus:ring-blue-200" rows={2} placeholder="הערות (אופציונלי)" />
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 text-sm text-gray-700">
               <input type="checkbox" checked={recurring} onChange={e => setRecurring(e.target.checked)} className="rounded border-gray-300" />
               <RotateCcw size={12} /> חוזר כל שבוע
             </label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700">תזכורת בטלגרם 📱</span>
-              <select value={reminderMinutes} onChange={e => setReminderMinutes(e.target.value)} className="border border-gray-300 rounded-lg px-2 py-1 text-sm bg-white">
+              <span className="text-sm text-gray-700">תזכורת</span>
+              <select value={reminderMinutes} onChange={e => setReminderMinutes(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1 text-sm bg-white outline-none">
                 <option value="">ללא</option>
-                <option value="5">5 דק' לפני</option>
-                <option value="10">10 דק' לפני</option>
-                <option value="15">15 דק' לפני</option>
-                <option value="30">30 דק' לפני</option>
-                <option value="60">שעה לפני</option>
-                <option value="120">שעתיים לפני</option>
-                <option value="1440">יום לפני</option>
+                <option value="5">5 דק&apos;</option>
+                <option value="10">10 דק&apos;</option>
+                <option value="15">15 דק&apos;</option>
+                <option value="30">30 דק&apos;</option>
+                <option value="60">שעה</option>
+                <option value="120">שעתיים</option>
+                <option value="1440">יום</option>
               </select>
             </div>
           </div>
-          <div className="flex gap-3 pt-1">
-            <button onClick={handleSave} disabled={saving || !title} className="flex-1 bg-blue-500 text-white py-2.5 rounded-lg text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-1">
+          <div className="flex gap-3 pt-2">
+            <button onClick={handleSave} disabled={saving || !title} className="flex-1 bg-blue-500 text-white py-3 rounded-xl text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-1 hover:bg-blue-600 transition-colors shadow-sm">
               {saving && <Loader2 size={14} className="animate-spin" />} {editEvent ? 'עדכן' : 'שמור'}
             </button>
             {editEvent && onDelete && (
-              <button onClick={handleDelete} disabled={deleting} className="px-4 py-2.5 border border-red-300 text-red-600 rounded-lg text-sm font-medium flex items-center gap-1">
+              <button onClick={handleDelete} disabled={deleting} className="px-4 py-3 border border-red-200 text-red-600 rounded-xl text-sm font-medium flex items-center gap-1 hover:bg-red-50 transition-colors">
                 {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} מחק
               </button>
             )}
-            <button onClick={onClose} className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg text-sm font-medium">ביטול</button>
+            <button onClick={onClose} className="flex-1 border border-gray-200 text-gray-600 py-3 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">ביטול</button>
           </div>
         </div>
       </div>
@@ -905,11 +963,17 @@ function EventModal({ isOpen, onClose, onSave, onDelete, initialDate, initialHou
 function FilterBar({ selectedPeople, onTogglePerson }: { selectedPeople: Set<string>; onTogglePerson: (p: string) => void }) {
   return (
     <div className="flex flex-wrap gap-1.5">
-      {PEOPLE.map(p => (
-        <button key={p} onClick={() => onTogglePerson(p)} className={`px-2 py-1 rounded-full text-[11px] font-medium transition-all ${selectedPeople.has(p) ? (PERSON_COLORS[p] || 'bg-gray-100 text-gray-800') : 'bg-gray-100 text-gray-300'}`}>
-          {p}
-        </button>
-      ))}
+      {PEOPLE.map(p => {
+        const color = getPersonColor(p);
+        const isActive = selectedPeople.has(p);
+        return (
+          <button key={p} onClick={() => onTogglePerson(p)}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all border-2 ${isActive ? '' : 'border-transparent bg-gray-100 text-gray-400 opacity-50'}`}
+            style={isActive ? { borderColor: color + '60', backgroundColor: color + '12', color } : undefined}>
+            <span className="text-xs">{PERSON_EMOJI[p] || '👤'}</span> {p}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -928,22 +992,19 @@ export default function FamilyScheduleClient() {
   const [editEvent, setEditEvent] = useState<FamilyEvent | null>(null);
   const [selectedPeople, setSelectedPeople] = useState(new Set(PEOPLE));
   const [isMobile, setIsMobile] = useState(false);
+  const [showConflictPanel, setShowConflictPanel] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [pendingUndoDelete, setPendingUndoDelete] = useState<{ event: FamilyEvent; secondsLeft: number } | null>(null);
   const pendingDeleteRef = useRef<FamilyEvent | null>(null);
   const deleteTimeoutRef = useRef<number | null>(null);
   const deleteIntervalRef = useRef<number | null>(null);
   const deleteDeadlineRef = useRef<number>(0);
 
-  // Announcements
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [showAnnInput, setShowAnnInput] = useState(false);
   const [annText, setAnnText] = useState('');
-
-  // Expand hours
   const [expandStart, setExpandStart] = useState(0);
   const [expandEnd, setExpandEnd] = useState(0);
-
-  // Categories
   const [customCats, setCustomCats] = useState<string[]>([]);
   const categories = useMemo(() => [...DEFAULT_CATEGORIES, ...customCats], [customCats]);
 
@@ -951,7 +1012,6 @@ export default function FamilyScheduleClient() {
     const saved = localStorage.getItem('family-schedule-custom-categories');
     if (saved) try { setCustomCats(JSON.parse(saved)); } catch {}
   }, []);
-
   const addCustomCat = (c: string) => {
     if (!c.trim() || categories.includes(c.trim())) return;
     const u = [...customCats, c.trim()];
@@ -959,20 +1019,10 @@ export default function FamilyScheduleClient() {
     localStorage.setItem('family-schedule-custom-categories', JSON.stringify(u));
   };
 
-  // Detect mobile
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-
-  // Auto day view on mobile
+  useEffect(() => { const check = () => setIsMobile(window.innerWidth < 768); check(); window.addEventListener('resize', check); return () => window.removeEventListener('resize', check); }, []);
   useEffect(() => { if (isMobile) setView('day'); }, [isMobile]);
-
   useEffect(() => { setExpandStart(0); setExpandEnd(0); }, [view]);
 
-  // Fetch events
   const fetchEvents = useCallback(async () => {
     try {
       const wk = getWeekDates(currentDate);
@@ -984,7 +1034,6 @@ export default function FamilyScheduleClient() {
   }, [currentDate]);
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
-  // Fetch announcements
   const fetchAnn = useCallback(async () => {
     try { const res = await fetch('/api/family/announcements'); const d = await res.json(); if (d.announcements) setAnnouncements(d.announcements); } catch {}
   }, []);
@@ -1002,6 +1051,7 @@ export default function FamilyScheduleClient() {
     return events.filter(e => (selectedPeople.has(e.person) || (e.person === 'כולם' && selectedPeople.size > 0)) && e.id !== pendingId);
   }, [events, selectedPeople, pendingUndoDelete]);
   const conflicts = useMemo(() => findConflicts(filteredEvents), [filteredEvents]);
+  const conflictPairs = useMemo(() => findConflictPairs(filteredEvents), [filteredEvents]);
   const weekDates = useMemo(() => getWeekDates(currentDate), [currentDate]);
 
   const hoursInfo = useMemo(() => {
@@ -1030,47 +1080,27 @@ export default function FamilyScheduleClient() {
     await fetchEvents();
   };
   const clearPendingDeleteTimers = () => {
-    if (deleteTimeoutRef.current !== null) {
-      window.clearTimeout(deleteTimeoutRef.current);
-      deleteTimeoutRef.current = null;
-    }
-    if (deleteIntervalRef.current !== null) {
-      window.clearInterval(deleteIntervalRef.current);
-      deleteIntervalRef.current = null;
-    }
+    if (deleteTimeoutRef.current !== null) { window.clearTimeout(deleteTimeoutRef.current); deleteTimeoutRef.current = null; }
+    if (deleteIntervalRef.current !== null) { window.clearInterval(deleteIntervalRef.current); deleteIntervalRef.current = null; }
   };
-  const commitDeleteNow = async (id: string) => {
-    await fetch(`/api/family/events/${id}`, { method: 'DELETE' });
-    await fetchEvents();
-  };
+  const commitDeleteNow = async (id: string) => { await fetch(`/api/family/events/${id}`, { method: 'DELETE' }); await fetchEvents(); };
   const handleDelete = async (id: string) => {
     if (pendingDeleteRef.current) {
       const prevPending = pendingDeleteRef.current;
-      clearPendingDeleteTimers();
-      pendingDeleteRef.current = null;
-      setPendingUndoDelete(null);
+      clearPendingDeleteTimers(); pendingDeleteRef.current = null; setPendingUndoDelete(null);
       await commitDeleteNow(prevPending.id);
     }
-
     const target = events.find(e => e.id === id) || editEvent;
-    if (!target) {
-      await commitDeleteNow(id);
-      return;
-    }
-
+    if (!target) { await commitDeleteNow(id); return; }
     pendingDeleteRef.current = target;
     deleteDeadlineRef.current = Date.now() + 10000;
     setPendingUndoDelete({ event: target, secondsLeft: 10 });
     setEvents(prev => prev.filter(e => e.id !== id));
-
     deleteTimeoutRef.current = window.setTimeout(async () => {
       const pending = pendingDeleteRef.current;
-      clearPendingDeleteTimers();
-      pendingDeleteRef.current = null;
-      setPendingUndoDelete(null);
+      clearPendingDeleteTimers(); pendingDeleteRef.current = null; setPendingUndoDelete(null);
       if (pending) await commitDeleteNow(pending.id);
     }, 10000);
-
     deleteIntervalRef.current = window.setInterval(() => {
       const msLeft = Math.max(0, deleteDeadlineRef.current - Date.now());
       const secondsLeft = Math.ceil(msLeft / 1000);
@@ -1080,16 +1110,14 @@ export default function FamilyScheduleClient() {
   const handleUndoDelete = () => {
     const pending = pendingDeleteRef.current;
     if (!pending) return;
-    clearPendingDeleteTimers();
-    pendingDeleteRef.current = null;
-    setPendingUndoDelete(null);
+    clearPendingDeleteTimers(); pendingDeleteRef.current = null; setPendingUndoDelete(null);
     setEvents(prev => [...prev, pending].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()));
   };
   useEffect(() => () => clearPendingDeleteTimers(), []);
   const handleDrop = async (ev: FamilyEvent, newDate: Date, newHour: number) => {
     const dur = differenceInMinutes(new Date(ev.end_time), new Date(ev.start_time));
     const ns = setMinutes(setHours(newDate, newHour), 0);
-    const ne = addDays(ns, 0); ne.setMinutes(ne.getMinutes() + dur); // addMinutes
+    const ne = addDays(ns, 0); ne.setMinutes(ne.getMinutes() + dur);
     await fetch(`/api/family/events/${ev.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...ev, start_time: ns.toISOString(), end_time: ne.toISOString() }) });
     await fetchEvents();
   };
@@ -1103,27 +1131,30 @@ export default function FamilyScheduleClient() {
     return `${MONTHS_HE[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
   };
 
+  const conflictCount = conflictPairs.length;
+
   // =====================
-  // MOBILE LAYOUT (Google Calendar style)
+  // MOBILE LAYOUT
   // =====================
   if (isMobile) {
     return (
       <div className="h-screen bg-white flex flex-col overflow-hidden family-schedule-root" dir="rtl">
         <style>{`.family-schedule-root button,.family-schedule-root a,.family-schedule-root [role="button"]{min-height:unset!important;min-width:unset!important;}`}</style>
 
-        {/* Top bar - like Google Calendar */}
         <div className="bg-white px-3 py-2 flex items-center justify-between border-b border-gray-100">
           <div className="flex items-center gap-2">
             <span className="text-base font-semibold text-gray-900">{getTitle()}</span>
+            {conflictCount > 0 && (
+              <button onClick={() => setShowConflictPanel(true)} className="flex items-center gap-1 bg-red-50 text-red-600 px-2 py-0.5 rounded-full text-[10px] font-semibold animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> {conflictCount}
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-1.5">
+            <button onClick={() => setShowMobileFilters(f => !f)} className={`p-1.5 rounded-full ${showMobileFilters ? 'bg-blue-100 text-blue-600' : 'text-gray-500'}`}><Filter size={16} /></button>
             <div className="flex items-center gap-0.5">
-              <button onClick={navBack} className="p-1.5 hover:bg-gray-100 rounded-full" aria-label="קודם">
-                <ChevronRight size={18} className="text-gray-600" />
-              </button>
-              <button onClick={navForward} className="p-1.5 hover:bg-gray-100 rounded-full" aria-label="הבא">
-                <ChevronLeft size={18} className="text-gray-600" />
-              </button>
+              <button onClick={navBack} className="p-1.5 hover:bg-gray-100 rounded-full"><ChevronRight size={18} className="text-gray-600" /></button>
+              <button onClick={navForward} className="p-1.5 hover:bg-gray-100 rounded-full"><ChevronLeft size={18} className="text-gray-600" /></button>
             </div>
             <button onClick={() => setCurrentDate(new Date())} className="px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded">היום</button>
             <div className="flex bg-gray-100 rounded-lg p-0.5">
@@ -1136,46 +1167,39 @@ export default function FamilyScheduleClient() {
           </div>
         </div>
 
-        {/* Week strip - always visible in day view */}
-        {view === 'day' && (
-          <MobileWeekStrip weekDates={weekDates} currentDate={currentDate} onSelectDate={setCurrentDate} events={filteredEvents} />
+        {showMobileFilters && (
+          <div className="px-3 py-2 border-b border-gray-100 bg-gray-50/50">
+            <FilterBar selectedPeople={selectedPeople} onTogglePerson={togglePerson} />
+          </div>
         )}
 
-        {/* Content */}
+        {view === 'day' && <MobileWeekStrip weekDates={weekDates} currentDate={currentDate} onSelectDate={setCurrentDate} events={filteredEvents} />}
+
         {loading ? (
           <div className="flex-1 flex items-center justify-center"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
         ) : (
           <>
             {view === 'day' && <MobileDayView events={filteredEvents} date={currentDate} conflicts={conflicts} onCellClick={openAdd} onEventClick={openEdit} minHour={hoursInfo.minHour} hours={hoursInfo.hours} />}
-            {view === 'week' && (
-              <div className="flex-1 overflow-auto">
-                <WeekView events={filteredEvents} weekDates={weekDates} conflicts={conflicts} onCellClick={openAdd} onEventClick={openEdit} expandStart={expandStart} expandEnd={expandEnd} />
-              </div>
-            )}
-            {view === 'month' && (
-              <div className="flex-1 overflow-auto">
-                <MonthView events={filteredEvents} currentDate={currentDate} conflicts={conflicts} onDayClick={d => { setCurrentDate(d); setView('day'); }} />
-              </div>
-            )}
+            {view === 'week' && <div className="flex-1 overflow-auto"><WeekView events={filteredEvents} weekDates={weekDates} conflicts={conflicts} onCellClick={openAdd} onEventClick={openEdit} expandStart={expandStart} expandEnd={expandEnd} /></div>}
+            {view === 'month' && <div className="flex-1 overflow-auto"><MonthView events={filteredEvents} currentDate={currentDate} conflicts={conflicts} onDayClick={d => { setCurrentDate(d); setView('day'); }} /></div>}
           </>
         )}
 
-        {/* Mobile navigation helper (day name) */}
         {view === 'day' && (
           <div className="bg-white border-t border-gray-100 px-4 py-1.5 flex items-center justify-center">
             <span className="text-sm text-gray-500">{DAYS_HE[getDay(currentDate)]}</span>
           </div>
         )}
 
-        {/* FAB */}
-        <button onClick={() => openAdd(currentDate)} className="fixed bottom-20 left-4 bg-blue-500 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-40">
+        <button onClick={() => openAdd(currentDate)} className="fixed bottom-20 left-4 bg-gradient-to-br from-blue-500 to-blue-600 text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center z-40 hover:shadow-2xl transition-shadow">
           <Plus size={28} />
         </button>
 
         <EventModal isOpen={showModal} onClose={() => setShowModal(false)} onSave={handleSave} onDelete={handleDelete} initialDate={modalDate} initialHour={modalHour} editEvent={editEvent} categories={categories} onAddCategory={addCustomCat} />
+        <ConflictPanel isOpen={showConflictPanel} onClose={() => setShowConflictPanel(false)} conflictPairs={conflictPairs} onEventClick={openEdit} />
         {pendingUndoDelete && (
-          <div className="fixed bottom-4 right-1/2 translate-x-1/2 z-50 bg-gray-900 text-white rounded-xl shadow-xl px-3 py-2 flex items-center gap-3">
-            <span className="text-xs">האירוע "{pendingUndoDelete.event.title}" נמחק ({pendingUndoDelete.secondsLeft})</span>
+          <div className="fixed bottom-4 right-1/2 translate-x-1/2 z-50 bg-gray-900 text-white rounded-xl shadow-xl px-4 py-2.5 flex items-center gap-3">
+            <span className="text-xs">האירוע &quot;{pendingUndoDelete.event.title}&quot; נמחק ({pendingUndoDelete.secondsLeft})</span>
             <button onClick={handleUndoDelete} className="text-xs font-semibold text-blue-300 hover:text-blue-200">UNDO</button>
           </div>
         )}
@@ -1186,45 +1210,48 @@ export default function FamilyScheduleClient() {
   // =====================
   // DESKTOP LAYOUT
   // =====================
-  const conflictCount = Math.floor(conflicts.size / 2);
-
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden family-schedule-root" dir="rtl">
       <style>{`.family-schedule-root button,.family-schedule-root a,.family-schedule-root [role="button"]{min-height:unset!important;min-width:unset!important;}`}</style>
 
-      {/* Desktop Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold text-gray-900">לוז משפחתי</h1>
-              {conflictCount > 0 && <span className="flex items-center gap-1 bg-red-50 text-red-600 px-2 py-0.5 rounded-full text-[10px] font-medium"><AlertTriangle size={10} /> {conflictCount} קונפליקטים</span>}
+              {conflictCount > 0 && (
+                <button onClick={() => setShowConflictPanel(true)} className="flex items-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  {conflictCount} קונפליקטים
+                </button>
+              )}
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setShowAnnInput(true)} className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-50"><Megaphone size={14} /> הודעה</button>
-              <button onClick={() => openAdd()} className="flex items-center gap-1.5 bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 shadow-sm"><Plus size={16} /> אירוע חדש</button>
+              <button onClick={() => setShowAnnInput(true)} className="flex items-center gap-1.5 border border-gray-200 text-gray-600 px-3 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"><Megaphone size={14} /> הודעה</button>
+              <button onClick={() => openAdd()} className="flex items-center gap-1.5 bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-600 shadow-sm transition-colors"><Plus size={16} /> אירוע חדש</button>
             </div>
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              <div className="flex bg-gray-100 rounded-lg p-0.5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex bg-gray-100 rounded-xl p-0.5">
                 {(['day', 'week', 'month'] as ViewMode[]).map(v => (
-                  <button key={v} onClick={() => setView(v)} className={`px-2.5 py-1 rounded-md text-[11px] font-medium ${view === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  <button key={v} onClick={() => setView(v)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${view === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                     {v === 'day' ? 'יום' : v === 'week' ? 'שבוע' : 'חודש'}
                   </button>
                 ))}
               </div>
-              <button onClick={navBack} className="p-1 hover:bg-gray-100 rounded"><ChevronRight size={16} className="text-gray-600" /></button>
-              <button onClick={navForward} className="p-1 hover:bg-gray-100 rounded"><ChevronLeft size={16} className="text-gray-600" /></button>
-              <button onClick={() => setCurrentDate(new Date())} className="px-2 py-0.5 text-[11px] font-medium text-blue-600 hover:bg-blue-50 rounded">היום</button>
-              <span className="text-sm font-semibold text-gray-900">{getTitle()}</span>
+              <div className="flex items-center">
+                <button onClick={navBack} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"><ChevronRight size={18} className="text-gray-600" /></button>
+                <button onClick={navForward} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"><ChevronLeft size={18} className="text-gray-600" /></button>
+              </div>
+              <button onClick={() => setCurrentDate(new Date())} className="px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">היום</button>
+              <span className="text-sm font-bold text-gray-900">{getTitle()}</span>
             </div>
             <FilterBar selectedPeople={selectedPeople} onTogglePerson={togglePerson} />
           </div>
         </div>
       </div>
 
-      {/* Announcements */}
       {(announcements.length > 0 || showAnnInput) && (
         <div className="max-w-7xl w-full mx-auto px-6 pt-2">
           <div className="flex flex-wrap gap-2 items-center">
@@ -1243,7 +1270,6 @@ export default function FamilyScheduleClient() {
         </div>
       )}
 
-      {/* Body */}
       <div className="flex-1 min-h-0 flex items-stretch relative">
         <button onClick={navBack} className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white border border-gray-200 shadow-md rounded-l-lg p-2"><ChevronRight size={20} className="text-gray-600" /></button>
         <button onClick={navForward} className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white border border-gray-200 shadow-md rounded-r-lg p-2"><ChevronLeft size={20} className="text-gray-600" /></button>
@@ -1254,7 +1280,7 @@ export default function FamilyScheduleClient() {
               <button onClick={() => setExpandStart(s => s + 2)} className="bg-gray-50 hover:bg-gray-100 border border-gray-300 rounded-lg px-3 py-1.5 flex items-center gap-1.5 text-xs text-gray-700 font-medium"><ChevronUp size={16} /> הוסף שעות מוקדם יותר</button>
             </div>
           )}
-          <div className="flex-1 min-h-0 bg-white border border-gray-200 shadow-sm overflow-hidden">
+          <div className="flex-1 min-h-0 bg-white border border-gray-200 shadow-sm overflow-hidden rounded-lg">
             {loading ? <div className="flex items-center justify-center py-20"><Loader2 size={24} className="animate-spin text-gray-400" /></div> : (
               <>
                 {view === 'week' && <WeekView events={filteredEvents} weekDates={weekDates} conflicts={conflicts} onCellClick={openAdd} onEventClick={openEdit} expandStart={expandStart} expandEnd={expandEnd} onEventDrop={handleDrop} />}
@@ -1272,9 +1298,10 @@ export default function FamilyScheduleClient() {
       </div>
 
       <EventModal isOpen={showModal} onClose={() => setShowModal(false)} onSave={handleSave} onDelete={handleDelete} initialDate={modalDate} initialHour={modalHour} editEvent={editEvent} categories={categories} onAddCategory={addCustomCat} />
+      <ConflictPanel isOpen={showConflictPanel} onClose={() => setShowConflictPanel(false)} conflictPairs={conflictPairs} onEventClick={openEdit} />
       {pendingUndoDelete && (
-        <div className="fixed bottom-4 right-1/2 translate-x-1/2 z-50 bg-gray-900 text-white rounded-xl shadow-xl px-3 py-2 flex items-center gap-3">
-          <span className="text-xs">האירוע "{pendingUndoDelete.event.title}" נמחק ({pendingUndoDelete.secondsLeft})</span>
+        <div className="fixed bottom-4 right-1/2 translate-x-1/2 z-50 bg-gray-900 text-white rounded-xl shadow-xl px-4 py-2.5 flex items-center gap-3">
+          <span className="text-xs">האירוע &quot;{pendingUndoDelete.event.title}&quot; נמחק ({pendingUndoDelete.secondsLeft})</span>
           <button onClick={handleUndoDelete} className="text-xs font-semibold text-blue-300 hover:text-blue-200">UNDO</button>
         </div>
       )}

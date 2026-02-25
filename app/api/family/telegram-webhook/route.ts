@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-import { buildDailyScheduleMessage, sendToChat, editMessage, notifyNewEvent } from '@/lib/telegram-family';
+import { buildDailyScheduleMessage, sendToChat, editMessage, notifyNewEvent, notifyEventConflict, notifyEventDeleted, notifyEventUpdated } from '@/lib/telegram-family';
 
 // Store editing state: chatId -> { eventId, originalEvent }
 const editingState = new Map<string, { eventId: string; originalEvent: any }>();
@@ -93,11 +93,23 @@ export async function POST(request: NextRequest) {
       if (cbData.startsWith('delete_event:')) {
         const eventId = cbData.replace('delete_event:', '');
         const supabase = createSupabaseAdminClient();
-        const { error } = await supabase.from('family_events').delete().eq('id', eventId);
-        if (error) {
+        const { data: eventToDelete, error: eventToDeleteError } = await supabase
+          .from('family_events')
+          .select('title, person, category, start_time, end_time')
+          .eq('id', eventId)
+          .single();
+        if (eventToDeleteError) {
           await editMessage(cbChatId, cbMsgId, '❌ שגיאה במחיקה');
         } else {
-          await editMessage(cbChatId, cbMsgId, '🗑 האירוע נמחק מהיומן');
+          const { error } = await supabase.from('family_events').delete().eq('id', eventId);
+          if (error) {
+            await editMessage(cbChatId, cbMsgId, '❌ שגיאה במחיקה');
+          } else {
+            await editMessage(cbChatId, cbMsgId, '🗑 האירוע נמחק מהיומן');
+            notifyEventDeleted(eventToDelete, cbChatId).catch((err) => {
+              console.error('Failed to send delete notification:', err);
+            });
+          }
         }
       } else if (cbData.startsWith('edit_event:')) {
         const eventId = cbData.replace('edit_event:', '');
@@ -399,6 +411,13 @@ async function handleAddEvent(chatId: string, text: string) {
       const startTime = new Date(`${eventData.date}T${normalizedStartTime}:00${tz}`).toISOString();
       const endTime = new Date(`${endDate}T${normalizedEndTime}:00${tz}`).toISOString();
 
+      const { data: overlappingEvents } = await supabase
+        .from('family_events')
+        .select('title, person, category, start_time, end_time')
+        .lt('start_time', endTime)
+        .gt('end_time', startTime)
+        .limit(10);
+
       const { data: inserted, error } = await supabase.from('family_events').insert({
         title: eventData.title,
         person: eventData.person,
@@ -423,23 +442,63 @@ async function handleAddEvent(chatId: string, text: string) {
         isAllDay,
       });
 
-      // Notify all family chat members (except the sender)
-      notifyNewEvent({
-        title: eventData.title,
-        person: eventData.person,
-        category: eventData.category,
-        start_time: startTime,
-        end_time: endTime,
-        notes: eventData.notes || null,
-        reminder_minutes: eventData.reminder_minutes || null,
-      }, chatId).catch((err) => {
-        console.error('Failed to send notification:', err);
-      });
+      if (!editingInfo) {
+        // Notify all family chat members (except the sender)
+        notifyNewEvent({
+          title: eventData.title,
+          person: eventData.person,
+          category: eventData.category,
+          start_time: startTime,
+          end_time: endTime,
+          notes: eventData.notes || null,
+          reminder_minutes: eventData.reminder_minutes || null,
+        }, chatId).catch((err) => {
+          console.error('Failed to send notification:', err);
+        });
+      }
+
+      if ((overlappingEvents?.length || 0) > 0) {
+        notifyEventConflict(
+          {
+            title: eventData.title,
+            person: eventData.person,
+            category: eventData.category,
+            start_time: startTime,
+            end_time: endTime,
+          },
+          overlappingEvents || [],
+          chatId
+        ).catch((err) => {
+          console.error('Failed to send conflict notification:', err);
+        });
+      }
     }
 
     // If we were editing an event, delete the old one now
     if (editingInfo) {
       await supabase.from('family_events').delete().eq('id', editingInfo.eventId);
+      const editedEvent = insertedEvents[0];
+      if (editedEvent) {
+        notifyEventUpdated(
+          {
+            title: editingInfo.originalEvent.title,
+            person: editingInfo.originalEvent.person,
+            category: editingInfo.originalEvent.category,
+            start_time: editingInfo.originalEvent.start_time,
+            end_time: editingInfo.originalEvent.end_time,
+          },
+          {
+            title: editedEvent.event.title,
+            person: editedEvent.event.person,
+            category: editedEvent.event.category,
+            start_time: editedEvent.startTime,
+            end_time: editedEvent.endTime,
+          },
+          chatId
+        ).catch((err) => {
+          console.error('Failed to send update notification:', err);
+        });
+      }
       editingState.delete(chatId);
     }
 
@@ -880,6 +939,26 @@ async function handleEditCommand(chatId: string, text: string) {
       await sendToChat(chatId, `❌ שגיאה בעדכון: ${error.message}`);
       return;
     }
+
+    notifyEventUpdated(
+      {
+        title: event.title,
+        person: event.person,
+        category: event.category,
+        start_time: event.start_time,
+        end_time: event.end_time,
+      },
+      {
+        title: event.title,
+        person: editRequest.new_person || event.person,
+        category: event.category,
+        start_time: newStartTime.toISOString(),
+        end_time: newEndTime.toISOString(),
+      },
+      chatId
+    ).catch((err) => {
+      console.error('Failed to send update notification:', err);
+    });
 
     const newDay = DAYS_HE[getDayIndexFromIsoInIsrael(newStartTime.toISOString())];
     const newTime = newStartTime.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: ISRAEL_TZ });

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-import { notifyNewEvent } from '@/lib/telegram-family';
+import { notifyEventConflict, notifyNewEvent } from '@/lib/telegram-family';
 
 // GET /api/family/events?start=...&end=...
 export async function GET(request: NextRequest) {
@@ -42,6 +42,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    const { data: overlappingEvents, error: overlapError } = await supabase
+      .from('family_events')
+      .select('title, person, category, start_time, end_time')
+      .lt('start_time', end_time)
+      .gt('end_time', start_time)
+      .limit(10);
+
+    if (overlapError) {
+      return NextResponse.json({ error: overlapError.message }, { status: 500 });
+    }
+
     const { data, error } = await supabase
       .from('family_events')
       .insert({
@@ -63,6 +74,12 @@ export async function POST(request: NextRequest) {
 
     // Send Telegram notification (fire and forget)
     notifyNewEvent({ title, person, category, start_time, end_time, notes, reminder_minutes }).catch(() => {});
+    if ((overlappingEvents?.length || 0) > 0) {
+      notifyEventConflict(
+        { title, person, category, start_time, end_time },
+        overlappingEvents || []
+      ).catch(() => {});
+    }
 
     return NextResponse.json({ event: data });
   } catch {
