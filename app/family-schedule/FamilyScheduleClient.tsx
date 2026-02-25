@@ -66,7 +66,10 @@ function getPersonColor(person: string): string {
 }
 
 function isMultiDayEvent(event: FamilyEvent): boolean {
-  return !isSameDay(new Date(event.start_time), new Date(event.end_time));
+  const start = startOfDay(new Date(event.start_time));
+  const end = startOfDay(new Date(event.end_time));
+  const daysDiff = Math.round((end.getTime() - start.getTime()) / 86400000);
+  return daysDiff >= 2;
 }
 
 // --- Helpers ---
@@ -162,6 +165,29 @@ function groupHoursForDisplay(allHours: number[], activeHours: Set<number>): Hou
   });
   if (currentRange) ranges.push(currentRange);
   return ranges;
+}
+
+function getDisplayHoursForDay(ev: FamilyEvent, day: Date, minHour: number, maxHour: number): { startH: number; endH: number } {
+  const evStart = new Date(ev.start_time);
+  const evEnd = new Date(ev.end_time);
+  const isStartDay = isSameDay(evStart, day);
+  const isEndDay = isSameDay(evEnd, day);
+
+  let startH: number, endH: number;
+  if (isStartDay && isEndDay) {
+    startH = getHours(evStart) + getMinutes(evStart) / 60;
+    endH = getHours(evEnd) + getMinutes(evEnd) / 60;
+  } else if (isStartDay) {
+    startH = getHours(evStart) + getMinutes(evStart) / 60;
+    endH = maxHour + 1;
+  } else if (isEndDay) {
+    startH = minHour;
+    endH = getHours(evEnd) + getMinutes(evEnd) / 60;
+  } else {
+    startH = minHour;
+    endH = maxHour + 1;
+  }
+  return { startH, endH };
 }
 
 // --- Overlap layout algorithm ---
@@ -433,15 +459,17 @@ function MobileDayView({ events, date, conflicts, onCellClick, onEventClick, min
           });
         })}
         <div className="absolute top-0 bottom-0" style={{ right: '48px', left: '4px' }}>
-          {laid.map(ev => {
-            const startH = getHours(new Date(ev.start_time)) + getMinutes(new Date(ev.start_time)) / 60;
-            const endH = getHours(new Date(ev.end_time)) + getMinutes(new Date(ev.end_time)) / 60;
-            const startOffset = hourToOffset.get(Math.floor(startH)) || 0;
-            const endOffset = hourToOffset.get(Math.floor(endH)) || 0;
-            const top = startOffset + ((startH % 1) * 60);
-            const height = Math.max(endOffset - startOffset + ((endH % 1) * 60) - ((startH % 1) * 60), 24);
-            return renderInlineEvent(ev, { top, height, rightPct: ev.col * (100 / ev.totalCols), widthPct: 100 / ev.totalCols, isConflict: conflicts.has(ev.id), onClick: () => onEventClick(ev) });
-          })}
+          {(() => {
+            const maxHour = hours[hours.length - 1] ?? 23;
+            return laid.map(ev => {
+              const { startH, endH } = getDisplayHoursForDay(ev, date, minHour, maxHour);
+              const startOffset = hourToOffset.get(Math.floor(startH)) || 0;
+              const endOffset = hourToOffset.get(Math.min(Math.floor(endH), maxHour)) || 0;
+              const top = startOffset + ((startH % 1) * 60);
+              const height = Math.max(endOffset - startOffset + ((endH % 1) * 60) - ((startH % 1) * 60), 24);
+              return renderInlineEvent(ev, { top, height, rightPct: ev.col * (100 / ev.totalCols), widthPct: 100 / ev.totalCols, isConflict: conflicts.has(ev.id), onClick: () => onEventClick(ev) });
+            });
+          })()}
         </div>
         {isDateToday(date) && <NowIndicator hourToOffset={hourToOffset} cumulativeOffset={cumulativeOffset} />}
       </div>
@@ -591,14 +619,14 @@ function WeekView({ events, weekDates, conflicts, onCellClick, onEventClick, exp
           {weekDates.map((d, di) => {
             const dayEvts = getEventsForDay(timedEvents, d);
             const laid = layoutOverlappingEvents(dayEvts, minHour);
+            const maxHour = hours[hours.length - 1] ?? 23;
             return (
               <div key={di} className="relative border-r border-gray-50">
                 {isDateToday(d) && <NowIndicator hourToOffset={hourToOffset} cumulativeOffset={cumulativeOffset} />}
                 {laid.map(ev => {
-                  const startH = getHours(new Date(ev.start_time)) + getMinutes(new Date(ev.start_time)) / 60;
-                  const endH = getHours(new Date(ev.end_time)) + getMinutes(new Date(ev.end_time)) / 60;
+                  const { startH, endH } = getDisplayHoursForDay(ev, d, minHour, maxHour);
                   const startOffset = hourToOffset.get(Math.floor(startH)) || 0;
-                  const endOffset = hourToOffset.get(Math.floor(endH)) || 0;
+                  const endOffset = hourToOffset.get(Math.min(Math.floor(endH), maxHour)) || 0;
                   const top = startOffset + ((startH % 1) * 60);
                   const height = Math.max(endOffset - startOffset + ((endH % 1) * 60) - ((startH % 1) * 60), 24);
                   return renderInlineEvent(ev, { top, height, rightPct: ev.col * (100 / ev.totalCols), widthPct: 100 / ev.totalCols, isConflict: conflicts.has(ev.id), onClick: () => onEventClick(ev), draggable: true, onDragStart: (e) => { e.stopPropagation(); setDraggedEvent(ev); } });
@@ -688,15 +716,17 @@ function DesktopDayView({ events, date, conflicts, onCellClick, onEventClick, ex
         })}
         <div className="absolute top-0 left-0" style={{ right: '60px', height: `${cumulativeOffset}px` }}>
           {isDateToday(date) && <NowIndicator hourToOffset={hourToOffset} cumulativeOffset={cumulativeOffset} />}
-          {laid.map(ev => {
-            const startH = getHours(new Date(ev.start_time)) + getMinutes(new Date(ev.start_time)) / 60;
-            const endH = getHours(new Date(ev.end_time)) + getMinutes(new Date(ev.end_time)) / 60;
-            const startOffset = hourToOffset.get(Math.floor(startH)) || 0;
-            const endOffset = hourToOffset.get(Math.floor(endH)) || 0;
-            const top = startOffset + ((startH % 1) * 60);
-            const height = Math.max(endOffset - startOffset + ((endH % 1) * 60) - ((startH % 1) * 60), 24);
-            return renderInlineEvent(ev, { top, height, rightPct: ev.col * (100 / ev.totalCols), widthPct: 100 / ev.totalCols, isConflict: conflicts.has(ev.id), onClick: () => onEventClick(ev), draggable: true, onDragStart: (e) => { e.stopPropagation(); setDraggedEvent(ev); } });
-          })}
+          {(() => {
+            const maxHour = hours[hours.length - 1] ?? 23;
+            return laid.map(ev => {
+              const { startH, endH } = getDisplayHoursForDay(ev, date, minHour, maxHour);
+              const startOffset = hourToOffset.get(Math.floor(startH)) || 0;
+              const endOffset = hourToOffset.get(Math.min(Math.floor(endH), maxHour)) || 0;
+              const top = startOffset + ((startH % 1) * 60);
+              const height = Math.max(endOffset - startOffset + ((endH % 1) * 60) - ((startH % 1) * 60), 24);
+              return renderInlineEvent(ev, { top, height, rightPct: ev.col * (100 / ev.totalCols), widthPct: 100 / ev.totalCols, isConflict: conflicts.has(ev.id), onClick: () => onEventClick(ev), draggable: true, onDragStart: (e) => { e.stopPropagation(); setDraggedEvent(ev); } });
+            });
+          })()}
         </div>
       </div>
     </div>
