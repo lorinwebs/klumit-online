@@ -118,21 +118,22 @@ export default async function BlogPostPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
+    <div className="min-h-screen flex flex-col bg-cream">
       <Header />
       <main className="flex-grow">
         {/* Hero image */}
         {article.image?.url && (
-          <div className="relative w-full h-[300px] md:h-[500px] bg-gray-100">
+          <div className="relative w-full aspect-[16/9] md:aspect-[21/9] max-h-[70vh] bg-cream-warm">
             <Image
               src={article.image.url}
               alt={article.image.altText || article.title}
               fill
               className="object-cover"
+              style={{ objectPosition: 'center 40%' }}
               priority
               sizes="100vw"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-espresso/50 via-espresso/10 to-transparent" />
           </div>
         )}
 
@@ -140,18 +141,18 @@ export default async function BlogPostPage({ params }: PageProps) {
         <article className="max-w-[800px] mx-auto px-4 py-10 md:py-16">
           {/* Breadcrumb */}
           <nav className="mb-8">
-            <ol className="flex items-center gap-2 text-xs font-light text-gray-400">
-              <li><Link href="/" className="hover:text-[#1a1a1a] transition-colors">בית</Link></li>
+            <ol className="flex items-center gap-2 text-xs font-light text-stone">
+              <li><Link href="/" className="hover:text-espresso transition-colors">בית</Link></li>
               <li>/</li>
-              <li><Link href="/blog" className="hover:text-[#1a1a1a] transition-colors">המגזין</Link></li>
+              <li><Link href="/blog" className="hover:text-espresso transition-colors">המגזין</Link></li>
               <li>/</li>
-              <li className="text-gray-600 truncate max-w-[200px]">{article.title}</li>
+              <li className="text-stone-dark truncate max-w-[200px]">{article.title}</li>
             </ol>
           </nav>
 
           {/* Meta */}
           <div className="mb-6 space-y-2">
-            <p className="text-xs font-light text-gray-400 tracking-wider uppercase">
+            <p className="text-[10px] font-medium text-stone tracking-editorial uppercase">
               {new Date(article.publishedAt).toLocaleDateString('he-IL', {
                 year: 'numeric',
                 month: 'long',
@@ -162,32 +163,32 @@ export default async function BlogPostPage({ params }: PageProps) {
           </div>
 
           {/* Title */}
-          <h1 className="text-2xl md:text-4xl font-light luxury-font text-[#1a1a1a] leading-snug mb-8">
+          <h1 className="text-2xl md:text-4xl font-light font-display text-espresso leading-snug mb-8">
             {article.title}
           </h1>
 
           {/* Body */}
           <style dangerouslySetInnerHTML={{ __html: `
-            .blog-content { font-size: 1.05rem; line-height: 1.9; color: #374151; }
-            .blog-content h1 { font-size: 2rem; font-weight: 300; color: #1a1a1a; margin: 2.5rem 0 1rem; line-height: 1.3; }
-            .blog-content h2 { font-size: 1.5rem; font-weight: 400; color: #1a1a1a; margin: 2rem 0 0.75rem; line-height: 1.35; }
-            .blog-content h3 { font-size: 1.25rem; font-weight: 500; color: #1a1a1a; margin: 1.75rem 0 0.5rem; line-height: 1.4; }
+            .blog-content { font-size: 1.05rem; line-height: 1.9; color: #8C7E73; }
+            .blog-content h1 { font-size: 2rem; font-weight: 300; color: #2C2420; margin: 2.5rem 0 1rem; line-height: 1.3; }
+            .blog-content h2 { font-size: 1.5rem; font-weight: 400; color: #2C2420; margin: 2rem 0 0.75rem; line-height: 1.35; }
+            .blog-content h3 { font-size: 1.25rem; font-weight: 500; color: #2C2420; margin: 1.75rem 0 0.5rem; line-height: 1.4; }
             .blog-content p { margin: 0 0 1.25rem; }
-            .blog-content a { color: #c9a962; text-decoration: none; transition: color 0.2s; }
-            .blog-content a:hover { color: #a17d4f; text-decoration: underline; }
-            .blog-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 1.5rem auto; display: block; }
+            .blog-content a { color: #C4956A; text-decoration: none; transition: color 0.3s; }
+            .blog-content a:hover { color: #A67B52; text-decoration: underline; }
+            .blog-content img { max-width: 100%; height: auto; margin: 1.5rem auto; display: block; }
             .blog-content ul, .blog-content ol { padding-right: 1.5rem; margin: 1rem 0; }
             .blog-content li { margin: 0.4rem 0; }
             .blog-content ul li { list-style-type: disc; }
             .blog-content ol li { list-style-type: decimal; }
-            .blog-content strong, .blog-content b { font-weight: 600; color: #1a1a1a; }
+            .blog-content strong, .blog-content b { font-weight: 600; color: #2C2420; }
             .blog-content em, .blog-content i { font-style: italic; }
-            .blog-content blockquote { border-right: 3px solid #c9a962; padding: 0.75rem 1.25rem; margin: 1.5rem 0; color: #6b7280; background: #fafaf9; border-radius: 4px; }
-            .blog-content hr { border: none; border-top: 1px solid #e5e7eb; margin: 2rem 0; }
+            .blog-content blockquote { border-right: 3px solid #C4956A; padding: 0.75rem 1.25rem; margin: 1.5rem 0; color: #A69585; background: #F2ECE4; }
+            .blog-content hr { border: none; border-top: 1px solid #E8E2DB; margin: 2rem 0; }
             .blog-content table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
-            .blog-content th, .blog-content td { border: 1px solid #e5e7eb; padding: 0.5rem 0.75rem; text-align: right; }
-            .blog-content th { background: #f9fafb; font-weight: 500; }
-            .blog-content iframe, .blog-content video { max-width: 100%; margin: 1.5rem auto; display: block; border-radius: 8px; }
+            .blog-content th, .blog-content td { border: 1px solid #E8E2DB; padding: 0.5rem 0.75rem; text-align: right; }
+            .blog-content th { background: #F2ECE4; font-weight: 500; }
+            .blog-content iframe, .blog-content video { max-width: 100%; margin: 1.5rem auto; display: block; }
           `}} />
           <div
             className="blog-content max-w-none"
@@ -196,10 +197,10 @@ export default async function BlogPostPage({ params }: PageProps) {
           />
 
           {/* Back link */}
-          <div className="mt-12 pt-8 border-t border-gray-200">
+          <div className="mt-12 pt-8 border-t border-sand">
             <Link
               href="/blog"
-              className="inline-flex items-center gap-2 text-sm font-light text-[#c9a962] hover:text-[#a17d4f] transition-colors tracking-wider uppercase"
+              className="inline-flex items-center gap-2 text-[11px] font-medium text-terracotta hover:text-terracotta-dark transition-colors duration-300 tracking-editorial uppercase"
             >
               &rarr; חזרה למגזין
             </Link>
@@ -209,28 +210,28 @@ export default async function BlogPostPage({ params }: PageProps) {
         {/* More articles */}
         {moreArticles.length > 0 && (
           <section className="max-w-[1200px] mx-auto px-4 pb-16">
-            <h2 className="text-xl md:text-2xl font-light luxury-font text-[#1a1a1a] tracking-[0.1em] uppercase text-center mb-8">
+            <h2 className="font-display text-xl md:text-2xl font-light text-espresso tracking-editorial uppercase text-center mb-8">
               עוד במגזין
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {moreArticles.map((a) => (
                 <Link key={a.id} href={`/blog/${a.handle}`} className="group block">
-                  <div className="relative aspect-[4/3] overflow-hidden bg-gray-100 mb-3">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-cream-warm border border-sand/60 mb-3">
                     {a.image?.url ? (
                       <Image
                         src={a.image.url}
                         alt={a.image.altText || a.title}
                         fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
                         sizes="(max-width: 768px) 100vw, 33vw"
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                        <span className="text-gray-300 text-4xl luxury-font">K</span>
+                      <div className="absolute inset-0 flex items-center justify-center bg-cream-warm">
+                        <span className="text-sand-dark text-4xl font-display">K</span>
                       </div>
                     )}
                   </div>
-                  <h3 className="text-sm font-light text-[#1a1a1a] group-hover:text-[#c9a962] transition-colors">
+                  <h3 className="text-sm font-light text-espresso group-hover:text-terracotta transition-colors duration-500">
                     {a.title}
                   </h3>
                 </Link>

@@ -29,7 +29,7 @@ export default function HeroMinimal({
   const displayCtaText = ctaText || t('hero.cta');
 
   return (
-    <section className="relative h-[45vh] md:h-[70vh] min-h-[340px] md:min-h-[540px] flex items-end overflow-hidden">
+    <section className="relative h-[55vh] md:h-[75vh] min-h-[380px] md:min-h-[580px] flex items-end overflow-hidden">
       {/* Background Image */}
       {backgroundImage && (
         <>
@@ -40,7 +40,7 @@ export default function HeroMinimal({
               fill
               priority
               className="object-cover"
-              style={{ objectPosition: 'center 30%' }}
+              style={{ objectPosition: 'center 45%' }}
               sizes="100vw"
               quality={90}
             />
@@ -52,7 +52,7 @@ export default function HeroMinimal({
               fill
               priority
               className="object-cover"
-              style={{ objectPosition: 'center 35%' }}
+              style={{ objectPosition: 'center 45%' }}
               sizes="100vw"
               quality={95}
             />

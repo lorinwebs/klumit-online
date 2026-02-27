@@ -37,21 +37,22 @@ export default async function BlogPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
+    <div className="min-h-screen flex flex-col bg-cream">
       <Header />
       <main className="flex-grow max-w-[1200px] mx-auto px-4 py-12 md:py-20 w-full">
         <div className="text-center mb-12 md:mb-16">
-          <h1 className="text-3xl md:text-5xl font-light luxury-font text-[#1a1a1a] tracking-[0.15em] uppercase mb-4">
+          <h1 className="font-display text-3xl md:text-5xl font-light text-espresso tracking-editorial uppercase mb-4">
             המגזין
           </h1>
-          <p className="text-sm md:text-base font-light text-gray-500 max-w-lg mx-auto">
+          <div className="w-12 h-[1px] bg-terracotta mx-auto mb-4" />
+          <p className="text-sm md:text-base font-light text-stone max-w-lg mx-auto">
             טיפים, השראה ועולם העור האיטלקי
           </p>
         </div>
 
         {articles.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-gray-500 font-light">אין מאמרים עדיין. חזרו בקרוב!</p>
+            <p className="text-stone font-light">אין מאמרים עדיין. חזרו בקרוב!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -61,38 +62,38 @@ export default async function BlogPage() {
                 href={`/blog/${article.handle}`}
                 className="group block"
               >
-                <div className="relative aspect-[4/3] overflow-hidden bg-gray-100 mb-4">
+                <div className="relative aspect-[4/3] overflow-hidden bg-cream-warm border border-sand/60 mb-4">
                   {article.image?.url ? (
                     <Image
                       src={article.image.url}
                       alt={article.image.altText || article.title}
                       fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
                       sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                      <span className="text-gray-300 text-4xl luxury-font">K</span>
+                    <div className="absolute inset-0 flex items-center justify-center bg-cream-warm">
+                      <span className="text-sand-dark text-4xl font-display">K</span>
                     </div>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <p className="text-xs font-light text-gray-400 tracking-wider uppercase">
+                  <p className="text-[10px] font-medium text-stone tracking-editorial uppercase">
                     {new Date(article.publishedAt).toLocaleDateString('he-IL', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
                     })}
                   </p>
-                  <h2 className="text-lg md:text-xl font-light text-[#1a1a1a] group-hover:text-[#c9a962] transition-colors leading-snug">
+                  <h2 className="font-display text-lg md:text-xl font-light text-espresso group-hover:text-terracotta transition-colors duration-500 leading-snug">
                     {article.title}
                   </h2>
                   {article.excerpt && (
-                    <p className="text-sm font-light text-gray-500 line-clamp-3 leading-relaxed">
+                    <p className="text-sm font-light text-stone line-clamp-3 leading-relaxed">
                       {article.excerpt}
                     </p>
                   )}
-                  <span className="inline-block text-xs font-light text-[#c9a962] tracking-wider uppercase mt-2 group-hover:underline">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-terracotta tracking-editorial uppercase mt-2 group-hover:underline underline-offset-4">
                     קראו עוד &larr;
                   </span>
                 </div>
