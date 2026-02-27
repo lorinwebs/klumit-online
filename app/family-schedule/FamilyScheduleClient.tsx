@@ -802,8 +802,9 @@ function MonthView({ events, currentDate, conflicts, onDayClick }: {
 }
 
 // --- Event Modal ---
-function EventModal({ isOpen, onClose, onSave, onDelete, initialDate, initialHour, editEvent, categories, onAddCategory }: {
+function EventModal({ isOpen, onClose, onSave, onBatchSave, onDelete, initialDate, initialHour, editEvent, categories, onAddCategory }: {
   isOpen: boolean; onClose: () => void; onSave: (e: Omit<FamilyEvent, 'id'>) => Promise<void>;
+  onBatchSave: (events: Omit<FamilyEvent, 'id'>[]) => Promise<void>;
   onDelete?: (id: string) => Promise<void>; initialDate?: Date; initialHour?: number;
   editEvent?: FamilyEvent | null; categories: string[]; onAddCategory: (c: string) => void;
 }) {
@@ -846,23 +847,41 @@ function EventModal({ isOpen, onClose, onSave, onDelete, initialDate, initialHou
     setAiText(''); setAiError('');
   }, [isOpen, editEvent, initialDate, initialHour]);
 
+  const [aiBatchCount, setAiBatchCount] = useState(0);
+
   const handleAiParse = async () => {
     if (!aiText.trim()) return;
-    setAiLoading(true); setAiError('');
+    setAiLoading(true); setAiError(''); setAiBatchCount(0);
     try {
       const res = await fetch('/api/family/parse-event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: aiText }) });
       const data = await res.json();
       if (data.error) { setAiError(data.error); return; }
-      const p: ParsedEvent = data.parsed;
-      if (p.title) setTitle(p.title);
-      if (p.person && PEOPLE.includes(p.person)) setPerson(p.person);
-      if (p.category && categories.includes(p.category)) setCategory(p.category);
-      if (p.date) { setStartDate(p.date); setEndDate(p.date); }
-      if (p.start_time) setStartTime(p.start_time);
-      if (p.end_time) setEndTime(p.end_time);
-      if (p.recurring !== undefined) setRecurring(p.recurring);
-      if (p.reminder_minutes !== undefined && p.reminder_minutes !== null) setReminderMinutes(String(p.reminder_minutes));
-      if (p.notes) setNotes(p.notes);
+      const events: ParsedEvent[] = data.events || (data.parsed ? [data.parsed] : []);
+      if (events.length === 0) { setAiError('לא זוהו אירועים'); return; }
+      if (events.length === 1) {
+        const p = events[0];
+        if (p.title) setTitle(p.title);
+        if (p.person && PEOPLE.includes(p.person)) setPerson(p.person);
+        if (p.category && categories.includes(p.category)) setCategory(p.category);
+        if (p.date) { setStartDate(p.date); setEndDate(p.date); }
+        if (p.start_time) setStartTime(p.start_time);
+        if (p.end_time) setEndTime(p.end_time);
+        if (p.recurring !== undefined) setRecurring(p.recurring);
+        if (p.reminder_minutes !== undefined && p.reminder_minutes !== null) setReminderMinutes(String(p.reminder_minutes));
+        if (p.notes) setNotes(p.notes);
+      } else {
+        const batch = events.map(p => ({
+          title: p.title || '', person: p.person || 'לורין', category: p.category || 'אחר',
+          start_time: new Date(`${p.date}T${p.start_time}:00`).toISOString(),
+          end_time: new Date(`${p.date}T${p.end_time}:00`).toISOString(),
+          recurring: p.recurring || false,
+          reminder_minutes: p.reminder_minutes ?? null,
+          notes: p.notes || null,
+        }));
+        await onBatchSave(batch);
+        setAiBatchCount(batch.length);
+        setAiText('');
+      }
     } catch { setAiError('שגיאה בפענוח'); } finally { setAiLoading(false); }
   };
 
@@ -923,6 +942,7 @@ function EventModal({ isOpen, onClose, onSave, onDelete, initialDate, initialHou
                 </button>
               </div>
               {aiError && <p className="text-xs text-red-500 mt-1">{aiError}</p>}
+              {aiBatchCount > 0 && <p className="text-xs text-green-600 mt-1 font-medium">✅ {aiBatchCount} אירועים נוספו בהצלחה!</p>}
             </div>
           )}
           <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300 transition-all" placeholder="כותרת האירוע" />
@@ -1143,6 +1163,10 @@ export default function FamilyScheduleClient() {
     else await fetch('/api/family/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     await fetchEvents();
   };
+  const handleBatchSave = async (events: Omit<FamilyEvent, 'id'>[]) => {
+    await Promise.all(events.map(e => fetch('/api/family/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(e) })));
+    await fetchEvents();
+  };
   const clearPendingDeleteTimers = () => {
     if (deleteTimeoutRef.current !== null) { window.clearTimeout(deleteTimeoutRef.current); deleteTimeoutRef.current = null; }
     if (deleteIntervalRef.current !== null) { window.clearInterval(deleteIntervalRef.current); deleteIntervalRef.current = null; }
@@ -1259,7 +1283,7 @@ export default function FamilyScheduleClient() {
           <Plus size={28} />
         </button>
 
-        <EventModal isOpen={showModal} onClose={() => setShowModal(false)} onSave={handleSave} onDelete={handleDelete} initialDate={modalDate} initialHour={modalHour} editEvent={editEvent} categories={categories} onAddCategory={addCustomCat} />
+        <EventModal isOpen={showModal} onClose={() => setShowModal(false)} onSave={handleSave} onBatchSave={handleBatchSave} onDelete={handleDelete} initialDate={modalDate} initialHour={modalHour} editEvent={editEvent} categories={categories} onAddCategory={addCustomCat} />
         <ConflictPanel isOpen={showConflictPanel} onClose={() => setShowConflictPanel(false)} conflictPairs={conflictPairs} onEventClick={openEdit} />
         {pendingUndoDelete && (
           <div className="fixed bottom-4 right-1/2 translate-x-1/2 z-50 bg-gray-900 text-white rounded-xl shadow-xl px-4 py-2.5 flex items-center gap-3">
@@ -1361,7 +1385,7 @@ export default function FamilyScheduleClient() {
         </div>
       </div>
 
-      <EventModal isOpen={showModal} onClose={() => setShowModal(false)} onSave={handleSave} onDelete={handleDelete} initialDate={modalDate} initialHour={modalHour} editEvent={editEvent} categories={categories} onAddCategory={addCustomCat} />
+      <EventModal isOpen={showModal} onClose={() => setShowModal(false)} onSave={handleSave} onBatchSave={handleBatchSave} onDelete={handleDelete} initialDate={modalDate} initialHour={modalHour} editEvent={editEvent} categories={categories} onAddCategory={addCustomCat} />
       <ConflictPanel isOpen={showConflictPanel} onClose={() => setShowConflictPanel(false)} conflictPairs={conflictPairs} onEventClick={openEdit} />
       {pendingUndoDelete && (
         <div className="fixed bottom-4 right-1/2 translate-x-1/2 z-50 bg-gray-900 text-white rounded-xl shadow-xl px-4 py-2.5 flex items-center gap-3">

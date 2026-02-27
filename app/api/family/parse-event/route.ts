@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const SYSTEM_PROMPT = `אתה עוזר לפענח טקסט חופשי לאירוע ביומן משפחתי.
+const SYSTEM_PROMPT = `אתה עוזר לפענח טקסט חופשי לאירועים ביומן משפחתי.
 
 האנשים במשפחה: לורין, מור, רון, שי, שחר, כולם
 קטגוריות: אימון, חוג, עבודה, משפחה, טיסה, אחר
@@ -19,20 +19,24 @@ const SYSTEM_PROMPT = `אתה עוזר לפענח טקסט חופשי לאירו
   * שעה לפני = 60
   * שעתיים לפני = 120
   * יום לפני / 24 שעות לפני = 1440
+- אם הטקסט מכיל מספר אירועים, החזר מערך של אירועים
+- אם הטקסט מכיל אירוע אחד בלבד, החזר מערך עם אירוע אחד
 - החזר JSON בלבד
 
-פורמט תשובה (JSON בלבד):
-{
-  "title": "שם האירוע",
-  "person": "שם האדם",
-  "category": "קטגוריה",
-  "date": "YYYY-MM-DD",
-  "start_time": "HH:MM",
-  "end_time": "HH:MM",
-  "recurring": false,
-  "reminder_minutes": null או מספר,
-  "notes": ""
-}`;
+פורמט תשובה (JSON בלבד - תמיד מערך):
+[
+  {
+    "title": "שם האירוע",
+    "person": "שם האדם",
+    "category": "קטגוריה",
+    "date": "YYYY-MM-DD",
+    "start_time": "HH:MM",
+    "end_time": "HH:MM",
+    "recurring": false,
+    "reminder_minutes": null או מספר,
+    "notes": ""
+  }
+]`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,14 +75,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No response from AI' }, { status: 500 });
     }
 
-    // Extract JSON from response
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
+    // Extract JSON array or object from response
+    const arrayMatch = content.match(/\[[\s\S]*\]/);
+    const objMatch = content.match(/\{[\s\S]*\}/);
+    
+    if (!arrayMatch && !objMatch) {
       return NextResponse.json({ error: 'Could not parse AI response' }, { status: 500 });
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    return NextResponse.json({ parsed });
+    let parsed;
+    if (arrayMatch) {
+      parsed = JSON.parse(arrayMatch[0]);
+    } else {
+      parsed = [JSON.parse(objMatch![0])];
+    }
+
+    const events = Array.isArray(parsed) ? parsed : [parsed];
+    return NextResponse.json({ events });
   } catch {
     return NextResponse.json({ error: 'Failed to parse event' }, { status: 500 });
   }
