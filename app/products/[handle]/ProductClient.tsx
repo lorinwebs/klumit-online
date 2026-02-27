@@ -69,9 +69,9 @@ function RelatedProductCard({ relatedProduct, formatPrice }: { relatedProduct: P
 
   return (
     <div className="related-card flex-shrink-0 snap-start w-[calc(50%-8px)] md:w-[calc(25%-12px)]">
-      <div className="relative aspect-[3/4] overflow-hidden bg-[#f9f9f9] group">
+      <div className="relative aspect-[3/4] overflow-hidden bg-cream-warm border border-sand/60 group">
         <div className="absolute inset-0 flex items-center justify-center z-0">
-          <div className="w-5 h-5 border-2 border-gray-300 border-t-[#1a1a1a] rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-sand-dark border-t-espresso rounded-full animate-spin" />
         </div>
         <Link href={`/products/${relatedProduct.handle}`} className="block w-full h-full relative z-[1]">
           {images[imgIndex]?.node.url && (
@@ -92,7 +92,7 @@ function RelatedProductCard({ relatedProduct, formatPrice }: { relatedProduct: P
                 e.stopPropagation();
                 setImgIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
               }}
-              className="absolute left-1 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white shadow rounded-full w-7 h-7 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
+              className="absolute left-1 top-1/2 -translate-y-1/2 bg-cream/90 hover:bg-cream shadow-sm rounded-full w-7 h-7 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 z-10"
               aria-label="Previous image"
             >
               <ChevronLeft size={16} />
@@ -103,7 +103,7 @@ function RelatedProductCard({ relatedProduct, formatPrice }: { relatedProduct: P
                 e.stopPropagation();
                 setImgIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
               }}
-              className="absolute right-1 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white shadow rounded-full w-7 h-7 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
+              className="absolute right-1 top-1/2 -translate-y-1/2 bg-cream/90 hover:bg-cream shadow-sm rounded-full w-7 h-7 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 z-10"
               aria-label="Next image"
             >
               <ChevronRight size={16} />
@@ -112,7 +112,7 @@ function RelatedProductCard({ relatedProduct, formatPrice }: { relatedProduct: P
               {images.slice(0, 5).map((_, i) => (
                 <span
                   key={i}
-                  className={`block w-1.5 h-1.5 rounded-full transition-colors ${i === imgIndex ? 'bg-[#1a1a1a]' : 'bg-gray-300'}`}
+                  className={`block w-1.5 h-1.5 rounded-full transition-colors duration-300 ${i === imgIndex ? 'bg-espresso' : 'bg-sand-dark'}`}
                 />
               ))}
             </div>
@@ -120,10 +120,10 @@ function RelatedProductCard({ relatedProduct, formatPrice }: { relatedProduct: P
         )}
       </div>
       <Link href={`/products/${relatedProduct.handle}`} className="block mt-3 text-center space-y-1">
-        <h3 className="text-xs md:text-sm font-light tracking-tight text-gray-900 line-clamp-2">
+        <h3 className="text-xs md:text-sm font-light tracking-tight text-espresso line-clamp-2">
           {relatedProduct.title}
         </h3>
-        <p className="text-xs md:text-sm font-medium text-gray-500">
+        <p className="text-xs md:text-sm font-normal text-stone">
           ₪{formatPrice(relatedProduct.priceRange.minVariantPrice.amount)}
         </p>
       </Link>
@@ -737,9 +737,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
         disabled={isDisabled}
         className={`w-full text-white ${isMobile ? 'py-3 px-6' : 'py-4 px-6'} text-sm tracking-luxury uppercase font-light transition-luxury flex items-center justify-center gap-2 ${
           isAddingToCart 
-            ? 'bg-green-600 cursor-wait' 
-            : 'bg-[#1a1a1a] hover:bg-[#2a2a2a]'
-        } disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300`}
+            ? 'bg-emerald-600 cursor-wait' 
+            : 'bg-espresso hover:bg-espresso-light'
+        } disabled:bg-sand disabled:text-stone disabled:cursor-not-allowed disabled:hover:bg-sand`}
       >
         {isAddingToCart ? (
           <>
@@ -760,7 +760,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
         {addToCartButton}
         <button 
           onClick={handleShareWhatsApp}
-          className={`w-full border border-green-600 text-green-600 ${isMobile ? 'py-3 px-6' : 'py-4 px-6'} text-sm tracking-luxury uppercase font-light hover:bg-green-600 hover:text-white transition-luxury flex items-center justify-center gap-2`}
+          className={`w-full border border-emerald-600 text-emerald-700 ${isMobile ? 'py-3 px-6' : 'py-4 px-6'} text-sm tracking-luxury uppercase font-light hover:bg-emerald-600 hover:text-cream transition-luxury flex items-center justify-center gap-2`}
         >
           <Share2 size={18} />
           {t('products.shareViaWhatsApp')}
@@ -777,7 +777,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
           {/* Left Side - Thumbnail Images (Desktop only) */}
           <div className="hidden md:block col-span-1 order-3">
             {filteredImages.length > 0 && (
-              <div className={`flex flex-col gap-2 transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}>
+              <div className="flex flex-col gap-2">
                 {filteredImages.map(({ node }, index) => (
                   <button
                     key={node.url}
@@ -794,8 +794,8 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     }}
                     className={`relative w-full aspect-[3/4] overflow-hidden border transition-luxury ${
                       selectedImage === node.url
-                        ? 'border-[#1a1a1a] ring-2 ring-[#1a1a1a] ring-opacity-20 opacity-100'
-                        : 'border-gray-200 hover:border-gray-400 opacity-60 hover:opacity-80'
+                        ? 'border-espresso ring-2 ring-espresso ring-opacity-20 opacity-100'
+                        : 'border-sand hover:border-stone opacity-50 hover:opacity-80'
                     }`}
                   >
                     <Image
@@ -814,79 +814,67 @@ export default function ProductClient({ product, relatedProducts: initialRelated
           {/* Center - Main Image (Scrollable on Desktop, Carousel on Mobile) */}
           <div className="col-span-12 md:col-span-7 order-1 md:order-2">
             <div className="md:sticky md:top-32">
-              {/* Mobile - Image Gallery */}
+              {/* Mobile - Swipeable Image Carousel */}
               <div className="md:hidden mb-1">
-                {/* Mobile - Vertical stack of all images */}
-                <div className={`flex flex-col gap-1 ${!currentVariant?.availableForSale ? 'opacity-50' : ''}`}>
-                  {filteredImages.map(({ node }, index) => (
-                    <div
-                      key={node.url}
-                      className="relative bg-[#fdfcfb] w-full cursor-pointer"
-                      style={{ aspectRatio: '2/3' }}
-                      onClick={() => handleImageClick(index)}
-                    >
-                      <div className="absolute inset-0 flex items-center justify-center z-0">
-                        <div className="w-6 h-6 border-2 border-gray-300 border-t-[#1a1a1a] rounded-full animate-spin" />
-                      </div>
-                      <Image
-                        src={node.url}
-                        alt={`${product.title} - תמונה ${index + 1}`}
-                        fill
-                        className="object-contain z-[1]"
-                        priority={index === 0}
-                        loading={index === 0 ? 'eager' : 'lazy'}
-                        sizes="100vw"
-                      />
-                    </div>
-                  ))}
-                </div>
-                
-                {/* Mobile - Add to Cart & WhatsApp Buttons */}
-                <div className="md:hidden mb-4 px-4 space-y-2 mt-4">
-                  {(() => {
-                    const existingItem = items.find((i) => i.variantId === currentVariant?.id);
-                    const currentQuantity = existingItem?.quantity || 0;
-                    const isMaxStock = currentVariant?.quantityAvailable !== undefined && 
-                                       currentQuantity >= currentVariant.quantityAvailable;
-                    const tooltipText = isMaxStock ? `${t('products.outOfStock')} (${currentVariant?.quantityAvailable} ${t('products.units')})` : undefined;
-                    const isDisabled = !currentVariant?.availableForSale || isMaxStock || isAddingToCart;
-                    const button = (
-                      <button
-                        onClick={handleAddToCart}
-                        disabled={isDisabled}
-                        className={`w-full text-white py-3 px-6 text-sm tracking-luxury uppercase font-light transition-luxury flex items-center justify-center gap-2 ${
-                          isAddingToCart 
-                            ? 'bg-green-600 cursor-wait' 
-                            : 'bg-[#1a1a1a] hover:bg-[#2a2a2a]'
-                        } disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300`}
-                      >
-                        {isAddingToCart ? (
-                          <>
-                            <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                            {t('products.addingToCart')}
-                          </>
-                        ) : isMaxStock ? t('products.outOfStock') : t('products.addToCart')}
-                      </button>
-                    );
-                    return tooltipText ? (
-                      <Tooltip content={tooltipText} position="top" disabled={isAddingToCart}>
-                        {button}
-                      </Tooltip>
-                    ) : button;
-                  })()}
-                  <button 
-                    onClick={handleShareWhatsApp}
-                    className="w-full border border-green-600 text-green-600 py-3 px-6 text-sm tracking-luxury uppercase font-light hover:bg-green-600 hover:text-white transition-luxury flex items-center justify-center gap-2"
+                <div
+                  className="relative overflow-hidden"
+                  onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+                  onTouchMove={(e) => { touchEndX.current = e.touches[0].clientX; }}
+                  onTouchEnd={() => {
+                    const diff = touchStartX.current - touchEndX.current;
+                    if (Math.abs(diff) > 50) {
+                      if (diff > 0 && currentImageIndex < filteredImages.length - 1) {
+                        setCurrentImageIndex(prev => prev + 1);
+                        setSelectedImage(filteredImages[currentImageIndex + 1]?.node.url);
+                      } else if (diff < 0 && currentImageIndex > 0) {
+                        setCurrentImageIndex(prev => prev - 1);
+                        setSelectedImage(filteredImages[currentImageIndex - 1]?.node.url);
+                      }
+                    }
+                  }}
+                >
+                  <div
+                    className="flex transition-transform duration-300 ease-out"
+                    style={{ transform: `translateX(${currentImageIndex * 100}%)` }}
                   >
-                    <Share2 size={18} />
-                    {t('products.shareViaWhatsApp')}
-                  </button>
+                    {filteredImages.map(({ node }, index) => (
+                      <div
+                        key={node.url}
+                        className="relative bg-white w-full flex-shrink-0 cursor-pointer border border-sand/40"
+                        style={{ aspectRatio: '3/4' }}
+                        onClick={() => handleImageClick(index)}
+                      >
+                        <Image
+                          src={node.url}
+                          alt={`${product.title} - תמונה ${index + 1}`}
+                          fill
+                          className="object-contain"
+                          priority={index === 0}
+                          loading={index <= 1 ? 'eager' : 'lazy'}
+                          sizes="100vw"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  {/* Dot indicators */}
+                  {filteredImages.length > 1 && (
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                      {filteredImages.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => { setCurrentImageIndex(i); setSelectedImage(filteredImages[i]?.node.url); }}
+                          className={`w-2 h-2 rounded-full transition-all duration-300 ${i === currentImageIndex ? 'bg-espresso w-4' : 'bg-stone/40'}`}
+                          aria-label={`תמונה ${i + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               {/* Desktop - Scrollable images */}
               <div 
                 ref={scrollContainerRef}
-                className={`hidden md:block overflow-y-auto transition-opacity ${!currentVariant?.availableForSale ? 'opacity-50' : ''} scrollbar-hide`}
+                className="hidden md:block overflow-y-auto scrollbar-hide"
                 style={{ height: 'calc(100vh - 120px)' }}
               >
                 <div className="space-y-2" style={{ width: '100%' }}>
@@ -899,12 +887,12 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                         }
                         imageRefs.current[node.url] = el;
                       }}
-                      className="relative w-full bg-[#fdfcfb] overflow-hidden cursor-pointer hover:opacity-90 transition-opacity group"
+                      className="relative w-full bg-white overflow-hidden cursor-pointer hover:opacity-95 transition-opacity group border border-sand/40"
                       style={{ aspectRatio: '3/4' }}
                       onClick={() => handleImageClick(index)}
                     >
                       <div className="absolute inset-0 flex items-center justify-center z-0">
-                        <div className="w-6 h-6 border-2 border-gray-300 border-t-[#1a1a1a] rounded-full animate-spin" />
+                        <div className="w-6 h-6 border-2 border-sand-dark border-t-espresso rounded-full animate-spin" />
                       </div>
                       <Image
                         src={node.url}
@@ -914,7 +902,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                         priority={selectedImage === node.url}
                         sizes="60vw"
                       />
-                      <div className="absolute top-4 left-4 bg-black/50 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-[2]">
+                      <div className="absolute top-4 left-4 bg-espresso/40 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-[2]">
                         <Maximize2 size={20} className="text-white" />
                       </div>
                     </div>
@@ -924,140 +912,35 @@ export default function ProductClient({ product, relatedProducts: initialRelated
             </div>
           </div>
 
-          {/* Right Side - Product Info (Fixed, No Scroll) */}
-          <div className="col-span-12 md:col-span-4 order-3 md:order-1">
+          {/* Right Side - Product Info */}
+          <div className="col-span-12 md:col-span-4 order-2 md:order-1">
             <div className="md:sticky md:top-32">
-              {/* Mobile - Sticky Price & CTA Section */}
-              <div className="md:hidden sticky top-0 bg-[#fdfcfb] z-10 pb-3 border-b border-gray-200 mb-4 -mt-2 w-full">
-                <div className="text-center space-y-3 pt-2 w-full">
-                  {/* Title */}
-                  <div>
-                    <h1 className="text-xl font-light luxury-font leading-tight">
-                      {product.title}
-                    </h1>
-                    {/* First line from description */}
-                    {firstLine && (
-                      <p className="text-xs font-light text-gray-600 tracking-luxury mt-1">
-                        {firstLine}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Price */}
-                  <div>
-                    <p className="text-2xl font-light text-[#1a1a1a]">
-                      ₪{price}
-                    </p>
-                    <p className="text-xs font-light text-gray-500 mt-1">{t('products.includingVAT')}</p>
-                  </div>
-
-                  {/* Color Selection */}
-                  {hasColors && (
-                    <div>
-                      <label className="block text-xs font-light mb-2 tracking-luxury uppercase text-gray-600">
-                        {t('products.color')}
-                      </label>
-                      <div className="flex flex-wrap gap-3 justify-center">
-                        {availableColors.map((color) => {
-                          const isSelected = currentColor === color;
-                          const variantsForColor = colorMap.get(color) || [];
-                          const isAvailable = variantsForColor.some(v => v.availableForSale);
-                          const colorHex = getColorHex(color);
-                          
-                          return (
-                            <button
-                              key={color}
-                              onClick={() => handleColorSelect(color)}
-                              className={`relative w-10 h-10 rounded-full border-2 transition-luxury ${
-                                isSelected
-                                  ? 'border-[#1a1a1a] ring-2 ring-[#1a1a1a] ring-opacity-30'
-                                  : isAvailable
-                                  ? 'border-gray-300 hover:border-[#1a1a1a]'
-                                  : 'border-gray-200 opacity-60'
-                              }`}
-                              style={{ backgroundColor: colorHex }}
-                              title={isAvailable ? color : `${color} - ${t('products.outOfStock')}`}
-                              aria-label={isAvailable ? color : `${color} - ${t('products.outOfStock')}`}
-                            >
-                              {!isAvailable && (
-                                <X 
-                                  size={16} 
-                                  className="absolute inset-0 m-auto text-[#1a1a1a] stroke-[3]" 
-                                />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      
-                    </div>
-                  )}
-
-                  {/* Variants (if no colors or additional options) */}
-                  {product.variants.edges.length > 1 && !hasColors && (
-                    <div>
-                      <label className="block text-xs font-light mb-2 tracking-luxury uppercase text-gray-600">
-                        בחר גרסה
-                      </label>
-                      <select
-                        value={selectedVariant}
-                        onChange={(e) => setSelectedVariant(e.target.value)}
-                        className="w-full p-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury"
-                      >
-                        {product.variants.edges.map(({ node }) => (
-                          <option key={node.id} value={node.id}>
-                            {node.title}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Stock Status */}
-                  {currentVariant && (
-                    <div>
-                      {currentVariant.availableForSale ? (
-                        <p className="text-sm font-light text-gray-700">
-                          במלאי
-                          {currentVariant.quantityAvailable > 0 && (
-                            <span className="text-gray-500"> • {currentVariant.quantityAvailable} יחידות</span>
-                          )}
-                        </p>
-                      ) : (
-                        <p className="text-sm font-light text-gray-600">{t('products.outOfStock')}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Desktop & Mobile - Full Product Info */}
-              <div className="text-right space-y-6">
-                {/* Desktop Title */}
-                <div className="hidden md:block">
-                  <h1 className="text-4xl md:text-5xl font-light luxury-font mb-3 leading-tight">
+              {/* Product Info - shared mobile & desktop */}
+              <div className="text-right space-y-5 px-4 md:px-0 pt-4 md:pt-0">
+                {/* Title */}
+                <div>
+                  <h1 className="text-2xl md:text-4xl lg:text-5xl font-light font-display leading-tight text-espresso">
                     {product.title}
                   </h1>
-                  {/* First line from description */}
                   {firstLine && (
-                    <p className="text-sm font-light text-gray-600 tracking-luxury mt-2">
+                    <p className="text-xs md:text-sm font-light text-stone tracking-luxury mt-1 md:mt-2">
                       {firstLine}
                     </p>
                   )}
                 </div>
 
-                {/* Desktop Price */}
-                <div className="hidden md:block pt-2">
-                  <p className="text-2xl md:text-3xl font-light text-[#1a1a1a]">
+                {/* Price */}
+                <div>
+                  <p className="text-xl md:text-2xl lg:text-3xl font-light text-espresso">
                     ₪{price}
                   </p>
-                  <p className="text-xs font-light text-gray-500 mt-1">כולל מע״מ</p>
+                  <p className="text-xs font-light text-stone mt-1">{t('products.includingVAT')}</p>
                 </div>
 
-                {/* Desktop Color Selection */}
+                {/* Color Selection */}
                 {hasColors && (
-                  <div className="hidden md:block">
-                    <label className="block text-sm font-light mb-3 tracking-luxury uppercase">
+                  <div>
+                    <label className="block text-xs md:text-sm font-light mb-2 md:mb-3 tracking-luxury uppercase text-stone">
                       {t('products.color')}
                     </label>
                     <div className="flex flex-wrap gap-3">
@@ -1066,50 +949,45 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                         const variantsForColor = colorMap.get(color) || [];
                         const isAvailable = variantsForColor.some(v => v.availableForSale);
                         const colorHex = getColorHex(color);
-                        
+
                         return (
                           <button
                             key={color}
                             onClick={() => handleColorSelect(color)}
-                            className={`relative w-12 h-12 rounded-full border-2 transition-luxury ${
+                            className={`relative w-10 h-10 md:w-12 md:h-12 rounded-full border-2 transition-luxury ${
                               isSelected
-                                ? 'border-[#1a1a1a] ring-2 ring-[#1a1a1a] ring-opacity-30'
+                                ? 'border-espresso ring-2 ring-espresso ring-opacity-30'
                                 : isAvailable
-                                ? 'border-gray-300 hover:border-[#1a1a1a]'
-                                : 'border-gray-200 opacity-60'
+                                ? 'border-sand-dark hover:border-espresso'
+                                : 'border-sand opacity-60'
                             }`}
                             style={{ backgroundColor: colorHex }}
                             title={isAvailable ? color : `${color} - ${t('products.outOfStock')}`}
                             aria-label={isAvailable ? color : `${color} - ${t('products.outOfStock')}`}
                           >
                             {!isAvailable && (
-                              <X 
-                                size={18} 
-                                className="absolute inset-0 m-auto text-[#1a1a1a] stroke-[3]" 
+                              <X
+                                size={16}
+                                className="absolute inset-0 m-auto text-espresso stroke-[3]"
                               />
                             )}
                           </button>
                         );
                       })}
                     </div>
-                    
-                    {/* Desktop CTAs - Next to color selection */}
-                    <div className="mt-6 space-y-3" data-cta-section>
-                      {renderCTAs(false)}
-                    </div>
                   </div>
                 )}
 
-                {/* Desktop Variants (if no colors or additional options) */}
+                {/* Variants (if no colors) */}
                 {product.variants.edges.length > 1 && !hasColors && (
-                  <div className="hidden md:block">
-                    <label className="block text-sm font-light mb-3 tracking-luxury uppercase">
+                  <div>
+                    <label className="block text-xs md:text-sm font-light mb-2 md:mb-3 tracking-luxury uppercase text-stone">
                       בחר גרסה
                     </label>
                     <select
                       value={selectedVariant}
                       onChange={(e) => setSelectedVariant(e.target.value)}
-                      className="w-full p-3 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury"
+                      className="w-full p-3 border border-sand bg-cream font-light text-sm focus:border-espresso focus:outline-none transition-luxury"
                     >
                       {product.variants.edges.map(({ node }) => (
                         <option key={node.id} value={node.id}>
@@ -1117,35 +995,28 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                         </option>
                       ))}
                     </select>
-                    
-                    {/* Desktop CTAs - Next to variants */}
-                    <div className="mt-6 space-y-3" data-cta-section>
-                      {renderCTAs(false)}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Desktop CTAs - If no variants or colors */}
-                {product.variants.edges.length === 1 && !hasColors && (
-                  <div className="hidden md:block mt-6 space-y-3" data-cta-section>
-                    {renderCTAs(false)}
                   </div>
                 )}
 
-                {/* Desktop Stock Status */}
+                {/* CTAs */}
+                <div className="space-y-3" data-cta-section>
+                  {renderCTAs(false)}
+                </div>
+
+                {/* Stock Status */}
                 {currentVariant && (
-                  <div className="hidden md:block pt-2">
+                  <div className="pt-2">
                     {currentVariant.availableForSale ? (
-                      <p className="text-sm font-light text-gray-700">
+                      <p className="text-sm font-light text-stone-dark">
                         {t('products.inStock')}
                         {currentVariant.quantityAvailable > 0 && (
-                          <span className="text-gray-500"> • {currentVariant.quantityAvailable} {t('products.units')}</span>
+                          <span className="text-stone"> • {currentVariant.quantityAvailable} {t('products.units')}</span>
                         )}
                       </p>
                     ) : (
                       <div className="space-y-2">
-                        <p className="text-sm font-light text-gray-600">{t('products.outOfStock')}</p>
-                        <button className="text-xs font-light underline text-gray-600 hover:text-[#1a1a1a] transition-colors">
+                        <p className="text-sm font-light text-stone">{t('products.outOfStock')}</p>
+                        <button className="text-xs font-light underline text-stone hover:text-espresso transition-colors">
                           {t('products.notifyWhenBack')}
                         </button>
                       </div>
@@ -1154,24 +1025,24 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                 )}
 
                 {/* Product Details */}
-                <div className="pt-8 space-y-6 border-t border-gray-200">
+                <div className="pt-8 space-y-6 border-t border-sand">
                   {descriptionWithoutFirstLine && (
                     <div
-                      className="product-description text-sm font-light text-gray-700 leading-relaxed"
+                      className="product-description text-sm font-light text-stone-dark leading-relaxed"
                       dangerouslySetInnerHTML={{ __html: descriptionWithoutFirstLine }}
                     />
                   )}
 
                   <div>
-                    <h3 className="text-sm font-light tracking-luxury uppercase mb-3 pb-3 border-b border-gray-200">{t('products.shippingAndReturns')}</h3>
-                    <p className="text-sm font-light text-gray-700 mb-2">
+                    <h3 className="text-sm font-light tracking-luxury uppercase mb-3 pb-3 border-b border-sand">{t('products.shippingAndReturns')}</h3>
+                    <p className="text-sm font-light text-stone-dark mb-2">
                       {t('products.freeShippingOver')}
                     </p>
                     <div className="flex gap-4 text-xs">
-                      <Link href="/shipping" className="underline text-gray-600 hover:text-[#1a1a1a]">
+                      <Link href="/shipping" className="underline text-stone hover:text-espresso">
                         {t('products.shipping')}
                       </Link>
-                      <Link href="/returns" className="underline text-gray-600 hover:text-[#1a1a1a]">
+                      <Link href="/returns" className="underline text-stone hover:text-espresso">
                         {t('products.returns')}
                       </Link>
                     </div>
@@ -1182,49 +1053,50 @@ export default function ProductClient({ product, relatedProducts: initialRelated
           </div>
         </div>
 
-        {/* Related Products Section */}
+        {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <section className="mt-24 pb-20 bg-white overflow-hidden border-t border-gray-100">
-            <div className="pt-16 mb-12 px-4">
-              <div className="max-w-[1400px] mx-auto text-center">
-                <h2 className="text-2xl md:text-5xl font-light luxury-font text-[#1a1a1a] tracking-[0.15em] uppercase">
-                  YOU MAY ALSO LIKE
+          <section className="mt-16 md:mt-24 overflow-hidden">
+            <div className="border-t border-sand pt-10 md:pt-14 mb-8 md:mb-10 px-4">
+              <div className="max-w-[1400px] mx-auto flex items-center justify-between">
+                <h2 className="font-display text-xl md:text-2xl font-light text-espresso">
+                  {t('products.related')}
                 </h2>
+                <div className="hidden md:flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      if (relatedScrollRef.current) {
+                        const cardWidth = relatedScrollRef.current.querySelector('.related-card')?.clientWidth || 300;
+                        relatedScrollRef.current.scrollBy({ left: -(cardWidth + 16), behavior: 'smooth' });
+                      }
+                    }}
+                    className="w-9 h-9 border border-sand rounded-full flex items-center justify-center text-stone hover:text-espresso hover:border-espresso transition-all duration-300"
+                    aria-label="Previous products"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (relatedScrollRef.current) {
+                        const cardWidth = relatedScrollRef.current.querySelector('.related-card')?.clientWidth || 300;
+                        relatedScrollRef.current.scrollBy({ left: cardWidth + 16, behavior: 'smooth' });
+                      }
+                    }}
+                    className="w-9 h-9 border border-sand rounded-full flex items-center justify-center text-stone hover:text-espresso hover:border-espresso transition-all duration-300"
+                    aria-label="Next products"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Product Cards Grid - 4 visible, scrollable, each with its own image carousel */}
-            <div className="relative px-4 md:px-8 max-w-[1400px] mx-auto">
-              <button
-                onClick={() => {
-                  if (relatedScrollRef.current) {
-                    const cardWidth = relatedScrollRef.current.querySelector('.related-card')?.clientWidth || 300;
-                    relatedScrollRef.current.scrollBy({ left: -(cardWidth + 16), behavior: 'smooth' });
-                  }
-                }}
-                className="absolute left-0 md:left-2 top-[35%] -translate-y-1/2 z-10 bg-white/90 shadow-md rounded-full w-9 h-9 flex items-center justify-center hover:bg-white transition-colors"
-                aria-label="Previous products"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  if (relatedScrollRef.current) {
-                    const cardWidth = relatedScrollRef.current.querySelector('.related-card')?.clientWidth || 300;
-                    relatedScrollRef.current.scrollBy({ left: cardWidth + 16, behavior: 'smooth' });
-                  }
-                }}
-                className="absolute right-0 md:right-2 top-[35%] -translate-y-1/2 z-10 bg-white/90 shadow-md rounded-full w-9 h-9 flex items-center justify-center hover:bg-white transition-colors"
-                aria-label="Next products"
-              >
-                <ChevronRight size={20} />
-              </button>
+            <div className="relative px-4 md:px-8 max-w-[1400px] mx-auto pb-8">
               <div
                 ref={relatedScrollRef}
-                className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4"
+                className="flex gap-3 md:gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-                {relatedProducts.slice(0, 12).map((relatedProduct) => (
+                {relatedProducts.slice(0, 8).map((relatedProduct) => (
                   <RelatedProductCard
                     key={relatedProduct.id}
                     relatedProduct={relatedProduct}
@@ -1235,68 +1107,15 @@ export default function ProductClient({ product, relatedProducts: initialRelated
             </div>
           </section>
         )}
-
-        {/* Newsletter Signup Section */}
-        <section className="py-12 px-4 bg-white border-t border-gray-100">
-          <div className="max-w-md mx-auto text-center">
-            {newsletterStatus === 'success' ? (
-              <div className="space-y-3">
-                <p className="text-lg font-light text-[#1a1a1a]">תודה שנרשמת!</p>
-                <p className="text-sm font-light text-gray-500">נשלח אליך עדכונים והטבות בקרוב.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleNewsletterSubmit} className="space-y-5">
-                <p className="text-sm font-light text-gray-700 leading-relaxed">
-                  10% הנחה ברכישה הבאה, בהצטרפות לניוזלטר, בכפוף לתקנון.
-                </p>
-
-                <label className="flex items-start gap-2 cursor-pointer text-right">
-                  <input
-                    type="checkbox"
-                    checked={newsletterConsent}
-                    onChange={(e) => setNewsletterConsent(e.target.checked)}
-                    className="mt-1 w-4 h-4 accent-[#1a1a1a] flex-shrink-0"
-                  />
-                  <span className="text-xs font-light text-gray-600 leading-relaxed">
-                    אני מאשר/ת קבלת חומרים פרסומיים
-                  </span>
-                </label>
-
-                <div className="flex border border-gray-300 overflow-hidden">
-                  <input
-                    type="email"
-                    value={newsletterEmail}
-                    onChange={(e) => setNewsletterEmail(e.target.value)}
-                    placeholder="EMAIL"
-                    required
-                    className="flex-1 px-4 py-3 text-sm font-light bg-white focus:outline-none text-left"
-                    dir="ltr"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!newsletterConsent || !newsletterEmail || newsletterStatus === 'loading'}
-                    className="px-6 py-3 bg-[#1a1a1a] text-white text-xs tracking-wider uppercase font-light hover:bg-[#2a2a2a] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex-shrink-0"
-                  >
-                    {newsletterStatus === 'loading' ? '...' : 'SIGN UP'}
-                  </button>
-                </div>
-
-                {newsletterError && (
-                  <p className="text-xs text-red-600 font-light">{newsletterError}</p>
-                )}
-              </form>
-            )}
-          </div>
-        </section>
       </main>
       
       {/* Floating Add to Cart - Mobile only */}
       {showFloatingCart && currentVariant?.availableForSale && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50 shadow-lg">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-cream border-t border-sand p-4 z-50 shadow-lg">
           <div className="max-w-md mx-auto flex items-center gap-4">
             <div className="flex-1">
-              <p className="text-lg font-light text-[#1a1a1a]">₪{price}</p>
-              <p className="text-xs font-light text-gray-500">{product.title}</p>
+              <p className="text-lg font-light text-espresso">₪{price}</p>
+              <p className="text-xs font-light text-stone">{product.title}</p>
             </div>
             {(() => {
               const existingItem = items.find((i) => i.variantId === currentVariant?.id);
@@ -1311,9 +1130,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                   disabled={isDisabled}
                   className={`text-white py-3 px-8 text-sm tracking-luxury uppercase font-light transition-luxury flex-shrink-0 flex items-center justify-center gap-2 ${
                     isAddingToCart 
-                      ? 'bg-green-600 cursor-wait' 
-                      : 'bg-[#1a1a1a] hover:bg-[#2a2a2a]'
-                  } disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:bg-gray-300`}
+                      ? 'bg-emerald-600 cursor-wait' 
+                      : 'bg-espresso hover:bg-espresso-light'
+                  } disabled:bg-sand disabled:text-stone disabled:cursor-not-allowed disabled:hover:bg-sand`}
                 >
                   {isAddingToCart ? (
                     <>

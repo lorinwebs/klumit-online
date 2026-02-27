@@ -147,7 +147,7 @@ export default async function ProductPage({ params }: PageProps) {
     ]);
 
     return (
-      <div className="min-h-screen flex flex-col bg-[#fdfcfb] overflow-x-hidden">
+      <div className="min-h-screen flex flex-col bg-cream overflow-x-hidden">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}

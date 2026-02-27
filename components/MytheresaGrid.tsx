@@ -95,8 +95,8 @@ function ProductImageSlider({
   }, [isHovered]);
 
   return (
-    <div 
-      className="relative aspect-[3/4] bg-gray-100 mb-2 overflow-hidden group/image"
+    <div
+      className="relative aspect-[3/4] bg-cream-warm mb-3 overflow-hidden group/image border border-sand/60"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -114,15 +114,15 @@ function ProductImageSlider({
           sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+        <div className="w-full h-full flex items-center justify-center text-stone text-sm font-light">
           אין תמונה
         </div>
       )}
-      
+
       {/* Quick View Button - Desktop Only */}
-      <div className="hidden md:block absolute inset-0 opacity-0 group-hover/image:opacity-100 transition-opacity duration-300">
-        <div className="absolute inset-0 bg-black/5" />
-        <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center">
+      <div className="hidden md:block absolute inset-0 opacity-0 group-hover/image:opacity-100 transition-opacity duration-500">
+        <div className="absolute inset-0 bg-espresso/5" />
+        <div className="absolute bottom-5 left-0 right-0 flex items-center justify-center">
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -130,10 +130,10 @@ function ProductImageSlider({
             }}
             onMouseEnter={() => setQuickViewHovered(true)}
             onMouseLeave={() => setQuickViewHovered(false)}
-            className={`px-4 py-1.5 text-[10px] tracking-[0.15em] uppercase font-light border transition-all duration-300 ${
-              quickViewHovered 
-                ? 'bg-black text-white border-black' 
-                : 'bg-white text-black border-white'
+            className={`px-5 py-2 text-[10px] tracking-editorial uppercase font-medium border backdrop-blur-sm transition-all duration-400 ${
+              quickViewHovered
+                ? 'bg-espresso text-cream border-espresso'
+                : 'bg-cream/95 text-espresso border-cream/95'
             }`}
           >
             {t('products.quickView') || 'צפייה מהירה'}
@@ -267,28 +267,25 @@ export default function MytheresaGrid({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
-        {/* Filters Bar Skeleton */}
-        <div className="sticky top-[160px] md:top-[170px] z-40 bg-white border-b border-gray-200">
-          {/* Mobile: Grid */}
+      <div className="min-h-screen bg-cream">
+        <div className="sticky top-[160px] md:top-[170px] z-40 bg-cream border-b border-sand">
           <div className="grid grid-cols-2 md:hidden">
-            <div className="h-12 border-l border-gray-200 bg-gray-100 animate-pulse" />
-            <div className="h-12 bg-gray-100 animate-pulse" />
+            <div className="h-12 border-l border-sand skeleton-shimmer" />
+            <div className="h-12 skeleton-shimmer" />
           </div>
-          {/* Desktop: Flex */}
-          <div className="hidden md:flex max-w-7xl mx-auto px-4 py-3 items-center justify-between">
-            <div className="h-8 w-24 bg-gray-200 animate-pulse" />
-            <div className="h-8 w-20 bg-gray-200 animate-pulse" />
+          <div className="hidden md:flex max-w-7xl mx-auto px-6 py-3 items-center justify-between">
+            <div className="h-8 w-24 skeleton-shimmer rounded" />
+            <div className="h-8 w-20 skeleton-shimmer rounded" />
           </div>
         </div>
-        {/* Grid Skeleton */}
-        <div className="max-w-7xl mx-auto px-2 md:px-4 py-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
+        <div className="max-w-7xl mx-auto px-3 md:px-6 py-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
             {[...Array(12)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="aspect-[3/4] bg-gray-200 mb-2" />
-                <div className="h-4 bg-gray-200 mb-1" />
-                <div className="h-4 bg-gray-200 w-2/3" />
+              <div key={i}>
+                <div className="aspect-[3/4] skeleton-shimmer mb-3" />
+                <div className="h-3 skeleton-shimmer mb-2 w-1/3 mx-auto" />
+                <div className="h-4 skeleton-shimmer mb-1.5 w-2/3 mx-auto" />
+                <div className="h-3 skeleton-shimmer w-1/4 mx-auto" />
               </div>
             ))}
           </div>
@@ -298,7 +295,7 @@ export default function MytheresaGrid({
   }
 
   return (
-    <div id="products" className="min-h-screen bg-white">
+    <div id="products" className="min-h-screen bg-cream">
       {/* Overlay for dropdowns */}
       {(showSort || showFilters) && (
         <div
@@ -311,42 +308,42 @@ export default function MytheresaGrid({
       )}
 
       {/* Filters & Sort Bar - Sticky */}
-      <div className={`sticky ${showViewAll ? 'top-[168px] md:top-[170px]' : 'top-[96px] md:top-[70px]'} z-40 bg-white border-b border-gray-200`}>
+      <div className={`sticky ${showViewAll ? 'top-[168px] md:top-[170px]' : 'top-[96px] md:top-[70px]'} z-40 bg-cream/95 backdrop-blur-sm border-b border-sand`}>
         {/* Mobile: Full width grid */}
         <div className="grid grid-cols-2 md:hidden">
           {/* Filters Button - Full width */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="relative flex items-center justify-center gap-2 h-12 border-l border-gray-200 hover:bg-gray-50 transition-colors"
+            className="relative flex items-center justify-center gap-2 h-12 border-l border-sand hover:bg-sand-light/50 transition-colors duration-300"
           >
-            <SlidersHorizontal size={16} className="text-[#1a1a1a]" />
-            <span className="text-sm font-light tracking-wide">{t('products.filter')}</span>
+            <SlidersHorizontal size={16} className="text-espresso" />
+            <span className="text-[11px] font-medium tracking-editorial uppercase text-espresso">{t('products.filter')}</span>
             {selectedVendors.size > 0 && (
-              <span className="absolute top-2 left-2 w-2 h-2 bg-[#1a1a1a] rounded-full" />
+              <span className="absolute top-2 left-2 w-2 h-2 bg-terracotta rounded-full" />
             )}
           </button>
 
           {/* Sort Button - Full width */}
           <button
             onClick={() => setShowSort(!showSort)}
-            className="flex items-center justify-center gap-2 h-12 hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center gap-2 h-12 hover:bg-sand-light/50 transition-colors duration-300"
           >
-            <span className="text-sm font-light tracking-wide">{t('products.sort')}</span>
+            <span className="text-[11px] font-medium tracking-editorial uppercase text-espresso">{t('products.sort')}</span>
           </button>
         </div>
 
         {/* Desktop: Filters and Sort side by side */}
-        <div className="hidden md:flex max-w-7xl mx-auto px-4 py-3 items-center gap-3">
+        <div className="hidden md:flex max-w-7xl mx-auto px-6 py-3 items-center gap-3">
           {/* Filters Button */}
           <div className="relative">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-4 py-1.5 text-xs font-light tracking-wide border border-gray-300 hover:border-[#1a1a1a] transition-colors bg-white relative"
+              className="flex items-center gap-2 px-4 py-2 text-[11px] font-medium tracking-editorial uppercase border border-sand hover:border-espresso transition-colors duration-300 bg-cream relative"
             >
               <span>{t('products.filter')}</span>
-              <SlidersHorizontal size={14} className="text-[#1a1a1a]" />
+              <SlidersHorizontal size={14} className="text-espresso" />
               {selectedVendors.size > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#1a1a1a] text-white text-[8px] flex items-center justify-center rounded-full">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-terracotta text-cream text-[8px] flex items-center justify-center rounded-full">
                   {selectedVendors.size}
                 </span>
               )}
@@ -357,24 +354,24 @@ export default function MytheresaGrid({
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute right-0 top-full mt-1 bg-white border border-gray-200 shadow-lg z-50 min-w-[200px] max-h-[400px] overflow-y-auto"
+                className="absolute right-0 top-full mt-1 bg-cream border border-sand shadow-lg z-50 min-w-[200px] max-h-[400px] overflow-y-auto"
               >
                 <div className="p-2">
-                  <div className="text-[10px] font-light text-gray-500 px-2 py-2 border-b border-gray-100">
+                  <div className="text-[10px] font-medium tracking-editorial uppercase text-stone px-2 py-2 border-b border-sand">
                     מותגים
                   </div>
                   {uniqueVendors.map((vendor) => (
                     <button
                       key={vendor}
                       onClick={() => toggleVendor(vendor)}
-                      className={`block w-full text-right px-4 py-2.5 text-xs hover:bg-gray-50 transition-colors ${
-                        selectedVendors.has(vendor) ? 'font-normal bg-gray-50' : 'font-light'
+                      className={`block w-full text-right px-4 py-2.5 text-xs hover:bg-sand-light transition-colors duration-200 ${
+                        selectedVendors.has(vendor) ? 'font-medium bg-sand-light text-espresso' : 'font-normal text-stone-dark'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span>{vendor}</span>
                         {selectedVendors.has(vendor) && (
-                          <span className="text-[#1a1a1a]">✓</span>
+                          <span className="text-espresso">✓</span>
                         )}
                       </div>
                     </button>
@@ -388,10 +385,10 @@ export default function MytheresaGrid({
           <div className="relative">
             <button
               onClick={() => setShowSort(!showSort)}
-              className="flex items-center gap-2 px-4 py-1.5 text-xs font-light tracking-wide border border-gray-300 hover:border-[#1a1a1a] transition-colors bg-white"
+              className="flex items-center gap-2 px-4 py-2 text-[11px] font-medium tracking-editorial uppercase border border-sand hover:border-espresso transition-colors duration-300 bg-cream"
             >
               <span>{t('products.sort')}</span>
-              <SlidersHorizontal size={14} className="text-[#1a1a1a]" />
+              <SlidersHorizontal size={14} className="text-espresso" />
             </button>
             
             {/* Sort Dropdown - Desktop only */}
@@ -399,15 +396,15 @@ export default function MytheresaGrid({
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute right-0 top-full mt-1 bg-white border border-gray-200 shadow-lg z-50 min-w-[200px]"
+                className="absolute right-0 top-full mt-1 bg-cream border border-sand shadow-lg z-50 min-w-[200px]"
               >
                 <button
                   onClick={() => {
                     setSortBy('new');
                     setShowSort(false);
                   }}
-                  className={`block w-full text-right px-4 py-2.5 text-xs hover:bg-gray-50 transition-colors ${
-                    sortBy === 'new' ? 'font-normal bg-gray-50' : 'font-light'
+                  className={`block w-full text-right px-4 py-2.5 text-xs hover:bg-sand-light transition-colors duration-200 ${
+                    sortBy === 'new' ? 'font-medium bg-sand-light text-espresso' : 'font-normal text-stone-dark'
                   }`}
                 >
                   {t('products.newest')}
@@ -417,8 +414,8 @@ export default function MytheresaGrid({
                     setSortBy('price-low');
                     setShowSort(false);
                   }}
-                  className={`block w-full text-right px-4 py-2.5 text-xs hover:bg-gray-50 transition-colors ${
-                    sortBy === 'price-low' ? 'font-normal bg-gray-50' : 'font-light'
+                  className={`block w-full text-right px-4 py-2.5 text-xs hover:bg-sand-light transition-colors duration-200 ${
+                    sortBy === 'price-low' ? 'font-medium bg-sand-light text-espresso' : 'font-normal text-stone-dark'
                   }`}
                 >
                   {t('products.priceLowHigh')}
@@ -428,8 +425,8 @@ export default function MytheresaGrid({
                     setSortBy('price-high');
                     setShowSort(false);
                   }}
-                  className={`block w-full text-right px-4 py-2.5 text-xs hover:bg-gray-50 transition-colors ${
-                    sortBy === 'price-high' ? 'font-normal bg-gray-50' : 'font-light'
+                  className={`block w-full text-right px-4 py-2.5 text-xs hover:bg-sand-light transition-colors duration-200 ${
+                    sortBy === 'price-high' ? 'font-medium bg-sand-light text-espresso' : 'font-normal text-stone-dark'
                   }`}
                 >
                   {t('products.priceHighLow')}
@@ -442,7 +439,7 @@ export default function MytheresaGrid({
           {selectedVendors.size > 0 && (
             <button
               onClick={() => setSelectedVendors(new Set())}
-              className="text-xs font-light text-gray-500 hover:text-[#1a1a1a] underline"
+              className="text-[11px] font-normal text-stone hover:text-espresso underline underline-offset-2 transition-colors duration-200"
             >
               {t('products.clear')}
             </button>
@@ -454,10 +451,10 @@ export default function MytheresaGrid({
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="md:hidden absolute right-0 top-full bg-white border-t-0 shadow-lg z-50 w-full max-h-[400px] overflow-y-auto"
+            className="md:hidden absolute right-0 top-full bg-cream border-t-0 shadow-lg z-50 w-full max-h-[400px] overflow-y-auto"
           >
             <div className="p-2">
-              <div className="text-[10px] font-light text-gray-500 px-2 py-2 border-b border-gray-100">
+              <div className="text-[10px] font-medium tracking-editorial uppercase text-stone px-2 py-2 border-b border-sand">
                 מותגים
               </div>
               {uniqueVendors.map((vendor) => (
@@ -471,7 +468,7 @@ export default function MytheresaGrid({
                   <div className="flex items-center justify-between">
                     <span>{vendor}</span>
                     {selectedVendors.has(vendor) && (
-                      <span className="text-[#1a1a1a]">✓</span>
+                      <span className="text-espresso">✓</span>
                     )}
                   </div>
                 </button>
@@ -485,7 +482,7 @@ export default function MytheresaGrid({
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="md:hidden absolute left-0 top-full bg-white border-t-0 shadow-lg z-50 w-full"
+            className="md:hidden absolute left-0 top-full bg-cream border-t-0 shadow-lg z-50 w-full"
           >
             <button
               onClick={() => {
@@ -525,8 +522,8 @@ export default function MytheresaGrid({
       </div>
 
       {/* Products Grid */}
-      <div className="max-w-7xl mx-auto px-2 md:px-4 py-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
+      <div className="max-w-7xl mx-auto px-3 md:px-6 py-6 md:py-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
           {(maxProducts ? sortedProducts.slice(0, maxProducts) : sortedProducts).map((product, index) => (
             <motion.div
               key={product.id}
@@ -536,36 +533,35 @@ export default function MytheresaGrid({
               className="group relative"
             >
               <Link href={`/products/${product.handle}`} className="block">
-                {/* NEW Tag - checks for new_arrival tag */}
-                {product.tags?.some(tag => tag.toLowerCase() === 'new_arrival') && (
-                  <div className="mb-2">
-                    <div className="inline-block bg-[#1a1a1a] px-2 py-1">
-                      <span className="text-[9px] md:text-[10px] font-medium tracking-[0.2em] uppercase text-white">
+                {/* Product Image with Auto-Cycle on Hover */}
+                <div className="relative">
+                  <ProductImageSlider
+                    images={product.images.edges}
+                    title={product.title}
+                    handle={product.handle}
+                  />
+                  {/* NEW Tag - absolutely positioned over image */}
+                  {product.tags?.some(tag => tag.toLowerCase() === 'new_arrival') && (
+                    <div className="absolute top-2 right-2 z-10 bg-espresso px-2.5 py-1">
+                      <span className="text-[9px] md:text-[10px] font-medium tracking-editorial uppercase text-cream">
                         {t('products.newTag')}
                       </span>
                     </div>
-                  </div>
-                )}
-
-                {/* Product Image with Auto-Cycle on Hover */}
-                <ProductImageSlider 
-                  images={product.images.edges} 
-                  title={product.title}
-                  handle={product.handle}
-                />
+                  )}
+                </div>
 
                 {/* Product Info */}
-                <div className="space-y-1 text-center">
-                  {/* Brand/Vendor Name - Small */}
-                  <p className="text-[9px] md:text-[10px] font-light tracking-[0.15em] uppercase text-gray-500">
+                <div className="space-y-1.5 text-center pt-1">
+                  {/* Brand/Vendor Name */}
+                  <p className="text-[9px] md:text-[10px] font-medium tracking-editorial uppercase text-stone">
                     {product.vendor || 'KLUMIT'}
                   </p>
-                  {/* Product Title - Main */}
-                  <h3 className="text-xs md:text-sm font-light text-[#1a1a1a] line-clamp-2 leading-tight">
+                  {/* Product Title */}
+                  <h3 className="text-xs md:text-sm font-light text-espresso line-clamp-2 leading-snug">
                     {product.title}
                   </h3>
                   {/* Price */}
-                  <p className="text-xs md:text-sm font-light text-[#1a1a1a]">
+                  <p className="text-xs md:text-sm font-normal text-espresso">
                     ₪ {formatPrice(product.priceRange.minVariantPrice.amount)}
                   </p>
                 </div>
@@ -576,19 +572,19 @@ export default function MytheresaGrid({
 
         {/* No Products */}
         {sortedProducts.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-gray-500">{t('products.noProducts')}</p>
+          <div className="text-center py-20">
+            <p className="text-stone font-light text-sm">{t('products.noProducts')}</p>
           </div>
         )}
       </div>
 
-      {/* Shop Categories Buttons - Homepage: all 3, Category pages: other 2 */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
+      {/* Shop Categories Buttons */}
+      <div className="max-w-7xl mx-auto px-4 py-10 md:py-14">
+        <div className="flex flex-col md:flex-row gap-3 md:gap-4 justify-center items-center">
           {(showViewAll || category !== 'bags') && (
             <a
               href="/products?tab=bags"
-              className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-4 text-sm tracking-wider uppercase font-light bg-white text-[#1a1a1a] border-2 border-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white transition-all duration-300"
+              className="group w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-3.5 text-[11px] tracking-editorial uppercase font-medium bg-cream text-espresso border border-espresso hover:bg-espresso hover:text-cream transition-all duration-500 ease-luxury"
             >
               <span>{t('products.shopBags')}</span>
             </a>
@@ -596,7 +592,7 @@ export default function MytheresaGrid({
           {(showViewAll || category !== 'belts') && (
             <a
               href="/products?tab=belts"
-              className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-4 text-sm tracking-wider uppercase font-light bg-white text-[#1a1a1a] border-2 border-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white transition-all duration-300"
+              className="group w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-3.5 text-[11px] tracking-editorial uppercase font-medium bg-cream text-espresso border border-espresso hover:bg-espresso hover:text-cream transition-all duration-500 ease-luxury"
             >
               <span>{t('products.shopBelts')}</span>
             </a>
@@ -604,7 +600,7 @@ export default function MytheresaGrid({
           {(showViewAll || category !== 'wallets') && (
             <a
               href="/products?tab=wallets"
-              className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-4 text-sm tracking-wider uppercase font-light bg-white text-[#1a1a1a] border-2 border-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-white transition-all duration-300"
+              className="group w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-3.5 text-[11px] tracking-editorial uppercase font-medium bg-cream text-espresso border border-espresso hover:bg-espresso hover:text-cream transition-all duration-500 ease-luxury"
             >
               <span>{t('products.shopWallets')}</span>
             </a>
