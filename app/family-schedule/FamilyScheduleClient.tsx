@@ -190,11 +190,15 @@ function getDisplayHoursForDay(ev: FamilyEvent, day: Date, minHour: number, maxH
   return { startH, endH };
 }
 
-// --- Overlap layout algorithm ---
-interface LayoutEvent extends FamilyEvent { col: number; totalCols: number; }
-function layoutOverlappingEvents(events: FamilyEvent[], minHour: number): LayoutEvent[] {
+// --- Overlap layout algorithm (Google Calendar style) ---
+interface LayoutEvent extends FamilyEvent { col: number; colSpan: number; totalCols: number; }
+function layoutOverlappingEvents(events: FamilyEvent[], _minHour: number): LayoutEvent[] {
   if (events.length === 0) return [];
-  const sorted = [...events].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+  const sorted = [...events].sort((a, b) => {
+    const diff = new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+    if (diff !== 0) return diff;
+    return (new Date(b.end_time).getTime() - new Date(b.start_time).getTime()) - (new Date(a.end_time).getTime() - new Date(a.start_time).getTime());
+  });
   const result: LayoutEvent[] = [];
   const groups: FamilyEvent[][] = [];
   let currentGroup: FamilyEvent[] = [sorted[0]];
@@ -213,16 +217,32 @@ function layoutOverlappingEvents(events: FamilyEvent[], minHour: number): Layout
   groups.push(currentGroup);
   for (const group of groups) {
     const columns: FamilyEvent[][] = [];
+    const eventCols = new Map<string, number>();
     for (const ev of group) {
       let placed = false;
       for (let c = 0; c < columns.length; c++) {
         const lastInCol = columns[c][columns[c].length - 1];
-        if (new Date(lastInCol.end_time).getTime() <= new Date(ev.start_time).getTime()) { columns[c].push(ev); placed = true; break; }
+        if (new Date(lastInCol.end_time).getTime() <= new Date(ev.start_time).getTime()) {
+          columns[c].push(ev); eventCols.set(ev.id, c); placed = true; break;
+        }
       }
-      if (!placed) columns.push([ev]);
+      if (!placed) { columns.push([ev]); eventCols.set(ev.id, columns.length - 1); }
     }
     const totalCols = columns.length;
-    columns.forEach((col, colIdx) => { col.forEach(ev => result.push({ ...ev, col: colIdx, totalCols })); });
+    for (const ev of group) {
+      const col = eventCols.get(ev.id)!;
+      let colSpan = 1;
+      for (let nc = col + 1; nc < totalCols; nc++) {
+        const blocked = columns[nc].some(o => {
+          const os = new Date(o.start_time).getTime(), oe = new Date(o.end_time).getTime();
+          const es = new Date(ev.start_time).getTime(), ee = new Date(ev.end_time).getTime();
+          return es < oe && os < ee;
+        });
+        if (blocked) break;
+        colSpan++;
+      }
+      result.push({ ...ev, col, colSpan, totalCols });
+    }
   }
   return result;
 }
@@ -245,7 +265,7 @@ function NowIndicator({ hourToOffset, cumulativeOffset }: { hourToOffset: Map<nu
 }
 
 // --- All-Day / Multi-Day Banner (Google Calendar style) ---
-function AllDayBanner({ events, conflicts, onEventClick }: {
+function AllDayBanner({ events, conflicts: _conflicts, onEventClick }: {
   events: FamilyEvent[]; conflicts: Set<string>; onEventClick: (e: FamilyEvent) => void;
 }) {
   if (events.length === 0) return null;
@@ -255,11 +275,10 @@ function AllDayBanner({ events, conflicts, onEventClick }: {
         const color = getPersonColor(ev.person);
         return (
           <button key={ev.id} onClick={() => onEventClick(ev)}
-            className={`w-full text-right px-2 py-1 rounded-md text-[11px] font-medium truncate hover:opacity-80 transition-opacity flex items-center gap-1.5 ${conflicts.has(ev.id) ? 'ring-1 ring-red-400' : ''}`}
-            style={{ backgroundColor: color + '20', color }}>
-            <span className="w-1.5 h-full min-h-[14px] rounded-full shrink-0" style={{ backgroundColor: color }} />
-            {PERSON_EMOJI[ev.person] || '👤'} {ev.title}
-            <span className="text-[9px] opacity-70 mr-auto">{fmtTime(ev.start_time)} - {fmtTime(ev.end_time)}</span>
+            className="w-full text-right px-2 py-1 rounded text-[11px] font-bold truncate hover:brightness-90 transition-all flex items-center gap-1.5 text-white"
+            style={{ backgroundColor: color, borderRadius: '4px' }}>
+            {ev.title}
+            <span className="text-[9px] opacity-80 mr-auto">{fmtTime(ev.start_time)} - {fmtTime(ev.end_time)}</span>
           </button>
         );
       })}
@@ -338,33 +357,38 @@ function ConflictPanel({ isOpen, onClose, conflictPairs, onEventClick }: {
   );
 }
 
-// --- Inline event rendering helper used in WeekView / DayView ---
+// --- Inline event rendering helper (Google Calendar style) ---
 function renderInlineEvent(ev: LayoutEvent, opts: {
   top: number; height: number; rightPct: number; widthPct: number;
   isConflict: boolean; onClick: () => void;
   draggable?: boolean; onDragStart?: (e: React.DragEvent) => void;
 }) {
   const color = getPersonColor(ev.person);
-  const catEmoji = CATEGORY_EMOJI[ev.category] || '';
   return (
     <button
       key={ev.id}
       draggable={opts.draggable}
       onDragStart={opts.onDragStart}
-      onClick={opts.onClick}
-      style={{ top: `${opts.top}px`, height: `${opts.height}px`, right: `${opts.rightPct}%`, width: `${opts.widthPct - 1}%`, backgroundColor: color + '18', borderRight: `3px solid ${color}` }}
-      className={`absolute rounded-lg px-1.5 py-0.5 overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] pointer-events-auto ${opts.isConflict ? 'ring-2 ring-red-400 ring-offset-1' : ''}`}
+      onClick={(e) => { e.stopPropagation(); opts.onClick(); }}
+      style={{
+        top: `${opts.top}px`,
+        height: `${Math.max(opts.height, 20)}px`,
+        right: `calc(${opts.rightPct}% + 1px)`,
+        width: `calc(${opts.widthPct}% - 3px)`,
+        backgroundColor: color,
+        borderRadius: '4px',
+      }}
+      className="absolute px-1.5 py-0.5 overflow-hidden cursor-pointer hover:brightness-90 hover:shadow-md transition-all pointer-events-auto text-white"
     >
-      {opts.isConflict && <span className="absolute top-0.5 left-0.5 w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
-      <p className="text-[11px] font-semibold truncate" style={{ color }}>{catEmoji ? `${catEmoji} ` : ''}{ev.title}</p>
-      {opts.height > 30 && <p className="text-[10px] text-gray-500">{fmtTime(ev.start_time)} - {fmtTime(ev.end_time)}</p>}
-      {opts.height > 48 && <span className="inline-block text-[9px] px-1.5 py-0.5 rounded-full mt-0.5 font-medium" style={{ backgroundColor: color + '20', color }}>{ev.person}</span>}
+      <p className="text-[11px] font-bold truncate leading-tight">{ev.title}</p>
+      {opts.height > 28 && <p className="text-[10px] opacity-85 leading-tight">{fmtTime(ev.start_time)} - {fmtTime(ev.end_time)}</p>}
+      {opts.height > 48 && <p className="text-[9px] opacity-75 leading-tight mt-0.5">{ev.person}</p>}
     </button>
   );
 }
 
-// --- Event Block (compact mode for month view) ---
-function EventBlockCompact({ event, isConflict, onClick, viewDay }: {
+// --- Event Block (compact mode for month view, Google Calendar style) ---
+function EventBlockCompact({ event, isConflict: _isConflict, onClick, viewDay }: {
   event: FamilyEvent; isConflict: boolean; onClick?: () => void; viewDay?: Date;
 }) {
   const color = getPersonColor(event.person);
@@ -373,12 +397,22 @@ function EventBlockCompact({ event, isConflict, onClick, viewDay }: {
   const isMultiDay = !isSameDay(evStart, evEnd);
   const isFirstDay = viewDay ? isSameDay(evStart, viewDay) : true;
   const isLastDay = viewDay ? isSameDay(evEnd, viewDay) : true;
+  const isAllDay = isMultiDay && !isFirstDay && !isLastDay;
   const timeLabel = isMultiDay
     ? (isFirstDay ? fmtTime(event.start_time) : isLastDay ? `עד ${fmtTime(event.end_time)}` : 'כל היום')
     : fmtTime(event.start_time);
+
+  if (isAllDay || isMultiDay) {
+    return (
+      <button onClick={onClick} className="w-full text-right px-1.5 py-0.5 rounded text-[10px] leading-tight truncate hover:brightness-90 transition-all text-white font-medium" style={{ backgroundColor: color, borderRadius: '4px' }}>
+        {event.title}
+      </button>
+    );
+  }
   return (
-    <button onClick={onClick} className={`w-full text-right px-1.5 py-0.5 rounded text-[10px] leading-tight truncate hover:opacity-80 transition-opacity ${isConflict ? 'ring-1 ring-red-400' : ''}`} style={{ backgroundColor: color + '20', borderRight: `3px solid ${color}`, color }}>
-      <span className="font-medium">{timeLabel}</span> {event.title}
+    <button onClick={onClick} className="w-full text-right px-1.5 py-0.5 rounded text-[10px] leading-tight truncate hover:bg-gray-100 transition-all flex items-center gap-1" style={{ color: '#3c4043' }}>
+      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+      <span className="text-gray-500">{timeLabel}</span> <span className="font-medium">{event.title}</span>
     </button>
   );
 }
@@ -467,7 +501,7 @@ function MobileDayView({ events, date, conflicts, onCellClick, onEventClick, min
               const endOffset = hourToOffset.get(Math.min(Math.floor(endH), maxHour)) || 0;
               const top = startOffset + ((startH % 1) * 60);
               const height = Math.max(endOffset - startOffset + ((endH % 1) * 60) - ((startH % 1) * 60), 24);
-              return renderInlineEvent(ev, { top, height, rightPct: ev.col * (100 / ev.totalCols), widthPct: 100 / ev.totalCols, isConflict: conflicts.has(ev.id), onClick: () => onEventClick(ev) });
+                  return renderInlineEvent(ev, { top, height, rightPct: ev.col * (100 / ev.totalCols), widthPct: (ev.colSpan * 100) / ev.totalCols, isConflict: conflicts.has(ev.id), onClick: () => onEventClick(ev) });
             });
           })()}
         </div>
@@ -565,8 +599,8 @@ function WeekView({ events, weekDates, conflicts, onCellClick, onEventClick, exp
                       const color = getPersonColor(ev.person);
                       return (
                         <button key={ev.id} onClick={() => onEventClick(ev)}
-                          className={`w-full text-right px-1.5 py-0.5 rounded text-[10px] font-medium truncate hover:opacity-80 transition-opacity pointer-events-auto ${conflicts.has(ev.id) ? 'ring-1 ring-red-400' : ''}`}
-                          style={{ backgroundColor: color + '25', color, borderRight: `2px solid ${color}` }}>
+                          className="w-full text-right px-1.5 py-0.5 rounded text-[10px] font-bold truncate hover:brightness-90 transition-all pointer-events-auto text-white"
+                          style={{ backgroundColor: color, borderRadius: '4px' }}>
                           {ev.title}
                         </button>
                       );
@@ -629,7 +663,7 @@ function WeekView({ events, weekDates, conflicts, onCellClick, onEventClick, exp
                   const endOffset = hourToOffset.get(Math.min(Math.floor(endH), maxHour)) || 0;
                   const top = startOffset + ((startH % 1) * 60);
                   const height = Math.max(endOffset - startOffset + ((endH % 1) * 60) - ((startH % 1) * 60), 24);
-                  return renderInlineEvent(ev, { top, height, rightPct: ev.col * (100 / ev.totalCols), widthPct: 100 / ev.totalCols, isConflict: conflicts.has(ev.id), onClick: () => onEventClick(ev), draggable: true, onDragStart: (e) => { e.stopPropagation(); setDraggedEvent(ev); } });
+                  return renderInlineEvent(ev, { top, height, rightPct: ev.col * (100 / ev.totalCols), widthPct: (ev.colSpan * 100) / ev.totalCols, isConflict: conflicts.has(ev.id), onClick: () => onEventClick(ev), draggable: true, onDragStart: (e) => { e.stopPropagation(); setDraggedEvent(ev); } });
                 })}
               </div>
             );
@@ -724,7 +758,7 @@ function DesktopDayView({ events, date, conflicts, onCellClick, onEventClick, ex
               const endOffset = hourToOffset.get(Math.min(Math.floor(endH), maxHour)) || 0;
               const top = startOffset + ((startH % 1) * 60);
               const height = Math.max(endOffset - startOffset + ((endH % 1) * 60) - ((startH % 1) * 60), 24);
-              return renderInlineEvent(ev, { top, height, rightPct: ev.col * (100 / ev.totalCols), widthPct: 100 / ev.totalCols, isConflict: conflicts.has(ev.id), onClick: () => onEventClick(ev), draggable: true, onDragStart: (e) => { e.stopPropagation(); setDraggedEvent(ev); } });
+              return renderInlineEvent(ev, { top, height, rightPct: ev.col * (100 / ev.totalCols), widthPct: (ev.colSpan * 100) / ev.totalCols, isConflict: conflicts.has(ev.id), onClick: () => onEventClick(ev), draggable: true, onDragStart: (e) => { e.stopPropagation(); setDraggedEvent(ev); } });
             });
           })()}
         </div>
