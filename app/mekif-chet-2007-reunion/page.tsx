@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users, MapPin, Sparkles, TrendingUp, Award, UserPlus, Calendar, DollarSign, CreditCard, Crown } from 'lucide-react';
+import { Users, MapPin, Sparkles, TrendingUp, Award, UserPlus, Calendar, DollarSign, CreditCard, Crown, Camera } from 'lucide-react';
 
 interface Participant {
   name: string;
@@ -196,6 +196,13 @@ export default function ReunionPage() {
               >
                 <Calendar size={22} />
                 בדיקת זמינות לתאריך
+              </a>
+              <a
+                href="/mekif-chet-2007-reunion/gallery"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-pink-600 to-rose-600 text-white px-6 py-3 shadow-md hover:shadow-lg hover:from-pink-700 hover:to-rose-700 transition-all duration-300 font-medium text-lg"
+              >
+                <Camera size={22} />
+                גלריית תמונות וסרטונים
               </a>
             </div>
             
