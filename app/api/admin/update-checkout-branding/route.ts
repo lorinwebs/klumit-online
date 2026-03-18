@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { GraphQLClient } from 'graphql-request';
 
-const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN!;
 const adminApiToken = process.env.SHOPIFY_ADMIN_API_TOKEN;
 
-const storeDomain = domain.includes('.myshopify.com') 
-  ? domain 
-  : `${domain}.myshopify.com`;
+const _domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || '';
+const storeDomain = _domain.includes('.myshopify.com')
+  ? _domain
+  : `${_domain}.myshopify.com`;
 
 // Site colors to match checkout
 const BRAND_COLORS = {
