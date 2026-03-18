@@ -10,10 +10,8 @@ import {
   CheckCircle2,
   XCircle,
   Sparkles,
-  ArrowRight,
   ImageIcon,
   Loader2,
-  Lock,
 } from 'lucide-react';
 
 interface Participant {
@@ -187,21 +185,6 @@ export default function GalleryPage() {
   return (
     <div className="min-h-screen bg-slate-50" dir="rtl">
 
-      {/* Top nav strip */}
-      <div className="bg-white border-b border-slate-100 px-6 py-3 flex items-center justify-between">
-        <img
-          src="https://mekifh.mashov.info/wp-content/uploads/sites/82/2021/06/Semel-MekifH-%D7%A9%D7%9C%D7%95%D7%9D-%D7%95%D7%90%D7%A0%D7%95%D7%A0%D7%95.png"
-          alt="לוגו מקיף ח'"
-          className="h-14 w-auto object-contain"
-        />
-        <a
-          href="/mekif-chet-2007-reunion"
-          className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-indigo-600 transition-colors font-medium"
-        >
-          <ArrowRight size={15} />
-          חזרה לדף האיחוד
-        </a>
-      </div>
 
       {/* Hero */}
       <div className="bg-white border-b border-slate-100 px-6 py-12 text-center">
