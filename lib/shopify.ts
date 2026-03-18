@@ -15,12 +15,12 @@ import { GraphQLClient } from 'graphql-request';
  *        לא צריך את ה-"API key" - רק את ה-secret key
  */
 
-const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN!;
-const storefrontAccessToken = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN!;
+const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || '';
+const storefrontAccessToken = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN || '';
 
 // הוסף .myshopify.com אם לא קיים
-const storeDomain = domain.includes('.myshopify.com') 
-  ? domain 
+const storeDomain = domain.includes('.myshopify.com')
+  ? domain
   : `${domain}.myshopify.com`;
 
 // Shopify credentials check - will fail gracefully if missing
