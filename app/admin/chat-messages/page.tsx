@@ -288,13 +288,13 @@ export default function AdminChatPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">ניהול צ'אט</h1>
+        <h1 className="text-3xl font-bold mb-6">ניהול צ&apos;אט</h1>
 
         {/* סטטיסטיקות */}
         {stats && (
           <div className="bg-white p-4 rounded-lg shadow mb-6 flex items-center gap-8">
             <div>
-              <span className="text-sm text-gray-600">סה"כ שיחות: </span>
+              <span className="text-sm text-gray-600">סה&quot;כ שיחות: </span>
               <span className="text-xl font-bold">{stats.conversations.total}</span>
             </div>
             <div>

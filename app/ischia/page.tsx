@@ -48,8 +48,7 @@ export default function IschiaCountdown() {
 
   useEffect(() => {
     setMounted(true);
-    setTimeLeft(calculateTimeLeft());
-    
+
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);

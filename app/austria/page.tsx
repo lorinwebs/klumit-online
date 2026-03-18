@@ -48,8 +48,7 @@ export default function AustriaCountdown() {
 
   useEffect(() => {
     setMounted(true);
-    setTimeLeft(calculateTimeLeft());
-    
+
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
