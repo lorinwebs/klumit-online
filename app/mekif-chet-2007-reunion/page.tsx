@@ -59,7 +59,7 @@ export default function ReunionPage() {
   useEffect(() => {
     // Update page title for Google Analytics
     document.title = 'מקיף ח\' 2007 מפגש איחוד!';
-    
+
     const fetchData = async () => {
       try {
         const response = await fetch('/api/monday/reunion');
@@ -114,33 +114,33 @@ export default function ReunionPage() {
 
   // רשימת כל הכיתות
   const allClasses = ['יב1', 'יב2', 'יב3', 'יב4', 'יב5', 'יב6', 'יב7', 'יב8', 'יב9', 'יב10', 'אחר'];
-  
+
   // יצירת אובייקט עם כל הכיתות, גם אם אין נרשמים
   const allClassesData: Record<string, Participant[]> = {};
   allClasses.forEach(className => {
     allClassesData[className] = data?.byClass[className] || [];
   });
-  
+
   // הוספת "לא צוין" אם יש נרשמים כאלה
   if (data?.byClass['לא צוין']) {
     allClassesData['לא צוין'] = data.byClass['לא צוין'];
   }
-  
+
   const total = data?.total || 0;
-  
+
   // חישוב כמה שילמו
   const paidCount = Object.values(allClassesData)
     .flat()
     .filter(p => p.paid).length;
   const paidPercentage = total > 0 ? Math.round((paidCount / total) * 100) : 0;
-  
+
   // חישוב סכומים
   const PRICE_PER_PERSON = 400;
   const TARGET_PARTICIPANTS = 24;
   const totalTargetAmount = TARGET_PARTICIPANTS * PRICE_PER_PERSON; // 9,600
   const collectedAmount = paidCount * PRICE_PER_PERSON;
   const remainingAmount = totalTargetAmount - collectedAmount;
-  
+
   // מציאת הכיתות המובילות (עם הכי הרבה משתתפים ששילמו)
   let leadingClasses: string[] = [];
   let maxPaidCount = 0;
@@ -161,7 +161,7 @@ export default function ReunionPage() {
         <div className="text-center mb-10 md:mb-16">
           {/* School Logo */}
           <div className="mb-6 flex justify-center">
-            <img 
+            <img
               src="https://mekifh.mashov.info/wp-content/uploads/sites/82/2021/06/Semel-MekifH-%D7%A9%D7%9C%D7%95%D7%9D-%D7%95%D7%90%D7%A0%D7%95%D7%A0%D7%95.png"
               alt="לוגו מקיף ח'"
               className="h-24 md:h-32 w-auto object-contain"
@@ -205,14 +205,14 @@ export default function ReunionPage() {
                 גלריית תמונות וסרטונים
               </a>
             </div>
-            
+
             {/* Telegram Payment Link */}
             <a
               href="https://links.payboxapp.com/ROF2GSCOP0b"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-8 py-3.5 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-lg rounded-lg"
-              style={{ 
+              style={{
                 backgroundColor: '#0088cc',
                 color: 'white'
               }}
@@ -233,7 +233,7 @@ export default function ReunionPage() {
                 היי לכולם, החלטנו שהגיע הזמן ליצור מפגש, רק לנו (בלי בני זוג וילדים!!) לא להאמין כמה אנחנו זקנים וכמה זמן לא נפגשנו, יאללה תמלאו את הטופס ובקרוב נעדכן מתי זה קורה!
               </p>
             </div>
-            
+
             {/* Payment Stats */}
             <div className="border-t border-slate-200 bg-gradient-to-br from-green-50 to-emerald-50 px-6 md:px-8 py-5">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -258,7 +258,7 @@ export default function ReunionPage() {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-4">
                   {/* Total Amount */}
                   <div className="bg-white/70 backdrop-blur-sm border border-green-200 rounded-lg px-5 py-3">
@@ -267,7 +267,7 @@ export default function ReunionPage() {
                       ₪{collectedAmount.toLocaleString('he-IL')}
                     </p>
                   </div>
-                  
+
                   {/* Progress Bar */}
                   <div className="w-full md:w-64">
                     <div className="flex items-center justify-between mb-2">
@@ -275,7 +275,7 @@ export default function ReunionPage() {
                       <span className="text-sm font-bold text-green-600">{paidPercentage}%</span>
                     </div>
                     <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-1000 ease-out rounded-full"
                         style={{ width: `${paidPercentage}%` }}
                       ></div>
@@ -293,13 +293,13 @@ export default function ReunionPage() {
             const gradient = CLASS_GRADIENTS[className] || CLASS_GRADIENTS['לא צוין'];
             const isLeading = leadingClasses.includes(className);
             const classPaidCount = participants.filter(p => p.paid).length;
-            
+
             return (
               <div
                 key={className}
                 className={`group bg-white shadow-md overflow-hidden border transition-all duration-300 ${
-                  isLeading 
-                    ? 'border-yellow-400 ring-4 ring-yellow-200 shadow-xl scale-105' 
+                  isLeading
+                    ? 'border-yellow-400 ring-4 ring-yellow-200 shadow-xl scale-105'
                     : 'border-slate-200 hover:shadow-lg'
                 }`}
                 style={{ animationDelay: `${idx * 50}ms` }}
@@ -312,7 +312,7 @@ export default function ReunionPage() {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Class Header */}
                 <div className={`bg-gradient-to-br ${gradient.from} ${gradient.to} ${gradient.text} px-5 py-4 relative overflow-hidden ${isLeading ? 'pt-6' : ''}`}>
                   {isLeading && (
@@ -353,8 +353,8 @@ export default function ReunionPage() {
                       <div
                         key={index}
                         className={`p-3 border transition-all duration-200 group/item ${
-                          participant.paid 
-                            ? 'bg-green-50 border-green-300 hover:border-green-400 hover:shadow-sm' 
+                          participant.paid
+                            ? 'bg-green-50 border-green-300 hover:border-green-400 hover:shadow-sm'
                             : 'bg-white border-slate-200 hover:border-indigo-300 hover:shadow-sm'
                         }`}
                       >
@@ -363,8 +363,8 @@ export default function ReunionPage() {
                             <DollarSign className="text-green-600 shrink-0" size={18} />
                           )}
                           <div className={`font-medium mb-1.5 transition-colors flex-1 ${
-                            participant.paid 
-                              ? 'text-green-900 group-hover/item:text-green-700' 
+                            participant.paid
+                              ? 'text-green-900 group-hover/item:text-green-700'
                               : 'text-slate-900 group-hover/item:text-indigo-700'
                           }`}>
                             {index + 1}. {participant.name}
