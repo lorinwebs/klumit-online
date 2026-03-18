@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'מקיף ח׳ - מפגש מחזור 20 שנה',
-  description: 'מפגש איחוד מחזור 2007 של מקיף ח׳. הרשמה, תשלום, גלריית תמונות וסרטונים.',
+  title: 'מקיף ח׳ - בדיקת זמינות לאירוע',
+  description: 'בדיקת זמינות תאריכים למפגש איחוד מחזור 2007 של מקיף ח׳.',
   openGraph: {
-    title: 'מקיף ח׳ - מפגש מחזור 20 שנה',
-    description: 'מפגש איחוד מחזור 2007 של מקיף ח׳. הרשמה, תשלום, גלריית תמונות וסרטונים.',
+    title: 'מקיף ח׳ - בדיקת זמינות לאירוע',
+    description: 'בדיקת זמינות תאריכים למפגש איחוד מחזור 2007 של מקיף ח׳.',
     siteName: 'מקיף ח׳ מפגש איחוד',
     locale: 'he_IL',
     type: 'website',
@@ -20,6 +20,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function MekifChetLayout({ children }: { children: React.ReactNode }) {
+export default function MekifChetAvailabilityLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
