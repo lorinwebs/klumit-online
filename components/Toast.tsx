@@ -4,9 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
+
 interface ToastProps {
-  show: boolean;
   message: string;
+  show: boolean;
   showViewCart?: boolean;
   type?: 'success' | 'warning';
 }
