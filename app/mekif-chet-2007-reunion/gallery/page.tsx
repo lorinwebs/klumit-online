@@ -183,7 +183,7 @@ export default function GalleryPage() {
   const totalUploads = (gallery?.imageCount || 0) + (gallery?.videoCount || 0);
 
   return (
-    <div className="min-h-screen bg-slate-50" dir="rtl">
+    <div className="min-h-screen bg-slate-50 overflow-x-hidden" dir="rtl">
 
 
       {/* Hero */}
