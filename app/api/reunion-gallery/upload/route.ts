@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { sendTelegramMessage, escapeHtml } from '@/lib/telegram';
 
 const MONDAY_API_KEY = process.env.MONDAY_API_KEY;
 const BOARD_ID = '5090027047';
@@ -113,6 +114,30 @@ export async function POST(request: NextRequest) {
     if (dbError) throw dbError;
 
     const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/mekif-chet-reunion/${filePath}`;
+
+    const { data: userUploads } = await supabase
+      .from('reunion_uploads')
+      .select('file_type')
+      .eq('uploader_name', uploaderName);
+
+    const userImages = userUploads?.filter(u => u.file_type === 'image').length || 0;
+    const userVideos = userUploads?.filter(u => u.file_type === 'video').length || 0;
+
+    const { count: totalCount } = await supabase
+      .from('reunion_uploads')
+      .select('*', { count: 'exact', head: true });
+
+    const parts = [];
+    if (userImages > 0) parts.push(`${userImages} תמונות`);
+    if (userVideos > 0) parts.push(`${userVideos} סרטונים`);
+
+    sendTelegramMessage(
+      `📸 <b>גלריית מקיף ח׳</b>\n\n` +
+      `👤 <b>${escapeHtml(uploaderName)}</b> העלה/תה ${isImage ? 'תמונה' : 'סרטון'}\n` +
+      `📊 סה״כ של ${escapeHtml(uploaderName)}: ${parts.join(' ו-')}\n` +
+      `📁 סה״כ בגלריה: ${totalCount || 0} קבצים\n` +
+      `🕐 ${new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}`
+    ).catch(() => {});
 
     return NextResponse.json({ success: true, url: publicUrl });
   } catch (error: any) {
