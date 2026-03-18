@@ -268,7 +268,7 @@ export default function GalleryPage() {
           {/* Upload zone */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col">
             <label className="block text-sm font-semibold text-slate-700 mb-1">העלאת קבצים</label>
-            <p className="text-xs text-slate-400 mb-4">תמונות עד 20MB • סרטונים עד 100MB</p>
+            <p className="text-xs text-slate-400 mb-4">תמונות עד 20MB • סרטונים עד 1GB</p>
             <div
               onDragOver={e => { e.preventDefault(); if (isPaid) setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}

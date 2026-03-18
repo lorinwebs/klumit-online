@@ -79,10 +79,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only images and videos are allowed' }, { status: 400 });
     }
 
-    const maxSize = isVideo ? 100 * 1024 * 1024 : 20 * 1024 * 1024;
+    const maxSize = isVideo ? 1024 * 1024 * 1024 : 20 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: `File too large. Max: ${isVideo ? '100MB' : '20MB'}` },
+        { error: `File too large. Max: ${isVideo ? '1GB' : '20MB'}` },
         { status: 400 }
       );
     }
