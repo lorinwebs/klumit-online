@@ -13,8 +13,6 @@ import { shopifyClient } from './shopify';
  *    SHOPIFY_ADMIN_API_TOKEN=shpat_xxxxx
  */
 
-const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN!;
-
 // פונקציה לקבלת Admin API token (ב-runtime)
 function getAdminApiToken(): string | undefined {
   // ב-Next.js, משתני סביבה נטענים רק ב-runtime של השרת
@@ -44,30 +42,28 @@ function validateAdminToken(token: string | undefined): void {
 // הערה: זה רץ ב-module load time, אז process.env יכול להיות ריק
 // הבדיקה האמיתית תתבצע ב-runtime כשהפונקציה נקראת
 
-const storeDomain = domain.includes('.myshopify.com') 
-  ? domain 
-  : `${domain}.myshopify.com`;
-
 // פונקציה ליצירת Admin API client (ב-runtime, רק server-side)
 function createAdminClient(): GraphQLClient | null {
   // חשוב: Admin API token לא אמור להיות זמין ב-client-side!
   if (typeof window !== 'undefined') {
-    // זה לא אמור לקרות - Admin API צריך להיות רק ב-server-side
-
     return null;
   }
-  
+
   const adminApiToken = getAdminApiToken();
-  
-  // בדיקה ראשונית (רק ב-server-side runtime)
+
   if (adminApiToken) {
     validateAdminToken(adminApiToken);
   }
-  
+
   if (!adminApiToken) {
     return null;
   }
-  
+
+  const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || '';
+  const storeDomain = domain.includes('.myshopify.com')
+    ? domain
+    : `${domain}.myshopify.com`;
+
   return new GraphQLClient(
     `https://${storeDomain}/admin/api/2024-01/graphql.json`,
     {
