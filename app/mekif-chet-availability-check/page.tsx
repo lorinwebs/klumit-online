@@ -136,7 +136,7 @@ export default function AvailabilityCheckPage() {
           </div>
           <div className="inline-block mb-6">
             <h1 className="text-4xl md:text-6xl font-light text-slate-900 mb-3 tracking-tight">
-              בדיקת זמינות לאירוע - פגישת מקיף ח'
+              בדיקת זמינות לאירוע - פגישת מקיף ח&apos;
             </h1>
             <div className="h-1 w-24 bg-gradient-to-r from-indigo-500 to-purple-500 mx-auto"></div>
           </div>

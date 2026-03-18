@@ -11,15 +11,10 @@ function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const reference = searchParams.get('reference');
   const { clearCart } = useCartStore();
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // נקה את העגלה אחרי תשלום מוצלח
-    if (reference) {
-      clearCart();
-      setLoading(false);
-    }
-  }, [reference, clearCart]);
+  const [loading] = useState(() => {
+    if (reference) clearCart();
+    return !reference;
+  });
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">

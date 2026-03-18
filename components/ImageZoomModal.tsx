@@ -30,6 +30,28 @@ export default function ImageZoomModal({ images, initialIndex, onClose }: ImageZ
     setPosition({ x: 0, y: 0 });
   }, [currentIndex]);
 
+  const handleZoomIn = () => {
+    setScale((prev) => Math.min(prev + 0.5, 4));
+  };
+
+  const handleZoomOut = () => {
+    setScale((prev) => {
+      const newScale = Math.max(prev - 0.5, 1);
+      if (newScale === 1) {
+        setPosition({ x: 0, y: 0 });
+      }
+      return newScale;
+    });
+  };
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const handlePrevious = () => {
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -57,28 +79,6 @@ export default function ImageZoomModal({ images, initialIndex, onClose }: ImageZ
       document.body.style.overflow = '';
     };
   }, []);
-
-  const handleZoomIn = () => {
-    setScale((prev) => Math.min(prev + 0.5, 4));
-  };
-
-  const handleZoomOut = () => {
-    setScale((prev) => {
-      const newScale = Math.max(prev - 0.5, 1);
-      if (newScale === 1) {
-        setPosition({ x: 0, y: 0 });
-      }
-      return newScale;
-    });
-  };
-
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % images.length);
-  };
-
-  const handlePrevious = () => {
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (scale > 1) {

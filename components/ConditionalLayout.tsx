@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useSyncExternalStore } from 'react';
 import MembershipTopBar from './MembershipTopBar';
 import SkipToMain from './SkipToMain';
 import ChatWidgetWrapper from './ChatWidgetWrapper';
@@ -11,11 +11,11 @@ import CouponModal from './CouponModal';
 
 export default function ConditionalLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   // דפים שלא צריכים את הקומפוננטות של קלומית
   const excludedPaths = ['/mekif-chet-availability-check', '/mekif-chet-2007-reunion'];

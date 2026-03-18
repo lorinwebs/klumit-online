@@ -43,12 +43,10 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
 }
 
 export default function IschiaCountdown() {
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [mounted, setMounted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>(calculateTimeLeft);
+  const [mounted] = useState(() => typeof window !== 'undefined');
 
   useEffect(() => {
-    setMounted(true);
-
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);

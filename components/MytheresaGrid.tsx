@@ -87,13 +87,15 @@ function ProductImageSlider({
   }, [isHovered, images.length, currentImageIndex]);
 
   const prevIsHovered = useRef(isHovered);
-  if (prevIsHovered.current !== isHovered) {
-    prevIsHovered.current = isHovered;
-    if (!isHovered) {
-      setImageOpacity(1);
-      setCurrentImageIndex(0);
+  useEffect(() => {
+    if (prevIsHovered.current !== isHovered) {
+      prevIsHovered.current = isHovered;
+      if (!isHovered) {
+        setImageOpacity(1);
+        setCurrentImageIndex(0);
+      }
     }
-  }
+  }, [isHovered]);
 
   return (
     <div

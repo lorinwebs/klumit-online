@@ -133,9 +133,24 @@ function RelatedProductCard({ relatedProduct, formatPrice }: { relatedProduct: P
 
 export default function ProductClient({ product, relatedProducts: initialRelatedProducts }: ProductClientProps) {
   const { t, language } = useLanguage();
-  const [selectedVariant, setSelectedVariant] = useState<string>('');
-  const [selectedImage, setSelectedImage] = useState<string>('');
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [selectedVariant, setSelectedVariant] = useState<string>(() => {
+    if (product.variants.edges.length > 0) return product.variants.edges[0].node.id;
+    return '';
+  });
+  const [selectedImage, setSelectedImage] = useState<string>(() => {
+    if (product.variants.edges.length > 0 && product.variants.edges[0].node.image?.url) {
+      return product.variants.edges[0].node.image.url;
+    }
+    if (product.images.edges.length > 0) return product.images.edges[0].node.url;
+    return '';
+  });
+  const [currentImageIndex, setCurrentImageIndex] = useState(() => {
+    if (product.variants.edges.length > 0 && product.variants.edges[0].node.image?.url) {
+      const idx = product.images.edges.findIndex(({ node }) => node.url === product.variants.edges[0].node.image?.url);
+      return idx >= 0 ? idx : 0;
+    }
+    return 0;
+  });
   const [showToast, setShowToast] = useState(false);
   const [showStockToast, setShowStockToast] = useState(false);
   const [stockMessage, setStockMessage] = useState('');
@@ -297,30 +312,6 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     return product.images.edges;
   }, [hasColors, currentColor, currentVariant, product.images.edges]);
 
-  // Initialize selected variant and image
-  useEffect(() => {
-    if (product.variants.edges.length > 0) {
-      const firstVariant = product.variants.edges[0].node;
-      setSelectedVariant(firstVariant.id);
-      
-      // Set initial image from variant if available
-      if (firstVariant.image?.url) {
-        const variantImageUrl = firstVariant.image.url;
-        setSelectedImage(variantImageUrl);
-        // Find the index in filteredImages
-        const imageIndex = product.images.edges.findIndex(
-          ({ node }) => node.url === variantImageUrl
-        );
-        setCurrentImageIndex(imageIndex >= 0 ? imageIndex : 0);
-      } else if (product.images.edges.length > 0) {
-        setSelectedImage(product.images.edges[0].node.url);
-        setCurrentImageIndex(0);
-      }
-    } else if (product.images.edges.length > 0) {
-      setSelectedImage(product.images.edges[0].node.url);
-      setCurrentImageIndex(0);
-    }
-  }, [product]);
 
   // Track product view
   useEffect(() => {
