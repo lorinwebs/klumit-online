@@ -69,9 +69,16 @@ export async function POST(request: NextRequest) {
     });
 
     const data = await res.json();
+
+    if (!res.ok) {
+      console.error('OpenAI API error:', JSON.stringify(data));
+      return NextResponse.json({ error: `OpenAI error: ${data.error?.message || res.statusText}` }, { status: 500 });
+    }
+
     const content = data.choices?.[0]?.message?.content;
 
     if (!content) {
+      console.error('OpenAI empty content. Full response:', JSON.stringify(data));
       return NextResponse.json({ error: 'No response from AI' }, { status: 500 });
     }
 
