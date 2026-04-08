@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { SlidersHorizontal } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { shopifyClient, PRODUCTS_QUERY } from '@/lib/shopify';
+import { shopifyClient, PRODUCTS_QUERY, SHOPIFY_COLLECTION_SS26_HANDLE } from '@/lib/shopify';
 import { useLanguage } from '@/lib/LanguageContext';
 
 interface Product {
@@ -33,7 +33,7 @@ interface Product {
 }
 
 interface MytheresaGridProps {
-  category?: 'bags' | 'belts' | 'wallets' | 'all';
+  category?: 'bags' | 'belts' | 'wallets' | 'all' | 'ss26';
   maxProducts?: number;
   showViewAll?: boolean;
 }
@@ -168,15 +168,25 @@ export default function MytheresaGrid({
   useEffect(() => {
     async function fetchProducts() {
       try {
+        const collectionQuery =
+          category === 'ss26' ? `collection:${SHOPIFY_COLLECTION_SS26_HANDLE}` : undefined;
+
         const data = await shopifyClient.request<{
           products: { edges: Array<{ node: Product }> };
         }>(PRODUCTS_QUERY, {
-          first: 50,
+          first: 100,
+          query: collectionQuery,
           sortKey: 'CREATED_AT',
           reverse: true,
         });
 
         let allProducts = data.products.edges.map((edge) => edge.node);
+
+        // Spring/Summer collection: show all products from that collection (no bags/belts split)
+        if (category === 'ss26') {
+          setProducts(allProducts);
+          return;
+        }
 
         // Filter by category
         if (category !== 'all') {
@@ -606,6 +616,14 @@ export default function MytheresaGrid({
               className="group w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-3.5 text-[11px] tracking-editorial uppercase font-medium bg-cream text-espresso border border-espresso hover:bg-espresso hover:text-cream transition-all duration-500 ease-luxury"
             >
               <span>{t('products.shopWallets')}</span>
+            </a>
+          )}
+          {(showViewAll || category !== 'ss26') && (
+            <a
+              href="/products?tab=ss26"
+              className="group w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-3.5 text-[11px] tracking-editorial uppercase font-medium bg-cream text-espresso border border-espresso hover:bg-espresso hover:text-cream transition-all duration-500 ease-luxury"
+            >
+              <span>{t('products.shopSpringSummer2026')}</span>
             </a>
           )}
         </div>

@@ -57,7 +57,8 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { handle } = await params;
+  const { handle: rawHandle } = await params;
+  const handle = decodeURIComponent(rawHandle);
   
   try {
     const productData = await shopifyClient.request<{ product: Product }>(
@@ -97,7 +98,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ProductPage({ params }: PageProps) {
-  const { handle } = await params;
+  const { handle: rawHandle } = await params;
+  const handle = decodeURIComponent(rawHandle);
 
   try {
     // Fetch product data on server

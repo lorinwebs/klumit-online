@@ -5,11 +5,17 @@ import { GraphQLClient } from 'graphql-request';
  * 
  * 1. ב-Shopify Admin: Settings > Apps and sales channels > Develop apps
  * 2. צור אפליקציה חדשה והפעל Storefront API
- * 3. הפעל הרשאות: unauthenticated_read_product_listings, unauthenticated_write_checkouts
+ * 3. הפעל הרשאות: unauthenticated_read_product_listings, unauthenticated_write_checkouts,
+ *    unauthenticated_read_content (בלוגים)
+ *
+ *    דף מוצר 404: ודא שהמוצר פורסם לערוץ ה-Headless / חנות מותאמת אישית של האפליקציה:
+ *    מוצר → Publishing → בחר את כל הערוצים הרלוונטיים (כולל Custom storefront אם קיים).
  * 4. התקן את האפליקציה והעתק את ה-Storefront access token
  * 5. הוסף ל-.env.local:
  *    NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN=your-store-name (ללא .myshopify.com)
  *    NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN=shpss_xxxxx (או shpat_xxxxx)
+ *    (אופציונלי) NEXT_PUBLIC_SHOPIFY_COLLECTION_SS26_HANDLE=slug-של-הקולקציה-בשופיפיי
+ *    ברירת המחדל: spring-summer-2026 — אם ה-handle בקישור /collections/... שונה, הגדר את המשתנה.
  * 
  * הערה: השתמש ב-"API secret key" מההגדרות (הערך שמתחיל ב-shpss_)
  *        לא צריך את ה-"API key" - רק את ה-secret key
@@ -17,6 +23,10 @@ import { GraphQLClient } from 'graphql-request';
 
 const domain = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN || '';
 const storefrontAccessToken = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN || '';
+
+/** Collection handle (/collections/...) for Spring Summer 2026. Override in .env if Shopify uses another slug. */
+export const SHOPIFY_COLLECTION_SS26_HANDLE =
+  process.env.NEXT_PUBLIC_SHOPIFY_COLLECTION_SS26_HANDLE || 'spring-summer-2026';
 
 // הוסף .myshopify.com אם לא קיים
 const storeDomain = domain.includes('.myshopify.com')

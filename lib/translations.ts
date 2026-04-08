@@ -6,6 +6,7 @@ export interface Translations {
   'header.bags': string;
   'header.belts': string;
   'header.wallets': string;
+  'header.springSummer2026': string;
   'header.products': string;
   'header.about': string;
   'header.contact': string;
@@ -43,6 +44,7 @@ export interface Translations {
   'products.shopWallets': string;
   'products.shopBelts': string;
   'products.shopBags': string;
+  'products.shopSpringSummer2026': string;
   'products.addToCart': string;
   'products.outOfStock': string;
   'products.addedToCart': string;
@@ -329,6 +331,7 @@ export const translations: Record<Language, Translations> = {
     'header.bags': 'תיקים',
     'header.belts': 'חגורות',
     'header.wallets': 'ארנקים',
+    'header.springSummer2026': 'אביב-קיץ 2026',
     'header.products': 'מוצרים',
     'header.about': 'אודות',
     'header.contact': 'יצירת קשר',
@@ -366,6 +369,7 @@ export const translations: Record<Language, Translations> = {
     'products.shopWallets': 'כל הארנקים',
     'products.shopBelts': 'כל החגורות',
     'products.shopBags': 'כל התיקים',
+    'products.shopSpringSummer2026': 'קולקציית אביב-קיץ 2026',
     'products.addToCart': 'הוסף לסל',
     'products.outOfStock': 'אזל מהמלאי',
     'products.addedToCart': 'הוסף לעגלה',
@@ -651,6 +655,7 @@ export const translations: Record<Language, Translations> = {
     'header.bags': 'Bags',
     'header.belts': 'Belts',
     'header.wallets': 'Wallets',
+    'header.springSummer2026': 'Spring Summer 2026',
     'header.products': 'Products',
     'header.about': 'About',
     'header.contact': 'Contact',
@@ -688,6 +693,7 @@ export const translations: Record<Language, Translations> = {
     'products.shopWallets': 'SHOP WALLETS',
     'products.shopBelts': 'SHOP BELTS',
     'products.shopBags': 'SHOP BAGS',
+    'products.shopSpringSummer2026': 'SPRING SUMMER 2026',
     'products.addToCart': 'Add to Cart',
     'products.outOfStock': 'Out of Stock',
     'products.addedToCart': 'Added to Cart',
@@ -973,6 +979,7 @@ export const translations: Record<Language, Translations> = {
     'header.bags': 'Сумки',
     'header.belts': 'Ремни',
     'header.wallets': 'Кошельки',
+    'header.springSummer2026': 'Весна-лето 2026',
     'header.products': 'Товары',
     'header.about': 'О нас',
     'header.contact': 'Контакты',
@@ -1010,6 +1017,7 @@ export const translations: Record<Language, Translations> = {
     'products.shopWallets': 'ВСЕ КОШЕЛЬКИ',
     'products.shopBelts': 'ВСЕ РЕМНИ',
     'products.shopBags': 'ВСЕ СУМКИ',
+    'products.shopSpringSummer2026': 'ВЕСНА-ЛЕТО 2026',
     'products.addToCart': 'Добавить в корзину',
     'products.outOfStock': 'Нет в наличии',
     'products.addedToCart': 'Добавлено в корзину',

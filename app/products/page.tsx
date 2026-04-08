@@ -11,7 +11,8 @@ export const metadata: Metadata = {
   },
 };
 
-type TabType = 'bags' | 'belts' | 'wallets';
+const VALID_TABS = ['bags', 'belts', 'wallets', 'ss26'] as const;
+type TabType = (typeof VALID_TABS)[number];
 
 interface PageProps {
   searchParams: Promise<{ tab?: string; category?: string }>;
@@ -19,8 +20,8 @@ interface PageProps {
 
 export default async function ProductsPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  // Support both 'tab' and 'category' parameters
-  const activeTab = ((params.category || params.tab) as TabType) || 'bags';
+  const raw = (params.category || params.tab || 'bags').toLowerCase();
+  const activeTab: TabType = VALID_TABS.includes(raw as TabType) ? (raw as TabType) : 'bags';
 
   return (
     <div className="min-h-screen flex flex-col">

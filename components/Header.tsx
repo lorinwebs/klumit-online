@@ -100,11 +100,12 @@ export default function Header() {
 
         {/* Center - Desktop nav / Mobile logo */}
         <div className="flex items-center justify-center order-2">
-          <nav className="hidden md:flex items-center justify-center gap-8 lg:gap-10" aria-label="תפריט ניווט ראשי">
+          <nav className="hidden md:flex items-center justify-center gap-5 lg:gap-8 flex-wrap" aria-label="תפריט ניווט ראשי">
             {[
               { tab: 'bags', label: t('header.bags') },
               { tab: 'belts', label: t('header.belts') },
               { tab: 'wallets', label: t('header.wallets') },
+              { tab: 'ss26', label: t('header.springSummer2026') },
             ].map((item) => (
               <Link
                 key={item.tab}
@@ -196,16 +197,17 @@ export default function Header() {
       </nav>
 
       {/* Mobile category sub-bar */}
-      <div className="md:hidden w-full flex items-center justify-center gap-6 h-10 border-t border-sand bg-cream-warm/80 backdrop-blur-sm">
+      <div className="md:hidden w-full flex items-center justify-center gap-3 px-2 h-10 border-t border-sand bg-cream-warm/80 backdrop-blur-sm overflow-x-auto scrollbar-hide">
         {[
           { tab: 'bags', label: t('header.bags') },
           { tab: 'belts', label: t('header.belts') },
           { tab: 'wallets', label: t('header.wallets') },
+          { tab: 'ss26', label: t('header.springSummer2026') },
         ].map((item) => (
           <Link
             key={item.tab}
             href={`/products?tab=${item.tab}`}
-            className={`relative flex items-center h-full text-[10px] tracking-editorial uppercase transition-all duration-300 ${
+            className={`relative flex items-center h-full shrink-0 text-[9px] tracking-editorial uppercase transition-all duration-300 whitespace-nowrap ${
               isProductsPage && currentTab === item.tab
                 ? 'text-espresso font-medium'
                 : 'text-stone-dark hover:text-espresso'
@@ -230,6 +232,7 @@ export default function Header() {
               { tab: 'bags', label: t('header.bags') },
               { tab: 'belts', label: t('header.belts') },
               { tab: 'wallets', label: t('header.wallets') },
+              { tab: 'ss26', label: t('header.springSummer2026') },
             ].map((item) => (
               <Link
                 key={item.tab}
