@@ -196,7 +196,7 @@ export default function CountdownPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0f0a1e, #1a0e2e, #0d0815)' }}>
         <div className="relative">
           <div className="absolute inset-0 animate-spin-slow">
             <div className="w-16 h-16 rounded-full border-2 border-transparent border-t-amber-400 border-r-amber-400/50" />
@@ -208,7 +208,7 @@ export default function CountdownPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] relative overflow-hidden flex flex-col" dir="rtl">
+    <div className="min-h-screen relative overflow-hidden flex flex-col" dir="rtl" style={{ background: 'linear-gradient(135deg, #0f0a1e 0%, #1a0e2e 25%, #1e1233 40%, #1a1028 60%, #150d1f 80%, #0d0815 100%)' }}>
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap');
 
@@ -321,9 +321,10 @@ export default function CountdownPage() {
 
       {/* Ambient gradient orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/4 -left-1/4 w-[600px] h-[600px] bg-amber-500/[0.07] rounded-full blur-[120px]" style={{ animation: 'gradient-shift 8s ease-in-out infinite' }} />
-        <div className="absolute -bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-orange-600/[0.05] rounded-full blur-[100px]" style={{ animation: 'gradient-shift 10s ease-in-out infinite reverse' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-amber-400/[0.03] rounded-full blur-[150px]" />
+        <div className="absolute -top-1/4 -left-1/4 w-[600px] h-[600px] bg-purple-600/[0.12] rounded-full blur-[120px]" style={{ animation: 'gradient-shift 8s ease-in-out infinite' }} />
+        <div className="absolute -bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-amber-500/[0.08] rounded-full blur-[100px]" style={{ animation: 'gradient-shift 10s ease-in-out infinite reverse' }} />
+        <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-fuchsia-700/[0.06] rounded-full blur-[130px]" style={{ animation: 'gradient-shift 12s ease-in-out infinite' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-amber-400/[0.04] rounded-full blur-[150px]" />
       </div>
 
       {/* Floating particles */}
@@ -335,8 +336,8 @@ export default function CountdownPage() {
       {/* Vignette overlay */}
       <div className="absolute inset-0 pointer-events-none" style={{
         background: `
-          radial-gradient(ellipse 60% 50% at center, rgba(5,5,5,0.85) 0%, rgba(5,5,5,0.5) 50%, rgba(5,5,5,0.3) 100%),
-          linear-gradient(to bottom, rgba(5,5,5,0.8) 0%, transparent 20%, transparent 80%, rgba(5,5,5,0.9) 100%)
+          radial-gradient(ellipse 60% 50% at center, rgba(15,10,30,0.85) 0%, rgba(15,10,30,0.4) 50%, transparent 100%),
+          linear-gradient(to bottom, rgba(15,10,30,0.7) 0%, transparent 20%, transparent 80%, rgba(13,8,21,0.8) 100%)
         `
       }} />
 
@@ -355,12 +356,14 @@ export default function CountdownPage() {
         {/* Logo */}
         <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <div className="relative">
-            <div className="absolute -inset-3 bg-amber-400/20 rounded-full blur-2xl animate-pulse" />
-            <img
-              src="https://mekifh.mashov.info/wp-content/uploads/sites/82/2021/06/Semel-MekifH-%D7%A9%D7%9C%D7%95%D7%9D-%D7%95%D7%90%D7%A0%D7%95%D7%A0%D7%95.png"
-              alt="מקיף ח'"
-              className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full border-2 border-amber-400/50 shadow-[0_0_30px_rgba(251,191,36,0.2)] animate-border-glow"
-            />
+            <div className="absolute -inset-4 bg-amber-400/20 rounded-full blur-2xl animate-pulse" />
+            <div className="relative w-26 h-26 sm:w-30 sm:h-30 rounded-full bg-white p-1 shadow-[0_0_30px_rgba(251,191,36,0.3)] animate-border-glow" style={{ borderWidth: '2px', borderColor: 'rgba(251,191,36,0.5)', borderStyle: 'solid' }}>
+              <img
+                src="https://mekifh.mashov.info/wp-content/uploads/sites/82/2021/06/Semel-MekifH-%D7%A9%D7%9C%D7%95%D7%9D-%D7%95%D7%90%D7%A0%D7%95%D7%A0%D7%95.png"
+                alt="מקיף ח'"
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover"
+              />
+            </div>
           </div>
         </div>
 
