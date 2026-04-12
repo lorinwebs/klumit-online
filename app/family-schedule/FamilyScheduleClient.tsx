@@ -95,11 +95,13 @@ function getEventsForDay(events: FamilyEvent[], day: Date): FamilyEvent[] {
 
 function findConflicts(events: FamilyEvent[]): Set<string> {
   const ids = new Set<string>();
+  const now = Date.now();
   for (let i = 0; i < events.length; i++) {
     for (let j = i + 1; j < events.length; j++) {
       const a = events[i], b = events[j];
       if (a.person !== b.person && a.person !== 'כולם' && b.person !== 'כולם') continue;
       const [as, ae, bs, be] = [new Date(a.start_time).getTime(), new Date(a.end_time).getTime(), new Date(b.start_time).getTime(), new Date(b.end_time).getTime()];
+      if (ae < now && be < now) continue;
       if (as < be && bs < ae) { ids.add(a.id); ids.add(b.id); }
     }
   }
@@ -108,11 +110,13 @@ function findConflicts(events: FamilyEvent[]): Set<string> {
 
 function findConflictPairs(events: FamilyEvent[]): [FamilyEvent, FamilyEvent][] {
   const pairs: [FamilyEvent, FamilyEvent][] = [];
+  const now = Date.now();
   for (let i = 0; i < events.length; i++) {
     for (let j = i + 1; j < events.length; j++) {
       const a = events[i], b = events[j];
       if (a.person !== b.person && a.person !== 'כולם' && b.person !== 'כולם') continue;
       const [as, ae, bs, be] = [new Date(a.start_time).getTime(), new Date(a.end_time).getTime(), new Date(b.start_time).getTime(), new Date(b.end_time).getTime()];
+      if (ae < now && be < now) continue;
       if (as < be && bs < ae) pairs.push([a, b]);
     }
   }
