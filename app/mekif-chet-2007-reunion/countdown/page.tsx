@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Sparkles } from 'lucide-react';
 
 const EVENT_DATE = new Date('2026-06-11T20:00:00+03:00');
@@ -32,26 +32,105 @@ function calcTimeLeft(): TimeLeft {
 function MarqueeRow({ images, duration, reverse }: { images: GalleryUpload[]; duration: number; reverse?: boolean }) {
   const doubled = [...images, ...images];
   return (
-    <div className="overflow-hidden whitespace-nowrap py-1.5">
+    <div className="overflow-hidden whitespace-nowrap py-2">
       <div
-        className={`inline-flex gap-3 ${reverse ? 'animate-marquee-reverse' : 'animate-marquee'}`}
+        className={`inline-flex gap-4 ${reverse ? 'animate-marquee-reverse' : 'animate-marquee'}`}
         style={{ animationDuration: `${duration}s` }}
       >
         {doubled.map((img, i) => (
           <div
             key={i}
-            className="relative w-44 h-44 sm:w-52 sm:h-52 md:w-60 md:h-60 rounded-2xl overflow-hidden shrink-0 shadow-lg border-2 border-white/10"
+            className="relative w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden shrink-0 group"
           >
             <img
               src={img.url}
               alt=""
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               loading="lazy"
             />
-            <div className="absolute inset-0 bg-black/5" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+            <div className="absolute inset-0 rounded-2xl border border-white/10" />
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function FloatingParticles() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {Array.from({ length: 30 }).map((_, i) => (
+        <div
+          key={i}
+          className="particle absolute rounded-full"
+          style={{
+            width: `${Math.random() * 4 + 1}px`,
+            height: `${Math.random() * 4 + 1}px`,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 8}s`,
+            animationDuration: `${Math.random() * 6 + 6}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function CountdownUnit({ value, label, index }: { value: number; label: string; index: number }) {
+  const prevValue = useRef(value);
+  const [flipping, setFlipping] = useState(false);
+
+  useEffect(() => {
+    if (prevValue.current !== value) {
+      setFlipping(true);
+      const t = setTimeout(() => setFlipping(false), 500);
+      prevValue.current = value;
+      return () => clearTimeout(t);
+    }
+  }, [value]);
+
+  return (
+    <div
+      className="flex flex-col items-center countdown-unit"
+      style={{ animationDelay: `${index * 0.1}s` }}
+    >
+      <div className="relative group">
+        {/* Outer glow ring */}
+        <div className="absolute -inset-3 rounded-3xl bg-gradient-to-br from-amber-400/30 via-orange-500/20 to-amber-600/30 blur-xl opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="absolute -inset-1.5 rounded-2xl bg-gradient-to-br from-amber-400/40 to-orange-600/40 blur-md" />
+
+        {/* Card */}
+        <div className={`relative overflow-hidden rounded-2xl min-w-[80px] sm:min-w-[110px] md:min-w-[130px] ${flipping ? 'animate-flip-tick' : ''}`}>
+          <div className="bg-gradient-to-b from-white/[0.12] to-white/[0.06] backdrop-blur-xl px-5 py-4 sm:px-7 sm:py-5 md:px-8 md:py-6 border border-white/[0.15] rounded-2xl relative">
+            {/* Shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent rounded-2xl" />
+            {/* Center divider line */}
+            <div className="absolute left-2 right-2 top-1/2 h-px bg-white/[0.07]" />
+            {/* Side notches */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-4 bg-black/60 rounded-r-full" />
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-4 bg-black/60 rounded-l-full" />
+
+            <span className="text-5xl sm:text-6xl md:text-8xl font-black text-white tabular-nums block text-center relative z-10 drop-shadow-[0_2px_10px_rgba(251,191,36,0.3)]">
+              {String(value).padStart(2, '0')}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <span className="text-amber-400/90 text-xs sm:text-sm md:text-base mt-3 font-semibold tracking-widest uppercase">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function Separator() {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 pt-2 self-start mt-4 sm:mt-5 md:mt-6">
+      <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-amber-400 animate-pulse shadow-[0_0_10px_rgba(251,191,36,0.6)]" />
+      <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-amber-400 animate-pulse shadow-[0_0_10px_rgba(251,191,36,0.6)]" style={{ animationDelay: '0.5s' }} />
     </div>
   );
 }
@@ -60,6 +139,7 @@ export default function CountdownPage() {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(calcTimeLeft);
   const [images, setImages] = useState<GalleryUpload[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   const fetchGallery = useCallback(async () => {
     try {
@@ -77,6 +157,7 @@ export default function CountdownPage() {
   useEffect(() => {
     document.title = 'COUNTDOWN - מקיף ח\' 2007';
     fetchGallery();
+    setTimeout(() => setMounted(true), 100);
   }, [fetchGallery]);
 
   useEffect(() => {
@@ -93,14 +174,21 @@ export default function CountdownPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Sparkles className="text-amber-400 animate-pulse" size={40} />
+        <div className="relative">
+          <div className="absolute inset-0 animate-spin-slow">
+            <div className="w-16 h-16 rounded-full border-2 border-transparent border-t-amber-400 border-r-amber-400/50" />
+          </div>
+          <Sparkles className="text-amber-400 animate-pulse" size={32} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden flex flex-col" dir="rtl">
+    <div className="min-h-screen bg-[#050505] relative overflow-hidden flex flex-col" dir="rtl">
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap');
+
         @keyframes marquee {
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
@@ -115,105 +203,225 @@ export default function CountdownPage() {
         .animate-marquee-reverse {
           animation: marquee-reverse linear infinite;
         }
+
+        @keyframes float-up {
+          0% { transform: translateY(100vh) scale(0); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 0.6; }
+          100% { transform: translateY(-20vh) scale(1); opacity: 0; }
+        }
+        .particle {
+          background: radial-gradient(circle, rgba(251,191,36,0.8), rgba(251,191,36,0));
+          animation: float-up linear infinite;
+        }
+
         @keyframes glow-pulse {
-          0%, 100% { text-shadow: 0 0 20px rgba(251,191,36,0.4), 0 0 60px rgba(251,191,36,0.15); }
-          50% { text-shadow: 0 0 40px rgba(251,191,36,0.6), 0 0 100px rgba(251,191,36,0.3); }
+          0%, 100% {
+            text-shadow:
+              0 0 30px rgba(251,191,36,0.5),
+              0 0 80px rgba(251,191,36,0.2),
+              0 0 120px rgba(251,191,36,0.1);
+          }
+          50% {
+            text-shadow:
+              0 0 50px rgba(251,191,36,0.7),
+              0 0 120px rgba(251,191,36,0.35),
+              0 0 200px rgba(251,191,36,0.15);
+          }
         }
         .glow-text {
           animation: glow-pulse 3s ease-in-out infinite;
         }
+
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+          animation: spin-slow 2s linear infinite;
+        }
+
+        @keyframes flip-tick {
+          0% { transform: scaleY(1); }
+          50% { transform: scaleY(0.85); }
+          100% { transform: scaleY(1); }
+        }
+        .animate-flip-tick {
+          animation: flip-tick 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fade-in-up {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+          animation: fade-in-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          opacity: 0;
+        }
+
+        .countdown-unit {
+          animation: fade-in-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          opacity: 0;
+        }
+
+        @keyframes shimmer {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        .shimmer-text {
+          background: linear-gradient(
+            90deg,
+            rgba(251,191,36,0.8) 0%,
+            rgba(255,255,255,1) 25%,
+            rgba(251,191,36,0.8) 50%,
+            rgba(255,255,255,1) 75%,
+            rgba(251,191,36,0.8) 100%
+          );
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: shimmer 4s linear infinite;
+        }
+
+        @keyframes border-glow {
+          0%, 100% { border-color: rgba(251,191,36,0.3); box-shadow: 0 0 20px rgba(251,191,36,0.1); }
+          50% { border-color: rgba(251,191,36,0.6); box-shadow: 0 0 40px rgba(251,191,36,0.2); }
+        }
+        .animate-border-glow {
+          animation: border-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes gradient-shift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
       `}</style>
+
+      {/* Ambient gradient orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/4 -left-1/4 w-[600px] h-[600px] bg-amber-500/[0.07] rounded-full blur-[120px]" style={{ animation: 'gradient-shift 8s ease-in-out infinite' }} />
+        <div className="absolute -bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-orange-600/[0.05] rounded-full blur-[100px]" style={{ animation: 'gradient-shift 10s ease-in-out infinite reverse' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-amber-400/[0.03] rounded-full blur-[150px]" />
+      </div>
+
+      {/* Floating particles */}
+      <FloatingParticles />
 
       {/* Image marquee background */}
       {images.length > 0 && (
-        <div className="absolute inset-0 flex flex-col justify-center gap-3">
-          {row1.length > 0 && <MarqueeRow images={row1} duration={60} />}
-          {row2.length > 0 && <MarqueeRow images={row2} duration={75} reverse />}
+        <div className="absolute inset-0 flex flex-col justify-center gap-4 opacity-40">
+          {row1.length > 0 && <MarqueeRow images={row1} duration={65} />}
+          {row2.length > 0 && <MarqueeRow images={row2} duration={80} reverse />}
           {row3.length > 0 && <MarqueeRow images={row3} duration={55} />}
         </div>
       )}
 
-      {/* Light center vignette so text is readable over images */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 50% at center, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.25) 70%, transparent 100%)' }} />
+      {/* Vignette overlay */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: `
+          radial-gradient(ellipse 60% 50% at center, rgba(5,5,5,0.85) 0%, rgba(5,5,5,0.5) 50%, rgba(5,5,5,0.3) 100%),
+          linear-gradient(to bottom, rgba(5,5,5,0.8) 0%, transparent 20%, transparent 80%, rgba(5,5,5,0.9) 100%)
+        `
+      }} />
+
+      {/* Subtle grid overlay */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{
+        backgroundImage: `
+          linear-gradient(rgba(251,191,36,0.3) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(251,191,36,0.3) 1px, transparent 1px)
+        `,
+        backgroundSize: '60px 60px'
+      }} />
 
       {/* Content */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-12">
+      <div className={`relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-12 transition-all duration-1000 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+
         {/* Logo */}
-        <div className="mb-6">
-          <img
-            src="https://mekifh.mashov.info/wp-content/uploads/sites/82/2021/06/Semel-MekifH-%D7%A9%D7%9C%D7%95%D7%9D-%D7%95%D7%90%D7%A0%D7%95%D7%A0%D7%95.png"
-            alt="מקיף ח'"
-            className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-2 border-amber-400/50 shadow-2xl"
-          />
+        <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <div className="relative">
+            <div className="absolute -inset-3 bg-amber-400/20 rounded-full blur-2xl animate-pulse" />
+            <img
+              src="https://mekifh.mashov.info/wp-content/uploads/sites/82/2021/06/Semel-MekifH-%D7%A9%D7%9C%D7%95%D7%9D-%D7%95%D7%90%D7%A0%D7%95%D7%A0%D7%95.png"
+              alt="מקיף ח'"
+              className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full border-2 border-amber-400/50 shadow-[0_0_30px_rgba(251,191,36,0.2)] animate-border-glow"
+            />
+          </div>
         </div>
 
+        {/* Decorative line */}
+        <div className="w-20 h-px bg-gradient-to-r from-transparent via-amber-400/60 to-transparent mb-6 animate-fade-in-up" style={{ animationDelay: '0.2s' }} />
+
         {/* Title */}
-        <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white tracking-tight text-center mb-1 glow-text">
+        <h1 className="text-5xl sm:text-6xl md:text-8xl font-black text-white tracking-tight text-center mb-2 glow-text animate-fade-in-up" style={{ animationDelay: '0.3s', fontFamily: 'Heebo, sans-serif' }}>
           מפגש האיחוד
         </h1>
-        <p className="text-amber-400 text-lg sm:text-xl md:text-2xl font-semibold mb-2">
+
+        <p className="shimmer-text text-xl sm:text-2xl md:text-3xl font-extrabold mb-2 animate-fade-in-up" style={{ animationDelay: '0.4s', fontFamily: 'Heebo, sans-serif' }}>
           מקיף ח&#x27; &bull; מחזור 2007
         </p>
-        <p className="text-white/50 text-sm sm:text-base mb-10">
-          11.06.2026 &bull; 20:00
-        </p>
+
+        <div className="flex items-center gap-3 mb-12 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
+          <div className="w-8 h-px bg-gradient-to-r from-transparent to-white/30" />
+          <p className="text-white/40 text-sm sm:text-base tracking-[0.2em] uppercase font-medium">
+            11.06.2026 &bull; 20:00
+          </p>
+          <div className="w-8 h-px bg-gradient-to-l from-transparent to-white/30" />
+        </div>
 
         {/* Countdown */}
         {isOver ? (
-          <div className="text-center">
-            <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-amber-400">!הגיע הזמן</h2>
+          <div className="text-center animate-fade-in-up">
+            <div className="text-7xl sm:text-8xl mb-6 animate-bounce">🎉</div>
+            <h2 className="text-4xl sm:text-5xl font-black shimmer-text" style={{ fontFamily: 'Heebo, sans-serif' }}>!הגיע הזמן</h2>
           </div>
         ) : (
-          <div className="flex flex-row-reverse flex-wrap justify-center gap-3 sm:gap-5 md:gap-6">
-            {[
-              { value: timeLeft.days, label: 'ימים' },
-              { value: timeLeft.hours, label: 'שעות' },
-              { value: timeLeft.minutes, label: 'דקות' },
-              { value: timeLeft.seconds, label: 'שניות' },
-            ].map(({ value, label }) => (
-              <div key={label} className="flex flex-col items-center">
-                <div className="relative">
-                  <div className="absolute -inset-1 bg-amber-400/20 rounded-2xl blur-lg" />
-                  <div className="relative bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 px-5 py-4 sm:px-7 sm:py-5 md:px-8 md:py-6 min-w-[75px] sm:min-w-[100px] md:min-w-[120px]">
-                    <span className="text-4xl sm:text-5xl md:text-7xl font-black text-white tabular-nums block text-center">
-                      {String(value).padStart(2, '0')}
-                    </span>
-                  </div>
-                </div>
-                <span className="text-amber-400/80 text-xs sm:text-sm md:text-base mt-2 font-medium tracking-wide">
-                  {label}
-                </span>
-              </div>
-            ))}
+          <div className="flex flex-row-reverse flex-wrap justify-center items-start gap-3 sm:gap-4 md:gap-5">
+            <CountdownUnit value={timeLeft.days} label="ימים" index={0} />
+            <Separator />
+            <CountdownUnit value={timeLeft.hours} label="שעות" index={1} />
+            <Separator />
+            <CountdownUnit value={timeLeft.minutes} label="דקות" index={2} />
+            <Separator />
+            <CountdownUnit value={timeLeft.seconds} label="שניות" index={3} />
           </div>
         )}
 
-        {/* CTA */}
-        <div className="mt-12 flex flex-wrap justify-center gap-3">
+        {/* CTA Buttons */}
+        <div className="mt-14 flex flex-wrap justify-center gap-4 animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
           <a
             href="https://forms.monday.com/forms/f2abc9fccb939b062aeb659cc4454b24?r=euc1"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-7 py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-full text-sm shadow-lg shadow-amber-500/25 transition-all hover:scale-105"
+            className="group relative px-8 py-3.5 rounded-full text-sm font-bold transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(251,191,36,0.3)]"
           >
-            הרשמה למפגש
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500" style={{ backgroundSize: '200% auto', animation: 'gradient-shift 3s linear infinite' }} />
+            <span className="relative text-black">הרשמה למפגש</span>
           </a>
+
           <a
             href="/mekif-chet-2007-reunion/gallery"
-            className="px-7 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-full text-sm border border-white/20 backdrop-blur-sm transition-all hover:scale-105"
+            className="px-8 py-3.5 bg-white/[0.06] hover:bg-white/[0.12] text-white font-semibold rounded-full text-sm border border-white/[0.15] hover:border-white/30 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]"
           >
             גלריה
           </a>
+
           <a
             href="https://links.payboxapp.com/ROF2GSCOP0b"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-7 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-full text-sm shadow-lg shadow-emerald-500/25 transition-all hover:scale-105"
+            className="group relative px-8 py-3.5 rounded-full text-sm font-bold transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(16,185,129,0.3)]"
           >
-            תשלום &#x20AA;400
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-500" style={{ backgroundSize: '200% auto', animation: 'gradient-shift 3s linear infinite' }} />
+            <span className="relative text-white">תשלום &#x20AA;400</span>
           </a>
         </div>
+      </div>
+
+      {/* Bottom decorative line */}
+      <div className="relative z-10 flex justify-center pb-6">
+        <div className="w-32 h-px bg-gradient-to-r from-transparent via-amber-400/30 to-transparent" />
       </div>
     </div>
   );
