@@ -372,11 +372,11 @@ export default function CountdownPage() {
 
         {/* Title */}
         <h1 className="text-5xl sm:text-6xl md:text-8xl font-black text-white tracking-tight text-center mb-2 glow-text animate-fade-in-up" style={{ animationDelay: '0.3s', fontFamily: 'Heebo, sans-serif' }}>
-          מפגש האיחוד
+          מפגש מחזור - מקיף ח&#x27;
         </h1>
 
-        <p className="shimmer-text text-xl sm:text-2xl md:text-3xl font-extrabold mb-2 animate-fade-in-up" style={{ animationDelay: '0.4s', fontFamily: 'Heebo, sans-serif' }}>
-          מקיף ח&#x27; &bull; מחזור 2007
+        <p className="shimmer-text text-3xl sm:text-4xl md:text-6xl font-black mb-2 animate-fade-in-up" style={{ animationDelay: '0.4s', fontFamily: 'Heebo, sans-serif' }}>
+          20 שנה!!!
         </p>
 
         <div className="flex items-center gap-3 mb-12 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
