@@ -48,7 +48,7 @@ function MarqueeRow({ images, duration, reverse }: { images: GalleryUpload[]; du
               className="w-full h-full object-cover"
               loading="lazy"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+            <div className="absolute inset-0 bg-black/5" />
           </div>
         ))}
       </div>
@@ -126,16 +126,15 @@ export default function CountdownPage() {
 
       {/* Image marquee background */}
       {images.length > 0 && (
-        <div className="absolute inset-0 flex flex-col justify-center gap-3 opacity-40">
+        <div className="absolute inset-0 flex flex-col justify-center gap-3">
           {row1.length > 0 && <MarqueeRow images={row1} duration={60} />}
           {row2.length > 0 && <MarqueeRow images={row2} duration={75} reverse />}
           {row3.length > 0 && <MarqueeRow images={row3} duration={55} />}
         </div>
       )}
 
-      {/* Gradient overlays */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-black/60 to-black pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/50 pointer-events-none" />
+      {/* Light center vignette so text is readable over images */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 50% at center, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.25) 70%, transparent 100%)' }} />
 
       {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-12">
