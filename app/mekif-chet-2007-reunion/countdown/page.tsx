@@ -65,7 +65,7 @@ function FloatingPhotos({ images }: { images: GalleryUpload[] }) {
             } as React.CSSProperties}
           >
             <div
-              className="relative w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 rounded-xl overflow-hidden shadow-2xl"
+              className="relative w-36 h-36 sm:w-44 sm:h-44 md:w-56 md:h-56 rounded-xl overflow-hidden shadow-2xl"
               style={{ transform: `rotate(${pos.rotation}deg) scale(${pos.scale})` }}
             >
               <img
@@ -214,9 +214,9 @@ export default function CountdownPage() {
 
         @keyframes floating-photo {
           0% { opacity: 0; transform: translateY(10px) translateX(0); }
-          15% { opacity: 0.5; }
-          50% { opacity: 0.35; transform: translateY(-10px) translateX(var(--drift-x, 0px)); }
-          85% { opacity: 0.5; }
+          12% { opacity: 0.85; }
+          50% { opacity: 0.75; transform: translateY(-10px) translateX(var(--drift-x, 0px)); }
+          88% { opacity: 0.85; }
           100% { opacity: 0; transform: translateY(10px) translateX(0); }
         }
         .floating-photo {
@@ -333,12 +333,9 @@ export default function CountdownPage() {
       {/* Floating photos background */}
       <FloatingPhotos images={images} />
 
-      {/* Vignette overlay */}
+      {/* Vignette overlay - only center area for text readability */}
       <div className="absolute inset-0 pointer-events-none" style={{
-        background: `
-          radial-gradient(ellipse 60% 50% at center, rgba(15,10,30,0.85) 0%, rgba(15,10,30,0.4) 50%, transparent 100%),
-          linear-gradient(to bottom, rgba(15,10,30,0.7) 0%, transparent 20%, transparent 80%, rgba(13,8,21,0.8) 100%)
-        `
+        background: `radial-gradient(ellipse 45% 35% at center, rgba(15,10,30,0.7) 0%, rgba(15,10,30,0.3) 60%, transparent 100%)`
       }} />
 
       {/* Subtle grid overlay */}
