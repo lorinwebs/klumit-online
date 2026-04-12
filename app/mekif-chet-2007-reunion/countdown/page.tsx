@@ -29,30 +29,57 @@ function calcTimeLeft(): TimeLeft {
   };
 }
 
-function MarqueeRow({ images, duration, reverse }: { images: GalleryUpload[]; duration: number; reverse?: boolean }) {
-  const doubled = [...images, ...images];
+// Seeded random for stable SSR/hydration
+function seededRandom(seed: number) {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+const PHOTO_POSITIONS = Array.from({ length: 14 }, (_, i) => ({
+  left: `${5 + seededRandom(i * 7 + 1) * 85}%`,
+  top: `${5 + seededRandom(i * 7 + 2) * 85}%`,
+  rotation: seededRandom(i * 7 + 3) * 24 - 12,
+  scale: 0.7 + seededRandom(i * 7 + 4) * 0.5,
+  delay: seededRandom(i * 7 + 5) * 8,
+  duration: 8 + seededRandom(i * 7 + 6) * 6,
+  driftX: seededRandom(i * 7 + 7) * 40 - 20,
+}));
+
+function FloatingPhotos({ images }: { images: GalleryUpload[] }) {
+  if (images.length === 0) return null;
+
   return (
-    <div className="overflow-hidden whitespace-nowrap py-2">
-      <div
-        className={`inline-flex gap-4 ${reverse ? 'animate-marquee-reverse' : 'animate-marquee'}`}
-        style={{ animationDuration: `${duration}s` }}
-      >
-        {doubled.map((img, i) => (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {PHOTO_POSITIONS.map((pos, i) => {
+        const img = images[i % images.length];
+        return (
           <div
             key={i}
-            className="relative w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 rounded-2xl overflow-hidden shrink-0 group"
+            className="floating-photo absolute"
+            style={{
+              left: pos.left,
+              top: pos.top,
+              animationDelay: `${pos.delay}s`,
+              animationDuration: `${pos.duration}s`,
+              '--drift-x': `${pos.driftX}px`,
+            } as React.CSSProperties}
           >
-            <img
-              src={img.url}
-              alt=""
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
-            <div className="absolute inset-0 rounded-2xl border border-white/10" />
+            <div
+              className="relative w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 rounded-xl overflow-hidden shadow-2xl"
+              style={{ transform: `rotate(${pos.rotation}deg) scale(${pos.scale})` }}
+            >
+              <img
+                src={img.url}
+                alt=""
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-black/30" />
+              <div className="absolute inset-0 rounded-xl border border-white/[0.08] shadow-[inset_0_0_30px_rgba(0,0,0,0.3)]" />
+            </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 }
@@ -167,10 +194,6 @@ export default function CountdownPage() {
 
   const isOver = timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0;
 
-  const row1 = images.slice(0, Math.ceil(images.length / 3));
-  const row2 = images.slice(Math.ceil(images.length / 3), Math.ceil((images.length * 2) / 3));
-  const row3 = images.slice(Math.ceil((images.length * 2) / 3));
-
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -189,19 +212,16 @@ export default function CountdownPage() {
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap');
 
-        @keyframes marquee {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+        @keyframes floating-photo {
+          0% { opacity: 0; transform: translateY(10px) translateX(0); }
+          15% { opacity: 0.5; }
+          50% { opacity: 0.35; transform: translateY(-10px) translateX(var(--drift-x, 0px)); }
+          85% { opacity: 0.5; }
+          100% { opacity: 0; transform: translateY(10px) translateX(0); }
         }
-        @keyframes marquee-reverse {
-          0% { transform: translateX(-50%); }
-          100% { transform: translateX(0); }
-        }
-        .animate-marquee {
-          animation: marquee linear infinite;
-        }
-        .animate-marquee-reverse {
-          animation: marquee-reverse linear infinite;
+        .floating-photo {
+          animation: floating-photo ease-in-out infinite;
+          opacity: 0;
         }
 
         @keyframes float-up {
@@ -309,14 +329,8 @@ export default function CountdownPage() {
       {/* Floating particles */}
       <FloatingParticles />
 
-      {/* Image marquee background */}
-      {images.length > 0 && (
-        <div className="absolute inset-0 flex flex-col justify-center gap-4 opacity-40">
-          {row1.length > 0 && <MarqueeRow images={row1} duration={65} />}
-          {row2.length > 0 && <MarqueeRow images={row2} duration={80} reverse />}
-          {row3.length > 0 && <MarqueeRow images={row3} duration={55} />}
-        </div>
-      )}
+      {/* Floating photos background */}
+      <FloatingPhotos images={images} />
 
       {/* Vignette overlay */}
       <div className="absolute inset-0 pointer-events-none" style={{
