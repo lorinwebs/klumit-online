@@ -7,6 +7,8 @@ import { SlidersHorizontal } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { shopifyClient, PRODUCTS_QUERY, SHOPIFY_COLLECTION_SS26_HANDLE } from '@/lib/shopify';
 import { useLanguage } from '@/lib/LanguageContext';
+import { isProductSoldOut } from '@/lib/product-availability';
+import SoldOutBadge from '@/components/SoldOutBadge';
 
 interface Product {
   id: string;
@@ -30,6 +32,13 @@ interface Product {
       };
     }>;
   };
+  variants?: {
+    edges: Array<{
+      node: {
+        availableForSale: boolean;
+      };
+    }>;
+  };
 }
 
 interface MytheresaGridProps {
@@ -42,11 +51,13 @@ interface MytheresaGridProps {
 function ProductImageSlider({ 
   images, 
   title,
-  handle 
+  handle,
+  soldOut,
 }: { 
   images: Array<{ node: { url: string; altText: string | null } }>; 
   title: string;
   handle: string;
+  soldOut?: boolean;
 }) {
   const { t } = useLanguage();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -121,6 +132,8 @@ function ProductImageSlider({
           אין תמונה
         </div>
       )}
+
+      {soldOut && <SoldOutBadge />}
 
       {/* Quick View Button - Desktop Only */}
       <div className="hidden md:block absolute inset-0 opacity-0 group-hover/image:opacity-100 transition-opacity duration-500">
@@ -255,8 +268,14 @@ export default function MytheresaGrid({
     ? products.filter(p => selectedVendors.has(p.vendor || 'KLUMIT'))
     : products;
 
-  // Sort products
+  // Sort products: in-stock first, then sold-out (within each group, apply sort below)
   const sortedProducts = [...filteredProducts].sort((a, b) => {
+    const aSold = isProductSoldOut(a);
+    const bSold = isProductSoldOut(b);
+    if (aSold !== bSold) {
+      return aSold ? 1 : -1;
+    }
+
     // For "newest" sort, prioritize new_arrival tag first
     if (sortBy === 'new') {
       const aIsNew = a.tags?.some(tag => tag.toLowerCase() === 'new_arrival') || false;
@@ -537,7 +556,9 @@ export default function MytheresaGrid({
       {/* Products Grid */}
       <div className="max-w-7xl mx-auto px-3 md:px-6 py-6 md:py-8">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
-          {(maxProducts ? sortedProducts.slice(0, maxProducts) : sortedProducts).map((product, index) => (
+          {(maxProducts ? sortedProducts.slice(0, maxProducts) : sortedProducts).map((product, index) => {
+            const soldOut = isProductSoldOut(product);
+            return (
             <motion.div
               key={product.id}
               initial={{ opacity: 0, y: 20 }}
@@ -552,13 +573,18 @@ export default function MytheresaGrid({
                     images={product.images.edges}
                     title={product.title}
                     handle={product.handle}
+                    soldOut={soldOut}
                   />
                   {/* NEW Tag - absolutely positioned over image */}
                   {product.tags?.some(tag => tag.toLowerCase() === 'new_arrival') && (
-                    <div className="absolute top-2 right-2 z-10 bg-espresso px-2.5 py-1">
-                      <span className="text-[9px] md:text-[10px] font-medium tracking-editorial uppercase text-cream">
-                        {t('products.newTag')}
-                      </span>
+                    <div
+                      className={`absolute top-2 z-20 rounded-full bg-white px-3.5 py-1 text-[12px] md:text-[13px] font-normal text-black leading-none ${
+                        soldOut ? 'left-2' : 'right-2'
+                      }`}
+                      role="status"
+                      aria-label={t('products.newTag')}
+                    >
+                      {t('products.newTag')}
                     </div>
                   )}
                 </div>
@@ -580,7 +606,8 @@ export default function MytheresaGrid({
                 </div>
               </Link>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
 
         {/* No Products */}

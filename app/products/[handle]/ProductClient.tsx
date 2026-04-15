@@ -12,6 +12,8 @@ import ImageZoomModal from '@/components/ImageZoomModal';
 import { trackProductViewed, trackAddToCart } from '@/lib/analytics';
 import { useLanguage } from '@/lib/LanguageContext';
 import { useTranslateHTML } from '@/lib/hooks/useTranslateHTML';
+import SoldOutBadge from '@/components/SoldOutBadge';
+import { isProductSoldOut } from '@/lib/product-availability';
 
 interface Product {
   id: string;
@@ -66,6 +68,7 @@ function RelatedProductCard({ relatedProduct, formatPrice }: { relatedProduct: P
   const [imgIndex, setImgIndex] = useState(0);
   const images = relatedProduct.images.edges;
   const hasMultipleImages = images.length > 1;
+  const soldOut = isProductSoldOut(relatedProduct);
 
   return (
     <div className="related-card flex-shrink-0 snap-start w-[calc(50%-8px)] md:w-[calc(25%-12px)]">
@@ -118,6 +121,7 @@ function RelatedProductCard({ relatedProduct, formatPrice }: { relatedProduct: P
             </div>
           </>
         )}
+        {soldOut && <SoldOutBadge />}
       </div>
       <Link href={`/products/${relatedProduct.handle}`} className="block mt-3 text-center space-y-1">
         <h3 className="text-xs md:text-sm font-light tracking-tight text-espresso line-clamp-2">

@@ -8,6 +8,8 @@ import { motion } from 'framer-motion';
 import { shopifyClient, PRODUCTS_QUERY } from '@/lib/shopify';
 import { useCartStore } from '@/store/cartStore';
 import { trackAddToCart } from '@/lib/analytics';
+import SoldOutBadge from '@/components/SoldOutBadge';
+import { isProductSoldOut } from '@/lib/product-availability';
 
 interface Product {
   id: string;
@@ -291,6 +293,7 @@ function CategoryCarousel({
     const firstVariant = product.variants?.edges?.[0]?.node;
     const availableVariant = product.variants?.edges?.find(v => v.node.availableForSale)?.node || firstVariant;
     const firstImage = product.images.edges[0]?.node;
+    const isSoldOut = isProductSoldOut(product);
     
     const handleAddToCart = async (e: React.MouseEvent) => {
       e.preventDefault();
@@ -362,6 +365,7 @@ function CategoryCarousel({
             }}
           >
             <ProductImageCarousel product={product} />
+            {isSoldOut && <SoldOutBadge />}
             
             {/* Add to Cart Button - Overlay */}
             {availableVariant && availableVariant.availableForSale && (
