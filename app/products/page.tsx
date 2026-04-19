@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   },
 };
 
-const VALID_TABS = ['bags', 'belts', 'wallets', 'ss26'] as const;
+const VALID_TABS = ['all', 'bags', 'belts', 'wallets', 'ss26'] as const;
 type TabType = (typeof VALID_TABS)[number];
 
 interface PageProps {
@@ -20,8 +20,8 @@ interface PageProps {
 
 export default async function ProductsPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const raw = (params.category || params.tab || 'bags').toLowerCase();
-  const activeTab: TabType = VALID_TABS.includes(raw as TabType) ? (raw as TabType) : 'bags';
+  const raw = (params.category || params.tab || 'all').toLowerCase();
+  const activeTab: TabType = VALID_TABS.includes(raw as TabType) ? (raw as TabType) : 'all';
 
   return (
     <div className="min-h-screen flex flex-col">

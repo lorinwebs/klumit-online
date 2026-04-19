@@ -2,11 +2,8 @@
 
 import { usePathname } from 'next/navigation';
 import { ReactNode, useSyncExternalStore } from 'react';
-import MembershipTopBar from './MembershipTopBar';
 import SkipToMain from './SkipToMain';
 import ChatWidgetWrapper from './ChatWidgetWrapper';
-import MembershipPopup from './MembershipPopup';
-import MembershipFloatingButton from './MembershipFloatingButton';
 import CouponModal from './CouponModal';
 
 export default function ConditionalLayout({ children }: { children: ReactNode }) {
@@ -34,12 +31,9 @@ export default function ConditionalLayout({ children }: { children: ReactNode })
   // דפי קלומית רגילים - עם כל הקומפוננטות
   return (
     <>
-      <MembershipTopBar />
       <SkipToMain />
       {children}
       <ChatWidgetWrapper />
-      <MembershipPopup />
-      <MembershipFloatingButton />
       <CouponModal />
     </>
   );

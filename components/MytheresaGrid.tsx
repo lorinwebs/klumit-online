@@ -45,6 +45,8 @@ interface MytheresaGridProps {
   category?: 'bags' | 'belts' | 'wallets' | 'all' | 'ss26';
   maxProducts?: number;
   showViewAll?: boolean;
+  /** When embedded in Biasia-style homepage: no #products id (parent section owns anchor), warm bg */
+  embedOnHome?: boolean;
 }
 
 // Product Image Slider Component with Flash Effect
@@ -110,7 +112,7 @@ function ProductImageSlider({
 
   return (
     <div
-      className="relative aspect-[3/4] bg-cream-warm mb-3 overflow-hidden group/image border border-sand/60"
+      className="relative aspect-[3/4] bg-cream-warm mb-3 overflow-hidden rounded-sm group/image border border-sand/60 md:rounded-none"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -125,7 +127,7 @@ function ProductImageSlider({
             opacity: imageOpacity,
             transition: 'opacity 200ms ease-in-out, transform 500ms ease-out'
           }}
-          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          sizes="(max-width: 768px) 48vw, (max-width: 1024px) 33vw, 25vw"
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center text-stone text-sm font-light">
@@ -164,6 +166,7 @@ export default function MytheresaGrid({
   category = 'all',
   maxProducts,
   showViewAll = false,
+  embedOnHome = false,
 }: MytheresaGridProps) {
   const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
@@ -187,7 +190,7 @@ export default function MytheresaGrid({
         const data = await shopifyClient.request<{
           products: { edges: Array<{ node: Product }> };
         }>(PRODUCTS_QUERY, {
-          first: 100,
+          first: 250,
           query: collectionQuery,
           sortKey: 'CREATED_AT',
           reverse: true,
@@ -299,8 +302,8 @@ export default function MytheresaGrid({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-cream">
-        <div className="sticky top-[160px] md:top-[170px] z-40 bg-cream border-b border-sand">
+      <div className={embedOnHome ? 'min-h-0 bg-biasia-bg' : 'min-h-screen bg-cream'}>
+        <div className={`${embedOnHome ? 'relative' : 'sticky top-[160px] md:top-[170px] z-40'} border-b ${embedOnHome ? 'bg-biasia-bg border-biasia-line' : 'bg-cream border-sand'}`}>
           <div className="grid grid-cols-2 md:hidden">
             <div className="h-12 border-l border-sand skeleton-shimmer" />
             <div className="h-12 skeleton-shimmer" />
@@ -310,8 +313,10 @@ export default function MytheresaGrid({
             <div className="h-8 w-20 skeleton-shimmer rounded" />
           </div>
         </div>
-        <div className="max-w-7xl mx-auto px-3 md:px-6 py-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
+        <div
+          className={`mx-auto max-w-7xl py-6 ${embedOnHome ? 'px-5 md:px-6' : 'px-4 md:px-6'}`}
+        >
+          <div className="grid grid-cols-2 gap-x-3.5 gap-y-6 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
             {[...Array(12)].map((_, i) => (
               <div key={i}>
                 <div className="aspect-[3/4] skeleton-shimmer mb-3" />
@@ -327,7 +332,10 @@ export default function MytheresaGrid({
   }
 
   return (
-    <div id="products" className="min-h-screen bg-cream">
+    <div
+      {...(embedOnHome ? {} : { id: 'products' })}
+      className={embedOnHome ? 'min-h-0 bg-biasia-bg' : 'min-h-screen bg-cream'}
+    >
       {/* Overlay for dropdowns */}
       {(showSort || showFilters) && (
         <div
@@ -339,8 +347,14 @@ export default function MytheresaGrid({
         />
       )}
 
-      {/* Filters & Sort Bar - Sticky */}
-      <div className={`sticky ${showViewAll ? 'top-[168px] md:top-[170px]' : 'top-[96px] md:top-[70px]'} z-40 bg-cream/95 backdrop-blur-sm border-b border-sand`}>
+      {/* Filters & Sort Bar — sticky on product page, static when embedded on the home */}
+      <div
+        className={`${
+          embedOnHome
+            ? 'relative bg-biasia-bg border-biasia-line'
+            : `sticky ${showViewAll ? 'top-[168px] md:top-[170px]' : 'top-[96px] md:top-[70px]'} z-40 backdrop-blur-sm bg-cream/95 border-sand`
+        } border-b`}
+      >
         {/* Mobile: Full width grid */}
         <div className="grid grid-cols-2 md:hidden">
           {/* Filters Button - Full width */}
@@ -553,9 +567,11 @@ export default function MytheresaGrid({
         )}
       </div>
 
-      {/* Products Grid */}
-      <div className="max-w-7xl mx-auto px-3 md:px-6 py-6 md:py-8">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
+      {/* Products Grid — align horizontal padding with homepage sections when embedded */}
+      <div
+        className={`mx-auto max-w-7xl py-6 md:py-8 ${embedOnHome ? 'px-5 md:px-6' : 'px-4 md:px-6'}`}
+      >
+        <div className="grid grid-cols-2 gap-x-3.5 gap-y-6 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
           {(maxProducts ? sortedProducts.slice(0, maxProducts) : sortedProducts).map((product, index) => {
             const soldOut = isProductSoldOut(product);
             return (

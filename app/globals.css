@@ -324,6 +324,16 @@ section:has([class*="bg-black"]) a:focus-visible,
   animation-play-state: paused;
 }
 
+/* Biasia homepage — pause motion when user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .home-marquee-track {
+    animation: none !important;
+  }
+  .home-hero-zoom {
+    animation: none !important;
+  }
+}
+
 /* Fix for Google Maps wheel event warning */
 .pac-container {
   touch-action: pan-y;

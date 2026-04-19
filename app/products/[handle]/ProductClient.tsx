@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { useCartStore } from '@/store/cartStore';
-import { ChevronLeft, ChevronRight, X, Share2, Maximize2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, X, Share2, Maximize2, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import Toast from '@/components/Toast';
 import ProductCard from '@/components/ProductCard';
@@ -170,17 +170,30 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const addItem = useCartStore((state) => state.addItem);
   const items = useCartStore((state) => state.items);
   const imageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  /** Desktop gallery stack (document flow — page scroll, not inner overflow) */
+  const galleryDesktopRootRef = useRef<HTMLDivElement | null>(null);
   const relatedScrollRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
   const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
+  const [galleryScrollAtEnd, setGalleryScrollAtEnd] = useState(false);
+  const [galleryHasOverflow, setGalleryHasOverflow] = useState(false);
   
   // Translate product description
   const { translatedContent: translatedDescription } = useTranslateHTML(
     product.descriptionHtml || product.description,
     language
   );
+
+  const whatsappContactHref = useMemo(() => {
+    const msg =
+      language === 'he'
+        ? `היי, יש לי שאלה לגבי: ${product.title}`
+        : language === 'ru'
+          ? `Здравствуйте, вопрос по товару: ${product.title}`
+          : `Hi — a question about: ${product.title}`;
+    return `https://wa.me/972549903139?text=${encodeURIComponent(msg)}`;
+  }, [language, product.title]);
 
   // Type for variant node
   type VariantNode = Product['variants']['edges'][0]['node'];
@@ -316,6 +329,40 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     return product.images.edges;
   }, [hasColors, currentColor, currentVariant, product.images.edges]);
 
+  const updateGalleryScrollHint = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    if (!window.matchMedia('(min-width: 768px)').matches) {
+      setGalleryScrollAtEnd(true);
+      setGalleryHasOverflow(false);
+      return;
+    }
+    const root = galleryDesktopRootRef.current;
+    if (!root) return;
+    const vh = window.innerHeight;
+    const rect = root.getBoundingClientRect();
+    const galleryTallerThanViewport = rect.height > vh + 4;
+    const bottomVisibleOrPast = rect.bottom <= vh + 32;
+    setGalleryScrollAtEnd(!galleryTallerThanViewport || bottomVisibleOrPast);
+    setGalleryHasOverflow(
+      filteredImages.length > 1 && galleryTallerThanViewport && rect.bottom > vh + 16
+    );
+  }, [filteredImages.length]);
+
+  useEffect(() => {
+    updateGalleryScrollHint();
+    const root = galleryDesktopRootRef.current;
+    const ro = new ResizeObserver(() => updateGalleryScrollHint());
+    if (root) ro.observe(root);
+    window.addEventListener('scroll', updateGalleryScrollHint, { passive: true });
+    window.addEventListener('resize', updateGalleryScrollHint);
+    const t = window.setTimeout(updateGalleryScrollHint, 350);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('scroll', updateGalleryScrollHint);
+      window.removeEventListener('resize', updateGalleryScrollHint);
+      window.clearTimeout(t);
+    };
+  }, [filteredImages, updateGalleryScrollHint]);
 
   // Track product view
   useEffect(() => {
@@ -348,16 +395,14 @@ export default function ProductClient({ product, relatedProducts: initialRelated
 
   // Use Intersection Observer instead of scroll listener for better performance
   useEffect(() => {
-    if (!product || !scrollContainerRef.current) return;
+    if (!product) return;
 
-    // Cleanup previous observer
     if (intersectionObserverRef.current) {
       intersectionObserverRef.current.disconnect();
     }
 
     const observer = new IntersectionObserver(
       (entries: IntersectionObserverEntry[]) => {
-        // Find the most visible image
         let mostVisibleEntry: IntersectionObserverEntry | null = null;
         let maxRatio = 0;
 
@@ -370,7 +415,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
 
         if (mostVisibleEntry) {
           const target = mostVisibleEntry.target as HTMLElement;
-          if (target && target.dataset) {
+          if (target?.dataset) {
             const imageUrl = target.dataset.imageUrl;
             if (imageUrl && imageUrl !== selectedImage) {
               setSelectedImage(imageUrl);
@@ -379,27 +424,29 @@ export default function ProductClient({ product, relatedProducts: initialRelated
         }
       },
       {
-        root: scrollContainerRef.current,
+        root: null,
         threshold: [0, 0.25, 0.5, 0.75, 1],
-        rootMargin: '-20% 0px -20% 0px',
+        rootMargin: '-18% 0px -18% 0px',
       }
     );
 
-    // Observe all images
-    filteredImages.forEach(({ node }) => {
-      const imageElement = imageRefs.current[node.url];
-      if (imageElement) {
-        imageElement.setAttribute('data-image-url', node.url);
-        observer.observe(imageElement);
-      }
-    });
+    const attach = () => {
+      filteredImages.forEach(({ node }) => {
+        const imageElement = imageRefs.current[node.url];
+        if (imageElement) {
+          imageElement.setAttribute('data-image-url', node.url);
+          observer.observe(imageElement);
+        }
+      });
+    };
 
+    attach();
+    const id = requestAnimationFrame(attach);
     intersectionObserverRef.current = observer;
 
     return () => {
-      if (intersectionObserverRef.current) {
-        intersectionObserverRef.current.disconnect();
-      }
+      cancelAnimationFrame(id);
+      intersectionObserverRef.current?.disconnect();
     };
   }, [product, selectedImage, filteredImages]);
 
@@ -752,6 +799,20 @@ export default function ProductClient({ product, relatedProducts: initialRelated
 
     return (
       <div className={`space-y-2 ${isMobile ? '' : 'md:space-y-3'}`}>
+        <div className="space-y-2">
+          <p className="text-[11px] md:text-xs font-light leading-relaxed text-stone">
+            {t('products.purchaseTrustLine')}
+          </p>
+          <a
+            href={whatsappContactHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-full items-center justify-center gap-2 rounded-sm border border-emerald-600/35 px-3 py-2.5 text-[11px] font-light text-emerald-800 transition-colors hover:bg-emerald-50/60 md:text-xs"
+          >
+            <MessageCircle size={17} strokeWidth={1.5} className="shrink-0 text-emerald-700" aria-hidden />
+            <span className="text-center leading-snug">{t('products.whatsappContactCta')}</span>
+          </a>
+        </div>
         {addToCartButton}
         <button 
           onClick={handleShareWhatsApp}
@@ -767,12 +828,16 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   return (
     <>
 
-      <main id="main-content" className="flex-grow max-w-[1400px] mx-auto px-4 pt-0 pb-16 md:py-20 w-full overflow-x-hidden" role="main">
-        <div className="grid grid-cols-12 gap-4 md:gap-6 items-start">
+      <main
+        id="main-content"
+        className={`mx-auto w-full max-w-[1400px] flex-grow px-4 pt-0 md:py-20 ${showFloatingCart ? 'pb-56 md:pb-20' : 'pb-16 md:pb-20'}`}
+        role="main"
+      >
+        <div className="grid grid-cols-12 gap-4 md:gap-6 items-start md:items-stretch">
           {/* Left Side - Thumbnail Images (Desktop only) */}
-          <div className="hidden md:block col-span-1 order-3">
+          <div className="hidden md:block col-span-1 order-3 md:self-stretch">
             {filteredImages.length > 0 && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 md:sticky md:top-32">
                 {filteredImages.map(({ node }, index) => (
                   <button
                     key={node.url}
@@ -780,7 +845,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                       setSelectedImage(node.url);
                       setCurrentImageIndex(index);
                       const imageElement = imageRefs.current[node.url];
-                      if (imageElement && scrollContainerRef.current) {
+                      if (imageElement) {
                         imageElement.scrollIntoView({
                           behavior: 'smooth',
                           block: 'center',
@@ -806,9 +871,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
             )}
           </div>
 
-          {/* Center - Main Image (Scrollable on Desktop, Carousel on Mobile) */}
-          <div className="col-span-12 md:col-span-7 order-1 md:order-2">
-            <div className="md:sticky md:top-32">
+          {/* Center — document scroll on desktop (tall gallery); sticky product column on the right */}
+          <div className="col-span-12 md:col-span-7 order-1 md:order-2 flex flex-col">
+            <div className="flex flex-col">
               {/* Mobile - Swipeable Image Carousel */}
               <div className="md:hidden mb-1">
                 <div
@@ -835,15 +900,15 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     {filteredImages.map(({ node }, index) => (
                       <div
                         key={node.url}
-                        className="relative bg-white w-full flex-shrink-0 cursor-pointer border border-sand/40"
-                        style={{ aspectRatio: '3/4' }}
+                        className="relative bg-cream w-full flex-shrink-0 cursor-pointer border border-sand/50 flex items-center justify-center px-2 py-3"
                         onClick={() => handleImageClick(index)}
                       >
                         <Image
                           src={node.url}
                           alt={`${product.title} - תמונה ${index + 1}`}
-                          fill
-                          className="object-contain"
+                          width={2000}
+                          height={2500}
+                          className="max-h-[min(85dvh,920px)] h-auto w-full object-contain object-center"
                           priority={index === 0}
                           loading={index <= 1 ? 'eager' : 'lazy'}
                           sizes="100vw"
@@ -865,50 +930,61 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                     </div>
                   )}
                 </div>
+                {filteredImages.length > 1 && (
+                  <p className="text-center text-[10px] tracking-[0.14em] uppercase text-stone pt-2 pb-1 px-2">
+                    {t('products.gallerySwipeHint')}
+                  </p>
+                )}
               </div>
-              {/* Desktop - Scrollable images */}
-              <div 
-                ref={scrollContainerRef}
-                className="hidden md:block overflow-y-auto scrollbar-hide"
-                style={{ height: 'calc(100vh - 120px)' }}
-              >
-                <div className="space-y-2" style={{ width: '100%' }}>
-                  {filteredImages.map(({ node }, index) => (
-                    <div
-                      key={node.url}
-                      ref={(el) => {
-                        if (imageRefs.current[node.url] && imageRefs.current[node.url] !== el) {
-                          delete imageRefs.current[node.url];
-                        }
-                        imageRefs.current[node.url] = el;
-                      }}
-                      className="relative w-full bg-white overflow-hidden cursor-pointer hover:opacity-95 transition-opacity group border border-sand/40"
-                      style={{ aspectRatio: '3/4' }}
-                      onClick={() => handleImageClick(index)}
-                    >
-                      <div className="absolute inset-0 flex items-center justify-center z-0">
-                        <div className="w-6 h-6 border-2 border-sand-dark border-t-espresso rounded-full animate-spin" />
-                      </div>
-                      <Image
-                        src={node.url}
-                        alt={node.altText || product.title}
-                        fill
-                        className="object-contain z-[1]"
+              {/* Desktop — stacked images; page scroll (row height = max(gallery, text) so info can stay sticky) */}
+              <div className="relative hidden md:block">
+                <div ref={galleryDesktopRootRef} className="rounded-sm">
+                  <div className="space-y-2" style={{ width: '100%' }}>
+                    {filteredImages.map(({ node }, index) => (
+                      <div
+                        key={node.url}
+                        ref={(el) => {
+                          if (imageRefs.current[node.url] && imageRefs.current[node.url] !== el) {
+                            delete imageRefs.current[node.url];
+                          }
+                          imageRefs.current[node.url] = el;
+                        }}
+                        className="relative w-full bg-cream cursor-pointer hover:opacity-95 transition-opacity group border border-sand/50 flex items-center justify-center px-2 py-4"
+                        onClick={() => handleImageClick(index)}
+                      >
+                        <Image
+                          src={node.url}
+                          alt={node.altText || product.title}
+                          width={2000}
+                          height={2500}
+                        className="w-full h-auto max-h-[min(92vh,1100px)] md:max-h-none object-contain object-center"
                         priority={selectedImage === node.url}
-                        sizes="60vw"
-                      />
-                      <div className="absolute top-4 left-4 bg-espresso/40 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-[2]">
-                        <Maximize2 size={20} className="text-white" />
+                        sizes="(max-width: 768px) 100vw, 55vw"
+                        />
+                        <div className="absolute top-4 left-4 bg-espresso/40 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-[2] pointer-events-none">
+                          <Maximize2 size={20} className="text-white" />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
+                {filteredImages.length > 1 && galleryHasOverflow && !galleryScrollAtEnd && (
+                  <div
+                    className="pointer-events-none absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-cream from-25% via-cream/95 to-transparent flex flex-col items-center justify-end gap-1 pb-3 pt-10"
+                    aria-hidden
+                  >
+                    <ChevronDown className="w-6 h-6 text-espresso/70 animate-bounce" strokeWidth={1.5} />
+                    <span className="text-[10px] font-medium tracking-[0.14em] uppercase text-stone text-center px-3 max-w-[14rem] leading-snug">
+                      {t('products.galleryScrollHint')}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Right Side - Product Info */}
-          <div className="col-span-12 md:col-span-4 order-2 md:order-1">
+          {/* Right Side - Product Info (sticky until the gallery finishes, then scrolls out with the page) */}
+          <div className="col-span-12 md:col-span-4 order-2 md:order-1 md:self-stretch">
             <div className="md:sticky md:top-32">
               {/* Product Info - shared mobile & desktop */}
               <div className="text-right space-y-5 px-4 md:px-0 pt-4 md:pt-0">
@@ -1106,11 +1182,22 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       
       {/* Floating Add to Cart - Mobile only */}
       {showFloatingCart && currentVariant?.availableForSale && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-cream border-t border-sand p-4 z-50 shadow-lg">
-          <div className="max-w-md mx-auto flex items-center gap-4">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-sand bg-cream shadow-lg pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 px-4">
+          <p className="mb-1.5 text-center text-[10px] font-light leading-snug text-stone">
+            {t('products.purchaseTrustLine')}
+          </p>
+          <a
+            href={whatsappContactHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mb-3 block text-center text-[10px] font-light text-emerald-700 underline underline-offset-2"
+          >
+            {t('products.whatsappContactCta')}
+          </a>
+          <div className="mx-auto flex max-w-md items-center gap-4">
             <div className="flex-1">
               <p className="text-lg font-light text-espresso">₪{price}</p>
-              <p className="text-xs font-light text-stone">{product.title}</p>
+              <p className="line-clamp-2 text-xs font-light text-stone">{product.title}</p>
             </div>
             {(() => {
               const existingItem = items.find((i) => i.variantId === currentVariant?.id);

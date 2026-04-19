@@ -38,6 +38,15 @@ module.exports = {
           light: '#F0ECE7',
           dark: '#D5CCC2',
         },
+        // Biasia-style homepage (warm editorial)
+        biasia: {
+          bg: '#f4efe8',
+          'bg-alt': '#ece5dc',
+          ink: '#1c1a17',
+          muted: '#6b6560',
+          accent: '#8b6a4a',
+          line: 'rgba(28, 26, 23, 0.18)',
+        },
       },
       fontFamily: {
         sans: ['var(--font-assistant)', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
@@ -68,11 +77,21 @@ module.exports = {
           '0%': { transform: 'scaleX(0)' },
           '100%': { transform: 'scaleX(1)' },
         },
+        'marquee-slide': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+        'hero-slow-zoom': {
+          '0%': { transform: 'scale(1)' },
+          '100%': { transform: 'scale(1.06)' },
+        },
       },
       animation: {
         'reveal-up': 'reveal-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         'reveal-fade': 'reveal-fade 1s ease-out forwards',
         'line-expand': 'line-expand 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'marquee-slide': 'marquee-slide 40s linear infinite',
+        'hero-slow-zoom': 'hero-slow-zoom 18s ease-in-out infinite alternate',
       },
     },
   },

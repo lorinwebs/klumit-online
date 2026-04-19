@@ -12,7 +12,45 @@ export interface Translations {
   'header.contact': string;
   'header.talkToUs': string;
   'header.cart': string;
-  
+  'header.magazine': string;
+  /** Full catalog (all products) */
+  'header.shopAll': string;
+  /** Wordmark next to nav (Hebrew / Latin per language) */
+  'header.brand': string;
+
+  // Home (Biasia-style homepage)
+  'home.announcement': string;
+  'home.marquee1': string;
+  'home.marquee2': string;
+  'home.marquee3': string;
+  'home.marquee4': string;
+  'home.heroEyebrow': string;
+  'home.heroTitle': string;
+  'home.heroTitleItalic': string;
+  'home.heroDescription': string;
+  'home.heroCta': string;
+  'home.heroCtaSecondary': string;
+  'home.categoryEyebrow': string;
+  'home.categoryTitle': string;
+  'home.categoryTitleEm': string;
+  'home.categoryShop': string;
+  'home.editorialEyebrow': string;
+  'home.editorialTitle': string;
+  'home.editorialBody': string;
+  'home.editorialCta': string;
+  'home.editorialCtaBlog': string;
+  'home.editorialImageAlt': string;
+  'home.productsEyebrow': string;
+  'home.productsTitle': string;
+  'home.productsTitleEm': string;
+  'home.newsletterEyebrow': string;
+  'home.newsletterTitle': string;
+  'home.newsletterTitleEm': string;
+  'home.newsletterPlaceholder': string;
+  'home.newsletterSubmit': string;
+  'home.newsletterSuccess': string;
+  'home.newsletterError': string;
+
   // Hero
   'hero.title': string;
   'hero.description': string;
@@ -53,6 +91,10 @@ export interface Translations {
   'products.description': string;
   'products.related': string;
   'products.shareViaWhatsApp': string;
+  /** Trust microcopy above add-to-cart */
+  'products.purchaseTrustLine': string;
+  /** Link label — WhatsApp for pre-purchase questions */
+  'products.whatsappContactCta': string;
   'products.color': string;
   'products.size': string;
   'products.notifyWhenBack': string;
@@ -65,6 +107,8 @@ export interface Translations {
   'products.zoomInstructions': string;
   'products.wheelZoom': string;
   'products.dragMove': string;
+  'products.galleryScrollHint': string;
+  'products.gallerySwipeHint': string;
   'products.noProductsInCategory': string;
   'products.resetFilters': string;
   'products.addToCartShort': string;
@@ -337,7 +381,43 @@ export const translations: Record<Language, Translations> = {
     'header.contact': 'יצירת קשר',
     'header.talkToUs': 'דברו איתנו!',
     'header.cart': 'סל קניות',
-    
+    'header.magazine': 'המגזין',
+    'header.shopAll': 'כל המוצרים',
+    'header.brand': 'קלומית',
+
+    // Home (Biasia-style)
+    'home.announcement': 'משלוח חינם בהזמנות מעל ₪500 · שירות אישי · עור איטלקי אמיתי',
+    'home.marquee1': 'חדש באתר',
+    'home.marquee2': 'Renato Angi · Carlino Group',
+    'home.marquee3': 'אביב–קיץ 2026',
+    'home.marquee4': 'יבוא בלעדי מאיטליה',
+    'home.heroEyebrow': 'קולקציה 2026',
+    'home.heroTitle': 'יוקרה איטלקית',
+    'home.heroTitleItalic': 'בכל יום',
+    'home.heroDescription': 'תיקים, חגורות וארנקים מאיטליה - עיצוב נצחי, איכות שמורגשת במגע.',
+    'home.heroCta': 'לקטלוג המוצרים',
+    'home.heroCtaSecondary': 'הסיפור שלנו',
+    'home.categoryEyebrow': 'קנו לפי קטגוריה',
+    'home.categoryTitle': 'נבחרו במיוחד',
+    'home.categoryTitleEm': 'בשבילך',
+    'home.categoryShop': 'לקנייה',
+    'home.editorialEyebrow': 'השראה',
+    'home.editorialTitle': 'מאז 1984 — אותה מחויבות לאיכות.',
+    'home.editorialBody': 'קלומית מייבאת באופן בלעדי את המותגים המובילים מאיטליה. כל פריט נבחר בקפידה, כדי שתיק הנשיאה שלך ילווה אותך שנים.',
+    'home.editorialCta': 'אודות קלומית',
+    'home.editorialCtaBlog': 'למגזין',
+    'home.editorialImageAlt': 'כיכר דיזנגוף בתל אביב, צילום היסטורי בשחור־לבן',
+    'home.productsEyebrow': 'נבחרי החנות',
+    'home.productsTitle': 'פריטים ש',
+    'home.productsTitleEm': 'אנחנו אוהבים',
+    'home.newsletterEyebrow': 'מועדון הלקוחות',
+    'home.newsletterTitle': 'הישארו',
+    'home.newsletterTitleEm': 'בקשר',
+    'home.newsletterPlaceholder': 'כתובת אימייל',
+    'home.newsletterSubmit': 'הרשמה',
+    'home.newsletterSuccess': 'תודה! ניצור קשר בקרוב.',
+    'home.newsletterError': 'אירעה שגיאה, נסו שוב.',
+
     // Hero
     'hero.title': 'קולקציית 2026',
     'hero.description': 'תיקים יוקרתיים מעור איטלקי. עיצובים חדשים מ-RENATO ANGI ו-CARLINO GROUP',
@@ -378,6 +458,8 @@ export const translations: Record<Language, Translations> = {
     'products.description': 'תיאור',
     'products.related': 'מוצרים דומים',
     'products.shareViaWhatsApp': 'שתפו בוואטסאפ',
+    'products.purchaseTrustLine': 'משלוח חינם מעל ₪500 · תשלום מאובטח',
+    'products.whatsappContactCta': 'שאלות לפני הקנייה? נענה בוואטסאפ',
     'products.color': 'צבע',
     'products.size': 'גודל',
     'products.notifyWhenBack': 'הודיעו לי כשחוזר',
@@ -390,6 +472,8 @@ export const translations: Record<Language, Translations> = {
     'products.zoomInstructions': 'לחץ + או - להגדלה/הקטנה',
     'products.wheelZoom': 'גלגל העכבר לזום',
     'products.dragMove': 'גרור להזזת התמונה',
+    'products.galleryScrollHint': 'גלול למטה לעוד תמונות',
+    'products.gallerySwipeHint': 'החליקו לצדדים בין התמונות',
     'products.noProductsInCategory': 'לא נמצאו מוצרים בקטגוריה זו',
     'products.resetFilters': 'נקה סינונים',
     'products.addToCartShort': 'הוספה לסל',
@@ -661,7 +745,43 @@ export const translations: Record<Language, Translations> = {
     'header.contact': 'Contact',
     'header.talkToUs': 'Talk to us!',
     'header.cart': 'Shopping Cart',
-    
+    'header.magazine': 'Magazine',
+    'header.shopAll': 'All products',
+    'header.brand': 'klumit',
+
+    // Home (Biasia-style)
+    'home.announcement': 'Free shipping on orders over ₪500 · Personal service · Genuine Italian leather',
+    'home.marquee1': 'New arrivals',
+    'home.marquee2': 'Renato Angi · Carlino Group',
+    'home.marquee3': 'Spring / Summer 2026',
+    'home.marquee4': 'Exclusive import from Italy',
+    'home.heroEyebrow': '2026 collection',
+    'home.heroTitle': 'Italian luxury',
+    'home.heroTitleItalic': 'for every day',
+    'home.heroDescription': 'Bags, belts and wallets in Italian leather — timeless design you can feel.',
+    'home.heroCta': 'Shop the collection',
+    'home.heroCtaSecondary': 'Our story',
+    'home.categoryEyebrow': 'Shop by category',
+    'home.categoryTitle': 'Crafted for',
+    'home.categoryTitleEm': 'you',
+    'home.categoryShop': 'Shop now',
+    'home.editorialEyebrow': 'Heritage',
+    'home.editorialTitle': 'Since 1984 — the same commitment to quality.',
+    'home.editorialBody': 'Klumit is the exclusive importer of Italy’s leading brands. Every piece is chosen with care, so your bag stays with you for years.',
+    'home.editorialCta': 'About Klumit',
+    'home.editorialCtaBlog': 'Read the magazine',
+    'home.editorialImageAlt': 'Historic black-and-white photograph of Dizengoff Square, Tel Aviv',
+    'home.productsEyebrow': 'Best sellers',
+    'home.productsTitle': 'Pieces we',
+    'home.productsTitleEm': 'love',
+    'home.newsletterEyebrow': 'Klumit world',
+    'home.newsletterTitle': 'Stay in',
+    'home.newsletterTitleEm': 'touch',
+    'home.newsletterPlaceholder': 'Your email',
+    'home.newsletterSubmit': 'Subscribe',
+    'home.newsletterSuccess': 'Thank you — we’ll be in touch.',
+    'home.newsletterError': 'Something went wrong. Please try again.',
+
     // Hero
     'hero.title': '2026 Collection',
     'hero.description': 'Luxury bags made from Italian leather. New designs from RENATO ANGI and CARLINO GROUP',
@@ -702,6 +822,8 @@ export const translations: Record<Language, Translations> = {
     'products.description': 'Description',
     'products.related': 'Related Products',
     'products.shareViaWhatsApp': 'Share via WhatsApp',
+    'products.purchaseTrustLine': 'Free shipping over ₪500 · Secure checkout',
+    'products.whatsappContactCta': 'Questions before you buy? Message us on WhatsApp',
     'products.color': 'Color',
     'products.size': 'Size',
     'products.notifyWhenBack': 'Notify me when back',
@@ -714,6 +836,8 @@ export const translations: Record<Language, Translations> = {
     'products.zoomInstructions': 'Press + or - to zoom',
     'products.wheelZoom': 'Mouse wheel to zoom',
     'products.dragMove': 'Drag to move image',
+    'products.galleryScrollHint': 'Scroll down for more images',
+    'products.gallerySwipeHint': 'Swipe sideways for more images',
     'products.noProductsInCategory': 'No products found in this category',
     'products.resetFilters': 'Reset Filters',
     'products.addToCartShort': 'Add to Cart',
@@ -947,7 +1071,7 @@ export const translations: Record<Language, Translations> = {
     'skipToMain': 'Skip to main content',
     
     // Footer
-    'footer.brand': 'Klumit',
+    'footer.brand': 'klumit',
     'footer.brandDesc': 'Exclusive importer of luxury bags from Italy',
     'footer.navigation': 'Navigation',
     'footer.home': 'Home',
@@ -985,7 +1109,43 @@ export const translations: Record<Language, Translations> = {
     'header.contact': 'Контакты',
     'header.talkToUs': 'Напишите нам!',
     'header.cart': 'Корзина',
-    
+    'header.magazine': 'Журнал',
+    'header.shopAll': 'Все товары',
+    'header.brand': 'Klumit',
+
+    // Home (Biasia-style)
+    'home.announcement': 'Бесплатная доставка от ₪500 · Персональный сервис · Натуральная итальянская кожа',
+    'home.marquee1': 'Новинки',
+    'home.marquee2': 'Renato Angi · Carlino Group',
+    'home.marquee3': 'Весна / лето 2026',
+    'home.marquee4': 'Эксклюзивный импорт из Италии',
+    'home.heroEyebrow': 'Коллекция 2026',
+    'home.heroTitle': 'Итальянская роскошь',
+    'home.heroTitleItalic': 'каждый день',
+    'home.heroDescription': 'Сумки, ремни и кошельки из итальянской кожи — вечный дизайн и ощутимое качество.',
+    'home.heroCta': 'К каталогу',
+    'home.heroCtaSecondary': 'О нас',
+    'home.categoryEyebrow': 'Категории',
+    'home.categoryTitle': 'Создано',
+    'home.categoryTitleEm': 'для вас',
+    'home.categoryShop': 'Смотреть',
+    'home.editorialEyebrow': 'Наследие',
+    'home.editorialTitle': 'С 1984 года — та же приверженность качеству.',
+    'home.editorialBody': 'Klumit — эксклюзивный импортер ведущих итальянских брендов. Каждая вещь отобрана с заботой.',
+    'home.editorialCta': 'О Klumit',
+    'home.editorialCtaBlog': 'Журнал',
+    'home.editorialImageAlt': 'Исторический снимок площади Дизенгоф, Тель-Авив',
+    'home.productsEyebrow': 'Хиты продаж',
+    'home.productsTitle': 'Наши',
+    'home.productsTitleEm': 'фавориты',
+    'home.newsletterEyebrow': 'Мир Klumit',
+    'home.newsletterTitle': 'Будьте',
+    'home.newsletterTitleEm': 'на связи',
+    'home.newsletterPlaceholder': 'Электронная почта',
+    'home.newsletterSubmit': 'Подписаться',
+    'home.newsletterSuccess': 'Спасибо! Мы скоро свяжемся.',
+    'home.newsletterError': 'Ошибка. Попробуйте снова.',
+
     // Hero
     'hero.title': 'Коллекция 2026',
     'hero.description': 'Роскошные сумки из итальянской кожи. Новые дизайны от RENATO ANGI и CARLINO GROUP',
@@ -1026,6 +1186,8 @@ export const translations: Record<Language, Translations> = {
     'products.description': 'Описание',
     'products.related': 'Похожие товары',
     'products.shareViaWhatsApp': 'Поделиться в WhatsApp',
+    'products.purchaseTrustLine': 'Бесплатная доставка от ₪500 · Безопасная оплата',
+    'products.whatsappContactCta': 'Вопросы перед покупкой? Напишите в WhatsApp',
     'products.color': 'Цвет',
     'products.size': 'Размер',
     'products.notifyWhenBack': 'Сообщить о поступлении',
@@ -1038,6 +1200,8 @@ export const translations: Record<Language, Translations> = {
     'products.zoomInstructions': 'Нажмите + или - для увеличения',
     'products.wheelZoom': 'Колесико мыши для зума',
     'products.dragMove': 'Перетащите для перемещения',
+    'products.galleryScrollHint': 'Прокрутите вниз, чтобы увидеть другие фото',
+    'products.gallerySwipeHint': 'Смахните в сторону для других фото',
     'products.noProductsInCategory': 'Товары в этой категории не найдены',
     'products.resetFilters': 'Сбросить фильтры',
     'products.addToCartShort': 'В корзину',

@@ -19,8 +19,10 @@ export default function Header() {
   const pathname = usePathname();
   const { language, setLanguage, t } = useLanguage();
 
-  const currentTab = searchParams?.get('tab') || 'bags';
+  const currentTab = searchParams?.get('tab') || 'all';
   const isProductsPage = pathname === '/products';
+  const isHome = pathname === '/';
+  const isBlogSection = pathname === '/blog' || pathname?.startsWith('/blog/');
 
   const languageFlags = {
     he: '🇮🇱',
@@ -66,9 +68,13 @@ export default function Header() {
   return (
     <header
       className={`sticky top-0 z-50 w-full transition-all duration-500 ease-luxury ${
-        scrolled
-          ? 'bg-cream/97 backdrop-blur-md shadow-[0_1px_0_0_rgba(44,36,32,0.06)]'
-          : 'bg-cream/90 backdrop-blur-sm'
+        isHome
+          ? scrolled
+            ? 'bg-biasia-bg/97 backdrop-blur-md border-b border-biasia-line shadow-[0_1px_0_0_rgba(28,26,23,0.06)]'
+            : 'bg-biasia-bg/92 backdrop-blur-sm border-b border-biasia-line'
+          : scrolled
+            ? 'bg-cream/97 backdrop-blur-md shadow-[0_1px_0_0_rgba(44,36,32,0.06)]'
+            : 'bg-cream/90 backdrop-blur-sm'
       }`}
       dir={language === 'he' ? 'rtl' : 'ltr'}
       suppressHydrationWarning
@@ -80,7 +86,7 @@ export default function Header() {
         <div className="flex items-center order-1">
           <Link href="/" className="hidden md:block group">
             <span className="font-display text-2xl md:text-[1.7rem] font-light text-espresso tracking-wide-plus group-hover:text-terracotta transition-colors duration-500">
-              Klumit
+              {t('header.brand')}
             </span>
           </Link>
 
@@ -102,6 +108,7 @@ export default function Header() {
         <div className="flex items-center justify-center order-2">
           <nav className="hidden md:flex items-center justify-center gap-5 lg:gap-8 flex-wrap" aria-label="תפריט ניווט ראשי">
             {[
+              { tab: 'all', label: t('header.shopAll') },
               { tab: 'bags', label: t('header.bags') },
               { tab: 'belts', label: t('header.belts') },
               { tab: 'wallets', label: t('header.wallets') },
@@ -122,11 +129,22 @@ export default function Header() {
                 )}
               </Link>
             ))}
+            <Link
+              href="/blog"
+              className={`relative text-[11px] tracking-editorial uppercase transition-all duration-500 py-1 ${
+                isBlogSection ? 'text-espresso font-medium' : 'text-stone-dark font-normal hover:text-espresso'
+              }`}
+            >
+              {t('header.magazine')}
+              {isBlogSection && (
+                <span className="absolute -bottom-0.5 right-0 left-0 h-[1px] bg-espresso animate-line-expand origin-right" />
+              )}
+            </Link>
           </nav>
 
           <Link href="/" className="md:hidden">
             <span className="font-display text-xl font-light text-espresso tracking-wide-plus">
-              Klumit
+              {t('header.brand')}
             </span>
           </Link>
         </div>
@@ -197,8 +215,13 @@ export default function Header() {
       </nav>
 
       {/* Mobile category sub-bar */}
-      <div className="md:hidden w-full flex items-center justify-center gap-3 px-2 h-10 border-t border-sand bg-cream-warm/80 backdrop-blur-sm overflow-x-auto scrollbar-hide">
+      <div
+        className={`md:hidden w-full flex items-center justify-center gap-2 px-2 h-10 border-t overflow-x-auto scrollbar-hide backdrop-blur-sm ${
+          isHome ? 'border-biasia-line bg-biasia-bg-alt/90' : 'border-sand bg-cream-warm/80'
+        }`}
+      >
         {[
+          { tab: 'all', label: t('header.shopAll') },
           { tab: 'bags', label: t('header.bags') },
           { tab: 'belts', label: t('header.belts') },
           { tab: 'wallets', label: t('header.wallets') },
@@ -219,6 +242,17 @@ export default function Header() {
             )}
           </Link>
         ))}
+        <Link
+          href="/blog"
+          className={`relative flex items-center h-full shrink-0 text-[9px] tracking-editorial uppercase transition-all duration-300 whitespace-nowrap ${
+            isBlogSection ? 'text-espresso font-medium' : 'text-stone-dark hover:text-espresso'
+          }`}
+        >
+          {t('header.magazine')}
+          {isBlogSection && (
+            <span className="absolute bottom-0 right-0 left-0 h-[1.5px] bg-terracotta" />
+          )}
+        </Link>
       </div>
 
       {/* Mobile menu overlay */}
@@ -229,6 +263,7 @@ export default function Header() {
         >
           <div className="flex flex-col pt-8 text-center px-8">
             {[
+              { tab: 'all', label: t('header.shopAll') },
               { tab: 'bags', label: t('header.bags') },
               { tab: 'belts', label: t('header.belts') },
               { tab: 'wallets', label: t('header.wallets') },
@@ -247,6 +282,15 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
+            <Link
+              href="/blog"
+              className={`font-display text-lg tracking-wide border-b border-sand py-5 transition-colors duration-300 ${
+                isBlogSection ? 'text-espresso' : 'text-stone hover:text-espresso'
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              {t('header.magazine')}
+            </Link>
           </div>
         </nav>
       )}

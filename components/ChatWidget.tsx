@@ -9,8 +9,10 @@ import Toast from '@/components/Toast';
 import { useChatWidget } from '@/lib/hooks/useChatWidget';
 import { useLanguage } from '@/lib/LanguageContext';
 
+const WHATSAPP_CHAT_URL = 'https://wa.me/972549903139';
+
 export default function ChatWidget() {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const {
     isOpen,
     toggleChat,
@@ -21,7 +23,6 @@ export default function ChatWidget() {
     isTyping,
     adminTyping,
     user,
-    unreadCount,
     conversationId,
     sessionId,
     sendMessage,
@@ -90,23 +91,20 @@ export default function ChatWidget() {
 
   return (
     <>
-      {/* כפתור פתיחה */}
+      {/* קישור ישיר ל-WhatsApp (במקום פתיחת צ'אט באתר) */}
       {!isOpen && (
-        <motion.button
+        <motion.a
+          href={WHATSAPP_CHAT_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          onClick={toggleChat}
-          className="fixed right-6 bottom-6 z-[9999] bg-[#1a1a1a] text-white rounded-full px-3 py-3 md:px-6 md:py-2.5 shadow-lg hover:bg-[#2a2a2a] transition-colors flex items-center gap-2"
-          aria-label="פתח צ'אט"
+          className="fixed end-6 bottom-6 z-[9999] bg-[#1a1a1a] text-white rounded-full px-3 py-3 md:px-6 md:py-2.5 shadow-lg hover:bg-[#2a2a2a] transition-colors flex items-center gap-2"
+          aria-label={t('header.talkToUs')}
         >
-          <MessageCircle size={20} />
-          <span className="hidden md:inline text-sm font-medium whitespace-nowrap">דברו איתנו!</span>
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </motion.button>
+          <MessageCircle size={20} aria-hidden />
+          <span className="hidden md:inline text-sm font-medium whitespace-nowrap">{t('header.talkToUs')}</span>
+        </motion.a>
       )}
 
       {/* חלון צ'אט */}

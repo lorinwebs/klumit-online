@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Assistant, Cormorant_Garamond } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
 import { Suspense } from 'react';
@@ -24,6 +24,13 @@ const cormorant = Cormorant_Garamond({
 });
 
 const siteUrl = 'https://www.klumit-online.co.il';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#f4efe8',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -204,7 +211,7 @@ const jsonLd = {
           name: 'האם יש משלוח חינם?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'כן! משלוח חינם בכל הזמנה מעל ₪250. משלוח מהיר תוך 3-5 ימי עסקים לכל רחבי הארץ.',
+            text: 'כן! משלוח חינם בכל הזמנה מעל ₪500. משלוח מהיר תוך 3-5 ימי עסקים לכל רחבי הארץ.',
           },
         },
         {
@@ -320,7 +327,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${assistant.variable} ${cormorant.variable} font-sans overflow-x-hidden`}>
+      <body className={`${assistant.variable} ${cormorant.variable} font-sans overflow-x-clip`}>
         <LanguageProvider>
           <ConditionalLayout>
             <Suspense fallback={null}>
