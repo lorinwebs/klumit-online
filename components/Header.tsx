@@ -30,6 +30,13 @@ export default function Header() {
     ru: '🇷🇺'
   };
 
+  /** Mobile only: three core categories (no "all", SS26, or magazine in the strip/menu) */
+  const mobileCategoryItems = [
+    { tab: 'bags' as const, label: t('header.bags') },
+    { tab: 'wallets' as const, label: t('header.wallets') },
+    { tab: 'belts' as const, label: t('header.belts') },
+  ];
+
   const handleLanguageChange = async (newLanguage: 'he' | 'en' | 'ru') => {
     setLanguage(newLanguage);
     setLangDropdownOpen(false);
@@ -214,45 +221,28 @@ export default function Header() {
         </div>
       </nav>
 
-      {/* Mobile category sub-bar */}
+      {/* Mobile category sub-bar — bags, wallets, belts only */}
       <div
-        className={`md:hidden w-full flex items-center justify-center gap-2 px-2 h-10 border-t overflow-x-auto scrollbar-hide backdrop-blur-sm ${
+        className={`md:hidden flex min-h-11 w-full items-stretch justify-between gap-1 border-t px-2 backdrop-blur-sm scrollbar-hide ${
           isHome ? 'border-biasia-line bg-biasia-bg-alt/90' : 'border-sand bg-cream-warm/80'
         }`}
       >
-        {[
-          { tab: 'all', label: t('header.shopAll') },
-          { tab: 'bags', label: t('header.bags') },
-          { tab: 'belts', label: t('header.belts') },
-          { tab: 'wallets', label: t('header.wallets') },
-          { tab: 'ss26', label: t('header.springSummer2026') },
-        ].map((item) => (
+        {mobileCategoryItems.map((item) => (
           <Link
             key={item.tab}
             href={`/products?tab=${item.tab}`}
-            className={`relative flex items-center h-full shrink-0 text-[9px] tracking-editorial uppercase transition-all duration-300 whitespace-nowrap ${
+            className={`relative flex flex-1 items-center justify-center px-1 py-2 text-[10px] tracking-editorial uppercase transition-all duration-300 ${
               isProductsPage && currentTab === item.tab
-                ? 'text-espresso font-medium'
+                ? 'font-medium text-espresso'
                 : 'text-stone-dark hover:text-espresso'
             }`}
           >
             {item.label}
             {isProductsPage && currentTab === item.tab && (
-              <span className="absolute bottom-0 right-0 left-0 h-[1.5px] bg-terracotta" />
+              <span className="absolute bottom-0.5 right-2 left-2 h-[1.5px] bg-terracotta" />
             )}
           </Link>
         ))}
-        <Link
-          href="/blog"
-          className={`relative flex items-center h-full shrink-0 text-[9px] tracking-editorial uppercase transition-all duration-300 whitespace-nowrap ${
-            isBlogSection ? 'text-espresso font-medium' : 'text-stone-dark hover:text-espresso'
-          }`}
-        >
-          {t('header.magazine')}
-          {isBlogSection && (
-            <span className="absolute bottom-0 right-0 left-0 h-[1.5px] bg-terracotta" />
-          )}
-        </Link>
       </div>
 
       {/* Mobile menu overlay */}
@@ -261,18 +251,12 @@ export default function Header() {
           id="mobile-menu"
           className="md:hidden border-t border-sand bg-cream absolute w-full left-0 top-full h-[calc(100dvh-100%)] z-50 overflow-y-auto"
         >
-          <div className="flex flex-col pt-8 text-center px-8">
-            {[
-              { tab: 'all', label: t('header.shopAll') },
-              { tab: 'bags', label: t('header.bags') },
-              { tab: 'belts', label: t('header.belts') },
-              { tab: 'wallets', label: t('header.wallets') },
-              { tab: 'ss26', label: t('header.springSummer2026') },
-            ].map((item) => (
+          <div className="flex flex-col px-8 pt-8 text-center">
+            {mobileCategoryItems.map((item) => (
               <Link
                 key={item.tab}
                 href={`/products?tab=${item.tab}`}
-                className={`font-display text-lg tracking-wide border-b border-sand py-5 transition-colors duration-300 ${
+                className={`font-display border-b border-sand py-5 text-lg tracking-wide transition-colors duration-300 ${
                   isProductsPage && currentTab === item.tab
                     ? 'text-espresso'
                     : 'text-stone hover:text-espresso'
@@ -282,15 +266,6 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/blog"
-              className={`font-display text-lg tracking-wide border-b border-sand py-5 transition-colors duration-300 ${
-                isBlogSection ? 'text-espresso' : 'text-stone hover:text-espresso'
-              }`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {t('header.magazine')}
-            </Link>
           </div>
         </nav>
       )}
