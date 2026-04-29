@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Sparkles } from 'lucide-react';
 
-const EVENT_DATE = new Date('2026-06-11T20:00:00+03:00');
+const EVENT_DATE = new Date('2026-06-10T20:00:00+03:00');
 
 interface TimeLeft {
   days: number;
