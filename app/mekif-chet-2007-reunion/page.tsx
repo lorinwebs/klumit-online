@@ -56,6 +56,7 @@ export default function ReunionPage() {
   const [data, setData] = useState<ReunionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [badgeCount, setBadgeCount] = useState<number | null>(null);
 
   useEffect(() => {
     document.title = 'מקיף ח\' 2007 מפגש איחוד!';
@@ -74,6 +75,7 @@ export default function ReunionPage() {
     };
 
     fetchData();
+    fetch('/api/badge/count').then(r => r.json()).then(d => setBadgeCount(d.count)).catch(() => null);
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -195,10 +197,18 @@ export default function ReunionPage() {
           </a>
         </div>
 
-        {/* Registered count pill */}
-        <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-sm font-medium px-5 py-2 rounded-full border border-indigo-100">
-          <Users size={15} />
-          <span><strong>{total}</strong> נרשמו עד כה</span>
+        {/* Count pills */}
+        <div className="flex flex-wrap justify-center gap-3">
+          <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-sm font-medium px-5 py-2 rounded-full border border-indigo-100">
+            <Users size={15} />
+            <span><strong>{total}</strong> נרשמו עד כה</span>
+          </div>
+          {badgeCount !== null && (
+            <div className="inline-flex items-center gap-2 bg-purple-50 text-purple-700 text-sm font-medium px-5 py-2 rounded-full border border-purple-100">
+              <BadgeCheck size={15} />
+              <span><strong>{badgeCount}</strong> / {paidCount} הכינו תג שם</span>
+            </div>
+          )}
         </div>
       </div>
 
