@@ -40,7 +40,9 @@ function nameFontSize(name: string): number {
 
 function rev(s: string): string {
   if (!s) return s;
-  return [...s].reverse().join('')
+  // Split into runs of digits and non-digits, reverse non-digit runs, keep digit order
+  const parts = s.match(/\d+|[^\d]+/g) || [];
+  return parts.reverse().map(p => /^\d+$/.test(p) ? p : [...p].reverse().join('')).join('')
     .replace(/\)/g, '\u27E8').replace(/\(/g, ')').replace(/\u27E8/g, '(');
 }
 
