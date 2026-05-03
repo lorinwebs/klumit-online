@@ -53,7 +53,7 @@ export const badgeSchema = z.object({
   last_name:      z.string().max(20).trim(),
   gender:         z.enum(GENDERS),
   marital_status: z.enum(MARITAL_STATUSES),
-  other_status:   z.string().max(10).trim(),
+  other_status:   z.string().max(12).trim(),
   married_name:   z.string().max(20).trim(),
   grade:          z.enum(GRADES),
   city:           z.string().min(2, 'עיר חובה').max(30).trim(),
