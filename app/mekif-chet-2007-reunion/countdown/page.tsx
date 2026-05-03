@@ -391,14 +391,14 @@ export default function CountdownPage() {
             <h2 className="text-4xl sm:text-5xl font-black shimmer-text" style={{ fontFamily: 'Heebo, sans-serif' }}>!הגיע הזמן</h2>
           </div>
         ) : (
-          <div className="flex flex-row-reverse flex-wrap justify-center items-start gap-3 sm:gap-4 md:gap-5">
-            <CountdownUnit value={timeLeft.days} label="ימים" index={0} />
+          <div className="flex flex-row flex-wrap justify-center items-start gap-3 sm:gap-4 md:gap-5">
+            <CountdownUnit value={timeLeft.seconds} label="שניות" index={0} />
             <Separator />
-            <CountdownUnit value={timeLeft.hours} label="שעות" index={1} />
+            <CountdownUnit value={timeLeft.minutes} label="דקות" index={1} />
             <Separator />
-            <CountdownUnit value={timeLeft.minutes} label="דקות" index={2} />
+            <CountdownUnit value={timeLeft.hours} label="שעות" index={2} />
             <Separator />
-            <CountdownUnit value={timeLeft.seconds} label="שניות" index={3} />
+            <CountdownUnit value={timeLeft.days} label="ימים" index={3} />
           </div>
         )}
 

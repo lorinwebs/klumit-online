@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users, Sparkles, UserPlus, DollarSign, CreditCard, Crown, Camera } from 'lucide-react';
+import { Users, Sparkles, UserPlus, DollarSign, CreditCard, Crown, Camera, BadgeCheck } from 'lucide-react';
 
 interface Participant {
   name: string;
@@ -16,6 +16,7 @@ interface Participant {
   wantsToHelp?: string;
   otherClass?: string;
   paid?: boolean;
+  hasBadge?: boolean;
 }
 
 interface ReunionData {
@@ -167,6 +168,13 @@ export default function ReunionPage() {
             הרשמה למפגש
           </a>
           <a
+            href="/mekif-chet-2007-reunion/badge"
+            className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
+          >
+            <BadgeCheck size={18} />
+            הכן תג שם לאירוע
+          </a>
+          <a
             href="/mekif-chet-2007-reunion/gallery"
             className="inline-flex items-center gap-2 bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5"
           >
@@ -302,6 +310,9 @@ export default function ReunionPage() {
                         <span className={`flex-1 ${participant.paid ? 'font-medium' : ''}`}>
                           {participant.name}
                         </span>
+                        {participant.hasBadge && (
+                          <BadgeCheck size={14} className="text-purple-500 shrink-0" />
+                        )}
                         {participant.paid && (
                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
                         )}

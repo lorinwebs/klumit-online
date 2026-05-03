@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createSupabaseAdminClient } from '../../../../lib/supabase/admin';
 
 const MONDAY_API_KEY = process.env.MONDAY_API_KEY;
 const BOARD_ID = '5090027047';
@@ -26,6 +27,7 @@ interface Participant {
   wantsToHelp?: string;
   otherClass?: string;
   paid?: boolean;
+  hasBadge?: boolean;
 }
 
 const CLASS_COLUMN_ID = 'single_selectv1iuqqz'; // איזה כיתה היית?
@@ -142,6 +144,28 @@ export async function GET(request: NextRequest) {
         paid: isPaid,
       };
     });
+
+    // Check which participants have badges
+    try {
+      const admin = createSupabaseAdminClient();
+      const { data: badges } = await admin
+        .from('reunion_badges')
+        .select('monday_name');
+
+      if (badges) {
+        const badgeNames = new Set(
+          badges.filter(b => b.monday_name).map(b => b.monday_name.trim().toLowerCase())
+        );
+        participants.forEach(p => {
+          if (badgeNames.has(p.name.trim().toLowerCase())) {
+            p.hasBadge = true;
+          }
+        });
+      }
+    } catch (e) {
+      // Badge lookup is non-critical, don't fail the whole request
+      console.error('Badge lookup error:', e);
+    }
 
     // קיבוץ לפי כיתות
     const byClass: Record<string, Participant[]> = {};
