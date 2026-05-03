@@ -19,7 +19,7 @@ export async function GET() {
     let hasMore = true;
 
     while (hasMore) {
-      const query = `
+      const query: string = `
         query {
           boards(ids: [${BOARD_ID}]) {
             items_page(limit: 100${cursor ? `, cursor: "${cursor}"` : ''}) {
@@ -38,7 +38,7 @@ export async function GET() {
         }
       `;
 
-      const response = await fetch('https://api.monday.com/v2', {
+      const response: Response = await fetch('https://api.monday.com/v2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,8 +48,8 @@ export async function GET() {
         body: JSON.stringify({ query }),
       });
 
-      const data = await response.json();
-      const itemsPage = data.data?.boards[0]?.items_page;
+      const data: { data?: { boards?: Array<{ items_page?: { items: any[]; cursor: string | null } }> } } = await response.json();
+      const itemsPage: { items: any[]; cursor: string | null } | undefined = data.data?.boards?.[0]?.items_page;
       const items = itemsPage?.items || [];
       allItems = [...allItems, ...items];
       cursor = itemsPage?.cursor || null;

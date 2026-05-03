@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
   const parsed = badgeSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.errors[0]?.message ?? 'שגיאת validation' }, { status: 400 });
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'שגיאת validation' }, { status: 400 });
   }
 
   const { _hp, ...data } = parsed.data;
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   // Generate PNG and upload (non-blocking on error)
   try {
-    const pngBuffer = await generateBadgePng(data as import('../../components/badge/Badge').BadgeData);
+    const pngBuffer = await generateBadgePng(data as import('../../../components/badge/Badge').BadgeData);
     const pngPath = `badges/${row.id}.png`;
 
     const { error: uploadErr } = await admin.storage
@@ -74,7 +74,7 @@ export async function GET() {
       .createSignedUrls(paths, 60 * 60); // 1 hour
 
     (signed ?? []).forEach(s => {
-      if (s.signedUrl) signedUrls[s.path] = s.signedUrl;
+      if (s.signedUrl && s.path) signedUrls[s.path] = s.signedUrl;
     });
   }
 

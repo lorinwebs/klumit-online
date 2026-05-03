@@ -50,20 +50,21 @@ export function getMaritalLabel(status: MaritalStatus, gender: Gender, otherStat
 
 export const badgeSchema = z.object({
   first_name:     z.string().min(2, 'שם פרטי חובה').max(20).trim(),
-  last_name:      z.string().max(20).trim().default(''),
+  last_name:      z.string().max(20).trim(),
   gender:         z.enum(GENDERS),
   marital_status: z.enum(MARITAL_STATUSES),
-  other_status:   z.string().max(10).trim().optional().default(''),
-  married_name:   z.string().max(20).trim().optional().default(''),
+  other_status:   z.string().max(10).trim(),
+  married_name:   z.string().max(20).trim(),
   grade:          z.enum(GRADES),
   city:           z.string().min(2, 'עיר חובה').max(30).trim(),
   occupation:     z.string().min(2, 'עיסוק חובה').max(30).trim(),
-  num_children:   z.coerce.number().int().min(0).max(20).optional().default(0),
-  monday_name:    z.string().max(50).trim().default(''),
+  num_children:   z.coerce.number().int().min(0).max(20),
+  monday_name:    z.string().max(50).trim(),
   _hp:            z.literal('').optional(),
 });
 
 export type BadgeFormData = z.infer<typeof badgeSchema>;
+export type BadgeFormInput = z.input<typeof badgeSchema>;
 
 /** Build full_name for display on the badge */
 export function buildDisplayName(data: {

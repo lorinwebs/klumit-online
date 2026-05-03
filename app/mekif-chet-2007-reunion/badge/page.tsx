@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { badgeSchema, BadgeFormData, GRADES, GRADE_LABELS, GENDERS, GENDER_LABELS, MARITAL_STATUSES, getMaritalLabel, type Gender, type MaritalStatus } from '../../../lib/badge/schema';
+import { badgeSchema, BadgeFormData, BadgeFormInput, GRADES, GRADE_LABELS, GENDERS, GENDER_LABELS, MARITAL_STATUSES, getMaritalLabel, type Gender, type MaritalStatus } from '../../../lib/badge/schema';
 import { BadgePreview } from '../../../components/badge/BadgePreview';
 
 interface PaidParticipant {
@@ -28,7 +28,7 @@ export default function BadgePage() {
     handleSubmit,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<BadgeFormData>({
+  } = useForm<BadgeFormInput, unknown, BadgeFormData>({
     resolver: zodResolver(badgeSchema),
     defaultValues: {
       first_name: '', last_name: '', gender: undefined,
@@ -296,7 +296,7 @@ export default function BadgePage() {
           <div className="order-2 lg:sticky lg:top-8">
             <h2 className="text-xl font-bold text-purple-900 mb-4 text-right">תצוגה מקדימה</h2>
             <div className="max-w-xs mx-auto lg:mx-0">
-              <BadgePreview data={values} />
+              <BadgePreview data={{ ...values, num_children: typeof values.num_children === 'number' ? values.num_children : Number(values.num_children) || 0 }} />
             </div>
             <p className="text-xs text-slate-400 mt-3 text-center lg:text-right">
               התג להדפסה יופק אוטומטית לאחר השמירה
