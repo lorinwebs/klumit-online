@@ -214,7 +214,7 @@ export default function BadgePage() {
                       {...register('other_status')}
                       type="text"
                       placeholder="אחר"
-                      maxLength={10}
+                      maxLength={20}
                       className={inputCls}
                       dir="rtl"
                     />

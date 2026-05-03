@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node -e ':*)"
+      "Bash(node -e ':*)",
+      "Bash(python3 -c ':*)",
+      "Bash(curl -s -X DELETE http://localhost:3000/api/badge/e5fb51d9-3443-4e17-8f82-b588dd131c80)",
+      "Bash(curl -s http://localhost:3000/api/badge/paid-participants)"
     ]
   }
 }
