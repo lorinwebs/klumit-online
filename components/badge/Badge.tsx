@@ -35,7 +35,7 @@ function nameFontSize(name: string): number {
   const len = name.length;
   const maxWidth = 700;
   const calculated = Math.floor(maxWidth / (len * 0.42));
-  return Math.max(44, Math.min(160, calculated));
+  return Math.max(44, Math.min(110, calculated));
 }
 
 function rev(s: string): string {
