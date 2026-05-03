@@ -44,10 +44,10 @@ export async function generateBadgePng(data: BadgeData): Promise<Buffer> {
     detailFontSize: 65,
     satoriRtlFix: true,
     detailPositionsOverride: [
-      { top: 810,  valueRight: 490 },
-      { top: 920,  valueRight: 490 },
-      { top: 1040, valueRight: 490 },
-      { top: 1150, valueRight: 490 },
+      { top: 810,  valueRight: 530 },
+      { top: 920,  valueRight: 530 },
+      { top: 1040, valueRight: 530 },
+      { top: 1150, valueRight: 530 },
     ],
   });
 
