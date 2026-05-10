@@ -43,13 +43,13 @@ export default function BadgePage() {
   const maritalStatus = watch('marital_status');
 
   useEffect(() => {
-    fetch('/api/badge/count')
-      .then(r => r.json())
-      .then(d => setCount(d.count))
-      .catch(() => null);
     fetch('/api/badge/paid-participants')
       .then(r => r.json())
-      .then(d => setParticipants(d.participants || []))
+      .then(d => {
+        const p = d.participants || [];
+        setParticipants(p);
+        setCount(p.filter((x: PaidParticipant) => x.hasBadge).length);
+      })
       .catch(() => null)
       .finally(() => setParticipantsLoading(false));
   }, []);

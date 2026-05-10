@@ -75,7 +75,10 @@ export default function ReunionPage() {
     };
 
     fetchData();
-    fetch('/api/badge/count').then(r => r.json()).then(d => setBadgeCount(d.count)).catch(() => null);
+    fetch('/api/badge/paid-participants').then(r => r.json()).then(d => {
+      const p = d.participants || [];
+      setBadgeCount(p.filter((x: any) => x.hasBadge).length);
+    }).catch(() => null);
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
