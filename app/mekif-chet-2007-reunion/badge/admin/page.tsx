@@ -215,6 +215,18 @@ export default function AdminPage() {
 
   const stats = useMemo(() => statsFromRows(rows), [rows]);
 
+  const duplicates = useMemo(() =>
+    rows.filter(r => {
+      const name = getDisplayName(r);
+      const words = name.trim().split(/\s+/);
+      const seen = new Set<string>();
+      for (const w of words) {
+        if (w.length > 1 && seen.has(w)) return true;
+        seen.add(w);
+      }
+      return false;
+    }), [rows]);
+
   const filtered = useMemo(() =>
     rows.filter(r => {
       if (!search) return true;
@@ -285,6 +297,42 @@ export default function AdminPage() {
                   {formatGrade(g)} <span className="font-bold">{n}</span>
                 </span>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Duplicate names alert */}
+        {duplicates.length > 0 && (
+          <div className="bg-amber-50 rounded-2xl border border-amber-200 shadow-sm p-5 mb-6">
+            <h2 className="text-sm font-semibold text-amber-800 mb-3">שמות כפולים לטיפול ({duplicates.length})</h2>
+            <div className="space-y-2">
+              {duplicates.map(row => {
+                const displayName = getDisplayName(row);
+                return (
+                  <div key={row.id} className="flex items-center justify-between bg-white rounded-xl border border-amber-100 px-4 py-2.5">
+                    <div className="flex items-center gap-3">
+                      {row.signed_url && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={row.signed_url}
+                          alt={displayName}
+                          className="w-8 rounded shadow-sm cursor-pointer hover:opacity-80"
+                          style={{ aspectRatio: '2/3' }}
+                          onClick={() => setLightbox({ url: row.signed_url!, alt: displayName })}
+                        />
+                      )}
+                      <span className="font-medium text-slate-800 text-sm">{displayName}</span>
+                      <span className="text-xs text-slate-400">{formatGrade(row.grade)}</span>
+                    </div>
+                    <button
+                      onClick={() => setEditing(row)}
+                      className="bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap"
+                    >
+                      ערוך
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
