@@ -40,9 +40,14 @@ function nameFontSize(name: string): number {
 
 function rev(s: string): string {
   if (!s) return s;
-  // Split into runs of digits and non-digits, reverse non-digit runs, keep digit order
-  const parts = s.match(/\d+|[^\d]+/g) || [];
-  return parts.reverse().map(p => /^\d+$/.test(p) ? p : [...p].reverse().join('')).join('')
+  // Split into runs of digits, Hebrew/RTL chars, and Latin/LTR chars
+  const parts = s.match(/\d+|[\u0590-\u05FF\u0600-\u06FF\uFB1D-\uFDFF\uFE70-\uFEFF]+|[^\d\u0590-\u05FF\u0600-\u06FF\uFB1D-\uFDFF\uFE70-\uFEFF]+/g) || [];
+  // Reverse order of parts for RTL layout, reverse RTL runs but keep LTR and digit runs intact
+  return parts.reverse().map(p => {
+    if (/^\d+$/.test(p)) return p; // digits: keep order
+    if (/[\u0590-\u05FF\u0600-\u06FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(p)) return [...p].reverse().join(''); // RTL: reverse
+    return p; // Latin/LTR: keep order
+  }).join('')
     .replace(/\)/g, '\u27E8').replace(/\(/g, ')').replace(/\u27E8/g, '(');
 }
 
