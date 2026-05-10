@@ -18,6 +18,19 @@ export async function POST(req: NextRequest) {
 
   const admin = createSupabaseAdminClient();
 
+  // Check for duplicate monday_name
+  if (data.monday_name) {
+    const { data: existing } = await admin
+      .from('reunion_badges')
+      .select('id')
+      .eq('monday_name', data.monday_name)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      return NextResponse.json({ error: 'כבר קיים תג עם שם זה' }, { status: 409 });
+    }
+  }
+
   // Insert row
   const { data: row, error: insertErr } = await admin
     .from('reunion_badges')
