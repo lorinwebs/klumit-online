@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { formatGrade, buildDisplayName, getMaritalLabel, type Gender, type MaritalStatus } from '../../../../lib/badge/schema';
+import { formatGrade, GRADES, GENDERS, MARITAL_STATUSES, buildDisplayName, getMaritalLabel, type Gender, type MaritalStatus } from '../../../../lib/badge/schema';
 
 interface BadgeRow {
   id:             string;
@@ -10,12 +10,15 @@ interface BadgeRow {
   gender:         string;
   marital_status: string;
   married_name?:  string;
+  other_status?:  string;
   grade:          string;
   city:           string;
   occupation:     string;
+  num_children?:  number;
   png_path:       string | null;
   signed_url:     string | null;
   created_at:     string;
+  monday_name?:   string;
   // legacy
   full_name?:     string;
   status?:        string;
@@ -28,7 +31,7 @@ function getDisplayName(r: BadgeRow): string {
 
 function getStatusLabel(r: BadgeRow): string {
   if (r.marital_status && r.gender) {
-    return getMaritalLabel(r.marital_status as MaritalStatus, r.gender as Gender);
+    return getMaritalLabel(r.marital_status as MaritalStatus, r.gender as Gender, r.other_status, r.num_children);
   }
   return r.status ?? '';
 }
@@ -61,11 +64,142 @@ function downloadCSV(rows: BadgeRow[]) {
   URL.revokeObjectURL(url);
 }
 
+function EditModal({ row, onClose, onSaved }: { row: BadgeRow; onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = useState({
+    first_name: row.first_name,
+    last_name: row.last_name,
+    gender: row.gender,
+    marital_status: row.marital_status,
+    married_name: row.married_name ?? '',
+    other_status: row.other_status ?? '',
+    grade: row.grade,
+    city: row.city,
+    occupation: row.occupation,
+    num_children: row.num_children ?? 0,
+  });
+  const [saving, setSaving] = useState(false);
+
+  const set = (field: string, value: string | number) => setForm(prev => ({ ...prev, [field]: value }));
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/badge/${row.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        onSaved();
+        onClose();
+      } else {
+        alert('שגיאה בשמירה');
+      }
+    } catch {
+      alert('שגיאת רשת');
+    }
+    setSaving(false);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6" dir="rtl" onClick={e => e.stopPropagation()}>
+        <h2 className="text-lg font-bold text-purple-900 mb-4">עריכת תג - {getDisplayName(row)}</h2>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-500">שם פרטי</label>
+              <input className="w-full border rounded-lg px-3 py-2 text-sm" value={form.first_name} onChange={e => set('first_name', e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-slate-500">שם משפחה</label>
+              <input className="w-full border rounded-lg px-3 py-2 text-sm" value={form.last_name} onChange={e => set('last_name', e.target.value)} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-500">מגדר</label>
+              <select className="w-full border rounded-lg px-3 py-2 text-sm" value={form.gender} onChange={e => set('gender', e.target.value)}>
+                {GENDERS.map(g => <option key={g} value={g}>{g === 'male' ? 'זכר' : 'נקבה'}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-500">כיתה</label>
+              <select className="w-full border rounded-lg px-3 py-2 text-sm" value={form.grade} onChange={e => set('grade', e.target.value)}>
+                <option value="">ללא</option>
+                {GRADES.map(g => <option key={g} value={g}>{formatGrade(g)}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-500">עיר</label>
+              <input className="w-full border rounded-lg px-3 py-2 text-sm" value={form.city} onChange={e => set('city', e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs text-slate-500">עיסוק</label>
+              <input className="w-full border rounded-lg px-3 py-2 text-sm" value={form.occupation} onChange={e => set('occupation', e.target.value)} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-slate-500">סטטוס</label>
+              <select className="w-full border rounded-lg px-3 py-2 text-sm" value={form.marital_status} onChange={e => set('marital_status', e.target.value)}>
+                {MARITAL_STATUSES.map(s => <option key={s} value={s}>{s === 'single' ? 'רווק/ה' : s === 'married' ? 'נשוי/אה' : 'אחר'}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-slate-500">ילדים</label>
+              <input type="number" min={0} max={20} className="w-full border rounded-lg px-3 py-2 text-sm" value={form.num_children} onChange={e => set('num_children', parseInt(e.target.value) || 0)} />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-slate-500">שם משפחה לאחר נישואין</label>
+            <input className="w-full border rounded-lg px-3 py-2 text-sm" value={form.married_name} onChange={e => set('married_name', e.target.value)} />
+          </div>
+          {form.marital_status === 'other' && (
+            <div>
+              <label className="text-xs text-slate-500">סטטוס אחר</label>
+              <input className="w-full border rounded-lg px-3 py-2 text-sm" value={form.other_status} onChange={e => set('other_status', e.target.value)} />
+            </div>
+          )}
+        </div>
+        <div className="flex gap-2 mt-6">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 bg-purple-700 hover:bg-purple-800 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-sm font-medium transition"
+          >
+            {saving ? 'שומר...' : 'שמור ויצר תג מחדש'}
+          </button>
+          <button
+            onClick={onClose}
+            className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 transition"
+          >
+            ביטול
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Lightbox({ url, alt, onClose }: { url: string; alt: string; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 cursor-pointer" onClick={onClose}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt={alt} className="max-h-[90vh] max-w-[90vw] rounded-xl shadow-2xl" />
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const [rows, setRows]       = useState<BadgeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch]   = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [editing, setEditing]   = useState<BadgeRow | null>(null);
+  const [lightbox, setLightbox] = useState<{ url: string; alt: string } | null>(null);
 
   const fetchRows = async () => {
     setLoading(true);
@@ -194,7 +328,13 @@ export default function AdminPage() {
                         <td className="px-4 py-3">
                           {row.signed_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={row.signed_url} alt={displayName} className="w-12 h-18 object-cover rounded shadow-sm border border-slate-100" style={{ aspectRatio: '2/3', width: 40 }} />
+                            <img
+                              src={row.signed_url}
+                              alt={displayName}
+                              className="w-12 h-18 object-cover rounded shadow-sm border border-slate-100 cursor-pointer hover:opacity-80 transition"
+                              style={{ aspectRatio: '2/3', width: 40 }}
+                              onClick={() => setLightbox({ url: row.signed_url!, alt: displayName })}
+                            />
                           ) : (
                             <div className="w-10 bg-slate-100 rounded" style={{ aspectRatio: '2/3' }} />
                           )}
@@ -207,6 +347,12 @@ export default function AdminPage() {
                         <td className="px-4 py-3 text-slate-400 whitespace-nowrap text-xs">{formatDate(row.created_at)}</td>
                         <td className="px-4 py-3">
                           <div className="flex gap-2">
+                            <button
+                              onClick={() => setEditing(row)}
+                              className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap"
+                            >
+                              ערוך
+                            </button>
                             {row.signed_url && (
                               <a
                                 href={row.signed_url}
@@ -238,6 +384,12 @@ export default function AdminPage() {
           {filtered.length} תגים מוצגים מתוך {rows.length}
         </p>
       </div>
+
+      {/* Lightbox */}
+      {lightbox && <Lightbox url={lightbox.url} alt={lightbox.alt} onClose={() => setLightbox(null)} />}
+
+      {/* Edit Modal */}
+      {editing && <EditModal row={editing} onClose={() => setEditing(null)} onSaved={fetchRows} />}
     </div>
   );
 }
