@@ -305,35 +305,36 @@ export function MobileSwipeView({
         )}
       </div>
 
-      <div className="mobile-swipe__actions">
-        <button
-          type="button"
-          className="mobile-swipe__btn mobile-swipe__btn--no"
-          aria-label="לא"
-          disabled={!activeFile}
-          onClick={() => commit('left')}
-        >
-          ✗
-        </button>
-        <button
-          type="button"
-          className="mobile-swipe__btn mobile-swipe__btn--skip"
-          aria-label="הבא"
-          disabled={!queue.length}
-          onClick={advance}
-        >
-          ↷
-        </button>
-        <button
-          type="button"
-          className="mobile-swipe__btn mobile-swipe__btn--yes"
-          aria-label="כן"
-          disabled={!activeFile}
-          onClick={() => commit('right')}
-        >
-          ✓
-        </button>
-      </div>
+      <div className="mobile-swipe__footer">
+        <div className="mobile-swipe__actions">
+          <button
+            type="button"
+            className="mobile-swipe__btn mobile-swipe__btn--no"
+            aria-label="לא"
+            disabled={!activeFile}
+            onClick={() => commit('left')}
+          >
+            ✗
+          </button>
+          <button
+            type="button"
+            className="mobile-swipe__btn mobile-swipe__btn--skip"
+            aria-label="הבא"
+            disabled={!queue.length}
+            onClick={advance}
+          >
+            ↷
+          </button>
+          <button
+            type="button"
+            className="mobile-swipe__btn mobile-swipe__btn--yes"
+            aria-label="כן"
+            disabled={!activeFile}
+            onClick={() => commit('right')}
+          >
+            ✓
+          </button>
+        </div>
 
       {mode === 'pending' && pendingByUploader.length > 0 && (
         <label className="mobile-swipe__uploader-pick">
@@ -371,26 +372,27 @@ export function MobileSwipeView({
         </label>
       )}
 
-      <div className="mobile-swipe__tabs" role="tablist">
-        {mainTabs.map((t) => {
-          const empty = t.count === 0;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={mode === t.id}
-              aria-disabled={empty}
-              disabled={empty}
-              className={`mobile-swipe__tab mobile-swipe__tab--${t.tone}${mode === t.id ? ' mobile-swipe__tab--active' : ''}${empty ? ' mobile-swipe__tab--disabled' : ''}`}
-              onClick={() => {
-                if (!empty) switchMode(t.id);
-              }}
-            >
-              {t.label} ({t.count})
-            </button>
-          );
-        })}
+        <div className="mobile-swipe__tabs" role="tablist">
+          {mainTabs.map((t) => {
+            const empty = t.count === 0;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                aria-selected={mode === t.id}
+                aria-disabled={empty}
+                disabled={empty}
+                className={`mobile-swipe__tab mobile-swipe__tab--${t.tone}${mode === t.id ? ' mobile-swipe__tab--active' : ''}${empty ? ' mobile-swipe__tab--disabled' : ''}`}
+                onClick={() => {
+                  if (!empty) switchMode(t.id);
+                }}
+              >
+                {t.label} ({t.count})
+              </button>
+            );
+          })}
+        </div>
       </div>
 
     </div>
