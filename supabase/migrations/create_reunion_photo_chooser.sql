@@ -1,4 +1,4 @@
--- Photo curation tool (hidden /gallery/choose): AI analysis + human review
+-- Photo curation tool (/mekif-chet-2007-reunion/gallery/choose): AI analysis + human review
 
 create table if not exists reunion_photo_analysis (
   file_path text primary key,

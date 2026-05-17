@@ -18,6 +18,15 @@ const nextConfig = {
     minimumCacheTTL: 31536000, // 1 year
     qualities: [70, 75, 85],
   },
+  async redirects() {
+    return [
+      {
+        source: '/gallery/choose',
+        destination: '/mekif-chet-2007-reunion/gallery/choose',
+        permanent: true,
+      },
+    ];
+  },
   // Headers for caching and security
   async headers() {
     const isDev = process.env.NODE_ENV === 'development';

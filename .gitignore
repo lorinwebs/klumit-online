@@ -17,8 +17,8 @@
 .DS_Store
 *.pem
 
-# generated badge print PDFs (scripts/generate-badges-pdf.*)
-badges-print*.pdf
+# PDFs (generated assets, prints — never commit)
+*.pdf
 
 # debug
 npm-debug.log*
