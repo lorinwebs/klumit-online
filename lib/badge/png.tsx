@@ -40,8 +40,8 @@ export async function generateBadgePng(data: BadgeData): Promise<Buffer> {
   const element = React.createElement(Badge, {
     data,
     templateSrc: template,
-    nameTopOverride: 670,
-    detailFontSize: 65,
+    nameTopOverride: 640,
+    detailFontSize: 76,
     satoriRtlFix: true,
     detailPositionsOverride: [
       { top: 810,  valueRight: 530 },

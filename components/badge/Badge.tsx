@@ -38,15 +38,43 @@ function nameFontSize(name: string): number {
   return Math.max(44, Math.min(110, calculated));
 }
 
+// Strip emoji code points + variation selectors + ZWJs. Satori uses regular
+// text fonts (Heebo/FrankRuhlLibre) that don't include color emoji glyphs, so
+// any emoji renders as a tofu (□). Easier to remove them than to wire up an
+// emoji font, given that print badges shouldn't contain emojis anyway.
+function stripEmojis(s: string): string {
+  if (!s) return s;
+  return s
+    .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Approximate width-fit. The detail labels (כיתה:, עיר:, …) are baked into
+// the template on the right; values render to their left. If the value at the
+// base font size would overflow the available width, shrink so it still fits.
+function fitDetailFontSize(text: string, base: number, maxWidth = 470): number {
+  if (!text) return base;
+  const CHAR_W = 0.55; // rough Heebo per-char width factor
+  const estimated = text.length * base * CHAR_W;
+  if (estimated <= maxWidth) return base;
+  return Math.max(36, Math.floor(maxWidth / (text.length * CHAR_W)));
+}
+
 function rev(s: string): string {
   if (!s) return s;
-  // Split into runs of digits, Hebrew/RTL chars, and Latin/LTR chars
-  const parts = s.match(/\d+|[\u0590-\u05FF\u0600-\u06FF\uFB1D-\uFDFF\uFE70-\uFEFF]+|[^\d\u0590-\u05FF\u0600-\u06FF\uFB1D-\uFDFF\uFE70-\uFEFF]+/g) || [];
-  // Reverse order of parts for RTL layout, reverse RTL runs but keep LTR and digit runs intact
+  // Split into digit runs, Hebrew runs, Latin runs, and individual other
+  // chars (spaces, parens, punctuation). Keeping spaces/parens as singletons
+  // ensures they reposition correctly when we reverse the parts order \u2014 if
+  // a space stays glued to a paren it ends up on the wrong side of the word.
+  const parts = s.match(/\d+|[\u0590-\u05FF\u0600-\u06FF\uFB1D-\uFDFF\uFE70-\uFEFF]+|[A-Za-z]+|./gs) || [];
+  // Swap ( \u2194 ) at the end: satori has no bidi paren mirroring, so without
+  // this swap parens appear to open outward (away from the parenthesized
+  // word) in the RTL render.
   return parts.reverse().map(p => {
     if (/^\d+$/.test(p)) return p; // digits: keep order
-    if (/[\u0590-\u05FF\u0600-\u06FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(p)) return [...p].reverse().join(''); // RTL: reverse
-    return p; // Latin/LTR: keep order
+    if (/[\u0590-\u05FF\u0600-\u06FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(p)) return [...p].reverse().join(''); // Hebrew: reverse
+    return p; // Latin words / single spaces / parens: keep order
   }).join('')
     .replace(/\)/g, '\u27E8').replace(/\(/g, ')').replace(/\u27E8/g, '(');
 }
@@ -89,12 +117,14 @@ export function Badge({ data, templateSrc, nameTopOverride, detailPositionsOverr
   ];
 
   const r = satoriRtlFix ? rev : (s: string) => s;
-  const detailValues = [
-    grade ? r(formatGrade(grade)) : '',
-    r(city),
-    r(occupation),
-    r(statusLabel),
+  // Strip emojis first (occupation often contains them), then RTL-fix.
+  const detailRawValues = [
+    grade ? formatGrade(grade) : '',
+    stripEmojis(city),
+    stripEmojis(occupation),
+    stripEmojis(statusLabel),
   ];
+  const detailValues = detailRawValues.map(r);
 
   return (
     <div style={{
@@ -135,19 +165,25 @@ export function Badge({ data, templateSrc, nameTopOverride, detailPositionsOverr
         </div>
       )}
 
-      {/* Detail values - positioned to the left of each baked-in label */}
+      {/* Detail values - right-anchored to the left of each baked-in label.
+          When fitDetailFontSize shrinks the font (long occupation), shift
+          `top` down by half the size delta so the shrunk text stays
+          vertically centered with the row's label instead of clinging to
+          the top of the row. */}
       {detailPositions.map((pos, i) => {
         const value = detailValues[i];
         if (!value) return null;
+        const fz = fitDetailFontSize(detailRawValues[i], detailFontSize);
+        const verticalCenterOffset = Math.round((detailFontSize - fz) * 0.6);
         return (
           <div key={i} style={{
             position: 'absolute',
-            top: pos.top,
+            top: pos.top + verticalCenterOffset,
             right: pos.valueRight,
             display: 'flex',
           }}>
             <div style={{
-              fontSize: detailFontSize,
+              fontSize: fz,
               fontWeight:2500,
               color: PURPLE,
               fontFamily: 'Heebo, sans-serif',

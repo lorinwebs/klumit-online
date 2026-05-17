@@ -17,12 +17,16 @@
 .DS_Store
 *.pem
 
+# generated badge print PDFs (scripts/generate-badges-pdf.*)
+badges-print*.pdf
+
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
 
 # vercel
