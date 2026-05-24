@@ -186,7 +186,7 @@ export default function TiberiaShiftsClient() {
     <div className="min-h-screen bg-amber-50 px-3 py-6 pb-36" dir="rtl">
       <div className="mx-auto max-w-4xl">
         <h1 className="mb-1 text-center text-3xl font-bold text-gray-900">משמרות בטבריה</h1>
-        <p className="mb-2 text-center text-xl text-gray-700">מי עם סבתא וסבא?</p>
+        <p className="mb-2 text-center text-xl text-gray-700">סופ״ש עם אבא ואמא</p>
         <p className="mb-4 text-center text-base text-gray-600">
           סמנו תאריכים → כתבו שם → שמור
         </p>
