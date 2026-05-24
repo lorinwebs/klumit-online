@@ -33,23 +33,6 @@ async function loadLogo(logoPath: string) {
   return cachedLogo;
 }
 
-async function jsxToSvg(
-  node: React.ReactNode,
-  width: number,
-  height: number,
-): Promise<string> {
-  const fonts = await loadFonts();
-  return satori(node as any, {
-    width,
-    height,
-    fonts: [
-      { name: 'Heebo', data: fonts.regular, weight: 400, style: 'normal' },
-      { name: 'Heebo', data: fonts.bold, weight: 700, style: 'normal' },
-      { name: 'Heebo', data: fonts.black, weight: 900, style: 'normal' },
-    ],
-  });
-}
-
 async function jsxToPng(
   node: React.ReactNode,
   width: number,
@@ -493,8 +476,11 @@ function OptionCard({
             ? 'rgba(255,255,255,0.04)'
             : 'rgba(255,255,255,0.08)',
         color: dim ? 'rgba(255,255,255,0.45)' : 'white',
+        // Keep blur radius modest — resvg's gaussian-blur filter region
+        // explodes (and panics) when blur+transform produces a region larger
+        // than ~30x the element. 30px is plenty for the glow effect.
         boxShadow: highlight
-          ? `0 0 ${60 + revealProgress * 40}px rgba(52,211,153,${0.45 + revealProgress * 0.35})`
+          ? `0 0 30px rgba(52,211,153,${0.5 + revealProgress * 0.3})`
           : 'none',
         transform: `scale(${scale})`,
       }}
@@ -563,19 +549,6 @@ export async function renderQuizPng(
 ): Promise<Buffer> {
   const logo = await loadLogo(config.logoPath);
   return jsxToPng(
-    <QuizFrame config={config} quiz={quiz} state={state} logoSrc={logo.dataUrl} />,
-    config.width,
-    config.height,
-  );
-}
-
-export async function renderQuizSvg(
-  config: MovieConfig,
-  quiz: QuizConfig,
-  state: Exclude<QuizState, { kind: 'intro' }>,
-): Promise<string> {
-  const logo = await loadLogo(config.logoPath);
-  return jsxToSvg(
     <QuizFrame config={config} quiz={quiz} state={state} logoSrc={logo.dataUrl} />,
     config.width,
     config.height,
