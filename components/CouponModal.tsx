@@ -103,7 +103,7 @@ export default function CouponModal() {
     }
   };
 
-  if (!isOpen || pathname?.startsWith('/family-schedule')) return null;
+  if (!isOpen || pathname?.startsWith('/family-schedule') || pathname?.startsWith('/tiberia-shifts')) return null;
 
   return (
     <div 

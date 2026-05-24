@@ -20,6 +20,7 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.39.0",
     "@vercel/analytics": "^1.6.1",
+    "@hebcal/core": "^5.10.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^10.16.5",
     "graphql": "^16.8.1",

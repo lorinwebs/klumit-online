@@ -235,7 +235,7 @@ export function trackPageView(path?: string, title?: string): void {
   if (typeof window === 'undefined') return;
   
   const pagePath = path || window.location.pathname;
-  if (pagePath.startsWith('/family-schedule')) return;
+  if (pagePath.startsWith('/family-schedule') || pagePath.startsWith('/tiberia-shifts')) return;
   const pageTitle = title || document.title || pagePath;
   
   // Google Analytics

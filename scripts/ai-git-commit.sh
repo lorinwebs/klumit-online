@@ -72,7 +72,8 @@ fi
 STATUS="$(git status --short)"
 DIFF="$(git diff HEAD 2>/dev/null || true)"
 STAGED="$(git diff --cached)"
-UNTRACKED="$(git ls-files --others --exclude-standard | head -200)"
+# head closes the pipe early; with pipefail that SIGPIPE would exit 141
+UNTRACKED="$(git ls-files --others --exclude-standard | head -200 || true)"
 
 # Keep prompt within reasonable size
 truncate() {

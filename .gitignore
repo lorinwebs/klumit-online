@@ -36,6 +36,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# reunion / movie — local media only (do not push)
+app/mekif-chet-2007-reunion/movie_pictures/
+.reunion-movie-work/
+reunion-movie-demo.mp4
+reunion_selected_360.zip
+
 
 
 
