@@ -38,7 +38,6 @@ function isRelevantHoliday(ev: HolidayEvent): boolean {
   if (f & flags.MODERN_HOLIDAY) return false;
   if (f & flags.CHAG) return true;
   if (f & flags.CHOL_HAMOED) return true;
-  if (f & flags.YOM_TOV) return true;
   if (f & flags.MINOR_HOLIDAY) return true;
   return false;
 }

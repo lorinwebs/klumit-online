@@ -43,9 +43,9 @@ async function jsxToSvg(
     width,
     height,
     fonts: [
-      { name: 'Heebo', data: new Uint8Array(fonts.regular), weight: 400, style: 'normal' },
-      { name: 'Heebo', data: new Uint8Array(fonts.bold), weight: 700, style: 'normal' },
-      { name: 'Heebo', data: new Uint8Array(fonts.black), weight: 900, style: 'normal' },
+      { name: 'Heebo', data: fonts.regular, weight: 400, style: 'normal' },
+      { name: 'Heebo', data: fonts.bold, weight: 700, style: 'normal' },
+      { name: 'Heebo', data: fonts.black, weight: 900, style: 'normal' },
     ],
   });
 }
@@ -60,9 +60,9 @@ async function jsxToPng(
     width,
     height,
     fonts: [
-      { name: 'Heebo', data: new Uint8Array(fonts.regular), weight: 400, style: 'normal' },
-      { name: 'Heebo', data: new Uint8Array(fonts.bold), weight: 700, style: 'normal' },
-      { name: 'Heebo', data: new Uint8Array(fonts.black), weight: 900, style: 'normal' },
+      { name: 'Heebo', data: fonts.regular, weight: 400, style: 'normal' },
+      { name: 'Heebo', data: fonts.bold, weight: 700, style: 'normal' },
+      { name: 'Heebo', data: fonts.black, weight: 900, style: 'normal' },
     ],
   });
   const png = new Resvg(svg, { fitTo: { mode: 'width', value: width } }).render().asPng();
