@@ -63,12 +63,39 @@ function inSummerRange(ymd: string): boolean {
   return ymd >= SUMMER_START && ymd <= SUMMER_END;
 }
 
-/** ימי חול בחו״ל בלבד — א׳–ה׳ בבית וסופ״ש לא נספרים */
-export function requiresAssignment(ymd: string): boolean {
-  if (!inSummerRange(ymd)) return false;
-  if (!abroadShortFor(ymd)) return false;
+export function isWeekend(ymd: string): boolean {
   const day = getDay(parseISO(ymd));
-  return day >= 0 && day <= 4;
+  return day === 5 || day === 6;
+}
+
+/** א׳–ה׳ בבית — נחשב מסודר */
+export function isCholAtHome(ymd: string): boolean {
+  return inSummerRange(ymd) && !isWeekend(ymd) && !abroadShortFor(ymd);
+}
+
+/** ימים לבנים בבית — לא סופ״ש, לא חו״ל */
+export function isTrackedScheduleDay(ymd: string): boolean {
+  return isCholAtHome(ymd);
+}
+
+export function hasSchedule(
+  ymd: string,
+  assignments: Record<string, string[]>,
+): boolean {
+  return (assignments[ymd]?.length ?? 0) > 0;
+}
+
+export function scheduleMetrics(
+  rows: SummerShiftRow[],
+  assignments: Record<string, string[]>,
+): { total: number; assigned: number; unassigned: number } {
+  const tracked = rows.filter((r) => isTrackedScheduleDay(r.key));
+  const assigned = tracked.filter((r) => hasSchedule(r.key, assignments)).length;
+  return {
+    total: tracked.length,
+    assigned,
+    unassigned: tracked.length - assigned,
+  };
 }
 
 export function buildSummerShiftRows(): SummerShiftRow[] {
@@ -132,6 +159,10 @@ export function abroadCellClass(label: string | null): string {
   return 'bg-indigo-50 ring-1 ring-inset ring-indigo-200';
 }
 
+export function weekendCellClass(): string {
+  return 'bg-violet-100/70';
+}
+
 export function abroadChipClass(label: string): string {
   if (label === 'איסקיה') return 'bg-orange-200 text-orange-950';
   return 'bg-indigo-200 text-indigo-950';
@@ -161,9 +192,7 @@ export function countUnassignedDays(
   rows: SummerShiftRow[],
   assignments: Record<string, string[]>,
 ): number {
-  return rows.filter(
-    (r) => requiresAssignment(r.key) && !(assignments[r.key]?.length),
-  ).length;
+  return scheduleMetrics(rows, assignments).unassigned;
 }
 
 export function vacationCountdown(from: Date = new Date()): { value: string; sub: string } {

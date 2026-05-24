@@ -9,14 +9,27 @@ import {
   abroadChipClass,
   buildCalendarMonth,
   buildSummerShiftRows,
-  countUnassignedDays,
-  requiresAssignment,
+  hasSchedule,
+  isTrackedScheduleDay,
+  isWeekend,
+  scheduleMetrics,
   vacationCountdown,
+  weekendCellClass,
   type CalendarDay,
   type CalendarMonth,
 } from '@/lib/babysitter-summer-rows';
 
-function MetricCard({ value, label, tone }: { value: string; label: string; tone: 'amber' | 'sky' }) {
+function MetricCard({
+  value,
+  label,
+  sub,
+  tone,
+}: {
+  value: string;
+  label: string;
+  sub?: string;
+  tone: 'amber' | 'sky';
+}) {
   const tones = {
     amber: 'border-amber-200 bg-amber-50 text-amber-950',
     sky: 'border-sky-200 bg-white text-gray-900',
@@ -25,6 +38,7 @@ function MetricCard({ value, label, tone }: { value: string; label: string; tone
     <div className={`flex-1 rounded-2xl border-2 px-4 py-4 text-center shadow-sm ${tones[tone]}`}>
       <p className="text-3xl font-black tabular-nums">{value}</p>
       <p className="mt-1 text-base font-semibold text-gray-700">{label}</p>
+      {sub ? <p className="mt-0.5 text-sm text-gray-500">{sub}</p> : null}
     </div>
   );
 }
@@ -133,8 +147,8 @@ export default function BabysitterSummerClient() {
   const datalistId = 'babysitter-summer-names';
   const selectedCount = selected.size;
 
-  const unassignedCount = useMemo(
-    () => countUnassignedDays(rows, assignments),
+  const scheduleStats = useMemo(
+    () => scheduleMetrics(rows, assignments),
     [rows, assignments],
   );
   const vacation = useMemo(() => vacationCountdown(), []);
@@ -147,7 +161,12 @@ export default function BabysitterSummerClient() {
 
         {!loading && (
           <div className="mb-4 flex gap-3">
-            <MetricCard tone="amber" value={String(unassignedCount)} label="ימי חול בחו״ל בלי סידור" />
+            <MetricCard
+              tone="amber"
+              value={`${scheduleStats.assigned} / ${scheduleStats.total}`}
+              label="שיבוצים"
+              sub="ימים לבנים (לא סופ״ש, לא חו״ל)"
+            />
             <MetricCard tone="sky" value={vacation.value} label={vacation.sub} />
           </div>
         )}
@@ -306,11 +325,13 @@ function CalendarCell({
   }
 
   const names = assignments[day.key] ?? [];
-  const needs = day.inRange && requiresAssignment(day.key);
-  const missing = needs && names.length === 0;
+  const tracked = day.inRange && isTrackedScheduleDay(day.key);
+  const missing = tracked && !hasSchedule(day.key, assignments);
+  const weekend = day.inRange && isWeekend(day.key);
 
   let cellBg = 'bg-white';
   if (!day.inRange) cellBg = 'bg-gray-50/60 text-gray-300';
+  else if (weekend) cellBg = weekendCellClass();
   else if (day.abroadShort) cellBg = abroadCellClass(day.abroadShort);
   else if (missing) cellBg = 'bg-amber-50';
 
@@ -322,7 +343,7 @@ function CalendarCell({
       aria-label={`${day.day}${names.length ? ` — ${names.join(', ')}` : ''}`}
       aria-pressed={isSelected}
       className={`relative flex min-h-[5.5rem] flex-col border-b border-e border-sky-100 p-1 text-start transition-colors sm:min-h-[6.5rem] sm:p-1.5 ${cellBg} ${
-        day.inRange ? 'cursor-pointer hover:bg-sky-50/80' : 'cursor-default'
+        day.inRange ? `cursor-pointer ${weekend ? 'hover:bg-violet-200/60' : 'hover:bg-sky-50/80'}` : 'cursor-default'
       } ${isSelected ? 'ring-2 ring-inset ring-sky-500' : ''}`}
     >
       <span
