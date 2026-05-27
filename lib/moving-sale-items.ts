@@ -101,6 +101,19 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
       '/moving-sale/closet-3.png',
     ],
   },
+  {
+    id: 'kallax',
+    name: 'כוורת KALLAX 4×3 — IKEA',
+    description:
+      'יחידת מדפים KALLAX של IKEA, 12 תאים (4×3). כולל סלים מסרגה. מצב טוב.',
+    price: 600,
+    originalPrice: 1200,
+    category: 'ריהוט',
+    status: 'available',
+    images: ['/moving-sale/kallax-1.png'],
+    referenceUrl:
+      'https://www.ikea.com/il/he/p/kallax-shelving-unit-with-4-inserts-white-s79278250/',
+  },
 ];
 
 export function whatsAppLink(phone: string, text: string) {
