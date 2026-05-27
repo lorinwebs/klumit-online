@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   MOVING_SALE_CONTACT,
   MOVING_SALE_ITEMS,
-  itemCoverImage,
   itemGalleryImages,
   itemWhatsAppText,
   whatsAppLink,
@@ -57,8 +56,6 @@ export default function MovingSaleClient() {
     [category],
   );
 
-  const availableCount = MOVING_SALE_ITEMS.filter((i) => i.status === 'available').length;
-
   const generalWhatsApp = whatsAppLink(
     MOVING_SALE_CONTACT.phone,
     'היי! ראיתי את דף המכירה לקראת המעבר דירה — אשמח לפרטים',
@@ -87,93 +84,56 @@ export default function MovingSaleClient() {
           }}
         />
 
-        <div className="mx-auto max-w-7xl px-5 pt-8 pb-16 sm:px-8 sm:pt-10 sm:pb-20">
-          <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-14">
-            {/* COPY */}
-            <div className="order-1">
-              <p className="font-serif text-xs uppercase tracking-[0.35em] text-[#FCE3C9]/90">
-                ✦ Moving Sale · {String(availableCount).padStart(2, '0')} פריטים
-              </p>
-              <h1 className="mt-4 text-[2rem] font-light leading-[1.05] text-white sm:text-[2.6rem] lg:text-[3.1rem] xl:text-[3.6rem]">
-                אנחנו עוברים דירה
-                <br />
-                <span className="font-serif italic text-[#FCE3C9]">ומוכרים הכל!</span>
-              </h1>
-              <p className="mt-4 max-w-xl text-base leading-relaxed text-white/85 sm:text-lg">
-                אם משהו מעניין אתכם — בואו לוואטסאפ.
-                <br />
-                <span className="text-[#FCE3C9]">הנחה למי שיקח כמה דברים</span> :)
-              </p>
-              <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm text-white/90 ring-1 ring-inset ring-white/20">
-                📍 איסוף עצמי מ{MOVING_SALE_CONTACT.location}
-              </p>
+        <div className="mx-auto max-w-5xl px-5 pt-10 pb-12 text-center sm:px-8 sm:pt-14 sm:pb-16">
+          <h1 className="mx-auto max-w-3xl text-[1.85rem] font-light leading-[1.1] text-white sm:text-[2.4rem] lg:text-[2.9rem]">
+            אנחנו עוברים דירה{' '}
+            <span className="font-serif italic text-[#FCE3C9]">ומוכרים הכל!</span>
+          </h1>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-white/85 sm:text-base">
+            אם משהו מעניין אתכם — בואו לוואטסאפ.{' '}
+            <span className="text-[#FCE3C9]">הנחה למי שיקח כמה דברים</span> :)
+          </p>
 
-              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/90 sm:text-[15px]">
-                <a
-                  href={`tel:+${MOVING_SALE_CONTACT.primary.phone}`}
-                  className="group inline-flex items-center gap-2 transition hover:text-[#FCE3C9]"
-                  dir="ltr"
-                >
-                  <span className="font-serif text-xs uppercase tracking-[0.25em] text-[#FCE3C9]/80">
-                    {MOVING_SALE_CONTACT.primary.name}
-                  </span>
-                  <span className="font-medium tabular-nums underline decoration-[#FCE3C9]/40 decoration-1 underline-offset-4 group-hover:decoration-[#FCE3C9]">
-                    {MOVING_SALE_CONTACT.primary.display}
-                  </span>
-                </a>
-                <span aria-hidden className="text-white/30">·</span>
-                <a
-                  href={`tel:+${MOVING_SALE_CONTACT.secondary.phone}`}
-                  className="group inline-flex items-center gap-2 transition hover:text-[#FCE3C9]"
-                  dir="ltr"
-                >
-                  <span className="font-serif text-xs uppercase tracking-[0.25em] text-[#FCE3C9]/80">
-                    {MOVING_SALE_CONTACT.secondary.name}
-                  </span>
-                  <span className="font-medium tabular-nums underline decoration-[#FCE3C9]/40 decoration-1 underline-offset-4 group-hover:decoration-[#FCE3C9]">
-                    {MOVING_SALE_CONTACT.secondary.display}
-                  </span>
-                </a>
-              </div>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-white/90">
+            <a
+              href={`tel:+${MOVING_SALE_CONTACT.primary.phone}`}
+              className="group inline-flex items-center gap-2 transition hover:text-[#FCE3C9]"
+              dir="ltr"
+            >
+              <span className="font-serif text-[11px] uppercase tracking-[0.25em] text-[#FCE3C9]/80">
+                {MOVING_SALE_CONTACT.primary.name}
+              </span>
+              <span className="font-medium tabular-nums underline decoration-[#FCE3C9]/40 decoration-1 underline-offset-4 group-hover:decoration-[#FCE3C9]">
+                {MOVING_SALE_CONTACT.primary.display}
+              </span>
+            </a>
+            <span aria-hidden className="text-white/30">·</span>
+            <a
+              href={`tel:+${MOVING_SALE_CONTACT.secondary.phone}`}
+              className="group inline-flex items-center gap-2 transition hover:text-[#FCE3C9]"
+              dir="ltr"
+            >
+              <span className="font-serif text-[11px] uppercase tracking-[0.25em] text-[#FCE3C9]/80">
+                {MOVING_SALE_CONTACT.secondary.name}
+              </span>
+              <span className="font-medium tabular-nums underline decoration-[#FCE3C9]/40 decoration-1 underline-offset-4 group-hover:decoration-[#FCE3C9]">
+                {MOVING_SALE_CONTACT.secondary.display}
+              </span>
+            </a>
+            <span aria-hidden className="text-white/30">·</span>
+            <span className="text-white/80">📍 איסוף עצמי מ{MOVING_SALE_CONTACT.location}</span>
+          </div>
 
-              <div className="mt-5 flex flex-wrap items-center gap-3">
-                <a
-                  href={generalWhatsApp}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#13122B] shadow-[0_20px_60px_-15px_rgba(252,227,201,0.6)] transition hover:bg-[#FCE3C9]"
-                >
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                  </span>
-                  כתבו לנו עכשיו בוואטסאפ
-                  <svg
-                    className="h-4 w-4 transition-transform group-hover:translate-x-[-2px] rtl:rotate-180"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M5 12h14M13 5l7 7-7 7" />
-                  </svg>
-                </a>
-                <a
-                  href="#items"
-                  className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-medium text-white/90 ring-1 ring-inset ring-white/25 backdrop-blur-md transition hover:bg-white/10"
-                >
-                  עוד מהבית
-                </a>
-              </div>
-            </div>
-
-            {/* FEATURED CAROUSEL */}
-            <HeroFeaturedCarousel
-              items={MOVING_SALE_ITEMS}
-              onOpenLightbox={(item) =>
-                setLightbox({ images: itemGalleryImages(item), index: 0, name: item.name })
-              }
-            />
+          <div className="mt-6 flex justify-center">
+            <a
+              href={generalWhatsApp}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center gap-2.5 rounded-full bg-white px-7 py-3 text-[15px] font-medium text-[#13122B] shadow-[0_18px_45px_-15px_rgba(0,0,0,0.35)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_55px_-15px_rgba(0,0,0,0.45)]"
+            >
+              <WhatsAppIcon className="h-[18px] w-[18px] text-[#25D366]" />
+              כתבו לנו בוואטסאפ
+            </a>
           </div>
         </div>
 
@@ -192,7 +152,7 @@ export default function MovingSaleClient() {
 
       {/* ──────────── CATALOG ──────────── */}
       <main id="items" className="relative">
-        <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
+        <div className="mx-auto max-w-6xl px-5 pt-10 pb-16 sm:px-8 sm:pt-14 sm:pb-24">
           <div className="mb-10 flex items-end justify-between gap-4 sm:mb-14">
             <div>
               <p className="font-serif text-xs uppercase tracking-[0.4em] text-[#6B2E6E]">
@@ -226,10 +186,7 @@ export default function MovingSaleClient() {
           {filtered.length > 0 ? (
             <ul className="grid gap-6 sm:gap-8 lg:grid-cols-6">
               {filtered.map((item, idx) => {
-                const images = itemGalleryImages(item);
-                const cover = itemCoverImage(item);
                 const total = filtered.length;
-                const featured = false;
                 let span = 'lg:col-span-2';
                 if (total === 1) span = 'lg:col-span-6';
                 else if (total === 2) span = 'lg:col-span-3';
@@ -237,170 +194,14 @@ export default function MovingSaleClient() {
                 else if (total === 5) span = idx < 2 ? 'lg:col-span-3' : 'lg:col-span-2';
 
                 return (
-                  <li
+                  <CatalogCard
                     key={item.id}
-                    className={`${span} group relative overflow-hidden rounded-[28px] bg-white shadow-[0_30px_80px_-40px_rgba(43,27,87,0.45)] ring-1 ring-black/[0.04] transition duration-500 hover:shadow-[0_40px_100px_-30px_rgba(43,27,87,0.55)] ${
-                      item.status === 'sold' ? 'opacity-70' : ''
-                    }`}
-                  >
-                    <div className={featured ? 'grid items-stretch lg:grid-cols-12' : ''}>
-                      <button
-                        type="button"
-                        disabled={images.length === 0}
-                        onClick={() =>
-                          images.length
-                            ? setLightbox({ images, index: cover ? 0 : 0, name: item.name })
-                            : undefined
-                        }
-                        className={`relative w-full overflow-hidden bg-gradient-to-br from-[#EFE7DC] to-[#FCE3C9] ${
-                          featured ? 'aspect-[4/3] lg:col-span-7 lg:aspect-auto' : 'aspect-[4/3]'
-                        } ${images.length ? 'cursor-zoom-in' : 'cursor-default'}`}
-                      >
-                        {cover ? (
-                          <Image
-                            src={cover}
-                            alt={item.name}
-                            fill
-                            className="object-cover transition-transform duration-700 group-hover:scale-105"
-                            sizes={
-                              featured
-                                ? '(max-width: 1024px) 100vw, 60vw'
-                                : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
-                            }
-                            priority={idx === 0}
-                          />
-                        ) : (
-                          <span
-                            className="absolute inset-0 flex items-center justify-center text-7xl opacity-50"
-                            aria-hidden
-                          >
-                            {item.emoji ?? '✦'}
-                          </span>
-                        )}
-
-                        <span
-                          className={`absolute start-4 top-4 rounded-full px-3 py-1 text-[11px] font-bold tracking-wide backdrop-blur-md ${STATUS_LABELS_LIGHT[item.status].className}`}
-                        >
-                          {STATUS_LABELS_LIGHT[item.status].text}
-                        </span>
-
-                        {images.length > 1 ? (
-                          <span className="absolute bottom-4 end-4 inline-flex items-center gap-1.5 rounded-full bg-[#13122B]/70 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
-                            <svg
-                              className="h-3 w-3"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <rect x="3" y="3" width="18" height="18" rx="2" />
-                              <circle cx="9" cy="9" r="2" />
-                              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                            </svg>
-                            {images.length} תמונות
-                          </span>
-                        ) : null}
-
-                        {item.originalPrice && item.price && item.originalPrice > item.price ? (
-                          <span className="absolute end-4 top-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#13122B] font-serif text-sm italic text-[#FCE3C9] shadow-lg ring-4 ring-white/40">
-                            −{Math.round((1 - item.price / item.originalPrice) * 100)}%
-                          </span>
-                        ) : null}
-                      </button>
-
-                      <div
-                        className={`flex flex-col p-6 sm:p-8 ${
-                          featured ? 'lg:col-span-5 lg:p-12' : ''
-                        }`}
-                      >
-                        <p className="font-serif text-[11px] uppercase tracking-[0.35em] text-[#8C6B91]">
-                          {item.category}
-                        </p>
-                        <h3
-                          className={`mt-3 font-light leading-tight text-[#13122B] ${
-                            featured ? 'text-3xl sm:text-4xl' : 'text-xl sm:text-2xl'
-                          }`}
-                        >
-                          {item.name}
-                        </h3>
-
-                        <p className="mt-4 flex-1 text-sm leading-relaxed text-[#4A4663] sm:text-[15px]">
-                          {item.description}
-                        </p>
-
-                        {item.referenceUrl ? (
-                          <a
-                            href={item.referenceUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-4 inline-flex items-center gap-1.5 self-start text-sm font-medium text-[#6B2E6E] transition hover:text-[#13122B]"
-                          >
-                            צפו במוצר המקורי
-                            <svg
-                              className="h-3.5 w-3.5 rtl:rotate-180"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <path d="M7 17 17 7M7 7h10v10" />
-                            </svg>
-                          </a>
-                        ) : null}
-
-                        <div className="mt-8 flex items-end justify-between gap-4 border-t border-[#13122B]/10 pt-6">
-                          <div>
-                            {item.originalPrice ? (
-                              <p className="font-serif text-sm italic text-[#13122B]/40 line-through">
-                                {formatPrice(item.originalPrice)}
-                              </p>
-                            ) : null}
-                            {item.price ? (
-                              <p
-                                className={`font-serif font-light leading-none text-[#13122B] ${
-                                  featured ? 'text-5xl sm:text-6xl' : 'text-3xl sm:text-4xl'
-                                }`}
-                              >
-                                {formatPrice(item.price)}
-                              </p>
-                            ) : (
-                              <p
-                                className={`font-serif font-light italic leading-tight text-[#13122B] ${
-                                  featured ? 'text-2xl sm:text-3xl' : 'text-lg sm:text-xl'
-                                }`}
-                              >
-                                מחיר לבירור
-                              </p>
-                            )}
-                          </div>
-
-                          {item.status === 'available' ? (
-                            <a
-                              href={whatsAppLink(MOVING_SALE_CONTACT.phone, itemWhatsAppText(item))}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="group/btn inline-flex shrink-0 items-center gap-2 rounded-full bg-[#13122B] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2B1B57]"
-                            >
-                              מעוניין/ת
-                              <svg
-                                className="h-4 w-4 transition-transform group-hover/btn:translate-x-[-3px] rtl:rotate-180"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                              >
-                                <path d="M5 12h14M13 5l7 7-7 7" />
-                              </svg>
-                            </a>
-                          ) : (
-                            <span className="font-serif text-sm italic text-[#13122B]/50">
-                              {item.status === 'reserved' ? 'שמור עבור לקוח' : 'נמכר'}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </li>
+                    item={item}
+                    span={span}
+                    onOpenLightbox={(images, index) =>
+                      setLightbox({ images, index, name: item.name })
+                    }
+                  />
                 );
               })}
             </ul>
@@ -548,219 +349,240 @@ export default function MovingSaleClient() {
   );
 }
 
-function HeroFeaturedCarousel({
-  items,
+function CatalogCard({
+  item,
+  span,
   onOpenLightbox,
 }: {
-  items: MovingSaleItem[];
-  onOpenLightbox: (item: MovingSaleItem) => void;
+  item: MovingSaleItem;
+  span: string;
+  onOpenLightbox: (images: string[], index: number) => void;
 }) {
-  const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const total = items.length;
-
-  useEffect(() => {
-    if (paused || total <= 1) return;
-    const id = window.setInterval(() => {
-      setIndex((i) => (i + 1) % total);
-    }, 5000);
-    return () => window.clearInterval(id);
-  }, [paused, total]);
-
-  if (total === 0) return null;
-  const safeIndex = Math.min(index, total - 1);
-  const item = items[safeIndex]!;
   const images = itemGalleryImages(item);
-  const cover = itemCoverImage(item);
   const discountPct =
     item.originalPrice && item.price && item.originalPrice > item.price
       ? Math.round((1 - item.price / item.originalPrice) * 100)
       : null;
 
-  const goPrev = () => setIndex((i) => (i - 1 + total) % total);
-  const goNext = () => setIndex((i) => (i + 1) % total);
-
   return (
-    <div
-      className="order-2 relative"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
-      onTouchStart={() => setPaused(true)}
+    <li
+      className={`${span} group relative overflow-hidden rounded-[28px] bg-white shadow-[0_30px_80px_-40px_rgba(43,27,87,0.45)] ring-1 ring-black/[0.04] transition duration-500 hover:shadow-[0_40px_100px_-30px_rgba(43,27,87,0.55)] ${
+        item.status === 'sold' ? 'opacity-70' : ''
+      }`}
     >
-      {/* hidden preloaders */}
-      <div className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0" aria-hidden>
-        {items.map((it) => {
-          const c = itemCoverImage(it);
-          return c ? (
-            <Image
-              key={it.id}
-              src={c}
-              alt=""
-              width={20}
-              height={20}
-              sizes="20px"
-            />
-          ) : null;
-        })}
-      </div>
+      <div className="relative">
+        <ProductImageCarousel
+          item={item}
+          onZoom={(startIndex) => onOpenLightbox(images, startIndex)}
+          aspectClassName="aspect-[4/3]"
+          imageSizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        />
 
-      <div className="group relative overflow-hidden rounded-[28px] bg-white shadow-[0_40px_100px_-30px_rgba(0,0,0,0.55)] ring-1 ring-white/15">
-        <div key={item.id} className="animate-[carousel-fade_500ms_ease-out]">
-          <button
-            type="button"
-            disabled={images.length === 0}
-            onClick={() => images.length && onOpenLightbox(item)}
-            className={`relative block aspect-[5/4] w-full overflow-hidden bg-gradient-to-br from-[#EFE7DC] to-[#FCE3C9] sm:aspect-[4/3] ${
-              images.length ? 'cursor-zoom-in' : 'cursor-default'
-            }`}
-          >
-            {cover ? (
-              <Image
-                src={cover}
-                alt={item.name}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                priority={safeIndex === 0}
-              />
-            ) : (
-              <span
-                className="absolute inset-0 flex items-center justify-center text-7xl opacity-50"
-                aria-hidden
-              >
-                {item.emoji ?? '✦'}
-              </span>
-            )}
+        <span
+          className={`pointer-events-none absolute start-4 top-4 z-20 rounded-full px-3 py-1 text-[11px] font-bold tracking-wide backdrop-blur-md ${STATUS_LABELS_LIGHT[item.status].className}`}
+        >
+          {STATUS_LABELS_LIGHT[item.status].text}
+        </span>
 
-            {/* featured tag */}
-            <span className="absolute start-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-[#13122B] px-3 py-1 font-serif text-[10px] uppercase tracking-[0.3em] text-[#FCE3C9]">
-              ✦ {safeIndex + 1} / {total}
-            </span>
-
-            {/* gallery indicator */}
-            {images.length > 1 ? (
-              <span className="absolute bottom-4 end-4 inline-flex items-center gap-1.5 rounded-full bg-[#13122B]/70 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-md">
-                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="9" cy="9" r="2" />
-                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                </svg>
-                {images.length} תמונות
-              </span>
-            ) : null}
-
-            {/* discount badge */}
-            {discountPct ? (
-              <span className="absolute end-4 top-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#13122B] font-serif text-sm italic text-[#FCE3C9] shadow-lg ring-4 ring-white/40">
-                −{discountPct}%
-              </span>
-            ) : null}
-          </button>
-
-          <div className="flex flex-col p-5 sm:p-6">
-            <p className="font-serif text-[11px] uppercase tracking-[0.35em] text-[#8C6B91]">
-              {item.category}
-            </p>
-            <h3 className="mt-2 min-h-[2.5rem] text-xl font-light leading-tight text-[#13122B] sm:min-h-[3.5rem] sm:text-2xl">
-              {item.name}
-            </h3>
-
-            <div className="mt-5 flex items-end justify-between gap-3 border-t border-[#13122B]/10 pt-4">
-              <div>
-                {item.originalPrice ? (
-                  <p className="font-serif text-sm italic text-[#13122B]/40 line-through">
-                    {formatPrice(item.originalPrice)}
-                  </p>
-                ) : null}
-                {item.price ? (
-                  <p className="font-serif text-3xl font-light leading-none text-[#13122B] sm:text-4xl">
-                    {formatPrice(item.price)}
-                  </p>
-                ) : (
-                  <p className="font-serif text-lg font-light italic leading-tight text-[#13122B] sm:text-xl">
-                    מחיר לבירור
-                  </p>
-                )}
-              </div>
-
-              {item.status === 'available' ? (
-                <a
-                  href={whatsAppLink(MOVING_SALE_CONTACT.phone, itemWhatsAppText(item))}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group/btn inline-flex shrink-0 items-center gap-2 rounded-full bg-[#13122B] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2B1B57]"
-                >
-                  מעוניין/ת
-                  <svg
-                    className="h-4 w-4 transition-transform group-hover/btn:translate-x-[-3px] rtl:rotate-180"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M5 12h14M13 5l7 7-7 7" />
-                  </svg>
-                </a>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        {/* nav arrows (overlay on card edges) */}
-        {total > 1 ? (
-          <>
-            <button
-              type="button"
-              onClick={goPrev}
-              aria-label="הקודם"
-              className="absolute start-3 top-[35%] inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#13122B] shadow-lg ring-1 ring-black/5 backdrop-blur-md transition hover:bg-white sm:h-11 sm:w-11"
-            >
-              <svg className="h-5 w-5 rtl:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="m15 18-6-6 6-6" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={goNext}
-              aria-label="הבא"
-              className="absolute end-3 top-[35%] inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#13122B] shadow-lg ring-1 ring-black/5 backdrop-blur-md transition hover:bg-white sm:h-11 sm:w-11"
-            >
-              <svg className="h-5 w-5 rtl:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="m9 6 6 6-6 6" />
-              </svg>
-            </button>
-          </>
+        {discountPct ? (
+          <span className="pointer-events-none absolute end-4 top-4 z-20 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#13122B] font-serif text-sm italic text-[#FCE3C9] shadow-lg ring-4 ring-white/40">
+            −{discountPct}%
+          </span>
         ) : null}
       </div>
 
+      <div className="flex flex-col p-6 sm:p-8">
+        <p className="font-serif text-[11px] uppercase tracking-[0.35em] text-[#8C6B91]">
+          {item.category}
+        </p>
+        <h3 className="mt-3 text-xl font-light leading-tight text-[#13122B] sm:text-2xl">
+          {item.name}
+        </h3>
+
+        <p className="mt-4 flex-1 text-sm leading-relaxed text-[#4A4663] sm:text-[15px]">
+          {item.description}
+        </p>
+
+        {item.referenceUrl ? (
+          <a
+            href={item.referenceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-1.5 self-start text-sm font-medium text-[#6B2E6E] transition hover:text-[#13122B]"
+          >
+            צפו במוצר המקורי
+            <svg className="h-3.5 w-3.5 rtl:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M7 17 17 7M7 7h10v10" />
+            </svg>
+          </a>
+        ) : null}
+
+        <div className="mt-8 flex items-end justify-between gap-4 border-t border-[#13122B]/10 pt-6">
+          <div>
+            {item.originalPrice ? (
+              <p className="font-serif text-sm italic text-[#13122B]/40 line-through">
+                {formatPrice(item.originalPrice)}
+              </p>
+            ) : null}
+            {item.price ? (
+              <p className="font-serif text-3xl font-light leading-none text-[#13122B] sm:text-4xl">
+                {formatPrice(item.price)}
+              </p>
+            ) : (
+              <p className="font-serif text-lg font-light italic leading-tight text-[#13122B] sm:text-xl">
+                מחיר לבירור
+              </p>
+            )}
+          </div>
+
+          {item.status === 'available' ? (
+            <a
+              href={whatsAppLink(MOVING_SALE_CONTACT.phone, itemWhatsAppText(item))}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group/btn inline-flex shrink-0 items-center gap-2 rounded-full bg-[#13122B] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2B1B57]"
+            >
+              מעוניין/ת
+              <svg
+                className="h-4 w-4 transition-transform group-hover/btn:translate-x-[-3px] rtl:rotate-180"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M5 12h14M13 5l7 7-7 7" />
+              </svg>
+            </a>
+          ) : (
+            <span className="font-serif text-sm italic text-[#13122B]/50">
+              {item.status === 'reserved' ? 'שמור עבור לקוח' : 'נמכר'}
+            </span>
+          )}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function ProductImageCarousel({
+  item,
+  onZoom,
+  aspectClassName = 'aspect-[4/3]',
+  imageSizes,
+  priorityFirst = false,
+}: {
+  item: MovingSaleItem;
+  onZoom: (startIndex: number) => void;
+  aspectClassName?: string;
+  imageSizes?: string;
+  priorityFirst?: boolean;
+}) {
+  const images = itemGalleryImages(item);
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    setIdx(0);
+  }, [item.id]);
+
+  if (images.length === 0) {
+    return (
+      <div
+        className={`relative w-full overflow-hidden bg-gradient-to-br from-[#EFE7DC] to-[#FCE3C9] ${aspectClassName}`}
+      >
+        <span
+          className="absolute inset-0 flex items-center justify-center text-7xl opacity-50"
+          aria-hidden
+        >
+          {item.emoji ?? '✦'}
+        </span>
+      </div>
+    );
+  }
+
+  const safeIdx = Math.min(idx, images.length - 1);
+  const src = images[safeIdx]!;
+
+  const stop = <T extends React.SyntheticEvent>(e: T) => {
+    e.stopPropagation();
+    e.preventDefault();
+  };
+  const goPrev = (e: React.MouseEvent) => {
+    stop(e);
+    setIdx((i) => (i - 1 + images.length) % images.length);
+  };
+  const goNext = (e: React.MouseEvent) => {
+    stop(e);
+    setIdx((i) => (i + 1) % images.length);
+  };
+
+  return (
+    <div
+      className={`relative w-full overflow-hidden bg-gradient-to-br from-[#EFE7DC] to-[#FCE3C9] ${aspectClassName}`}
+    >
+      <Image
+        key={src}
+        src={src}
+        alt={`${item.name} — תמונה ${safeIdx + 1}`}
+        fill
+        className="object-cover transition-transform duration-700 group-hover:scale-105"
+        sizes={imageSizes}
+        priority={priorityFirst && safeIdx === 0}
+      />
+
+      {/* zoom overlay */}
+      <button
+        type="button"
+        aria-label={`הגדל תמונה — ${item.name}`}
+        onClick={() => onZoom(safeIdx)}
+        className="absolute inset-0 cursor-zoom-in"
+      />
+
+      {/* arrows */}
+      {images.length > 1 ? (
+        <>
+          <button
+            type="button"
+            onClick={goPrev}
+            aria-label="תמונה הקודמת"
+            className="absolute start-2.5 top-1/2 z-10 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#13122B] shadow-md ring-1 ring-black/5 backdrop-blur-md transition hover:bg-white sm:start-3 sm:h-10 sm:w-10"
+          >
+            <svg className="h-4 w-4 rtl:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            aria-label="תמונה הבאה"
+            className="absolute end-2.5 top-1/2 z-10 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-[#13122B] shadow-md ring-1 ring-black/5 backdrop-blur-md transition hover:bg-white sm:end-3 sm:h-10 sm:w-10"
+          >
+            <svg className="h-4 w-4 rtl:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m9 6 6 6-6 6" />
+            </svg>
+          </button>
+        </>
+      ) : null}
+
       {/* dots */}
-      {total > 1 ? (
-        <div className="mt-4 flex items-center justify-center gap-1.5">
-          {items.map((it, i) => (
+      {images.length > 1 ? (
+        <div className="absolute inset-x-0 bottom-3 z-10 flex items-center justify-center gap-1.5">
+          {images.map((thumb, i) => (
             <button
-              key={it.id}
+              key={thumb}
               type="button"
-              onClick={() => setIndex(i)}
-              aria-label={`עבור לפריט ${i + 1}: ${it.name}`}
-              aria-current={i === safeIndex}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === safeIndex
-                  ? 'w-7 bg-white shadow-[0_2px_10px_rgba(255,255,255,0.4)]'
-                  : 'w-1.5 bg-white/40 hover:bg-white/70'
+              onClick={(e) => {
+                stop(e);
+                setIdx(i);
+              }}
+              aria-label={`תמונה ${i + 1}`}
+              aria-current={i === safeIdx}
+              className={`h-1.5 rounded-full ring-1 ring-black/10 transition-all duration-300 ${
+                i === safeIdx ? 'w-6 bg-white shadow' : 'w-1.5 bg-white/75 hover:bg-white'
               }`}
             />
           ))}
         </div>
       ) : null}
-
-      <style jsx>{`
-        @keyframes carousel-fade {
-          from { opacity: 0; transform: translateY(6px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
