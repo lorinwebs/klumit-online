@@ -27,7 +27,8 @@ export interface MovieConfig {
   photoDurationSec: number;
   crossfadeSec: number;
   photosFolder: string;
-  photos: string[];
+  /** Explicit photo file list, or null to auto-discover all images in photosFolder. */
+  photos: string[] | null;
   quizzes: QuizConfig[];
   logoPath: string;
 }
@@ -47,16 +48,10 @@ export const DEMO_CONFIG: MovieConfig = {
     title: 'מפגש מחזור - 20 שנה',
     year: '2026',
   },
-  photoDurationSec: 4,
+  photoDurationSec: 3,
   crossfadeSec: 0.7,
   photosFolder: path.join(REPO_ROOT, 'app', 'mekif-chet-2007-reunion', 'movie_pictures'),
-  photos: [
-    '1773826410830-5lxf93.jpeg',
-    '1773995249260-0m6m5x.jpg',
-    '1774122425395-qi6mpf.jpeg',
-    '1774122428232-cho86d.jpeg',
-    '1774122431011-9geewj.jpeg',
-  ],
+  photos: null,
   quizzes: [
     {
       afterPhotoIndex: 1,

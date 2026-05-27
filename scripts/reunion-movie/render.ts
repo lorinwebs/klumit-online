@@ -247,10 +247,87 @@ async function composeWithXfade(
   ]);
 }
 
+/**
+ * Concatenate clips with no transitions using ffmpeg's concat demuxer.
+ * Used when the clip count makes xfade impractical. All input clips must
+ * share the same codec/resolution/fps — they do, since we built them.
+ */
+async function composeWithConcat(clips: Clip[], outPath: string) {
+  if (clips.length === 0) throw new Error('no clips');
+  if (clips.length === 1) {
+    await fs.copyFile(clips[0].path, outPath);
+    return;
+  }
+  const listFile = path.join(WORK_DIR, 'final_concat.txt');
+  await fs.writeFile(
+    listFile,
+    clips.map(c => `file '${c.path.replace(/'/g, "'\\''")}'`).join('\n'),
+  );
+  await run('ffmpeg', [
+    '-y',
+    '-loglevel', 'error',
+    '-f', 'concat',
+    '-safe', '0',
+    '-i', listFile,
+    '-c', 'copy',
+    '-movflags', '+faststart',
+    outPath,
+  ]);
+}
+
+const IMG_EXT_RE = /\.(jpe?g|png)$/i;
+const PHOTO_PARALLELISM = 6;
+
+async function resolvePhotos(config: MovieConfig): Promise<string[]> {
+  if (config.photos) return config.photos;
+  const all = await fs.readdir(config.photosFolder);
+  return all.filter(n => IMG_EXT_RE.test(n) && !n.startsWith('.')).sort();
+}
+
+async function buildPhotoClipsParallel(
+  config: MovieConfig,
+  photos: string[],
+): Promise<string[]> {
+  const out: string[] = new Array(photos.length);
+  let done = 0;
+  let lastLogged = -1;
+  const counter = { value: 0 };
+  const worker = async () => {
+    while (true) {
+      const i = counter.value++;
+      if (i >= photos.length) return;
+      const src = path.join(config.photosFolder, photos[i]);
+      const dst = path.join(WORK_DIR, `clip_photo_${String(i).padStart(5, '0')}.mp4`);
+      try {
+        // Skip rebuild if cached file exists and is non-empty.
+        const st = await fs.stat(dst).catch(() => null);
+        if (!st || st.size < 1024) {
+          await buildPhotoClip(config, src, config.photoDurationSec, dst);
+        }
+      } catch (e) {
+        console.error(`\nphoto ${i + 1} (${photos[i]}) failed:`, e);
+        throw e;
+      }
+      out[i] = dst;
+      done++;
+      // Throttle log lines.
+      if (done - lastLogged >= 20 || done === photos.length) {
+        process.stdout.write(`  photo ${done}/${photos.length}\n`);
+        lastLogged = done;
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: PHOTO_PARALLELISM }, worker));
+  return out;
+}
+
 async function main() {
   const config = DEMO_CONFIG;
   console.log('• Working dir:', WORK_DIR);
   await fs.mkdir(WORK_DIR, { recursive: true });
+
+  const photos = await resolvePhotos(config);
+  console.log(`• ${photos.length} photos found in ${config.photosFolder}`);
 
   console.log('• Rendering intro PNGs...');
   const intro = await writeIntroFrames(config, WORK_DIR);
@@ -266,15 +343,8 @@ async function main() {
   const introClip = path.join(WORK_DIR, 'clip_intro.mp4');
   const introDurationSec = await buildIntroClip(config, intro.letters, introClip);
 
-  console.log('• Building photo clips (with Ken Burns + corner logos)...');
-  const photoClips: string[] = [];
-  for (let i = 0; i < config.photos.length; i++) {
-    const src = path.join(config.photosFolder, config.photos[i]);
-    const out = path.join(WORK_DIR, `clip_photo_${i}.mp4`);
-    await buildPhotoClip(config, src, config.photoDurationSec, out);
-    photoClips.push(out);
-    process.stdout.write(`  photo ${i + 1}/${config.photos.length}\n`);
-  }
+  console.log(`• Building ${photos.length} photo clips (${PHOTO_PARALLELISM}-way parallel)...`);
+  const photoClips = await buildPhotoClipsParallel(config, photos);
 
   console.log('• Building quiz clips...');
   const quizClips = new Map<number, { path: string; durationSec: number }>();
@@ -308,7 +378,15 @@ async function main() {
     if (q) clips.push(q);
   }
 
-  await composeWithXfade(config, clips, config.crossfadeSec, config.outputPath);
+  // xfade is O(N) filter graph; for many clips it explodes. Use concat-demuxer
+  // (zero re-encode) above a threshold. Quality difference is negligible since
+  // Ken Burns motion masks the hard cuts.
+  if (clips.length > 30) {
+    console.log(`  ${clips.length} clips — using concat-demuxer (no xfade)`);
+    await composeWithConcat(clips, config.outputPath);
+  } else {
+    await composeWithXfade(config, clips, config.crossfadeSec, config.outputPath);
+  }
   console.log(`✓ Done: ${config.outputPath}`);
 }
 
