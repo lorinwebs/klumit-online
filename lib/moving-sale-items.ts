@@ -114,6 +114,18 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
     referenceUrl:
       'https://www.ikea.com/il/he/p/kallax-shelving-unit-with-4-inserts-white-s79278250/',
   },
+  {
+    id: 'alex-desk',
+    name: 'שולחן עבודה עם 5 מגירות — IKEA',
+    description:
+      'ANFALLARE / ALEX של IKEA — משטח במבוק, יחידת ALEX עם 5 מגירות, 140×65 ס"מ. מצב חדש. 2 יחידות זמינות!',
+    price: 500,
+    originalPrice: 1000,
+    category: 'ריהוט',
+    status: 'available',
+    images: ['/moving-sale/desk-alex-1.png'],
+    referenceUrl: 'https://www.ikea.com/il/he/p/anfallare-alex-desk-bamboo-white-s59417742/',
+  },
 ];
 
 export function whatsAppLink(phone: string, text: string) {

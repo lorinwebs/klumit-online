@@ -69,85 +69,84 @@ export default function MovingSaleClient() {
           className="absolute inset-0 -z-20"
           style={{
             background:
-              'radial-gradient(130% 95% at 15% 0%, #2B1B57 0%, #3B1F6B 22%, #6B2E6E 42%, #A0436A 62%, #C75A6A 80%, #D86A5E 100%)',
+              'linear-gradient(180deg, #E8C9A4 0%, #EFD9B8 28%, #F4E4D1 60%, #F6F1EA 100%)',
           }}
         />
-        <CloudBlob className="left-[-12%] top-[8%] h-72 w-[28rem] opacity-70" delay="0s" />
-        <CloudBlob className="right-[-8%] top-[20%] h-56 w-[22rem] opacity-50" delay="-6s" />
-        <CloudBlob className="left-[15%] bottom-[-6%] h-64 w-[30rem] opacity-60" delay="-12s" />
-        <CloudBlob className="right-[10%] bottom-[10%] h-44 w-[18rem] opacity-40" delay="-3s" />
         <div
-          className="absolute inset-0 -z-10 opacity-[0.08] mix-blend-overlay"
+          aria-hidden
+          className="pointer-events-none absolute -top-32 -right-24 -z-10 h-[28rem] w-[28rem] rounded-full opacity-50 blur-3xl"
+          style={{ background: 'radial-gradient(circle, #D9986A 0%, transparent 70%)' }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-20 -left-24 -z-10 h-[22rem] w-[22rem] rounded-full opacity-40 blur-3xl"
+          style={{ background: 'radial-gradient(circle, #C9603D 0%, transparent 70%)' }}
+        />
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 opacity-[0.06] mix-blend-multiply"
           style={{
-            backgroundImage: 'radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)',
-            backgroundSize: '3px 3px',
+            backgroundImage: 'radial-gradient(#5C4A3A 1px, transparent 1px)',
+            backgroundSize: '4px 4px',
           }}
         />
 
-        <div className="mx-auto max-w-5xl px-5 pt-10 pb-12 text-center sm:px-8 sm:pt-14 sm:pb-16">
-          <h1 className="mx-auto max-w-3xl text-[1.85rem] font-light leading-[1.1] text-white sm:text-[2.4rem] lg:text-[2.9rem]">
-            אנחנו עוברים דירה{' '}
-            <span className="font-serif italic text-[#FCE3C9]">ומוכרים הכל!</span>
-          </h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-white/85 sm:text-base">
-            אם משהו מעניין אתכם — בואו לוואטסאפ.{' '}
-            <span className="text-[#FCE3C9]">הנחה למי שיקח כמה דברים</span> :)
+        <div className="mx-auto max-w-4xl px-5 pt-14 pb-20 text-center sm:px-8 sm:pt-20 sm:pb-24">
+          <p className="text-[11px] font-medium uppercase tracking-[0.4em] text-[#8b6a4a]">
+            Moving Sale · ראשון לציון
           </p>
 
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-white/90">
+          <h1 className="mx-auto mt-5 max-w-3xl text-[2rem] font-light leading-[1.15] text-[#2B2118] sm:text-[2.6rem] lg:text-[3.1rem]">
+            אנחנו עוברים דירה
+            <br />
+            <span className="font-medium text-[#C9603D]">ומוכרים הכל</span>
+          </h1>
+
+          <p className="mx-auto mt-6 max-w-lg text-[15px] leading-relaxed text-[#5C4A3A] sm:text-base">
+            אם משהו מעניין אתכם — כתבו לנו בוואטסאפ.
+            <br />
+            <span className="font-medium text-[#A6552D]">הנחה למי שלוקח כמה דברים :)</span>
+          </p>
+
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-3 text-[15px]">
             <a
               href={`tel:+${MOVING_SALE_CONTACT.primary.phone}`}
-              className="group inline-flex items-center gap-2 transition hover:text-[#FCE3C9]"
-              dir="ltr"
+              className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-[#2B2118] ring-1 ring-[#C9603D]/15 backdrop-blur-sm transition hover:bg-white hover:ring-[#C9603D]/40"
             >
-              <span className="font-serif text-[11px] uppercase tracking-[0.25em] text-[#FCE3C9]/80">
-                {MOVING_SALE_CONTACT.primary.name}
-              </span>
-              <span className="font-medium tabular-nums underline decoration-[#FCE3C9]/40 decoration-1 underline-offset-4 group-hover:decoration-[#FCE3C9]">
+              <span className="text-sm text-[#8b6a4a]">{MOVING_SALE_CONTACT.primary.name}</span>
+              <span dir="ltr" className="font-medium tabular-nums">
                 {MOVING_SALE_CONTACT.primary.display}
               </span>
             </a>
-            <span aria-hidden className="text-white/30">·</span>
             <a
               href={`tel:+${MOVING_SALE_CONTACT.secondary.phone}`}
-              className="group inline-flex items-center gap-2 transition hover:text-[#FCE3C9]"
-              dir="ltr"
+              className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-2 text-[#2B2118] ring-1 ring-[#C9603D]/15 backdrop-blur-sm transition hover:bg-white hover:ring-[#C9603D]/40"
             >
-              <span className="font-serif text-[11px] uppercase tracking-[0.25em] text-[#FCE3C9]/80">
-                {MOVING_SALE_CONTACT.secondary.name}
-              </span>
-              <span className="font-medium tabular-nums underline decoration-[#FCE3C9]/40 decoration-1 underline-offset-4 group-hover:decoration-[#FCE3C9]">
+              <span className="text-sm text-[#8b6a4a]">{MOVING_SALE_CONTACT.secondary.name}</span>
+              <span dir="ltr" className="font-medium tabular-nums">
                 {MOVING_SALE_CONTACT.secondary.display}
               </span>
             </a>
-            <span aria-hidden className="text-white/30">·</span>
-            <span className="text-white/80">📍 איסוף עצמי מ{MOVING_SALE_CONTACT.location}</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm text-[#5C4A3A]">
+              <svg className="h-4 w-4 text-[#C9603D]" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z" />
+              </svg>
+              איסוף עצמי מ{MOVING_SALE_CONTACT.location}
+            </span>
           </div>
 
-          <div className="mt-6 flex justify-center">
+          <div className="mt-10 flex justify-center">
             <a
               href={generalWhatsApp}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center gap-2.5 rounded-full bg-white px-7 py-3 text-[15px] font-medium text-[#13122B] shadow-[0_18px_45px_-15px_rgba(0,0,0,0.35)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_55px_-15px_rgba(0,0,0,0.45)]"
+              className="group inline-flex items-center gap-2.5 rounded-full bg-[#C9603D] px-8 py-3.5 text-[15px] font-medium text-[#FAF1E4] shadow-[0_18px_40px_-12px_rgba(166,85,45,0.55)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#B0512F] hover:shadow-[0_22px_50px_-12px_rgba(166,85,45,0.65)]"
             >
-              <WhatsAppIcon className="h-[18px] w-[18px] text-[#25D366]" />
+              <WhatsAppIcon className="h-[18px] w-[18px]" />
               כתבו לנו בוואטסאפ
             </a>
           </div>
         </div>
-
-        <svg
-          className="absolute bottom-[-1px] left-0 right-0 h-16 w-full text-[#F6F1EA] sm:h-24"
-          viewBox="0 0 1440 120"
-          preserveAspectRatio="none"
-          aria-hidden
-        >
-          <path
-            fill="currentColor"
-            d="M0,64 C240,112 480,16 720,40 C960,64 1200,112 1440,72 L1440,120 L0,120 Z"
-          />
-        </svg>
       </section>
 
       {/* ──────────── CATALOG ──────────── */}
@@ -339,12 +338,6 @@ export default function MovingSaleClient() {
         </div>
       ) : null}
 
-      <style jsx>{`
-        @keyframes drift {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50% { transform: translate(30px, -20px) scale(1.05); }
-        }
-      `}</style>
     </div>
   );
 }
@@ -584,16 +577,6 @@ function ProductImageCarousel({
         </div>
       ) : null}
     </div>
-  );
-}
-
-function CloudBlob({ className = '', delay = '0s' }: { className?: string; delay?: string }) {
-  return (
-    <div
-      aria-hidden
-      className={`pointer-events-none absolute -z-10 rounded-full bg-white blur-3xl ${className}`}
-      style={{ animation: `drift 18s ease-in-out ${delay} infinite` }}
-    />
   );
 }
 
