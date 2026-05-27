@@ -15,7 +15,7 @@ export type MovingSaleItem = {
 
 export const MOVING_SALE_CONTACT = {
   location: 'ראשון לציון',
-  note: 'איסוף עצמי בלבד · תשלום במזומן / ביט',
+  note: 'איסוף עצמי מראשון לציון · תשלום במזומן / ביט',
   primary: { name: 'לורין', phone: '972524893329', display: '052-489-3329' },
   secondary: { name: 'מור', phone: '972542600177', display: '054-260-0177' },
   /** primary phone — used by all CTAs */
