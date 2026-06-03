@@ -40,7 +40,7 @@ export default function HomeNewsletter() {
       </h2>
       <form
         onSubmit={onSubmit}
-        className="mx-auto flex max-w-md flex-col gap-2 border-b border-[rgba(244,239,232,0.35)] sm:flex-row sm:items-center"
+        className="mx-auto flex max-w-md flex-col items-stretch gap-3 border-b border-[rgba(244,239,232,0.35)] sm:flex-row sm:items-center sm:gap-2"
       >
         <label htmlFor="home-newsletter-email" className="sr-only">
           {t('home.newsletterPlaceholder')}
@@ -59,7 +59,7 @@ export default function HomeNewsletter() {
         <button
           type="submit"
           disabled={status === 'loading'}
-          className="min-h-[44px] shrink-0 px-2 py-3 text-[11px] tracking-[0.22em] uppercase text-biasia-bg hover:text-white disabled:opacity-50"
+          className="min-h-[44px] shrink-0 self-center px-6 py-3 text-[11px] tracking-[0.22em] uppercase text-biasia-bg hover:text-white disabled:opacity-50 sm:self-auto sm:px-2"
         >
           {status === 'loading' ? '…' : t('home.newsletterSubmit')}
         </button>

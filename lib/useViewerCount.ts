@@ -167,7 +167,10 @@ export function useViewerCount() {
           await fetch('/api/telegram/notify-high-traffic', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ viewerCount }),
+            body: JSON.stringify({
+              viewerCount,
+              pageUrl: typeof window !== 'undefined' ? window.location.href : '',
+            }),
           });
         } catch (err) {
           // ignore errors

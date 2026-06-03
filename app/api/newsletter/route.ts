@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { sendTelegramMessage, escapeHtml } from '@/lib/telegram';
+import {
+  sendTelegramMessage,
+  escapeHtml,
+  isAllowedKlumitOnlineWebsiteTelegramPage,
+  gatePageUrlFromAllowedRequestHost,
+} from '@/lib/telegram';
 import nodemailer from 'nodemailer';
 
 export async function POST(request: Request) {
@@ -22,7 +27,18 @@ export async function POST(request: Request) {
 אימייל: <code>${escapeHtml(email)}</code>
 📅 ${time}`;
 
-    await sendTelegramMessage(telegramMessage);
+    const originOrReferer = request.headers.get('origin') || request.headers.get('referer') || '';
+    const gateFromOrigin =
+      originOrReferer && isAllowedKlumitOnlineWebsiteTelegramPage(originOrReferer)
+        ? originOrReferer
+        : null;
+    const gateFromHost = gatePageUrlFromAllowedRequestHost(request);
+    const gateUrl =
+      gateFromOrigin ||
+      (gateFromHost && isAllowedKlumitOnlineWebsiteTelegramPage(gateFromHost) ? gateFromHost : null);
+    if (gateUrl) {
+      await sendTelegramMessage(telegramMessage, { kind: 'pageUrl', pageUrl: gateUrl });
+    }
 
     // 2. Send actual email to klumitltd@gmail.com
     try {

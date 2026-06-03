@@ -25,26 +25,26 @@ export default function HomeEditorialSplit() {
           <div className="absolute inset-0 bg-sand" role="img" aria-label="" />
         )}
       </div>
-      <div className="flex flex-col justify-center px-6 py-12 md:px-14 lg:px-16">
-        <p className="text-[11px] tracking-[0.3em] uppercase text-biasia-muted mb-3">
+      <div className="flex flex-col justify-center px-5 py-12 text-center md:px-14 md:text-start lg:px-16">
+        <p className="mb-3 text-[11px] uppercase tracking-[0.3em] text-biasia-muted md:mx-0">
           {t('home.editorialEyebrow')}
         </p>
-        <h2 className="font-display text-[clamp(1.75rem,3.5vw,3rem)] leading-tight text-biasia-ink mb-5">
+        <h2 className="mx-auto mb-5 max-w-xl font-display text-[clamp(1.75rem,3.5vw,3rem)] leading-tight text-biasia-ink md:mx-0 md:max-w-none">
           {t('home.editorialTitle')}
         </h2>
-        <p className="max-w-prose text-[15px] leading-relaxed text-biasia-muted">
+        <p className="mx-auto max-w-prose text-[15px] leading-relaxed text-biasia-muted md:mx-0">
           {t('home.editorialBody')}
         </p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+        <div className="mt-8 flex flex-col items-center gap-4 md:items-start md:gap-6 md:self-stretch md:flex-row md:justify-start">
           <Link
             href="/about"
-            className="inline-flex w-fit border border-biasia-ink px-7 py-3.5 text-[12px] tracking-[0.2em] uppercase text-biasia-ink transition-colors hover:bg-biasia-ink hover:text-biasia-bg"
+            className="inline-flex w-full max-w-xs justify-center border border-biasia-ink px-7 py-3.5 text-[12px] uppercase tracking-[0.2em] text-biasia-ink transition-colors hover:bg-biasia-ink hover:text-biasia-bg md:w-auto md:max-w-none"
           >
             {t('home.editorialCta')}
           </Link>
           <Link
             href="/blog"
-            className="inline-flex w-fit text-[12px] tracking-[0.15em] uppercase text-biasia-muted underline-offset-4 hover:text-biasia-ink hover:underline"
+            className="inline-flex justify-center text-[12px] uppercase tracking-[0.15em] text-biasia-muted underline-offset-4 hover:text-biasia-ink hover:underline md:inline-flex md:justify-start"
           >
             {t('home.editorialCtaBlog')}
           </Link>

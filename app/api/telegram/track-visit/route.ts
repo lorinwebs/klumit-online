@@ -4,7 +4,7 @@ import { trackUserVisit } from '@/lib/telegram';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     const { sessionId, pagePath, pageTitle, pageUrl, previousPages } = body;
 
     if (!sessionId || !pagePath) {
@@ -12,13 +12,6 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Missing required fields: sessionId, pagePath' },
         { status: 400 }
       );
-    }
-
-    // Don't send notifications from localhost
-    const isLocalhost = pageUrl?.includes('localhost') || pageUrl?.includes('127.0.0.1');
-    if (isLocalhost) {
-      console.log('Skipping Telegram notification (localhost)');
-      return NextResponse.json({ success: true, skipped: true });
     }
 
     const result = await trackUserVisit({
@@ -29,21 +22,22 @@ export async function POST(request: NextRequest) {
       previousPages: previousPages || [],
     });
 
+    if (result.skipped) {
+      return NextResponse.json({ success: true, skipped: true });
+    }
+
     if (!result.success) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to track visit' },
-        { status: 500 }
-      );
+      return NextResponse.json({ success: false, error: 'Failed to track visit' }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
       messageId: result.messageId,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in track-visit API:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

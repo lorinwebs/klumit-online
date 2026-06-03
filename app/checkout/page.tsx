@@ -187,6 +187,7 @@ export default function CheckoutPage() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              pageUrl: typeof window !== 'undefined' ? window.location.href : '',
               userEmail: user?.email || undefined,
               userPhone: user?.phone || user?.user_metadata?.phone || undefined,
               itemsCount: items.length,

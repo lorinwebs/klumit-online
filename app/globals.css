@@ -130,6 +130,22 @@ section:has([class*="bg-black"]) a:focus-visible,
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* iPhone: snappier taps without affecting page scroll/zoom */
+  a[href],
+  button,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    a:active,
+    button:active {
+      -webkit-tap-highlight-color: rgba(44, 36, 32, 0.08);
+    }
+  }
+
   h1, h2, h3, .luxury-font {
     font-family: var(--font-cormorant), Georgia, serif;
     font-weight: 400;
@@ -144,6 +160,11 @@ section:has([class*="bg-black"]) a:focus-visible,
 }
 
 @layer utilities {
+  /* iOS: comfortable tap, no grey flash on tap */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
   .text-balance {
     text-wrap: balance;
   }

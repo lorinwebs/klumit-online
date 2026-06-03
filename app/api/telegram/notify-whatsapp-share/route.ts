@@ -1,30 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { notifyWhatsAppShare } from '@/lib/telegram';
+import { isAllowedKlumitOnlineWebsiteTelegramPage, notifyWhatsAppShare } from '@/lib/telegram';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    // Don't send notifications from localhost
-    const isLocalhost = body.productUrl?.includes('localhost') || body.productUrl?.includes('127.0.0.1');
-    if (isLocalhost) {
-      console.log('Skipping Telegram notification (localhost)');
+
+    const productUrl = typeof body.productUrl === 'string' ? body.productUrl.trim() : '';
+    if (!productUrl || !isAllowedKlumitOnlineWebsiteTelegramPage(productUrl)) {
       return NextResponse.json({ success: true, skipped: true });
     }
-    
-    const result = await notifyWhatsAppShare({
-      productTitle: body.productTitle,
-      productUrl: body.productUrl,
-      productPrice: body.productPrice,
-    });
+
+    const result = await notifyWhatsAppShare(
+      {
+        productTitle: body.productTitle,
+        productUrl,
+        productPrice: body.productPrice,
+      },
+      { kind: 'pageUrl', pageUrl: productUrl }
+    );
 
     if (!result) {
       return NextResponse.json({ success: false, error: 'Failed to send notification' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in notify-whatsapp-share API:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 }

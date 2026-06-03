@@ -1,41 +1,34 @@
 import { NextResponse } from 'next/server';
-import { sendTelegramMessage } from '@/lib/telegram';
+import { isAllowedKlumitOnlineWebsiteTelegramPage, sendTelegramMessage, escapeHtml } from '@/lib/telegram';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { language, pageUrl, userAgent } = body;
+    const { language, pageUrl: rawPageUrl, userAgent } = body;
 
-    // Check if running on localhost
-    const isLocalhost = pageUrl && (pageUrl.includes('localhost') || pageUrl.includes('127.0.0.1'));
-    
-    if (isLocalhost) {
-      console.log('Skipping Telegram notification on localhost');
+    const pageUrl = typeof rawPageUrl === 'string' ? rawPageUrl.trim() : '';
+    if (!pageUrl || !isAllowedKlumitOnlineWebsiteTelegramPage(pageUrl)) {
       return NextResponse.json({ success: true, skipped: true });
     }
 
     const languageNames: Record<string, string> = {
       he: 'עברית',
       en: 'English',
-      ru: 'Русский'
+      ru: 'Русский',
     };
 
-    const message = `
-🌐 *החלפת שפה באתר*
+    const message = `🌐 <b>החלפת שפה באתר</b>
 
-שפה חדשה: *${languageNames[language] || language}*
-דף: ${pageUrl || 'לא ידוע'}
-זמן: ${new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}
-    `.trim();
+שפה חדשה: <b>${escapeHtml(languageNames[language] || language)}</b>
+דף: ${escapeHtml(pageUrl)}
+User-Agent: ${userAgent ? escapeHtml(String(userAgent).substring(0, 120)) : 'לא ידוע'}
+זמן: ${new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}`;
 
-    await sendTelegramMessage(message);
+    await sendTelegramMessage(message, { kind: 'pageUrl', pageUrl });
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Failed to send language change notification:', error);
-    return NextResponse.json(
-      { error: 'Failed to send notification' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to send notification' }, { status: 500 });
   }
 }

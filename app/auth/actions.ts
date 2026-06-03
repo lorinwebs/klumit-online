@@ -1,5 +1,6 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { shopifyAdminClient } from '@/lib/shopify-admin';
@@ -151,7 +152,11 @@ export async function verifyOtpServer(prevState: any, formData: FormData) {
     
     // שלח הודעת טלגרם על משתמש חדש
     if (isNewUser && user && phone) {
-      notifyNewUser(phone, user.id).catch(() => {});
+      const h = await headers();
+      const host = h.get('x-forwarded-host') || h.get('host') || '';
+      if (host) {
+        notifyNewUser(phone, user.id, { kind: 'requestHost', host }).catch(() => {});
+      }
     }
     
     // סנכרון Shopify Customer הוסר - נעשה בנפרד

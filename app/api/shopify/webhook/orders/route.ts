@@ -46,15 +46,19 @@ export async function POST(request: NextRequest) {
       order.billing_address?.phone ||
       undefined;
 
-    const telegramResult = await notifyNewOrder({
-      orderNumber: order.name || `#${order.order_number}`,
-      customerName,
-      customerPhone,
-      customerEmail: order.email,
-      totalPrice: order.total_price,
-      currency: order.currency,
-      itemsCount: order.line_items?.length || 0,
-    });
+    const shopDomain = request.headers.get('x-shopify-shop-domain') || '';
+    const telegramResult = await notifyNewOrder(
+      {
+        orderNumber: order.name || `#${order.order_number}`,
+        customerName,
+        customerPhone,
+        customerEmail: order.email,
+        totalPrice: order.total_price,
+        currency: order.currency,
+        itemsCount: order.line_items?.length || 0,
+      },
+      { kind: 'shopifyOrder', shopDomain }
+    );
 
     return NextResponse.json({ success: true, telegramResult });
   } catch (error) {

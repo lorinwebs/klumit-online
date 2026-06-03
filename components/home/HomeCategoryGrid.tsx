@@ -49,7 +49,7 @@ export default function HomeCategoryGrid() {
                 <div className="absolute inset-0 bg-biasia-bg-alt" aria-hidden />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-              <div className="absolute bottom-5 start-6 z-[1] text-start text-[#fbf6ee]">
+              <div className="absolute inset-x-0 bottom-5 z-[1] px-4 text-center text-[#fbf6ee] md:start-6 md:inset-x-auto md:px-0 md:text-start">
                 <div className="font-display text-2xl tracking-wide">{t(cat.labelKey)}</div>
                 <div className="mt-1.5 inline-block border-b border-[rgba(251,246,238,0.55)] pb-0.5 text-[11px] tracking-[0.24em] uppercase">
                   {t('home.categoryShop')}

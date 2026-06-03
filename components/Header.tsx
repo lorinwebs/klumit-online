@@ -74,7 +74,7 @@ export default function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-all duration-500 ease-luxury ${
+      className={`sticky top-0 z-50 w-full pt-[env(safe-area-inset-top,0px)] transition-all duration-500 ease-luxury ${
         isHome
           ? scrolled
             ? 'bg-biasia-bg/97 backdrop-blur-md border-b border-biasia-line shadow-[0_1px_0_0_rgba(28,26,23,0.06)]'

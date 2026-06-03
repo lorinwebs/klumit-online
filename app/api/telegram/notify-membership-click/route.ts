@@ -1,33 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendTelegramMessage, escapeHtml, breakUrlForTelegram } from '@/lib/telegram';
+import {
+  isAllowedKlumitOnlineWebsiteTelegramPage,
+  sendTelegramMessage,
+  escapeHtml,
+  breakUrlForTelegram,
+} from '@/lib/telegram';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    // Don't send notifications from localhost
-    const isLocalhost = body.pageUrl?.includes('localhost') || body.pageUrl?.includes('127.0.0.1');
-    if (isLocalhost) {
-      console.log('Skipping Telegram notification (localhost)');
+
+    const pageUrl = typeof body.pageUrl === 'string' ? body.pageUrl.trim() : '';
+    if (!pageUrl || !isAllowedKlumitOnlineWebsiteTelegramPage(pageUrl)) {
       return NextResponse.json({ success: true, skipped: true });
     }
-    
-    const urlBroken = body.pageUrl ? breakUrlForTelegram(body.pageUrl) : '';
-    
+
+    const urlBroken = breakUrlForTelegram(pageUrl);
+
     const message = `💳 <b>לחיצה על בר מועדון לקוחות עליון</b>
 
 🔗 דף: ${escapeHtml(urlBroken)}
 📅 תאריך: ${new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}`;
 
-    const result = await sendTelegramMessage(message);
+    const result = await sendTelegramMessage(message, { kind: 'pageUrl', pageUrl });
 
     if (!result) {
       return NextResponse.json({ success: false, error: 'Failed to send notification' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in notify-membership-click API:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 }

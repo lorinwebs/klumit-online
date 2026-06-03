@@ -26,6 +26,23 @@ export const MOVING_SALE_CONTACT = {
 
 export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
   {
+    id: 'dr-couch-nordic-sofa',
+    name: 'ספת נורדית רביצה של חלקים — Dr Couch',
+    description:
+      'ספת נורדית מודולרית לרביצה של Dr Couch (מדגם Big Mama). רוחב הספה 3.2 מ\', אורך הרביצה 1.8 מ\', וכל חלק באורך מטר. נקנתה לפני שנתיים מ-Dr Couch בראשון לציון ב-₪10,000. נמכרת עקב מעבר דירה. ספה מדהימה, דוחה כתמים וקלה לניקוי, עם בד מדהים.',
+    price: 2800,
+    originalPrice: 10000,
+    category: 'ריהוט',
+    status: 'available',
+    images: [
+      '/moving-sale/dr-couch-sofa-1.png',
+      '/moving-sale/dr-couch-sofa-2.png',
+      '/moving-sale/dr-couch-sofa-3.png',
+      '/moving-sale/dr-couch-sofa-4.png',
+    ],
+    referenceUrl: 'https://drcouch.co.il/shop/%d7%a1%d7%a4%d7%94-%d7%91%d7%99%d7%92-%d7%9e%d7%90%d7%9e%d7%90/',
+  },
+  {
     id: 'ummi',
     name: 'קומודה מעץ עם 6 מגירות',
     description:
