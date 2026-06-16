@@ -467,7 +467,7 @@ function CatalogCard({
       </div>
 
       {item.status === 'sold' && (
-        <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center rounded-[28px] bg-red-600/80 backdrop-blur-[2px]">
+        <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center rounded-[28px] bg-red-600/40 backdrop-blur-[1px]">
           <span className="font-serif text-5xl font-bold italic text-white drop-shadow-lg sm:text-6xl">
             נמכר
           </span>
