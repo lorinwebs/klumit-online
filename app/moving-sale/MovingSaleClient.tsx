@@ -111,6 +111,15 @@ export default function MovingSaleClient() {
             <span className="font-medium text-[#A6552D]">הנחה למי שלוקח כמה דברים :)</span>
           </p>
 
+          <div className="mx-auto mt-5 max-w-lg rounded-2xl bg-[#C9603D]/10 px-5 py-3.5 ring-1 ring-[#C9603D]/25">
+            <p className="text-center text-[14px] font-semibold leading-snug text-[#A6452A]">
+              🏠 שבוע אחרון למעבר — חייב להימכר!
+            </p>
+            <p className="mt-1 text-center text-[13px] text-[#7A4A2A]">
+              הורדנו מחירים — זה הזמן לתפוס!
+            </p>
+          </div>
+
           <div className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-3 text-[15px]">
             <a
               href={`tel:+${MOVING_SALE_CONTACT.primary.phone}`}
@@ -425,9 +434,15 @@ function CatalogCard({
             ) : null}
             {item.originalPrice ? (
               <p className="flex items-center gap-1.5 mt-0.5 font-serif text-sm italic text-[#13122B]/45 line-through">
-                <span className="not-italic text-[10px] font-medium uppercase tracking-widest text-[#9B4020]/60">ביקשנו</span>
+                <span className="not-italic text-[10px] font-bold text-[#9B4020]/70">✕</span>
                 {formatPrice(item.originalPrice)}
               </p>
+            ) : null}
+            {item.originalPrice && item.price && item.originalPrice > item.price ? (
+              <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[#9B4020]/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#9B4020]">
+                <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                הורדת מחיר
+              </span>
             ) : null}
             {item.price ? (
               <p className="mt-1 font-serif text-3xl font-light leading-none text-[#13122B] sm:text-4xl">
