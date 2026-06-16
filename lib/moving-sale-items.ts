@@ -33,7 +33,7 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
     price: 2800,
     originalPrice: 10000,
     category: 'ריהוט',
-    status: 'available',
+    status: 'sold',
     images: [
       '/moving-sale/dr-couch-sofa-1.png',
       '/moving-sale/dr-couch-sofa-2.png',
@@ -41,6 +41,17 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
       '/moving-sale/dr-couch-sofa-4.png',
     ],
     referenceUrl: 'https://drcouch.co.il/shop/%d7%a1%d7%a4%d7%94-%d7%91%d7%99%d7%92-%d7%9e%d7%90%d7%9e%d7%90/',
+  },
+  {
+    id: 'tami4-edge',
+    name: 'מטהר מים תמי4 EDGE',
+    description: 'מטהר מים תמי4 EDGE במצב חדש לגמרי. מסנן, מקרר ומחמם מים. מחיר חדש בחנות ₪3,500.',
+    price: 900,
+    originalPrice: 1100,
+    category: 'מוצרי חשמל',
+    status: 'available',
+    images: ['/moving-sale/tami4-edge-1.png'],
+    referenceUrl: 'https://www.tami4.co.il/products/tami4-edge',
   },
   {
     id: 'ummi',
@@ -60,7 +71,7 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
     description:
       'מצב טוב. ארון לבן עם 2 דלתות הזזה ו-2 מגירות תחתונות. מידות: רוחב 1.40 מ\', גובה 2.40 מ\', עומק 60 ס"מ.',
     category: 'ארונות',
-    status: 'available',
+    status: 'sold',
     images: ['/moving-sale/doron-wardrobe-1.png', '/moving-sale/doron-wardrobe-2.png'],
   },
   {
@@ -69,7 +80,7 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
     description:
       'מצב טוב. ארון לבן עם 3 דלתות — מדפים, 4 מגירות ומוט תלייה. מידות: רוחב 1.80 מ\', גובה 2.40 מ\'.',
     category: 'ארונות',
-    status: 'available',
+    status: 'sold',
     images: ['/moving-sale/doron-wardrobe-2-1.png', '/moving-sale/doron-wardrobe-2-2.png'],
   },
   {
@@ -123,8 +134,8 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
     name: 'כוורת KALLAX 4×3 — IKEA',
     description:
       'יחידת מדפים KALLAX של IKEA, 12 תאים (4×3). כולל סלים מסרגה. מצב טוב.',
-    price: 600,
-    originalPrice: 1200,
+    price: 350,
+    originalPrice: 600,
     category: 'ריהוט',
     status: 'available',
     images: ['/moving-sale/kallax-1.png'],
@@ -136,8 +147,8 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
     name: 'שולחן עבודה עם 5 מגירות — IKEA',
     description:
       'ANFALLARE / ALEX של IKEA — משטח במבוק, יחידת ALEX עם 5 מגירות, 140×65 ס"מ. מצב חדש. 2 יחידות זמינות!',
-    price: 500,
-    originalPrice: 1000,
+    price: 400,
+    originalPrice: 600,
     category: 'ריהוט',
     status: 'available',
     images: ['/moving-sale/desk-alex-1.png'],

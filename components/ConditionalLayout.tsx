@@ -15,7 +15,7 @@ export default function ConditionalLayout({ children }: { children: ReactNode })
   );
 
   // דפים שלא צריכים את הקומפוננטות של קלומית
-  const excludedPaths = ['/mekif-chet-availability-check', '/mekif-chet-2007-reunion', '/moving-sale'];
+  const excludedPaths = ['/mekif-chet-availability-check', '/mekif-chet-2007-reunion', '/moving-sale', '/loricountdown'];
   const isExcluded = excludedPaths.some(p => pathname === p || pathname.startsWith(p + '/'));
 
   // עד ש-component mounted, נציג רק את children (למנוע hydration mismatch)
