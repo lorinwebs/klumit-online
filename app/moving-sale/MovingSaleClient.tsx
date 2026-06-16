@@ -441,7 +441,7 @@ function CatalogCard({
             ) : null}
             {item.originalPrice && item.price && item.originalPrice > item.price ? (
               <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[#9B4020]/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#9B4020]">
-                <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 15l7 7 7-7"/></svg>
                 הורדת מחיר
               </span>
             ) : null}
