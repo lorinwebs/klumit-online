@@ -42,6 +42,12 @@ app/mekif-chet-2007-reunion/movie_pictures/
 reunion-movie-demo.mp4
 reunion_selected_360.zip
 
+# badge PNGs (generated locally, not for repo)
+badge-*.png
+
+# loricountdown — local only
+app/loricountdown/
+
 
 
 
