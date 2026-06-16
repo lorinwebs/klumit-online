@@ -392,8 +392,9 @@ function CatalogCard({
         )}
 
         {discountPct ? (
-          <span className="pointer-events-none absolute end-4 top-4 z-20 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#13122B] font-serif text-sm italic text-[#FCE3C9] shadow-lg ring-4 ring-white/40">
-            −{discountPct}%
+          <span className="pointer-events-none absolute end-4 top-4 z-20 inline-flex h-14 w-14 flex-col items-center justify-center gap-0 rounded-full bg-[#13122B] font-serif text-sm italic text-[#FCE3C9] shadow-lg ring-4 ring-white/40">
+            <svg className="h-3 w-3 mb-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden><path d="M12 5v14M5 15l7 7 7-7"/></svg>
+            {discountPct}%
           </span>
         ) : null}
       </div>
