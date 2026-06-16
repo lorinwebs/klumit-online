@@ -108,8 +108,8 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
     name: 'מזנון נורדי מעץ ומתכת',
     description:
       'מ-KUALA, מדגם Sinclair — מזנון מודרני בשילוב עץ אלון טבעי ומתכת שחורה, רוחב 220 ס"מ.',
-    price: 1400,
-    originalPrice: 4800,
+    price: 800,
+    originalPrice: 1400,
     category: 'ריהוט',
     status: 'available',
     images: ['/moving-sale/sinclair-1.png', '/moving-sale/ummi-receipt.png'],
@@ -146,7 +146,7 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
     id: 'alex-desk',
     name: 'שולחן עבודה עם 5 מגירות — IKEA',
     description:
-      'ANFALLARE / ALEX של IKEA — משטח במבוק, יחידת ALEX עם 5 מגירות, 140×65 ס"מ. מצב חדש. 2 יחידות זמינות!',
+      'ANFALLARE / ALEX של IKEA — משטח במבוק, יחידת ALEX עם 5 מגירות, 140×65 ס"מ. מצב חדש. יחידה אחת זמינות!',
     price: 400,
     originalPrice: 600,
     category: 'ריהוט',

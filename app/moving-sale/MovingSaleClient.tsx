@@ -48,13 +48,16 @@ export default function MovingSaleClient() {
     return () => window.removeEventListener('keydown', onKey);
   }, [lightbox]);
 
-  const filtered = useMemo(
-    () =>
+  const filtered = useMemo(() => {
+    const items =
       category === 'הכל'
         ? MOVING_SALE_ITEMS
-        : MOVING_SALE_ITEMS.filter((i) => i.category === category),
-    [category],
-  );
+        : MOVING_SALE_ITEMS.filter((i) => i.category === category);
+    return [...items].sort((a, b) => {
+      const rank = (s: MovingSaleItem['status']) => (s === 'sold' ? 1 : 0);
+      return rank(a.status) - rank(b.status);
+    });
+  }, [category]);
 
   const generalWhatsApp = whatsAppLink(
     MOVING_SALE_CONTACT.phone,
