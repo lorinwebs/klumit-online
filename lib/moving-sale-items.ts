@@ -4,7 +4,10 @@ export type MovingSaleItem = {
   name: string;
   description: string;
   price?: number;
+  /** מחיר שרצינו לפני הורדה */
   originalPrice?: number;
+  /** מחיר בחנות / מחיר קנייה */
+  storePrice?: number;
   category: string;
   status: 'available' | 'reserved' | 'sold';
   image?: string;
@@ -31,7 +34,7 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
     description:
       'ספת נורדית מודולרית לרביצה של Dr Couch (מדגם Big Mama). רוחב הספה 3.2 מ\', אורך הרביצה 1.8 מ\', וכל חלק באורך מטר. נקנתה לפני שנתיים מ-Dr Couch בראשון לציון ב-₪10,000. נמכרת עקב מעבר דירה. ספה מדהימה, דוחה כתמים וקלה לניקוי, עם בד מדהים.',
     price: 2800,
-    originalPrice: 10000,
+    storePrice: 10000,
     category: 'ריהוט',
     status: 'sold',
     images: [
@@ -45,9 +48,10 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
   {
     id: 'tami4-edge',
     name: 'מטהר מים תמי4 EDGE',
-    description: 'מטהר מים תמי4 EDGE במצב חדש לגמרי. מסנן, מקרר ומחמם מים. מחיר חדש בחנות ₪3,500.',
+    description: 'מטהר מים תמי4 EDGE במצב חדש לגמרי. מסנן, מקרר ומחמם מים.',
     price: 900,
     originalPrice: 1100,
+    storePrice: 3500,
     category: 'מוצרי חשמל',
     status: 'available',
     images: ['/moving-sale/tami4-edge-1.png'],
@@ -58,8 +62,9 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
     name: 'קומודה מעץ עם 6 מגירות',
     description:
       'מדגם UMMI של KUALA — קומודה מודרנית עם 6 מגירות, גוף שחור ורגליים מעץ אלון. יש שריטות על החלק העליון.',
-    price: 1000,
-    originalPrice: 3200,
+    price: 700,
+    originalPrice: 1000,
+    storePrice: 3200,
     category: 'ריהוט',
     status: 'available',
     images: ['/moving-sale/ummi-main-v2.png', '/moving-sale/ummi-receipt.png'],
@@ -88,8 +93,9 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
     name: 'סט שולחנות סלון',
     description:
       'מ-KUALA, מדגם Carlsson — סט שני שולחנות בגווני שחור ועץ טבעי. יש שברים בפינה. מידות: אורך 1.30 מ\', רוחב 60 ס"מ, גובה 35 ס"מ.',
-    price: 800,
-    originalPrice: 3300,
+    price: 500,
+    originalPrice: 800,
+    storePrice: 3300,
     category: 'ריהוט',
     status: 'available',
     images: [
@@ -110,6 +116,7 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
       'מ-KUALA, מדגם Sinclair — מזנון מודרני בשילוב עץ אלון טבעי ומתכת שחורה, רוחב 220 ס"מ.',
     price: 800,
     originalPrice: 1400,
+    storePrice: 4800,
     category: 'ריהוט',
     status: 'available',
     images: ['/moving-sale/sinclair-1.png', '/moving-sale/ummi-receipt.png'],
@@ -136,6 +143,7 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
       'יחידת מדפים KALLAX של IKEA, 12 תאים (4×3). כולל סלים מסרגה. מצב טוב.',
     price: 350,
     originalPrice: 600,
+    storePrice: 1200,
     category: 'ריהוט',
     status: 'available',
     images: ['/moving-sale/kallax-1.png'],
@@ -149,6 +157,7 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
       'ANFALLARE / ALEX של IKEA — משטח במבוק, יחידת ALEX עם 5 מגירות, 140×65 ס"מ. מצב חדש. יחידה אחת זמינות!',
     price: 400,
     originalPrice: 600,
+    storePrice: 1000,
     category: 'ריהוט',
     status: 'available',
     images: ['/moving-sale/desk-alex-1.png'],

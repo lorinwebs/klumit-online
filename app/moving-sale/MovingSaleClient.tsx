@@ -358,13 +358,13 @@ function CatalogCard({
   const discountPct =
     item.originalPrice && item.price && item.originalPrice > item.price
       ? Math.round((1 - item.price / item.originalPrice) * 100)
-      : null;
+      : item.storePrice && item.price && item.storePrice > item.price
+        ? Math.round((1 - item.price / item.storePrice) * 100)
+        : null;
 
   return (
     <li
-      className={`${span} group relative overflow-hidden rounded-[28px] bg-white shadow-[0_30px_80px_-40px_rgba(43,27,87,0.45)] ring-1 ring-black/[0.04] transition duration-500 hover:shadow-[0_40px_100px_-30px_rgba(43,27,87,0.55)] ${
-        item.status === 'sold' ? 'opacity-70' : ''
-      }`}
+      className={`${span} group relative overflow-hidden rounded-[28px] bg-white shadow-[0_30px_80px_-40px_rgba(43,27,87,0.45)] ring-1 ring-black/[0.04] transition duration-500 hover:shadow-[0_40px_100px_-30px_rgba(43,27,87,0.55)]`}
     >
       <div className="relative">
         <ProductImageCarousel
@@ -374,11 +374,13 @@ function CatalogCard({
           imageSizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
 
-        <span
-          className={`pointer-events-none absolute start-4 top-4 z-20 rounded-full px-3 py-1 text-[11px] font-bold tracking-wide backdrop-blur-md ${STATUS_LABELS_LIGHT[item.status].className}`}
-        >
-          {STATUS_LABELS_LIGHT[item.status].text}
-        </span>
+        {item.status !== 'sold' && (
+          <span
+            className={`pointer-events-none absolute start-4 top-4 z-20 rounded-full px-3 py-1 text-[11px] font-bold tracking-wide backdrop-blur-md ${STATUS_LABELS_LIGHT[item.status].className}`}
+          >
+            {STATUS_LABELS_LIGHT[item.status].text}
+          </span>
+        )}
 
         {discountPct ? (
           <span className="pointer-events-none absolute end-4 top-4 z-20 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#13122B] font-serif text-sm italic text-[#FCE3C9] shadow-lg ring-4 ring-white/40">
@@ -415,13 +417,20 @@ function CatalogCard({
 
         <div className="mt-8 flex items-end justify-between gap-4 border-t border-[#13122B]/10 pt-6">
           <div>
+            {item.storePrice ? (
+              <p className="flex items-center gap-1.5 font-serif text-xs italic text-[#13122B]/35 line-through">
+                <span className="not-italic text-[10px] font-medium uppercase tracking-widest text-[#13122B]/30">מחיר מקורי</span>
+                {formatPrice(item.storePrice)}
+              </p>
+            ) : null}
             {item.originalPrice ? (
-              <p className="font-serif text-sm italic text-[#13122B]/40 line-through">
+              <p className="flex items-center gap-1.5 mt-0.5 font-serif text-sm italic text-[#13122B]/45 line-through">
+                <span className="not-italic text-[10px] font-medium uppercase tracking-widest text-[#9B4020]/60">ביקשנו</span>
                 {formatPrice(item.originalPrice)}
               </p>
             ) : null}
             {item.price ? (
-              <p className="font-serif text-3xl font-light leading-none text-[#13122B] sm:text-4xl">
+              <p className="mt-1 font-serif text-3xl font-light leading-none text-[#13122B] sm:text-4xl">
                 {formatPrice(item.price)}
               </p>
             ) : (
@@ -456,6 +465,17 @@ function CatalogCard({
           )}
         </div>
       </div>
+
+      {item.status === 'sold' && (
+        <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center rounded-[28px] bg-red-600/80 backdrop-blur-[2px]">
+          <span className="font-serif text-5xl font-bold italic text-white drop-shadow-lg sm:text-6xl">
+            נמכר
+          </span>
+          <span className="mt-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-white/80">
+            SOLD
+          </span>
+        </div>
+      )}
     </li>
   );
 }
