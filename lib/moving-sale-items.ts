@@ -62,8 +62,9 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
     id: 'bosch-washing-machine',
     name: 'מכונת כביסה Bosch Serie 6 — 8 ק"ג',
     description:
-      'Bosch WAU24U00PL Serie 6, נקנתה ב-2023. 8 ק"ג, SpeedPerfect, AquaStop, EcoSilence Drive. מצב תקין.',
+      'Bosch WAU24U00PL Serie 6, נקנתה ב-2023. 8 ק"ג, SpeedPerfect, AquaStop, EcoSilence Drive. כמו חדש — בשימוש פחות מ-3 שנים.',
     price: 450,
+    originalPrice: 600,
     storePrice: 2500,
     category: 'מוצרי חשמל',
     status: 'available',
