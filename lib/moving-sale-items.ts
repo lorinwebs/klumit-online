@@ -46,6 +46,19 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
     referenceUrl: 'https://drcouch.co.il/shop/%d7%a1%d7%a4%d7%94-%d7%91%d7%99%d7%92-%d7%9e%d7%90%d7%9e%d7%90/',
   },
   {
+    id: 'gray-sectional-sofa',
+    name: 'ספת פינתית אפורה — 3×2 מ\'',
+    description: 'ספת פינתית במצב מעולה. בד אפור עם מראה מוקלד, 3 מטר על 2 מטר. דוחת כתמים, קלה לניקוי.',
+    price: 2000,
+    originalPrice: 2800,
+    category: 'ריהוט',
+    status: 'available',
+    images: [
+      '/moving-sale/gray-sofa-2.png',
+      '/moving-sale/gray-sofa-1.png',
+    ],
+  },
+  {
     id: 'bosch-washing-machine',
     name: 'מכונת כביסה Bosch Serie 6 — 8 ק"ג',
     description:
