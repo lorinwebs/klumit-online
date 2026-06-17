@@ -53,7 +53,7 @@ export const MOVING_SALE_ITEMS: MovingSaleItem[] = [
     originalPrice: 1100,
     storePrice: 3500,
     category: 'מוצרי חשמל',
-    status: 'available',
+    status: 'sold',
     images: ['/moving-sale/tami4-edge-1.png'],
     referenceUrl: 'https://www.tami4.co.il/products/tami4-edge',
   },
