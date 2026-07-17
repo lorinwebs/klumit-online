@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { SlidersHorizontal } from 'lucide-react';
@@ -62,6 +62,24 @@ interface MytheresaGridProps {
 
 const CARD_BACKGROUNDS = ['#f3efe8', '#f5f5f5', '#f0eeef', '#f6f1f3', '#eef1f0', '#f4f2ed'];
 
+/** Two rows: 2-col mobile → 4, 3-col md → 6, 4-col lg → 8 */
+function getTwoRowPageSize() {
+  if (typeof window === 'undefined') return 8;
+  if (window.matchMedia('(min-width: 1024px)').matches) return 8;
+  if (window.matchMedia('(min-width: 768px)').matches) return 6;
+  return 4;
+}
+
+function LoadMoreDots() {
+  return (
+    <div className="flex items-center justify-center gap-2 py-10" aria-hidden>
+      <span className="w-1.5 h-1.5 rounded-full bg-black/25 animate-pulse" style={{ animationDelay: '0ms' }} />
+      <span className="w-1.5 h-1.5 rounded-full bg-black/35 animate-pulse" style={{ animationDelay: '150ms' }} />
+      <span className="w-1.5 h-1.5 rounded-full bg-black/25 animate-pulse" style={{ animationDelay: '300ms' }} />
+    </div>
+  );
+}
+
 function getCardBackground(id: string) {
   let hash = 0;
   for (let i = 0; i < id.length; i++) hash = (hash + id.charCodeAt(i) * (i + 1)) % CARD_BACKGROUNDS.length;
@@ -107,6 +125,7 @@ function ProductImageSlider({
   background,
   salePercent,
   isNew,
+  priority = false,
 }: {
   images: Array<{ node: { url: string; altText: string | null } }>;
   title: string;
@@ -116,18 +135,21 @@ function ProductImageSlider({
   background: string;
   salePercent?: number | null;
   isNew?: boolean;
+  priority?: boolean;
 }) {
   const { t } = useLanguage();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
+  // Preload alternate images only on hover (keeps first paint fast)
   useEffect(() => {
-    if (images.length > 1) {
+    if (!isHovered || images.length < 2) return;
+    images.slice(1, 3).forEach((edge) => {
       const img = new window.Image();
-      img.src = images[1].node.url;
-    }
-  }, [images]);
+      img.src = edge.node.url;
+    });
+  }, [isHovered, images]);
 
   const goPrev = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -155,8 +177,12 @@ function ProductImageSlider({
             src={images[currentImageIndex].node.url}
             alt={images[currentImageIndex].node.altText || title}
             fill
-            className="object-contain object-center p-3 md:p-5 transition-opacity duration-300"
-            sizes="(max-width: 768px) 48vw, (max-width: 1024px) 33vw, 25vw"
+            priority={priority}
+            loading={priority ? 'eager' : 'lazy'}
+            quality={70}
+            decoding="async"
+            className="object-contain object-center p-3 md:p-5"
+            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
         ) : (
           <span className="absolute inset-0 flex items-center justify-center text-black/30 text-sm font-light">
@@ -261,6 +287,10 @@ export default function MytheresaGrid({
   const [showSort, setShowSort] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedVendors, setSelectedVendors] = useState<Set<string>>(new Set());
+  const [visibleCount, setVisibleCount] = useState(8);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const loadingMoreLock = useRef(false);
 
   useEffect(() => {
     setSelectedVendors(new Set());
@@ -349,42 +379,96 @@ export default function MytheresaGrid({
   };
 
   // Get unique vendors from products
-  const uniqueVendors = Array.from(new Set(products.map(p => p.vendor || 'KLUMIT'))).sort();
+  const uniqueVendors = useMemo(
+    () => Array.from(new Set(products.map((p) => p.vendor || 'KLUMIT'))).sort(),
+    [products]
+  );
 
+  const sortedProducts = useMemo(() => {
+    const filtered =
+      selectedVendors.size > 0
+        ? products.filter((p) => selectedVendors.has(p.vendor || 'KLUMIT'))
+        : products;
 
-  // Filter products by selected vendors
-  const filteredProducts = selectedVendors.size > 0
-    ? products.filter(p => selectedVendors.has(p.vendor || 'KLUMIT'))
-    : products;
+    return [...filtered].sort((a, b) => {
+      const aSold = isProductSoldOut(a);
+      const bSold = isProductSoldOut(b);
+      if (aSold !== bSold) {
+        return aSold ? 1 : -1;
+      }
 
-  // Sort products: in-stock first, then sold-out (within each group, apply sort below)
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    const aSold = isProductSoldOut(a);
-    const bSold = isProductSoldOut(b);
-    if (aSold !== bSold) {
-      return aSold ? 1 : -1;
-    }
+      if (sortBy === 'new') {
+        const aIsNew = a.tags?.some((tag) => tag.toLowerCase() === 'new_arrival') || false;
+        const bIsNew = b.tags?.some((tag) => tag.toLowerCase() === 'new_arrival') || false;
+        if (aIsNew && !bIsNew) return -1;
+        if (!aIsNew && bIsNew) return 1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
 
-    // For "newest" sort, prioritize new_arrival tag first
-    if (sortBy === 'new') {
-      const aIsNew = a.tags?.some(tag => tag.toLowerCase() === 'new_arrival') || false;
-      const bIsNew = b.tags?.some(tag => tag.toLowerCase() === 'new_arrival') || false;
-      
-      // If one is new and the other isn't, prioritize the new one
-      if (aIsNew && !bIsNew) return -1;
-      if (!aIsNew && bIsNew) return 1;
-      
-      // Otherwise sort by creation date
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    } 
-    
-    // For price sorting, sort all products together regardless of new_arrival tag
-    if (sortBy === 'price-low') {
-      return parseFloat(a.priceRange.minVariantPrice.amount) - parseFloat(b.priceRange.minVariantPrice.amount);
-    } else {
-      return parseFloat(b.priceRange.minVariantPrice.amount) - parseFloat(a.priceRange.minVariantPrice.amount);
-    }
-  });
+      if (sortBy === 'price-low') {
+        return (
+          parseFloat(a.priceRange.minVariantPrice.amount) -
+          parseFloat(b.priceRange.minVariantPrice.amount)
+        );
+      }
+      return (
+        parseFloat(b.priceRange.minVariantPrice.amount) -
+        parseFloat(a.priceRange.minVariantPrice.amount)
+      );
+    });
+  }, [products, selectedVendors, sortBy]);
+
+  const productPool = useMemo(
+    () => (maxProducts ? sortedProducts.slice(0, maxProducts) : sortedProducts),
+    [sortedProducts, maxProducts]
+  );
+
+  // Reset to two rows when category / filters / sort change
+  useEffect(() => {
+    setVisibleCount(getTwoRowPageSize());
+    loadingMoreLock.current = false;
+    setLoadingMore(false);
+  }, [category, sortBy, selectedVendors, maxProducts, productPool.length]);
+
+  useEffect(() => {
+    const onResize = () => {
+      setVisibleCount((prev) => {
+        const page = getTwoRowPageSize();
+        // Never shrink below already-loaded rows; grow page size if viewport widens on first page
+        return prev <= page ? page : prev;
+      });
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const visibleProducts = productPool.slice(0, visibleCount);
+  const hasMore = visibleCount < productPool.length;
+
+  const loadMore = useCallback(() => {
+    if (loadingMoreLock.current || !hasMore) return;
+    loadingMoreLock.current = true;
+    setLoadingMore(true);
+    const page = getTwoRowPageSize();
+    window.setTimeout(() => {
+      setVisibleCount((c) => Math.min(c + page, productPool.length));
+      setLoadingMore(false);
+      loadingMoreLock.current = false;
+    }, 280);
+  }, [hasMore, productPool.length]);
+
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el || !hasMore) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMore();
+      },
+      { rootMargin: '320px 0px' }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [hasMore, loadMore, visibleCount]);
 
   if (loading) {
     return (
@@ -402,9 +486,14 @@ export default function MytheresaGrid({
         <div
           className={`mx-auto max-w-7xl py-6 ${embedOnHome ? 'px-5 md:px-6' : 'px-4 md:px-6'}`}
         >
-          <div className="grid grid-cols-2 gap-x-3.5 gap-y-6 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
-            {[...Array(12)].map((_, i) => (
-              <div key={i}>
+          <div className="grid grid-cols-2 gap-x-2 gap-y-8 md:grid-cols-3 md:gap-x-3 lg:grid-cols-4">
+            {[...Array(8)].map((_, i) => (
+              <div
+                key={i}
+                className={
+                  i < 4 ? 'block' : i < 6 ? 'hidden md:block' : 'hidden lg:block'
+                }
+              >
                 <div className="aspect-[3/4] skeleton-shimmer mb-3" />
                 <div className="h-3 skeleton-shimmer mb-2 w-1/3 mx-auto" />
                 <div className="h-4 skeleton-shimmer mb-1.5 w-2/3 mx-auto" />
@@ -658,7 +747,7 @@ export default function MytheresaGrid({
         className={`mx-auto max-w-7xl py-6 md:py-8 ${embedOnHome ? 'px-5 md:px-6' : 'px-4 md:px-6'}`}
       >
         <div className="grid grid-cols-2 gap-x-2 gap-y-8 md:grid-cols-3 md:gap-x-3 md:gap-y-10 lg:grid-cols-4 lg:gap-x-4">
-          {(maxProducts ? sortedProducts.slice(0, maxProducts) : sortedProducts).map((product, index) => {
+          {visibleProducts.map((product, index) => {
             const soldOut = isProductSoldOut(product);
             const sale = getSaleInfo(product);
             const sizes = getSizeOptions(product);
@@ -666,9 +755,9 @@ export default function MytheresaGrid({
             return (
             <motion.div
               key={product.id}
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.4) }}
+              transition={{ duration: 0.25, delay: index < 8 ? Math.min(index * 0.03, 0.2) : 0 }}
               className="group relative"
             >
               <div className="block">
@@ -681,6 +770,7 @@ export default function MytheresaGrid({
                   background={getCardBackground(product.id)}
                   salePercent={sale?.percent}
                   isNew={isNew}
+                  priority={index < 4}
                 />
 
                 <Link href={`/products/${product.handle}`} className="block space-y-1 text-center pt-1 px-1">
@@ -713,8 +803,15 @@ export default function MytheresaGrid({
           })}
         </div>
 
+        {/* Infinite scroll sentinel — loads next 2 rows */}
+        {hasMore && (
+          <div ref={loadMoreRef} className="w-full">
+            {loadingMore ? <LoadMoreDots /> : <div className="h-8" aria-hidden />}
+          </div>
+        )}
+
         {/* No Products */}
-        {sortedProducts.length === 0 && (
+        {productPool.length === 0 && (
           <div className="text-center py-20">
             <p className="text-black/45 font-light text-sm">{t('products.noProducts')}</p>
           </div>
