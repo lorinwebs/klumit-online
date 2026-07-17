@@ -49,9 +49,9 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-assistant)', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
-        serif: ['var(--font-cormorant)', 'Georgia', 'serif'],
-        display: ['var(--font-cormorant)', 'Georgia', 'serif'],
+        sans: ['var(--font-roundo)', 'var(--font-assistant)', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+        serif: ['var(--font-roundo)', 'var(--font-assistant)', 'Georgia', 'serif'],
+        display: ['var(--font-roundo)', 'var(--font-assistant)', 'sans-serif'],
       },
       screens: {
         'landscape': { 'raw': '(orientation: landscape) and (max-height: 500px)' },

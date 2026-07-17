@@ -125,7 +125,7 @@ section:has([class*="bg-black"]) a:focus-visible,
     @apply bg-cream text-black;
     direction: inherit;
     text-align: start;
-    font-family: var(--font-assistant), 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: var(--font-roundo), var(--font-assistant), 'Helvetica Neue', Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -147,9 +147,10 @@ section:has([class*="bg-black"]) a:focus-visible,
   }
 
   h1, h2, h3, .luxury-font {
-    font-family: var(--font-cormorant), Georgia, serif;
-    font-weight: 400;
-    letter-spacing: 0.02em;
+    font-family: var(--font-roundo), var(--font-assistant), sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
   /* Refined selection color */
@@ -260,7 +261,7 @@ section:has([class*="bg-black"]) a:focus-visible,
   display: block;
   font-size: 0.75rem !important;
   font-weight: 500 !important;
-  font-family: var(--font-assistant), 'Helvetica Neue', sans-serif !important;
+  font-family: var(--font-roundo), var(--font-assistant), 'Helvetica Neue', sans-serif !important;
   letter-spacing: 0.2em !important;
   text-transform: uppercase !important;
   margin-bottom: 0.75rem !important;
@@ -279,7 +280,7 @@ section:has([class*="bg-black"]) a:focus-visible,
   display: block;
   font-size: 0.75rem !important;
   font-weight: 600 !important;
-  font-family: var(--font-assistant), 'Helvetica Neue', sans-serif !important;
+  font-family: var(--font-roundo), var(--font-assistant), 'Helvetica Neue', sans-serif !important;
   letter-spacing: 0.15em !important;
   text-transform: uppercase !important;
   color: #A69585 !important;

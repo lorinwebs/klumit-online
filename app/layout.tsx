@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
-import { Assistant, Cormorant_Garamond } from 'next/font/google';
+import { Assistant } from 'next/font/google';
+import localFont from 'next/font/local';
 import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/react';
 import { Suspense } from 'react';
@@ -8,20 +9,26 @@ import ConditionalLayout from '@/components/ConditionalLayout';
 import { LanguageProvider } from '@/lib/LanguageContext';
 import './globals.css';
 
+/* TaliaSol-style brand font (Latin) — self-hosted Roundo */
+const roundo = localFont({
+  src: [
+    { path: './fonts/roundo-400.woff2', weight: '400', style: 'normal' },
+    { path: './fonts/roundo-500.woff2', weight: '500', style: 'normal' },
+    { path: './fonts/roundo-600.woff2', weight: '600', style: 'normal' },
+    { path: './fonts/roundo-700.woff2', weight: '700', style: 'normal' },
+  ],
+  variable: '--font-roundo',
+  display: 'swap',
+  preload: true,
+});
+
+/* Hebrew fallback (Roundo has no Hebrew glyphs) */
 const assistant = Assistant({ 
   subsets: ['latin', 'latin-ext', 'hebrew'],
   weight: ['400', '500', '600'],
   variable: '--font-assistant',
   display: 'swap',
   preload: true,
-});
-
-const cormorant = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-cormorant',
-  display: 'swap',
-  preload: false,
 });
 
 const siteUrl = 'https://www.klumit-online.co.il';
@@ -314,7 +321,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${assistant.variable} ${cormorant.variable} font-sans overflow-x-clip`}>
+      <body className={`${roundo.variable} ${assistant.variable} font-sans overflow-x-clip`}>
         <LanguageProvider>
           <ConditionalLayout>
             <Suspense fallback={null}>
