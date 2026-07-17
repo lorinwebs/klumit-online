@@ -249,7 +249,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="he" dir="rtl" suppressHydrationWarning>
+    <html lang="en" dir="ltr" suppressHydrationWarning>
       <head>
         {/* Set language and direction before hydration */}
         <script
@@ -258,10 +258,9 @@ export default function RootLayout({
               (function() {
                 try {
                   var savedLang = localStorage.getItem('language');
-                  if (savedLang && ['he', 'en', 'ru'].includes(savedLang)) {
-                    document.documentElement.setAttribute('lang', savedLang);
-                    document.documentElement.setAttribute('dir', savedLang === 'he' ? 'rtl' : 'ltr');
-                  }
+                  var lang = (savedLang && ['he', 'en', 'ru'].includes(savedLang)) ? savedLang : 'en';
+                  document.documentElement.setAttribute('lang', lang);
+                  document.documentElement.setAttribute('dir', lang === 'he' ? 'rtl' : 'ltr');
                 } catch (e) {}
               })();
             `,

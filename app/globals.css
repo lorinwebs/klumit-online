@@ -123,8 +123,8 @@ section:has([class*="bg-black"]) a:focus-visible,
 
   body {
     @apply bg-white text-black;
-    direction: rtl;
-    text-align: right;
+    direction: inherit;
+    text-align: start;
     font-family: var(--font-assistant), 'Helvetica Neue', Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

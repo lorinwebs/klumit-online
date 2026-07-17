@@ -160,16 +160,16 @@ export default function Header() {
                   className="fixed inset-0 z-40"
                   onClick={() => setLangDropdownOpen(false)}
                 />
-                <div className="absolute top-full left-0 mt-2 bg-white border border-black/10 shadow-sm z-50 min-w-[130px] overflow-hidden">
+                <div className="absolute top-full end-0 mt-2 bg-white border border-black/10 shadow-sm z-50 min-w-[130px] overflow-hidden">
                   {[
-                    { code: 'he' as const, label: 'עברית', flag: languageFlags.he },
                     { code: 'en' as const, label: 'English', flag: languageFlags.en },
+                    { code: 'he' as const, label: 'עברית', flag: languageFlags.he },
                     { code: 'ru' as const, label: 'Русский', flag: languageFlags.ru },
                   ].map((lang) => (
                     <button
                       key={lang.code}
                       onClick={() => handleLanguageChange(lang.code)}
-                      className={`w-full text-right px-4 py-2.5 text-xs tracking-wide hover:bg-black/[0.04] transition-colors duration-200 flex items-center gap-2.5 ${
+                      className={`w-full text-start px-4 py-2.5 text-xs tracking-wide hover:bg-black/[0.04] transition-colors duration-200 flex items-center gap-2.5 ${
                         language === lang.code ? 'text-black font-medium' : 'text-black/60'
                       }`}
                     >
