@@ -13,7 +13,7 @@ export default function HomeHero() {
 
   return (
     <section
-      className="relative min-h-[min(88dvh,720px)] h-[min(90dvh,calc(100dvh-120px))] max-h-[960px] overflow-hidden bg-cream md:min-h-[560px] md:h-[min(88vh,900px)]"
+      className="relative min-h-[560px] h-[100dvh] max-h-[1100px] overflow-hidden bg-cream"
       aria-label="Hero"
     >
       <div className="absolute inset-0 bg-cream">

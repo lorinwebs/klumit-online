@@ -23,10 +23,17 @@ export default function Header() {
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<'bags' | 'brands' | null>(null);
   const [drawerSection, setDrawerSection] = useState<'bags' | 'brands' | null>('bags');
+  const [scrolled, setScrolled] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const pathname = usePathname();
   const { language, setLanguage, t } = useLanguage();
 
   const isBlogSection = pathname === '/blog' || pathname?.startsWith('/blog/');
+  const isHome = pathname === '/';
+
+  // TaliaSol-style: transparent over the hero until hover / scroll / any menu opens
+  const transparent =
+    isHome && !scrolled && !hovered && !drawerOpen && openDropdown === null && !langDropdownOpen;
 
   const languageFlags = {
     he: '🇮🇱',
@@ -67,6 +74,13 @@ export default function Header() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   // Close drawer on route change + lock body scroll while open
   useEffect(() => {
     setDrawerOpen(false);
@@ -93,10 +107,18 @@ export default function Header() {
 
   const closeDrawer = () => setDrawerOpen(false);
 
+  // Shared color helpers that flip with transparency
+  const inkText = transparent ? 'text-white' : 'text-black';
+  const inkLink = transparent ? 'text-white/80 hover:text-white' : 'text-black/60 hover:text-black';
+
   return (
     <header
-      className="sticky top-0 z-50 w-full bg-cream border-b border-black/10 pt-[env(safe-area-inset-top,0px)]"
+      className={`${isHome ? 'fixed' : 'sticky'} top-0 z-50 w-full pt-[env(safe-area-inset-top,0px)] transition-colors duration-300 ${
+        transparent ? 'bg-transparent border-b border-transparent' : 'bg-cream border-b border-black/10'
+      }`}
       dir={language === 'he' ? 'rtl' : 'ltr'}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       suppressHydrationWarning
     >
       {/* Announcement bar */}
@@ -111,7 +133,7 @@ export default function Header() {
         {/* Start — hamburger (always) + desktop nav */}
         <div className="flex items-center gap-3 md:gap-6 order-1">
           <button
-            className="flex items-center justify-center w-8 h-8 shrink-0 text-black hover:opacity-70 transition-opacity duration-300"
+            className={`flex items-center justify-center w-8 h-8 shrink-0 hover:opacity-70 transition-all duration-300 ${inkText}`}
             onClick={() => setDrawerOpen(true)}
             aria-label={t('header.menu')}
             aria-expanded={drawerOpen}
@@ -122,7 +144,7 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-5 lg:gap-7" aria-label="תפריט ניווט ראשי">
             <Link
               href="/products?tab=ss26"
-              className="text-[11px] tracking-[0.18em] uppercase text-black/60 hover:text-black transition-colors duration-300 py-1"
+              className={`text-[11px] tracking-[0.18em] uppercase transition-colors duration-300 py-1 ${inkLink}`}
             >
               {t('header.new')}
             </Link>
@@ -132,7 +154,7 @@ export default function Header() {
               <button
                 onClick={() => setOpenDropdown(openDropdown === 'brands' ? null : 'brands')}
                 className={`flex items-center gap-1 text-[11px] tracking-[0.18em] uppercase transition-colors duration-300 py-1 ${
-                  openDropdown === 'brands' ? 'text-black' : 'text-black/60 hover:text-black'
+                  openDropdown === 'brands' ? 'text-black' : inkLink
                 }`}
                 aria-expanded={openDropdown === 'brands'}
               >
@@ -163,7 +185,7 @@ export default function Header() {
               <button
                 onClick={() => setOpenDropdown(openDropdown === 'bags' ? null : 'bags')}
                 className={`flex items-center gap-1 text-[11px] tracking-[0.18em] uppercase transition-colors duration-300 py-1 ${
-                  openDropdown === 'bags' ? 'text-black' : 'text-black/60 hover:text-black'
+                  openDropdown === 'bags' ? 'text-black' : inkLink
                 }`}
                 aria-expanded={openDropdown === 'bags'}
               >
@@ -201,7 +223,7 @@ export default function Header() {
         {/* Center — logo */}
         <div className="flex items-center justify-center order-2">
           <Link href="/">
-            <span className="font-display text-xl md:text-[1.75rem] font-normal text-black tracking-[0.28em] uppercase hover:opacity-70 transition-opacity duration-300">
+            <span className={`font-display text-xl md:text-[1.75rem] font-normal tracking-[0.28em] uppercase hover:opacity-70 transition-all duration-300 ${inkText}`}>
               KLUMIT
             </span>
           </Link>
@@ -213,7 +235,7 @@ export default function Header() {
           <Link
             href="/blog"
             className={`hidden md:block text-[11px] tracking-[0.18em] uppercase transition-colors duration-300 py-1 ${
-              isBlogSection ? 'text-black font-medium' : 'text-black/60 hover:text-black'
+              isBlogSection ? 'text-black font-medium' : inkLink
             }`}
           >
             {t('header.magazine')}
@@ -256,16 +278,23 @@ export default function Header() {
             )}
           </div>
 
-          <UserMenu />
+          <span className={transparent ? '[&_svg]:!text-white' : ''}>
+            <UserMenu />
+          </span>
 
           <Link
             href="/cart"
             className="relative flex items-center justify-center w-8 h-8 hover:opacity-70 transition-opacity duration-300 shrink-0"
             aria-label={mounted && itemCount > 0 ? `${t('header.cart')} (${itemCount})` : t('header.cart')}
           >
-            <ShoppingBag size={18} className="text-black" strokeWidth={1.5} aria-hidden="true" />
+            <ShoppingBag size={18} className={`transition-colors duration-300 ${inkText}`} strokeWidth={1.5} aria-hidden="true" />
             {mounted && itemCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-black text-white text-[8px] rounded-full w-4 h-4 flex items-center justify-center font-medium" aria-hidden="true">
+              <span
+                className={`absolute -top-0.5 -right-0.5 text-[8px] rounded-full w-4 h-4 flex items-center justify-center font-medium transition-colors duration-300 ${
+                  transparent ? 'bg-white text-black' : 'bg-black text-white'
+                }`}
+                aria-hidden="true"
+              >
                 {itemCount}
               </span>
             )}
