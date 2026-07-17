@@ -92,7 +92,7 @@ export const metadata: Metadata = {
     siteName: 'Klumit - קלומית',
     images: [
       {
-        url: '/hero-venice.jpg',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
         alt: 'קלומית - תיקים יוקרתיים מאיטליה',
@@ -103,7 +103,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'קלומית - תיקים יוקרתיים מאיטליה',
     description: 'יבואן בלעדי בישראל לתיקי RENTAO ANGI ו-CARLINO GROUP היישר מאיטליה',
-    images: ['/hero-venice.jpg'],
+    images: ['/og-image.png'],
   },
   category: 'shopping',
 };

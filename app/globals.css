@@ -111,9 +111,10 @@ section:has([class*="bg-black"]) a:focus-visible,
 /* ===== MODERN EDITORIAL BASE ===== */
 
 @layer base {
+  /* clip (not hidden!) — hidden turns html/body into a scroll container,
+     which breaks sticky/fixed headers during hard scroll / overscroll bounce */
   html, body {
-    overflow-x: hidden;
-    max-width: 100vw;
+    overflow-x: clip;
     width: 100%;
   }
 
