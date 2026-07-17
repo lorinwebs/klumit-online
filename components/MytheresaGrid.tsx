@@ -302,8 +302,8 @@ export default function MytheresaGrid({
 
   if (loading) {
     return (
-      <div className={embedOnHome ? 'min-h-0 bg-white' : 'min-h-screen bg-white'}>
-        <div className={`${embedOnHome ? 'relative' : 'sticky top-[160px] md:top-[170px] z-40'} border-b ${embedOnHome ? 'bg-white border-black/10' : 'bg-white border-black/10'}`}>
+      <div className={embedOnHome ? 'min-h-0 bg-cream' : 'min-h-screen bg-cream'}>
+        <div className={`${embedOnHome ? 'relative' : 'sticky top-[160px] md:top-[170px] z-40'} border-b ${embedOnHome ? 'bg-cream border-black/10' : 'bg-cream border-black/10'}`}>
           <div className="grid grid-cols-2 md:hidden">
             <div className="h-12 border-l border-black/10 skeleton-shimmer" />
             <div className="h-12 skeleton-shimmer" />
@@ -334,7 +334,7 @@ export default function MytheresaGrid({
   return (
     <div
       {...(embedOnHome ? {} : { id: 'products' })}
-      className={embedOnHome ? 'min-h-0 bg-white' : 'min-h-screen bg-white'}
+      className={embedOnHome ? 'min-h-0 bg-cream' : 'min-h-screen bg-cream'}
     >
       {/* Overlay for dropdowns */}
       {(showSort || showFilters) && (
@@ -351,8 +351,8 @@ export default function MytheresaGrid({
       <div
         className={`${
           embedOnHome
-            ? 'relative bg-white border-black/10'
-            : `sticky ${showViewAll ? 'top-[168px] md:top-[170px]' : 'top-[96px] md:top-[70px]'} z-40 bg-white/95 border-black/10`
+            ? 'relative bg-cream border-black/10'
+            : `sticky ${showViewAll ? 'top-[168px] md:top-[170px]' : 'top-[96px] md:top-[70px]'} z-40 bg-cream/95 border-black/10`
         } border-b`}
       >
         {/* Mobile: Full width grid */}

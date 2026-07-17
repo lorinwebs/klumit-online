@@ -13,7 +13,7 @@ export default function Footer() {
   const heading = 'text-[10px] font-medium tracking-[0.2em] uppercase text-black/45 mb-4 md:mb-6';
 
   return (
-    <footer className="bg-white text-black mt-10 md:mt-24 border-t border-black/10">
+    <footer className="bg-cream text-black mt-10 md:mt-24 border-t border-black/10">
       <div className="max-w-7xl mx-auto px-5 md:px-10 py-10 md:py-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
           {/* Brand */}

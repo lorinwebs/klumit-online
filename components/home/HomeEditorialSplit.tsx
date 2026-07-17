@@ -11,7 +11,7 @@ export default function HomeEditorialSplit() {
   const has = Boolean(src?.trim());
 
   return (
-    <section className="grid grid-cols-1 bg-white md:grid-cols-2 md:items-stretch border-t border-black/10">
+    <section className="grid grid-cols-1 bg-cream md:grid-cols-2 md:items-stretch border-t border-black/10">
       <div className="relative aspect-[4/5] w-full min-h-[280px] border-b border-black/10 sm:aspect-[16/10] sm:min-h-[220px] md:aspect-auto md:min-h-[min(70vh,560px)] md:h-full md:border-b-0 md:border-e">
         {has ? (
           <Image

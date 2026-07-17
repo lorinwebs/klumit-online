@@ -24,9 +24,9 @@ module.exports = {
           dark: '#666666',
         },
         cream: {
-          DEFAULT: '#ffffff',
+          DEFAULT: '#F5F5F5',
           warm: '#fafafa',
-          deep: '#f5f5f5',
+          deep: '#eeeeee',
         },
         terracotta: {
           DEFAULT: '#111111',
@@ -40,7 +40,7 @@ module.exports = {
         },
         // Homepage tokens mapped to same minimal system
         biasia: {
-          bg: '#ffffff',
+          bg: '#F5F5F5',
           'bg-alt': '#fafafa',
           ink: '#111111',
           muted: '#666666',

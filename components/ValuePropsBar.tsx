@@ -38,7 +38,7 @@ export default function ValuePropsBar() {
   ];
 
   return (
-    <div className="sticky top-[110px] md:top-[120px] z-30 bg-white border-y border-black/10">
+    <div className="sticky top-[110px] md:top-[120px] z-30 bg-cream border-y border-black/10">
       <div className="max-w-7xl mx-auto">
         {/* Desktop */}
         <div className="hidden md:grid md:grid-cols-5">

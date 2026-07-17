@@ -13,10 +13,10 @@ export default function HomeHero() {
 
   return (
     <section
-      className="relative min-h-[min(88dvh,720px)] h-[min(90dvh,calc(100dvh-120px))] max-h-[960px] overflow-hidden bg-white md:min-h-[560px] md:h-[min(88vh,900px)]"
+      className="relative min-h-[min(88dvh,720px)] h-[min(90dvh,calc(100dvh-120px))] max-h-[960px] overflow-hidden bg-cream md:min-h-[560px] md:h-[min(88vh,900px)]"
       aria-label="Hero"
     >
-      <div className="absolute inset-0 bg-white">
+      <div className="absolute inset-0 bg-cream">
         {hasImage ? (
           <div className="absolute inset-0">
             <div className="relative h-full w-full min-h-[260px]">

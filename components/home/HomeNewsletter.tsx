@@ -31,7 +31,7 @@ export default function HomeNewsletter() {
   };
 
   return (
-    <section className="bg-white px-5 py-16 md:py-20 text-center border-t border-black/10">
+    <section className="bg-cream px-5 py-16 md:py-20 text-center border-t border-black/10">
       <p className="text-[11px] tracking-[0.3em] uppercase text-black/50 mb-3">
         {t('home.newsletterEyebrow')}
       </p>

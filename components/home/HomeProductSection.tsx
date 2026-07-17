@@ -8,7 +8,7 @@ export default function HomeProductSection() {
   const em = t('home.productsTitleEm');
 
   return (
-    <section id="products" className="bg-white scroll-mt-28">
+    <section id="products" className="bg-cream scroll-mt-28">
       <div className="mx-auto max-w-[1320px] px-5 pt-14 pb-2 text-center md:px-7 md:pt-20">
         <p className="text-[11px] tracking-[0.3em] uppercase text-black/50 mb-3">
           {t('home.productsEyebrow')}

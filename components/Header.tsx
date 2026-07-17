@@ -63,7 +63,7 @@ export default function Header() {
 
   return (
     <header
-      className="sticky top-0 z-50 w-full bg-white border-b border-black/10 pt-[env(safe-area-inset-top,0px)]"
+      className="sticky top-0 z-50 w-full bg-cream border-b border-black/10 pt-[env(safe-area-inset-top,0px)]"
       dir={language === 'he' ? 'rtl' : 'ltr'}
       suppressHydrationWarning
     >
@@ -208,7 +208,7 @@ export default function Header() {
       </nav>
 
       {/* Mobile category sub-bar */}
-      <div className="md:hidden flex min-h-11 w-full items-stretch justify-between gap-1 border-t border-black/10 px-2 bg-white">
+      <div className="md:hidden flex min-h-11 w-full items-stretch justify-between gap-1 border-t border-black/10 px-2 bg-cream">
         {mobileCategoryItems.map((item) => (
           <Link
             key={item.tab}
@@ -231,7 +231,7 @@ export default function Header() {
       {mobileMenuOpen && (
         <nav
           id="mobile-menu"
-          className="md:hidden border-t border-black/10 bg-white absolute w-full left-0 top-full h-[calc(100dvh-100%)] z-50 overflow-y-auto"
+          className="md:hidden border-t border-black/10 bg-cream absolute w-full left-0 top-full h-[calc(100dvh-100%)] z-50 overflow-y-auto"
         >
           <div className="flex flex-col px-8 pt-8 text-center">
             {mobileCategoryItems.map((item) => (

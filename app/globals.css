@@ -122,7 +122,7 @@ section:has([class*="bg-black"]) a:focus-visible,
   }
 
   body {
-    @apply bg-white text-black;
+    @apply bg-cream text-black;
     direction: inherit;
     text-align: start;
     font-family: var(--font-assistant), 'Helvetica Neue', Helvetica, Arial, sans-serif;

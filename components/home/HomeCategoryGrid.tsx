@@ -16,7 +16,7 @@ export default function HomeCategoryGrid() {
   const em = t('home.categoryTitleEm');
 
   return (
-    <section className="bg-white px-5 py-16 md:py-24 md:px-7 border-t border-black/10">
+    <section className="bg-cream px-5 py-16 md:py-24 md:px-7 border-t border-black/10">
       <div className="mx-auto max-w-[1320px] text-center mb-10 md:mb-12">
         <p className="text-[11px] tracking-[0.3em] uppercase text-black/50 mb-3">
           {t('home.categoryEyebrow')}
