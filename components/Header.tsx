@@ -15,6 +15,19 @@ const BRANDS = [
   { name: 'Biasia', logo: '/brands/biasia.svg', vendor: 'biasia' },
 ];
 
+/** Rotating announcement slides: promo ↔ brand, switching every 5s */
+const ANNOUNCEMENT_SLIDES: Array<
+  | { type: 'promo' }
+  | { type: 'brand'; name: string; href: string }
+> = [
+  { type: 'promo' },
+  { type: 'brand', name: 'Valentino', href: '/products?tab=all&vendor=valentino' },
+  { type: 'promo' },
+  { type: 'brand', name: 'Renato Angi', href: '/products?tab=all&vendor=renato' },
+  { type: 'promo' },
+  { type: 'brand', name: 'Biasia', href: '/products?tab=all&vendor=biasia' },
+];
+
 export default function Header() {
   const itemCount = useCartStore((state) => state.getItemCount());
   const loadFromShopify = useCartStore((state) => state.loadFromShopify);
@@ -25,6 +38,7 @@ export default function Header() {
   const [drawerSection, setDrawerSection] = useState<'bags' | 'brands' | null>('bags');
   const [scrolled, setScrolled] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [slideIndex, setSlideIndex] = useState(0);
   const pathname = usePathname();
   const { language, setLanguage, t } = useLanguage();
 
@@ -81,6 +95,15 @@ export default function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Rotate announcement bar every 5 seconds
+  useEffect(() => {
+    const id = setInterval(
+      () => setSlideIndex((i) => (i + 1) % ANNOUNCEMENT_SLIDES.length),
+      5000
+    );
+    return () => clearInterval(id);
+  }, []);
+
   // Close drawer on route change + lock body scroll while open
   useEffect(() => {
     setDrawerOpen(false);
@@ -121,11 +144,36 @@ export default function Header() {
       onMouseLeave={() => setHovered(false)}
       suppressHydrationWarning
     >
-      {/* Announcement bar */}
-      <div className="bg-black text-white text-center px-4 py-2">
-        <p className="text-[10px] md:text-[11px] tracking-[0.18em] uppercase font-light">
-          {t('home.announcement')}
-        </p>
+      {/* Announcement bar — rotates every 5s between promo and brands */}
+      <div className="bg-black text-center px-4 py-2 min-h-[32px] flex items-center justify-center">
+        {(() => {
+          const slide = ANNOUNCEMENT_SLIDES[slideIndex];
+          if (slide.type === 'promo') {
+            return (
+              <Link
+                key={`promo-${slideIndex}`}
+                href="/products?tab=ss26"
+                className="flex items-center justify-center gap-3 animate-reveal-fade hover:opacity-80 transition-opacity"
+              >
+                <span className="text-[#e11d2e] text-[10px] md:text-[11px] tracking-[0.18em] uppercase font-medium">
+                  Shop Now
+                </span>
+                <span className="text-white text-[10px] md:text-[11px] tracking-[0.18em] uppercase font-light">
+                  New Arrival
+                </span>
+              </Link>
+            );
+          }
+          return (
+            <Link
+              key={`brand-${slideIndex}`}
+              href={slide.href}
+              className="animate-reveal-fade text-white text-[10px] md:text-[11px] tracking-[0.24em] uppercase font-light hover:opacity-80 transition-opacity"
+            >
+              {slide.name}
+            </Link>
+          );
+        })()}
       </div>
 
       {/* Main nav row — hamburger + nav | logo | icons (TaliaSol layout) */}
