@@ -317,10 +317,11 @@ export default function MytheresaGrid({
       setLoading(true);
       try {
         const searchQuery = getCategorySearchQuery(category);
+        // Categories are filtered client-side, so fetch a wider slim page for them
         const first =
-          typeof maxProducts === 'number'
+          typeof maxProducts === 'number' && category === 'ss26'
             ? Math.min(Math.max(maxProducts + 4, 12), 24)
-            : 64;
+            : 100;
 
         const data = await shopifyClient.request<{
           products: { edges: Array<{ node: Product }> };

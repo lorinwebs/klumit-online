@@ -213,21 +213,16 @@ export const PRODUCTS_LIST_QUERY = `
   }
 `;
 
-/** Build a Shopify Storefront search query for category tabs */
+/**
+ * Server-side Shopify search query per category tab.
+ * Only ss26 uses a Shopify query (collection); bags/wallets/belts rely on the
+ * proven client-side title/type filter since store data mixes Hebrew/English.
+ */
 export function getCategorySearchQuery(
   category: 'bags' | 'belts' | 'wallets' | 'all' | 'ss26'
 ): string | undefined {
   if (category === 'ss26') {
     return `collection:${SHOPIFY_COLLECTION_SS26_HANDLE}`;
-  }
-  if (category === 'bags') {
-    return 'product_type:bag OR product_type:Bag OR product_type:תיק OR title:bag OR title:תיק';
-  }
-  if (category === 'wallets') {
-    return 'product_type:wallet OR product_type:Wallet OR product_type:ארנק OR title:wallet OR title:ארנק';
-  }
-  if (category === 'belts') {
-    return 'product_type:belt OR product_type:Belt OR product_type:חגורה OR title:belt OR title:חגור';
   }
   return undefined;
 }
