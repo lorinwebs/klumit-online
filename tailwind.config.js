@@ -9,43 +9,43 @@ module.exports = {
     extend: {
       colors: {
         luxury: {
-          gold: '#D4AF37',
-          dark: '#1a1a1a',
+          gold: '#111111',
+          dark: '#111111',
           light: '#f5f5f5',
         },
-        // Modern editorial palette
+        // Daniel Yona–style minimal palette (white / black)
         espresso: {
-          DEFAULT: '#2C2420',
-          light: '#3D332E',
+          DEFAULT: '#111111',
+          light: '#2a2a2a',
         },
         stone: {
-          DEFAULT: '#A69585',
-          light: '#C4B5A7',
-          dark: '#8C7E73',
+          DEFAULT: '#888888',
+          light: '#b0b0b0',
+          dark: '#666666',
         },
         cream: {
-          DEFAULT: '#F7F4F0',
-          warm: '#F2ECE4',
-          deep: '#EDE6DC',
+          DEFAULT: '#ffffff',
+          warm: '#fafafa',
+          deep: '#f5f5f5',
         },
         terracotta: {
-          DEFAULT: '#C4956A',
-          light: '#D4AD88',
-          dark: '#A67B52',
+          DEFAULT: '#111111',
+          light: '#333333',
+          dark: '#000000',
         },
         sand: {
-          DEFAULT: '#E8E2DB',
-          light: '#F0ECE7',
-          dark: '#D5CCC2',
+          DEFAULT: '#e5e5e5',
+          light: '#f0f0f0',
+          dark: '#d4d4d4',
         },
-        // Biasia-style homepage (warm editorial)
+        // Homepage tokens mapped to same minimal system
         biasia: {
-          bg: '#f4efe8',
-          'bg-alt': '#ece5dc',
-          ink: '#1c1a17',
-          muted: '#6b6560',
-          accent: '#8b6a4a',
-          line: 'rgba(28, 26, 23, 0.18)',
+          bg: '#ffffff',
+          'bg-alt': '#fafafa',
+          ink: '#111111',
+          muted: '#666666',
+          accent: '#111111',
+          line: 'rgba(17, 17, 17, 0.12)',
         },
       },
       fontFamily: {

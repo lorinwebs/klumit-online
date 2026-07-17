@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { motion } from 'framer-motion';
 import Toast from './Toast';
@@ -42,10 +41,9 @@ export default function ProductCard({
   const items = useCartStore((state) => state.items);
   const [showToast, setShowToast] = useState(false);
 
-  // בדיקה אם המוצר הגיע למקסימום במלאי
   const existingItem = items.find((i) => i.variantId === variantId);
   const currentQuantity = existingItem?.quantity || 0;
-  const isMaxStock = quantityAvailable !== undefined && 
+  const isMaxStock = quantityAvailable !== undefined &&
                      currentQuantity >= quantityAvailable;
 
   const handleAddToCart = async (e: React.MouseEvent) => {
@@ -62,8 +60,7 @@ export default function ProductCard({
         quantityAvailable,
         handle,
       });
-      
-      // Track add to cart
+
       trackAddToCart({
         id: variantId,
         name: title,
@@ -71,8 +68,7 @@ export default function ProductCard({
         currency: currencyCode,
         quantity: 1,
       });
-      
-      // Show toast
+
       setShowToast(true);
       setTimeout(() => {
         setShowToast(false);
@@ -80,7 +76,6 @@ export default function ProductCard({
     }
   };
 
-  // פורמט מחיר פרימיום
   const formatPrice = (amount: string) => {
     const num = parseFloat(amount);
     return Math.round(num).toLocaleString('he-IL');
@@ -106,42 +101,42 @@ export default function ProductCard({
                 className="object-cover transition-transform duration-700 group-hover:scale-105"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm font-light">
+              <div className="w-full h-full flex items-center justify-center text-black/30 text-sm font-light">
                 אין תמונה
               </div>
             )}
             {onSale && (
               <div
-                className={`absolute top-3 bg-[#1a1a1a]/90 text-white px-2 py-1 text-[10px] tracking-luxury uppercase font-light ${available ? 'right-3' : 'left-3'}`}
+                className={`absolute top-3 bg-black text-white px-2.5 py-1 text-[10px] tracking-[0.18em] uppercase font-light ${available ? 'right-3' : 'left-3'}`}
                 aria-label="מוצר במבצע"
               >
                 מבצע
               </div>
             )}
             {!available && <SoldOutBadge className="top-3 right-3" />}
-            <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-white/98 border-t border-gray-100">
+            <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-white/98 border-t border-black/10">
               <button
                 onClick={handleAddToCart}
                 disabled={!available || isMaxStock}
-                className="w-full py-2 text-[10px] tracking-luxury uppercase font-light hover:bg-[#1a1a1a] hover:text-white transition-luxury disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-2 text-[10px] tracking-[0.18em] uppercase font-light hover:bg-black hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label={isMaxStock ? `${t('products.outOfStock')} (${quantityAvailable} ${t('products.units')})` : `${t('products.addToCart')} ${title}`}
               >
                 {isMaxStock ? t('products.outOfStock') : t('products.addToCartShort')}
               </button>
             </div>
           </div>
-          
-          <div className="text-right space-y-1">
-            <h3 className="text-base font-light luxury-font text-[#1a1a1a] leading-tight">
+
+          <div className="text-center space-y-1">
+            <h3 className="text-base font-light font-display text-black leading-tight">
               {title}
             </h3>
-            <div className="flex items-center gap-2 justify-end">
+            <div className="flex items-center gap-2 justify-center">
               {onSale && originalPrice && (
-                <span className="text-gray-400 line-through text-xs font-light">
+                <span className="text-black/35 line-through text-xs font-light">
                   ₪{formatPrice(originalPrice)}
                 </span>
               )}
-              <p className="text-sm font-light text-[#1a1a1a]">
+              <p className="text-sm font-light text-black">
                 ₪{formatPrice(price)}
               </p>
             </div>
@@ -152,4 +147,3 @@ export default function ProductCard({
     </motion.div>
   );
 }
-

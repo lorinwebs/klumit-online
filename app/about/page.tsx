@@ -45,7 +45,7 @@ export default function AboutPage() {
         {/* ══════════ HERO SECTION ══════════ */}
         <section className="relative overflow-hidden bg-espresso">
           {/* Subtle radial gradient background */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_#3D332E_0%,_#2C2420_70%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_#2a2a2a_0%,_#111111_70%)]" />
 
           <div className="relative z-10 max-w-5xl mx-auto px-5 md:px-10 py-20 md:py-32 lg:py-40 text-center">
             <motion.span

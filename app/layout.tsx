@@ -107,12 +107,12 @@ const jsonLd = {
     {
       '@type': 'Organization',
       '@id': `${siteUrl}/#organization`,
-      name: 'קלומית בע"מ',
-      alternateName: 'Klumit',
+      name: 'KLUMIT',
+      alternateName: ['קלומית בע"מ', 'Klumit'],
       url: siteUrl,
       logo: {
         '@type': 'ImageObject',
-        url: `${siteUrl}/hero-venice.jpg`,
+        url: `${siteUrl}/logo-klumit.svg`,
       },
       foundingDate: '1984',
       email: 'klumitltd@gmail.com',

@@ -112,7 +112,7 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
+      <div className="min-h-screen flex flex-col bg-white">
         <Header />
         <main id="main-content" className="flex-grow max-w-4xl mx-auto px-4 py-20" role="main">
           <div className="text-center">
@@ -137,7 +137,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
+    <div className="min-h-screen flex flex-col bg-white">
       <Header />
       <main id="main-content" className="flex-grow w-full" role="main">
         <div className="w-full px-6 md:px-12 lg:px-16 xl:px-24 py-8 md:py-12">

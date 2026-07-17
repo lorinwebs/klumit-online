@@ -10,7 +10,7 @@
   top: -100px;
   left: 50%;
   transform: translateX(-50%);
-  background: #2C2420;
+  background: #111111;
   color: white;
   padding: 0.75rem 1.5rem;
   z-index: 9999;
@@ -25,7 +25,7 @@
 
 /* Focus indicators - WCAG 2.4.7 */
 :focus-visible {
-  outline: 2px solid #2C2420 !important;
+  outline: 2px solid #111111 !important;
   outline-offset: 2px !important;
 }
 
@@ -37,7 +37,7 @@ select:focus-visible,
 textarea:focus-visible,
 [role="button"]:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid #2C2420 !important;
+  outline: 2px solid #111111 !important;
   outline-offset: 2px !important;
 }
 
@@ -122,7 +122,7 @@ section:has([class*="bg-black"]) a:focus-visible,
   }
 
   body {
-    @apply bg-cream text-espresso;
+    @apply bg-white text-black;
     direction: rtl;
     text-align: right;
     font-family: var(--font-assistant), 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -267,7 +267,7 @@ section:has([class*="bg-black"]) a:focus-visible,
   margin-top: 1.5rem !important;
   padding-bottom: 0.75rem !important;
   border-bottom: 1px solid #E8E2DB !important;
-  color: #2C2420 !important;
+  color: #111111 !important;
   line-height: 1.5 !important;
 }
 

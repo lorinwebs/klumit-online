@@ -6,8 +6,8 @@ import Footer from '@/components/Footer';
 import { shopifyClient, ARTICLES_QUERY } from '@/lib/shopify';
 
 export const metadata: Metadata = {
-  title: 'המגזין | קלומית - טיפים, השראה ועולם העור האיטלקי',
-  description: 'מגזין קלומית - מאמרים על תיקי עור, טיפים לטיפוח עור, טרנדים באופנה איטלקית, ועוד. הישארו מעודכנים עם החדשות האחרונות.',
+  title: 'המגזין | KLUMIT - טיפים, השראה ועולם העור האיטלקי',
+  description: 'מגזין KLUMIT - מאמרים על תיקי עור, טיפים לטיפוח עור, טרנדים באופנה איטלקית, ועוד. הישארו מעודכנים עם החדשות האחרונות.',
   alternates: {
     canonical: 'https://www.klumit-online.co.il/blog',
   },
