@@ -1,16 +1,18 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import HomeHero from '@/components/home/HomeHero';
-import HomeCategoryGrid from '@/components/home/HomeCategoryGrid';
-import HomeEditorialSplit from '@/components/home/HomeEditorialSplit';
 import HomeProductSection from '@/components/home/HomeProductSection';
-import HomeNewsletter from '@/components/home/HomeNewsletter';
+import dynamic from 'next/dynamic';
 import type { Metadata } from 'next';
 
+const HomeEditorialSplit = dynamic(() => import('@/components/home/HomeEditorialSplit'));
+const HomeCategoryGrid = dynamic(() => import('@/components/home/HomeCategoryGrid'));
+const HomeNewsletter = dynamic(() => import('@/components/home/HomeNewsletter'));
+
 export const metadata: Metadata = {
-  title: 'תיקים יוקרתיים | KLUMIT',
+  title: 'Luxury bags | KLUMIT',
   description:
-    'יבואן בלעדי בישראל לתיקי RENTAO ANGI ו-CARLINO GROUP. תיקים יוקרתיים מעור איטלקי איכותי, חגורות ואביזרי אופנה היישר מאיטליה.',
+    'Exclusive importer in Israel of RENTAO ANGI and CARLINO GROUP bags. Italian leather bags, belts and accessories.',
   alternates: {
     canonical: 'https://www.klumit-online.co.il',
   },

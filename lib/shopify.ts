@@ -153,6 +153,85 @@ export const PRODUCTS_QUERY = `
   }
 `;
 
+/** Lightweight catalog/grid query — no descriptions, fewer images/variants */
+export const PRODUCTS_LIST_QUERY = `
+  query getProductsList($first: Int!, $query: String, $sortKey: ProductSortKeys, $reverse: Boolean) {
+    products(first: $first, query: $query, sortKey: $sortKey, reverse: $reverse) {
+      edges {
+        node {
+          id
+          title
+          handle
+          productType
+          vendor
+          tags
+          createdAt
+          priceRange {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+          }
+          compareAtPriceRange {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+          }
+          images(first: 2) {
+            edges {
+              node {
+                url
+                altText
+              }
+            }
+          }
+          variants(first: 12) {
+            edges {
+              node {
+                id
+                title
+                price {
+                  amount
+                  currencyCode
+                }
+                compareAtPrice {
+                  amount
+                  currencyCode
+                }
+                availableForSale
+                selectedOptions {
+                  name
+                  value
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+/** Build a Shopify Storefront search query for category tabs */
+export function getCategorySearchQuery(
+  category: 'bags' | 'belts' | 'wallets' | 'all' | 'ss26'
+): string | undefined {
+  if (category === 'ss26') {
+    return `collection:${SHOPIFY_COLLECTION_SS26_HANDLE}`;
+  }
+  if (category === 'bags') {
+    return 'product_type:bag OR product_type:Bag OR product_type:תיק OR title:bag OR title:תיק';
+  }
+  if (category === 'wallets') {
+    return 'product_type:wallet OR product_type:Wallet OR product_type:ארנק OR title:wallet OR title:ארנק';
+  }
+  if (category === 'belts') {
+    return 'product_type:belt OR product_type:Belt OR product_type:חגורה OR title:belt OR title:חגור';
+  }
+  return undefined;
+}
+
 export const PRODUCT_QUERY = `
   query getProduct($handle: String!) {
     product(handle: $handle) {

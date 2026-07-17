@@ -2,9 +2,18 @@
 
 import { usePathname } from 'next/navigation';
 import { ReactNode, useSyncExternalStore } from 'react';
+import dynamic from 'next/dynamic';
 import SkipToMain from './SkipToMain';
-import ChatWidgetWrapper from './ChatWidgetWrapper';
-import CouponModal from './CouponModal';
+
+const ChatWidgetWrapper = dynamic(() => import('./ChatWidgetWrapper'), {
+  ssr: false,
+  loading: () => null,
+});
+
+const CouponModal = dynamic(() => import('./CouponModal'), {
+  ssr: false,
+  loading: () => null,
+});
 
 export default function ConditionalLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -14,21 +23,17 @@ export default function ConditionalLayout({ children }: { children: ReactNode })
     () => false,
   );
 
-  // דפים שלא צריכים את הקומפוננטות של קלומית
   const excludedPaths = ['/mekif-chet-availability-check', '/mekif-chet-2007-reunion', '/moving-sale', '/loricountdown'];
   const isExcluded = excludedPaths.some(p => pathname === p || pathname.startsWith(p + '/'));
 
-  // עד ש-component mounted, נציג רק את children (למנוע hydration mismatch)
   if (!isMounted) {
     return <>{children}</>;
   }
 
-  // אם זה דף excluded, רק children
   if (isExcluded) {
     return <>{children}</>;
   }
 
-  // דפי קלומית רגילים - עם כל הקומפוננטות
   return (
     <>
       <SkipToMain />

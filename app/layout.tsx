@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Assistant, Cormorant_Garamond } from 'next/font/google';
+import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/react';
 import { Suspense } from 'react';
 import AnalyticsProvider from '@/components/Analytics';
@@ -9,7 +10,7 @@ import './globals.css';
 
 const assistant = Assistant({ 
   subsets: ['latin', 'latin-ext', 'hebrew'],
-  weight: ['200', '300', '400', '500', '600', '700'],
+  weight: ['400', '500', '600'],
   variable: '--font-assistant',
   display: 'swap',
   preload: true,
@@ -17,10 +18,10 @@ const assistant = Assistant({
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
+  weight: ['400', '500', '600'],
   variable: '--font-cormorant',
   display: 'swap',
-  preload: true,
+  preload: false,
 });
 
 const siteUrl = 'https://www.klumit-online.co.il';
@@ -29,7 +30,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#f4efe8',
+  themeColor: '#F5F5F5',
 };
 
 export const metadata: Metadata = {
@@ -266,23 +267,19 @@ export default function RootLayout({
             `,
           }}
         />
-        {/* Meta Pixel Code */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              !function(f,b,e,v,n,t,s)
-              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-              n.queue=[];t=b.createElement(e);t.async=!0;
-              t.src=v;s=b.getElementsByTagName(e)[0];
-              s.parentNode.insertBefore(t,s)}(window, document,'script',
-              'https://connect.facebook.net/en_US/fbevents.js');
-              fbq('init', '812488071826982');
-              fbq('track', 'PageView');
-            `,
-          }}
-        />
+        {/* Meta Pixel + GA deferred so they don't block shopping UI */}
+        <Script id="meta-pixel" strategy="lazyOnload">{`
+          !function(f,b,e,v,n,t,s)
+          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+          n.queue=[];t=b.createElement(e);t.async=!0;
+          t.src=v;s=b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t,s)}(window, document,'script',
+          'https://connect.facebook.net/en_US/fbevents.js');
+          fbq('init', '812488071826982');
+          fbq('track', 'PageView');
+        `}</Script>
         <noscript>
           <img 
             height="1" 
@@ -292,35 +289,26 @@ export default function RootLayout({
             alt=""
           />
         </noscript>
-        {/* End Meta Pixel Code */}
-        
-        {/* Google Analytics */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-FZT27KSTMM" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-FZT27KSTMM', { send_page_view: false });
-            `,
-          }}
-        />
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-FZT27KSTMM" strategy="lazyOnload" />
+        <Script id="google-analytics" strategy="lazyOnload">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-FZT27KSTMM', { send_page_view: false });
+        `}</Script>
         {/* Permissions Policy - allow unload for Supabase Realtime */}
         <meta httpEquiv="Permissions-Policy" content="unload=*" />
-        {/* Preload LCP image for faster discovery */}
+        {/* Preload real LCP hero image */}
         <link
           rel="preload"
-          href="/coverimage.jpeg"
+          href="/hero-venice.png"
           as="image"
-          type="image/jpeg"
+          type="image/png"
           fetchPriority="high"
         />
-        {/* Preconnect to external domains */}
-        <link rel="preconnect" href="https://cdn.shopify.com" />
+        {/* Preconnect to Shopify CDN for product images */}
+        <link rel="preconnect" href="https://cdn.shopify.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://cdn.shopify.com" />
-        <link rel="preconnect" href="https://www.instagram.com" />
-        <link rel="dns-prefetch" href="https://www.instagram.com" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

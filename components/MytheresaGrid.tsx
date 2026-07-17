@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { SlidersHorizontal } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { shopifyClient, PRODUCTS_QUERY, SHOPIFY_COLLECTION_SS26_HANDLE } from '@/lib/shopify';
+import { shopifyClient, PRODUCTS_LIST_QUERY, getCategorySearchQuery } from '@/lib/shopify';
 import { useLanguage } from '@/lib/LanguageContext';
 import { isProductSoldOut } from '@/lib/product-availability';
 import SoldOutBadge from '@/components/SoldOutBadge';
@@ -298,39 +298,41 @@ export default function MytheresaGrid({
   }, [category]);
 
   useEffect(() => {
+    let cancelled = false;
     async function fetchProducts() {
+      setLoading(true);
       try {
-        const collectionQuery =
-          category === 'ss26' ? `collection:${SHOPIFY_COLLECTION_SS26_HANDLE}` : undefined;
+        const searchQuery = getCategorySearchQuery(category);
+        const first =
+          typeof maxProducts === 'number'
+            ? Math.min(Math.max(maxProducts + 4, 12), 24)
+            : 64;
 
         const data = await shopifyClient.request<{
           products: { edges: Array<{ node: Product }> };
-        }>(PRODUCTS_QUERY, {
-          first: 250,
-          query: collectionQuery,
+        }>(PRODUCTS_LIST_QUERY, {
+          first,
+          query: searchQuery,
           sortKey: 'CREATED_AT',
           reverse: true,
         });
 
+        if (cancelled) return;
+
         let allProducts = data.products.edges.map((edge) => edge.node);
 
-        // Spring/Summer collection: show all products from that collection (no bags/belts split)
-        if (category === 'ss26') {
-          setProducts(allProducts);
-          return;
-        }
-
-        // Filter by category
-        if (category !== 'all') {
-          allProducts = allProducts.filter(product => {
+        // Fallback client filter if Shopify search returns mixed types
+        if (category !== 'all' && category !== 'ss26') {
+          allProducts = allProducts.filter((product) => {
             const type = (product.productType || '').toLowerCase();
             const title = product.title.toLowerCase();
-            
             if (category === 'bags') {
               return type.includes('bag') || type.includes('תיק') || title.includes('תיק') || title.includes('bag');
-            } else if (category === 'wallets') {
+            }
+            if (category === 'wallets') {
               return type.includes('wallet') || type.includes('ארנק') || title.includes('ארנק') || title.includes('wallet');
-            } else if (category === 'belts') {
+            }
+            if (category === 'belts') {
               return type.includes('belt') || type.includes('חגור') || title.includes('חגור') || title.includes('belt');
             }
             return true;
@@ -340,13 +342,17 @@ export default function MytheresaGrid({
         setProducts(allProducts);
       } catch (error) {
         console.error('Error fetching products:', error);
+        if (!cancelled) setProducts([]);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     fetchProducts();
-  }, [category]);
+    return () => {
+      cancelled = true;
+    };
+  }, [category, maxProducts]);
 
   // Close dropdowns on escape key
   useEffect(() => {
@@ -758,7 +764,7 @@ export default function MytheresaGrid({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: index < 8 ? Math.min(index * 0.03, 0.2) : 0 }}
-              className="group relative"
+              className="group relative [content-visibility:auto] [contain-intrinsic-size:auto_420px]"
             >
               <div className="block">
                 <ProductImageSlider
