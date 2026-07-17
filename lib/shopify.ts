@@ -111,6 +111,12 @@ export const PRODUCTS_QUERY = `
               currencyCode
             }
           }
+          compareAtPriceRange {
+            minVariantPrice {
+              amount
+              currencyCode
+            }
+          }
           images(first: 5) {
             edges {
               node {
@@ -119,7 +125,7 @@ export const PRODUCTS_QUERY = `
               }
             }
           }
-          variants(first: 10) {
+          variants(first: 50) {
             edges {
               node {
                 id
@@ -128,8 +134,16 @@ export const PRODUCTS_QUERY = `
                   amount
                   currencyCode
                 }
+                compareAtPrice {
+                  amount
+                  currencyCode
+                }
                 availableForSale
                 quantityAvailable
+                selectedOptions {
+                  name
+                  value
+                }
               }
             }
           }

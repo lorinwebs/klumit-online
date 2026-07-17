@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { SlidersHorizontal } from 'lucide-react';
@@ -24,6 +24,12 @@ interface Product {
       currencyCode: string;
     };
   };
+  compareAtPriceRange?: {
+    minVariantPrice: {
+      amount: string;
+      currencyCode: string;
+    };
+  };
   images: {
     edges: Array<{
       node: {
@@ -35,7 +41,12 @@ interface Product {
   variants?: {
     edges: Array<{
       node: {
+        id: string;
+        title: string;
         availableForSale: boolean;
+        price?: { amount: string; currencyCode: string };
+        compareAtPrice?: { amount: string; currencyCode: string } | null;
+        selectedOptions?: Array<{ name: string; value: string }>;
       };
     }>;
   };
@@ -45,30 +56,72 @@ interface MytheresaGridProps {
   category?: 'bags' | 'belts' | 'wallets' | 'all' | 'ss26';
   maxProducts?: number;
   showViewAll?: boolean;
-  /** When embedded in Biasia-style homepage: no #products id (parent section owns anchor), warm bg */
+  /** When embedded on homepage: no #products id (parent section owns anchor) */
   embedOnHome?: boolean;
 }
 
-// Product Image Slider Component with Flash Effect
-function ProductImageSlider({ 
-  images, 
+const CARD_BACKGROUNDS = ['#f3efe8', '#f5f5f5', '#f0eeef', '#f6f1f3', '#eef1f0', '#f4f2ed'];
+
+function getCardBackground(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash + id.charCodeAt(i) * (i + 1)) % CARD_BACKGROUNDS.length;
+  return CARD_BACKGROUNDS[Math.abs(hash) % CARD_BACKGROUNDS.length];
+}
+
+function getSaleInfo(product: Product) {
+  const price = parseFloat(product.priceRange.minVariantPrice.amount);
+  const compareAt = parseFloat(product.compareAtPriceRange?.minVariantPrice?.amount || '0');
+  const variantCompare = product.variants?.edges
+    .map((e) => parseFloat(e.node.compareAtPrice?.amount || '0'))
+    .find((v) => v > price);
+  const original = compareAt > price ? compareAt : variantCompare && variantCompare > price ? variantCompare : 0;
+  if (!original || original <= price) return null;
+  const percent = Math.round(((original - price) / original) * 100);
+  if (percent <= 0) return null;
+  return { original, percent, price };
+}
+
+function getSizeOptions(product: Product) {
+  const sizes: string[] = [];
+  const seen = new Set<string>();
+  for (const edge of product.variants?.edges || []) {
+    const sizeOpt = edge.node.selectedOptions?.find((o) =>
+      /size|מידה|מידת|pointure|taille/i.test(o.name)
+    );
+    const value = sizeOpt?.value || (edge.node.title !== 'Default Title' ? edge.node.title : null);
+    if (!value || seen.has(value) || !edge.node.availableForSale) continue;
+    // Skip if looks like a full color name without size digits for bag products
+    seen.add(value);
+    sizes.push(value);
+  }
+  return sizes.slice(0, 8);
+}
+
+// Product image with arrows + optional size row (TaliaSol style)
+function ProductImageSlider({
+  images,
   title,
   handle,
   soldOut,
-}: { 
-  images: Array<{ node: { url: string; altText: string | null } }>; 
+  sizes,
+  background,
+  salePercent,
+  isNew,
+}: {
+  images: Array<{ node: { url: string; altText: string | null } }>;
   title: string;
   handle: string;
   soldOut?: boolean;
+  sizes: string[];
+  background: string;
+  salePercent?: number | null;
+  isNew?: boolean;
 }) {
   const { t } = useLanguage();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [imageOpacity, setImageOpacity] = useState(1);
-  const [quickViewHovered, setQuickViewHovered] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
-  // Preload second image for instant transition
   useEffect(() => {
     if (images.length > 1) {
       const img = new window.Image();
@@ -76,88 +129,121 @@ function ProductImageSlider({
     }
   }, [images]);
 
-  useEffect(() => {
-    // Only switch to next image on desktop when hovered and there are multiple images
-    if (isHovered && images.length > 1 && window.innerWidth >= 768 && currentImageIndex === 0) {
-      timeoutRef.current = setTimeout(() => {
-        // Subtle flash effect: fade out slightly
-        setImageOpacity(0.3);
-        
-        // After fade, change to next image and fade in
-        setTimeout(() => {
-          setCurrentImageIndex(1); // Only show next image, not all
-          setImageOpacity(1);
-        }, 200); // Flash duration
-        
-      }, 400); // Quick switch - 400ms after hover
-    }
+  const goPrev = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((i) => (i - 1 + images.length) % images.length);
+  };
 
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [isHovered, images.length, currentImageIndex]);
-
-  const prevIsHovered = useRef(isHovered);
-  useEffect(() => {
-    if (prevIsHovered.current !== isHovered) {
-      prevIsHovered.current = isHovered;
-      if (!isHovered) {
-        setImageOpacity(1);
-        setCurrentImageIndex(0);
-      }
-    }
-  }, [isHovered]);
+  const goNext = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((i) => (i + 1) % images.length);
+  };
 
   return (
     <div
-      className="relative aspect-[3/4] bg-[#f5f5f5] mb-3 overflow-hidden group/image"
+      className="relative aspect-[3/4] mb-3 overflow-hidden group/image"
+      style={{ backgroundColor: background }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {images[currentImageIndex] ? (
-        <Image
-          key={currentImageIndex}
-          src={images[currentImageIndex].node.url}
-          alt={images[currentImageIndex].node.altText || title}
-          fill
-          className="object-cover group-hover:scale-105 transition-all duration-500"
-          style={{ 
-            opacity: imageOpacity,
-            transition: 'opacity 200ms ease-in-out, transform 500ms ease-out'
-          }}
-          sizes="(max-width: 768px) 48vw, (max-width: 1024px) 33vw, 25vw"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center text-black/30 text-sm font-light">
-          אין תמונה
+      <Link href={`/products/${handle}`} className="absolute inset-0 z-0 block">
+        {images[currentImageIndex] ? (
+          <Image
+            key={currentImageIndex}
+            src={images[currentImageIndex].node.url}
+            alt={images[currentImageIndex].node.altText || title}
+            fill
+            className="object-contain object-center p-3 md:p-5 transition-opacity duration-300"
+            sizes="(max-width: 768px) 48vw, (max-width: 1024px) 33vw, 25vw"
+          />
+        ) : (
+          <span className="absolute inset-0 flex items-center justify-center text-black/30 text-sm font-light">
+            —
+          </span>
+        )}
+      </Link>
+
+      {/* Sale badges — top start (TaliaSol) */}
+      {salePercent != null && salePercent > 0 && !soldOut && (
+        <div className="absolute top-2 start-2 z-20 flex flex-col items-stretch gap-0 pointer-events-none">
+          <span className="bg-white border border-black px-2 py-0.5 text-[10px] md:text-[11px] font-medium tracking-[0.12em] uppercase text-black text-center leading-none">
+            {t('products.sale')}
+          </span>
+          <span className="bg-black px-2 py-0.5 text-[10px] md:text-[11px] font-medium tracking-[0.08em] text-white text-center leading-none">
+            - {salePercent}%
+          </span>
+        </div>
+      )}
+
+      {isNew && !soldOut && (
+        <div className="absolute top-2 end-2 z-20 bg-white border border-black px-2 py-0.5 text-[10px] md:text-[11px] font-medium tracking-[0.12em] uppercase text-black leading-none pointer-events-none">
+          {t('products.newTag')}
         </div>
       )}
 
       {soldOut && <SoldOutBadge />}
 
-      {/* Quick View Button - Desktop Only */}
-      <div className="hidden md:block absolute inset-0 opacity-0 group-hover/image:opacity-100 transition-opacity duration-500">
-        <div className="absolute inset-0 bg-black/5" />
-        <div className="absolute bottom-5 left-0 right-0 flex items-center justify-center">
+      {/* Image arrows on hover */}
+      {images.length > 1 && (
+        <div
+          className={`hidden md:flex absolute inset-y-0 inset-x-0 z-20 items-center justify-between px-1 transition-opacity duration-300 ${
+            isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+        >
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              window.location.href = `/products/${handle}`;
-            }}
-            onMouseEnter={() => setQuickViewHovered(true)}
-            onMouseLeave={() => setQuickViewHovered(false)}
-            className={`px-5 py-2 text-[10px] tracking-[0.18em] uppercase font-medium border transition-all duration-300 ${
-              quickViewHovered
-                ? 'bg-black text-white border-black'
-                : 'bg-white/95 text-black border-white/95'
-            }`}
+            type="button"
+            onClick={goPrev}
+            className="w-8 h-8 flex items-center justify-center text-black/45 hover:text-black text-lg leading-none"
+            aria-label={t('products.previousImage')}
           >
-            {t('products.quickView') || 'צפייה מהירה'}
+            ‹
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            className="w-8 h-8 flex items-center justify-center text-black/45 hover:text-black text-lg leading-none"
+            aria-label={t('products.nextImage')}
+          >
+            ›
           </button>
         </div>
-      </div>
+      )}
+
+      {/* Size row on hover */}
+      {sizes.length > 1 && (
+        <div
+          className={`hidden md:flex absolute bottom-0 inset-x-0 z-30 items-center gap-1.5 px-2.5 py-2 bg-gradient-to-t from-black/5 to-transparent transition-opacity duration-300 ${
+            isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          <span className="text-[9px] font-semibold tracking-[0.14em] uppercase text-black/45 shrink-0">
+            {t('products.size')}
+          </span>
+          <div className="flex flex-wrap gap-1 justify-end flex-1">
+            {sizes.map((size) => (
+              <button
+                key={size}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSelectedSize(size);
+                  window.location.href = `/products/${handle}`;
+                }}
+                className={`min-w-[28px] h-7 px-1.5 flex items-center justify-center text-[10px] border transition-colors ${
+                  selectedSize === size
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-black border-black/25 hover:border-black'
+                }`}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -571,56 +657,57 @@ export default function MytheresaGrid({
       <div
         className={`mx-auto max-w-7xl py-6 md:py-8 ${embedOnHome ? 'px-5 md:px-6' : 'px-4 md:px-6'}`}
       >
-        <div className="grid grid-cols-2 gap-x-3.5 gap-y-6 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-2 gap-y-8 md:grid-cols-3 md:gap-x-3 md:gap-y-10 lg:grid-cols-4 lg:gap-x-4">
           {(maxProducts ? sortedProducts.slice(0, maxProducts) : sortedProducts).map((product, index) => {
             const soldOut = isProductSoldOut(product);
+            const sale = getSaleInfo(product);
+            const sizes = getSizeOptions(product);
+            const isNew = product.tags?.some((tag) => tag.toLowerCase() === 'new_arrival');
             return (
             <motion.div
               key={product.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: index * 0.05 }}
+              transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.4) }}
               className="group relative"
             >
-              <Link href={`/products/${product.handle}`} className="block">
-                {/* Product Image with Auto-Cycle on Hover */}
-                <div className="relative">
-                  <ProductImageSlider
-                    images={product.images.edges}
-                    title={product.title}
-                    handle={product.handle}
-                    soldOut={soldOut}
-                  />
-                  {/* NEW Tag - absolutely positioned over image */}
-                  {product.tags?.some(tag => tag.toLowerCase() === 'new_arrival') && (
-                    <div
-                      className={`absolute top-2 z-20 bg-black px-3 py-1 text-[11px] md:text-[12px] font-light tracking-[0.12em] uppercase text-white leading-none ${
-                        soldOut ? 'left-2' : 'right-2'
-                      }`}
-                      role="status"
-                      aria-label={t('products.newTag')}
-                    >
-                      {t('products.newTag')}
-                    </div>
-                  )}
-                </div>
+              <div className="block">
+                <ProductImageSlider
+                  images={product.images.edges}
+                  title={product.title}
+                  handle={product.handle}
+                  soldOut={soldOut}
+                  sizes={sizes}
+                  background={getCardBackground(product.id)}
+                  salePercent={sale?.percent}
+                  isNew={isNew}
+                />
 
-                {/* Product Info */}
-                <div className="space-y-1.5 text-center pt-1">
-                  {/* Brand/Vendor Name */}
-                  <p className="text-[9px] md:text-[10px] font-medium tracking-[0.18em] uppercase text-black/40">
+                <Link href={`/products/${product.handle}`} className="block space-y-1 text-center pt-1 px-1">
+                  <p className="text-[10px] md:text-[11px] font-normal tracking-[0.16em] uppercase text-black/40">
                     {product.vendor || 'KLUMIT'}
                   </p>
-                  {/* Product Title */}
-                  <h3 className="text-xs md:text-sm font-light font-display text-black line-clamp-2 leading-snug">
+                  <h3 className="text-[11px] md:text-[13px] font-semibold uppercase tracking-[0.04em] text-black line-clamp-2 leading-snug">
                     {product.title}
                   </h3>
-                  {/* Price */}
-                  <p className="text-xs md:text-sm font-light text-black">
-                    ₪ {formatPrice(product.priceRange.minVariantPrice.amount)}
-                  </p>
-                </div>
-              </Link>
+                  <div className="flex items-baseline justify-center gap-2 pt-0.5">
+                    {sale ? (
+                      <>
+                        <span className="text-[12px] md:text-[14px] font-medium text-[#e11d2e]">
+                          {formatPrice(String(sale.price))} ₪
+                        </span>
+                        <span className="text-[11px] md:text-[12px] text-black/35 line-through">
+                          {formatPrice(String(sale.original))}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[12px] md:text-[14px] font-medium text-black">
+                        {formatPrice(product.priceRange.minVariantPrice.amount)} ₪
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              </div>
             </motion.div>
             );
           })}

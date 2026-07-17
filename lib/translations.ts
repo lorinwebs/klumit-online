@@ -113,6 +113,7 @@ export interface Translations {
   'products.resetFilters': string;
   'products.addToCartShort': string;
   'products.soldOut': string;
+  'products.sale': string;
   'products.quickView': string;
   'products.addingToCart': string;
   'products.includingVAT': string;
@@ -478,6 +479,7 @@ export const translations: Record<Language, Translations> = {
     'products.resetFilters': 'נקה סינונים',
     'products.addToCartShort': 'הוספה לסל',
     'products.soldOut': 'אזל מהמלאי',
+    'products.sale': 'SALE',
     'products.quickView': 'צפייה מהירה',
     'products.addingToCart': 'נוסף לעגלה',
     'products.includingVAT': 'כולל מע״מ',
@@ -842,6 +844,7 @@ export const translations: Record<Language, Translations> = {
     'products.resetFilters': 'Reset Filters',
     'products.addToCartShort': 'Add to Cart',
     'products.soldOut': 'Sold out',
+    'products.sale': 'SALE',
     'products.quickView': 'Quick View',
     'products.addingToCart': 'Adding to Cart',
     'products.includingVAT': 'Including VAT',
@@ -1206,6 +1209,7 @@ export const translations: Record<Language, Translations> = {
     'products.resetFilters': 'Сбросить фильтры',
     'products.addToCartShort': 'В корзину',
     'products.soldOut': 'Нет в наличии',
+    'products.sale': 'SALE',
     'products.quickView': 'Быстрый просмотр',
     'products.addingToCart': 'Добавляется в корзину',
     'products.includingVAT': 'Включая НДС',
