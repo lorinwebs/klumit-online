@@ -58,6 +58,8 @@ interface MytheresaGridProps {
   showViewAll?: boolean;
   /** When embedded on homepage: no #products id (parent section owns anchor) */
   embedOnHome?: boolean;
+  /** Pre-filter by brand/vendor (case-insensitive substring, e.g. "valentino") */
+  initialVendor?: string;
 }
 
 const CARD_BACKGROUNDS = ['#f3efe8', '#f5f5f5', '#f0eeef', '#f6f1f3', '#eef1f0', '#f4f2ed'];
@@ -279,6 +281,7 @@ export default function MytheresaGrid({
   maxProducts,
   showViewAll = false,
   embedOnHome = false,
+  initialVendor,
 }: MytheresaGridProps) {
   const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
@@ -296,6 +299,17 @@ export default function MytheresaGrid({
     setSelectedVendors(new Set());
     setShowFilters(false);
   }, [category]);
+
+  // Pre-select brand filter when arriving from a Brands menu link (?vendor=...)
+  useEffect(() => {
+    if (!initialVendor || products.length === 0) return;
+    const matches = Array.from(new Set(products.map((p) => p.vendor || 'KLUMIT'))).filter((v) =>
+      v.toLowerCase().includes(initialVendor.toLowerCase())
+    );
+    if (matches.length > 0) {
+      setSelectedVendors(new Set(matches));
+    }
+  }, [initialVendor, products]);
 
   useEffect(() => {
     let cancelled = false;

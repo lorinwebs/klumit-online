@@ -15,6 +15,14 @@ export interface Translations {
   'header.magazine': string;
   /** Full catalog (all products) */
   'header.shopAll': string;
+  /** TaliaSol-style menu group: all bags with sub-categories */
+  'header.allBags': string;
+  /** Brands menu */
+  'header.brands': string;
+  /** New arrivals nav item */
+  'header.new': string;
+  /** Menu title in side drawer */
+  'header.menu': string;
   /** Wordmark next to nav (Hebrew / Latin per language) */
   'header.brand': string;
 
@@ -384,6 +392,10 @@ export const translations: Record<Language, Translations> = {
     'header.cart': 'סל קניות',
     'header.magazine': 'המגזין',
     'header.shopAll': 'כל המוצרים',
+    'header.allBags': 'כל התיקים',
+    'header.brands': 'מותגים',
+    'header.new': 'חדש',
+    'header.menu': 'תפריט',
     'header.brand': 'KLUMIT',
 
     // Home (Biasia-style)
@@ -749,6 +761,10 @@ export const translations: Record<Language, Translations> = {
     'header.cart': 'Shopping Cart',
     'header.magazine': 'Magazine',
     'header.shopAll': 'All products',
+    'header.allBags': 'All Bags',
+    'header.brands': 'Brands',
+    'header.new': 'New',
+    'header.menu': 'Menu',
     'header.brand': 'KLUMIT',
 
     // Home (Biasia-style)
@@ -1114,6 +1130,10 @@ export const translations: Record<Language, Translations> = {
     'header.cart': 'Корзина',
     'header.magazine': 'Журнал',
     'header.shopAll': 'Все товары',
+    'header.allBags': 'Все сумки',
+    'header.brands': 'Бренды',
+    'header.new': 'Новинки',
+    'header.menu': 'Меню',
     'header.brand': 'KLUMIT',
 
     // Home (Biasia-style)

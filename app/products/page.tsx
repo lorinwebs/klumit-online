@@ -15,19 +15,20 @@ const VALID_TABS = ['all', 'bags', 'belts', 'wallets', 'ss26'] as const;
 type TabType = (typeof VALID_TABS)[number];
 
 interface PageProps {
-  searchParams: Promise<{ tab?: string; category?: string }>;
+  searchParams: Promise<{ tab?: string; category?: string; vendor?: string }>;
 }
 
 export default async function ProductsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const raw = (params.category || params.tab || 'all').toLowerCase();
   const activeTab: TabType = VALID_TABS.includes(raw as TabType) ? (raw as TabType) : 'all';
+  const vendor = params.vendor?.toLowerCase() || undefined;
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main id="main-content" className="flex-grow" role="main">
-        <MytheresaGrid category={activeTab} showViewAll={false} />
+        <MytheresaGrid category={activeTab} showViewAll={false} initialVendor={vendor} />
       </main>
       <Footer />
     </div>
