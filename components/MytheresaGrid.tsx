@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { shopifyClient, PRODUCTS_LIST_QUERY, getCategorySearchQuery } from '@/lib/shopify';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -213,30 +213,42 @@ function ProductImageSlider({
 
       {soldOut && <SoldOutBadge />}
 
-      {/* Image arrows on hover */}
+      {/* Image arrows — always on mobile, on hover on desktop (TaliaSol style) */}
       {images.length > 1 && (
-        <div
-          className={`hidden md:flex absolute inset-y-0 inset-x-0 z-20 items-center justify-between px-1 transition-opacity duration-300 ${
-            isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-        >
+        <>
           <button
             type="button"
             onClick={goPrev}
-            className="w-8 h-8 flex items-center justify-center text-black/45 hover:text-black text-lg leading-none"
+            className={`absolute left-1 md:left-1.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 md:w-10 md:h-10 flex items-center justify-center text-black/55 hover:text-black transition-all duration-300 opacity-100 md:opacity-0 ${
+              isHovered ? 'md:opacity-100' : ''
+            }`}
             aria-label={t('products.previousImage')}
           >
-            ‹
+            <ChevronLeft size={26} strokeWidth={2.25} />
           </button>
           <button
             type="button"
             onClick={goNext}
-            className="w-8 h-8 flex items-center justify-center text-black/45 hover:text-black text-lg leading-none"
+            className={`absolute right-1 md:right-1.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 md:w-10 md:h-10 flex items-center justify-center text-black/55 hover:text-black transition-all duration-300 opacity-100 md:opacity-0 ${
+              isHovered ? 'md:opacity-100' : ''
+            }`}
             aria-label={t('products.nextImage')}
           >
-            ›
+            <ChevronRight size={26} strokeWidth={2.25} />
           </button>
-        </div>
+
+          {/* Image position dots */}
+          <div className="absolute bottom-2 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 z-10 flex items-center gap-1 pointer-events-none">
+            {images.slice(0, 6).map((_, i) => (
+              <span
+                key={i}
+                className={`w-1 h-1 rounded-full transition-colors duration-200 ${
+                  i === currentImageIndex ? 'bg-black/70' : 'bg-black/20'
+                }`}
+              />
+            ))}
+          </div>
+        </>
       )}
 
       {/* Size row on hover */}

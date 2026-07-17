@@ -178,7 +178,7 @@ export const PRODUCTS_LIST_QUERY = `
               currencyCode
             }
           }
-          images(first: 2) {
+          images(first: 4) {
             edges {
               node {
                 url
