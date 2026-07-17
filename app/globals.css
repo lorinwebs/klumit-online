@@ -373,14 +373,6 @@ section:has([class*="bg-black"]) a:focus-visible,
   max-width: 100% !important;
 }
 
-/* Fix for landscape mobile */
-@media (orientation: landscape) and (max-height: 500px) {
-  html, body {
-    overflow-y: auto;
-    height: auto;
-  }
-}
-
 /* Custom scrollbar for reunion page */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
