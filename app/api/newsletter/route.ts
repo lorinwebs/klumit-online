@@ -7,12 +7,21 @@ import {
 } from '@/lib/telegram';
 import nodemailer from 'nodemailer';
 
+function optionalString(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email } = body;
+    const email = optionalString(body.email);
+    const firstName = optionalString(body.firstName);
+    const lastName = optionalString(body.lastName);
+    const phone = optionalString(body.phone);
 
-    if (!email || typeof email !== 'string') {
+    if (!email) {
       return NextResponse.json(
         { error: 'Email is required' },
         { status: 400 }
@@ -20,11 +29,20 @@ export async function POST(request: Request) {
     }
 
     const time = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' });
+    const isKClub = Boolean(firstName || lastName || phone);
+    const title = isKClub ? 'הצטרפות ל-The K Club' : 'הצטרפות לניוזלטר';
+
+    const detailLines = [
+      firstName ? `שם פרטי: <code>${escapeHtml(firstName)}</code>` : null,
+      lastName ? `שם משפחה: <code>${escapeHtml(lastName)}</code>` : null,
+      `אימייל: <code>${escapeHtml(email)}</code>`,
+      phone ? `טלפון: <code>${escapeHtml(phone)}</code>` : null,
+    ].filter(Boolean);
 
     // 1. Send Telegram notification (HTML format)
-    const telegramMessage = `📧 <b>הצטרפות לניוזלטר</b>
+    const telegramMessage = `📧 <b>${title}</b>
 
-אימייל: <code>${escapeHtml(email)}</code>
+${detailLines.join('\n')}
 📅 ${time}`;
 
     const originOrReferer = request.headers.get('origin') || request.headers.get('referer') || '';
@@ -54,16 +72,37 @@ export async function POST(request: Request) {
           },
         });
 
+        const textDetails = [
+          firstName ? `שם פרטי: ${firstName}` : null,
+          lastName ? `שם משפחה: ${lastName}` : null,
+          `אימייל: ${email}`,
+          phone ? `טלפון: ${phone}` : null,
+          `תאריך: ${time}`,
+        ]
+          .filter(Boolean)
+          .join('\n');
+
+        const htmlDetails = [
+          firstName ? `<p><strong>שם פרטי:</strong> ${escapeHtml(firstName)}</p>` : null,
+          lastName ? `<p><strong>שם משפחה:</strong> ${escapeHtml(lastName)}</p>` : null,
+          `<p><strong>אימייל:</strong> ${escapeHtml(email)}</p>`,
+          phone ? `<p><strong>טלפון:</strong> ${escapeHtml(phone)}</p>` : null,
+          `<p><strong>תאריך:</strong> ${time}</p>`,
+        ]
+          .filter(Boolean)
+          .join('\n');
+
         await transporter.sendMail({
           from: smtpUser,
           to: 'klumitltd@gmail.com',
-          subject: `${email} הצטרף למועדון החברים`,
-          text: `כתובת אימייל חדשה הצטרפה למועדון החברים:\n\n${email}\n\nתאריך: ${time}`,
+          subject: isKClub
+            ? `${email} הצטרף ל-The K Club`
+            : `${email} הצטרף למועדון החברים`,
+          text: `הצטרפות חדשה:\n\n${textDetails}`,
           html: `
             <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px;">
-              <h2>הצטרפות חדשה למועדון החברים</h2>
-              <p><strong>אימייל:</strong> ${escapeHtml(email)}</p>
-              <p><strong>תאריך:</strong> ${time}</p>
+              <h2>${title}</h2>
+              ${htmlDetails}
             </div>
           `,
         });

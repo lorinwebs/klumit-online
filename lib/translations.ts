@@ -358,12 +358,12 @@ export interface Translations {
   // Footer
   'footer.brand': string;
   'footer.brandDesc': string;
-  'footer.navigation': string;
+  'footer.site': string;
+  'footer.shop': string;
   'footer.home': string;
   'footer.products': string;
   'footer.cart': string;
   'footer.myAccount': string;
-  'footer.customerService': string;
   'footer.contact': string;
   'footer.about': string;
   'footer.shipping': string;
@@ -380,6 +380,21 @@ export interface Translations {
   'footer.hours': string;
   'footer.hoursDetails': string;
   'footer.fax': string;
+  'footer.phone': string;
+  'footer.whatsapp': string;
+  'footer.email': string;
+  'footer.pciSecure': string;
+  'footer.accessibilityButton': string;
+  'footer.kClubTitle': string;
+  'footer.kClubTagline': string;
+  'footer.firstName': string;
+  'footer.lastName': string;
+  'footer.phoneField': string;
+  'footer.emailField': string;
+  'footer.consent': string;
+  'footer.join': string;
+  'footer.joinSuccess': string;
+  'footer.joinError': string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -731,28 +746,43 @@ export const translations: Record<Language, Translations> = {
     // Footer
     'footer.brand': 'KLUMIT',
     'footer.brandDesc': 'יבואן בלעדי של תיקים יוקרתיים היישר מאיטליה',
-    'footer.navigation': 'ניווט',
+    'footer.site': 'SITE',
+    'footer.shop': 'SHOP',
     'footer.home': 'בית',
     'footer.products': 'מוצרים',
     'footer.cart': 'עגלת קניות',
     'footer.myAccount': 'החשבון שלי',
-    'footer.customerService': 'שירות לקוחות',
-    'footer.contact': 'יצירת קשר',
+    'footer.contact': 'CONTACT',
     'footer.about': 'אודות',
     'footer.shipping': 'משלוחים',
     'footer.returns': 'החזרות',
     'footer.terms': 'תקנון',
     'footer.privacy': 'מדיניות פרטיות',
-    'footer.accessibility': 'נגישות',
+    'footer.accessibility': 'הצהרת נגישות',
     'footer.magazine': 'המגזין',
     'footer.viewersNow': 'צופים כעת',
     'footer.viewersOnSite': 'צופים באתר',
     'footer.copyright': 'כל הזכויות שמורות',
     'footer.address': 'כתובת:',
     'footer.addressDetails': 'גאולה 45, תל אביב יפו 6330447',
-    'footer.hours': 'שעות פעילות',
+    'footer.hours': 'שעות פתיחה:',
     'footer.hoursDetails': 'א׳-ה׳: 10:00-17:00',
     'footer.fax': 'פקס:',
+    'footer.phone': 'טלפון:',
+    'footer.whatsapp': 'וואטסאפ:',
+    'footer.email': 'מייל:',
+    'footer.pciSecure': 'הקניה באתר מאובטחת בתקן PCI',
+    'footer.accessibilityButton': 'נגישות',
+    'footer.kClubTitle': 'THE K CLUB',
+    'footer.kClubTagline': 'הצטרפי וקבלי 20% הנחה בקנייה הראשונה',
+    'footer.firstName': 'שם פרטי *',
+    'footer.lastName': 'שם משפחה *',
+    'footer.phoneField': 'טלפון נייד *',
+    'footer.emailField': 'דואר אלקטרוני *',
+    'footer.consent': 'אני מאשר/ת קבלת תוכן פרסומי',
+    'footer.join': 'גם אני רוצה להצטרף!',
+    'footer.joinSuccess': 'תודה! הצטרפת ל-The K Club',
+    'footer.joinError': 'משהו השתבש, נסי שוב',
   },
   
   en: {
@@ -1103,28 +1133,43 @@ export const translations: Record<Language, Translations> = {
     // Footer
     'footer.brand': 'KLUMIT',
     'footer.brandDesc': 'Exclusive importer of luxury bags from Italy',
-    'footer.navigation': 'Navigation',
+    'footer.site': 'SITE',
+    'footer.shop': 'SHOP',
     'footer.home': 'Home',
     'footer.products': 'Products',
     'footer.cart': 'Shopping Cart',
     'footer.myAccount': 'My Account',
-    'footer.customerService': 'Customer Service',
-    'footer.contact': 'Contact',
+    'footer.contact': 'CONTACT',
     'footer.about': 'About',
     'footer.shipping': 'Shipping',
     'footer.returns': 'Returns',
     'footer.terms': 'Terms',
     'footer.privacy': 'Privacy Policy',
-    'footer.accessibility': 'Accessibility',
+    'footer.accessibility': 'Accessibility Statement',
     'footer.magazine': 'Magazine',
     'footer.viewersNow': 'viewers now',
     'footer.viewersOnSite': 'viewing now',
     'footer.copyright': 'All rights reserved',
     'footer.address': 'Address:',
     'footer.addressDetails': '45 Geula St, Tel Aviv 6330447',
-    'footer.hours': 'Opening Hours',
+    'footer.hours': 'Opening Hours:',
     'footer.hoursDetails': 'Sun-Thu: 10:00-17:00',
     'footer.fax': 'Fax:',
+    'footer.phone': 'Phone:',
+    'footer.whatsapp': 'WhatsApp:',
+    'footer.email': 'Email:',
+    'footer.pciSecure': 'Shopping on this site is secured with PCI standard',
+    'footer.accessibilityButton': 'Accessibility',
+    'footer.kClubTitle': 'THE K CLUB',
+    'footer.kClubTagline': 'Join and get 20% off your first purchase',
+    'footer.firstName': 'First name *',
+    'footer.lastName': 'Last name *',
+    'footer.phoneField': 'Mobile phone *',
+    'footer.emailField': 'Email *',
+    'footer.consent': 'I agree to receive promotional content',
+    'footer.join': 'I want to join!',
+    'footer.joinSuccess': 'Thank you! You joined The K Club',
+    'footer.joinError': 'Something went wrong, please try again',
   },
   
   ru: {
@@ -1475,28 +1520,43 @@ export const translations: Record<Language, Translations> = {
     // Footer
     'footer.brand': 'KLUMIT',
     'footer.brandDesc': 'Эксклюзивный импортер роскошных сумок из Италии',
-    'footer.navigation': 'Навигация',
+    'footer.site': 'SITE',
+    'footer.shop': 'SHOP',
     'footer.home': 'Главная',
     'footer.products': 'Товары',
     'footer.cart': 'Корзина',
     'footer.myAccount': 'Мой аккаунт',
-    'footer.customerService': 'Служба поддержки',
-    'footer.contact': 'Контакты',
+    'footer.contact': 'CONTACT',
     'footer.about': 'О нас',
     'footer.shipping': 'Доставка',
     'footer.returns': 'Возврат',
     'footer.terms': 'Условия',
     'footer.privacy': 'Конфиденциальность',
-    'footer.accessibility': 'Доступность',
+    'footer.accessibility': 'Заявление о доступности',
     'footer.magazine': 'Журнал',
     'footer.viewersNow': 'просматривают',
     'footer.viewersOnSite': 'смотрят сейчас',
     'footer.copyright': 'Все права защищены',
     'footer.address': 'Адрес:',
     'footer.addressDetails': 'ул. Геула 45, Тель-Авив 6330447',
-    'footer.hours': 'Часы работы',
+    'footer.hours': 'Часы работы:',
     'footer.hoursDetails': 'Вс-Чт: 10:00-17:00',
     'footer.fax': 'Факс:',
+    'footer.phone': 'Телефон:',
+    'footer.whatsapp': 'WhatsApp:',
+    'footer.email': 'Email:',
+    'footer.pciSecure': 'Покупки на сайте защищены стандартом PCI',
+    'footer.accessibilityButton': 'Доступность',
+    'footer.kClubTitle': 'THE K CLUB',
+    'footer.kClubTagline': 'Присоединяйтесь и получите 20% скидку на первую покупку',
+    'footer.firstName': 'Имя *',
+    'footer.lastName': 'Фамилия *',
+    'footer.phoneField': 'Мобильный телефон *',
+    'footer.emailField': 'Электронная почта *',
+    'footer.consent': 'Я согласен/на на получение рекламного контента',
+    'footer.join': 'Хочу присоединиться!',
+    'footer.joinSuccess': 'Спасибо! Вы вступили в The K Club',
+    'footer.joinError': 'Что-то пошло не так, попробуйте снова',
   },
 };
 
