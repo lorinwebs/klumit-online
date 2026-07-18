@@ -2,17 +2,17 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingBag, Menu, X, ChevronDown } from 'lucide-react';
-import { useCartStore } from '@/store/cartStore';
-import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
-import UserMenu from './UserMenu';
+import { Menu, X, ChevronDown, Search } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import FloatingCart from './FloatingCart';
 import { useLanguage } from '@/lib/LanguageContext';
 
 const BRANDS = [
   { name: 'Valentino', logo: '/brands/valentino.svg', vendor: 'valentino' },
   { name: 'Renato Angi', logo: '/brands/renato-angi.svg', vendor: 'renato' },
   { name: 'Biasia', logo: '/brands/biasia.svg', vendor: 'biasia' },
+  { name: 'ByByblos', logo: '/brands/bybyblos.svg', vendor: 'byblos' },
 ];
 
 /** Rotating announcement slides: promo ↔ brand, switching every 5s */
@@ -26,20 +26,34 @@ const ANNOUNCEMENT_SLIDES: Array<
   { type: 'brand', name: 'Renato Angi', href: '/products?tab=all&vendor=renato' },
   { type: 'promo' },
   { type: 'brand', name: 'Biasia', href: '/products?tab=all&vendor=biasia' },
+  { type: 'promo' },
+  { type: 'brand', name: 'ByByblos', href: '/products?tab=all&vendor=byblos' },
 ];
 
+/** TaliaSol-style blinking dot (red for NEW, purple for SALE) */
+function PulseDot({ color }: { color: 'red' | 'purple' }) {
+  const bg = color === 'red' ? 'bg-[#e11d2e]' : 'bg-[#8b5cf6]';
+  return (
+    <span className="relative flex h-1.5 w-1.5 shrink-0" aria-hidden>
+      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${bg}`} />
+      <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${bg}`} />
+    </span>
+  );
+}
+
 export default function Header() {
-  const itemCount = useCartStore((state) => state.getItemCount());
-  const loadFromShopify = useCartStore((state) => state.loadFromShopify);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<'bags' | 'brands' | null>(null);
   const [drawerSection, setDrawerSection] = useState<'bags' | 'brands' | null>('bags');
   const [scrolled, setScrolled] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
+  const router = useRouter();
   const { language, setLanguage, t } = useLanguage();
 
   const isBlogSection = pathname === '/blog' || pathname?.startsWith('/blog/');
@@ -47,7 +61,7 @@ export default function Header() {
 
   // TaliaSol-style: transparent over the hero until hover / scroll / any menu opens
   const transparent =
-    isHome && !scrolled && !hovered && !drawerOpen && openDropdown === null && !langDropdownOpen;
+    isHome && !scrolled && !hovered && !drawerOpen && openDropdown === null && !langDropdownOpen && !searchOpen;
 
   const languageFlags = {
     he: '🇮🇱',
@@ -83,10 +97,17 @@ export default function Header() {
   };
 
   useEffect(() => {
-    setMounted(true);
-    loadFromShopify().catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (searchOpen) searchInputRef.current?.focus();
+  }, [searchOpen]);
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    setSearchOpen(false);
+    setSearchQuery('');
+    router.push(`/products?tab=all&q=${encodeURIComponent(q)}`);
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -122,6 +143,7 @@ export default function Header() {
       if (e.key === 'Escape') {
         setDrawerOpen(false);
         setOpenDropdown(null);
+        setSearchOpen(false);
       }
     };
     document.addEventListener('keydown', onKey);
@@ -192,8 +214,9 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-5 lg:gap-7" aria-label="תפריט ניווט ראשי">
             <Link
               href="/products?tab=ss26"
-              className={`text-[11px] tracking-[0.18em] uppercase transition-colors duration-300 py-1 ${inkLink}`}
+              className={`flex items-center gap-1.5 text-[11px] tracking-[0.18em] uppercase transition-colors duration-300 py-1 ${inkLink}`}
             >
+              <PulseDot color="red" />
               {t('header.new')}
             </Link>
 
@@ -277,7 +300,7 @@ export default function Header() {
           </Link>
         </div>
 
-        {/* End — icons */}
+        {/* End — desktop: Magazine / Sale / search / tiny language. Mobile: search only */}
         <div className="flex items-center gap-2.5 md:gap-4 shrink-0 order-3 justify-self-end">
           {/* Magazine link — desktop only */}
           <Link
@@ -289,13 +312,35 @@ export default function Header() {
             {t('header.magazine')}
           </Link>
 
-          <div className="relative">
+          {/* Sale — desktop only, purple blinking dot */}
+          <Link
+            href="/products?tab=sale"
+            className={`hidden md:flex items-center gap-1.5 text-[11px] tracking-[0.18em] uppercase transition-colors duration-300 py-1 ${inkLink}`}
+          >
+            <PulseDot color="purple" />
+            {t('header.sale')}
+          </Link>
+
+          {/* Search — mobile + desktop */}
+          <button
+            onClick={() => setSearchOpen((v) => !v)}
+            className={`flex items-center justify-center w-8 h-8 hover:opacity-70 transition-all duration-300 ${inkText}`}
+            aria-label={t('header.search')}
+            aria-expanded={searchOpen}
+          >
+            <Search size={18} strokeWidth={1.5} />
+          </button>
+
+          {/* Language — desktop only, small + subtle */}
+          <div className="relative hidden md:block">
             <button
               onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-              className="flex items-center justify-center w-8 h-8 hover:opacity-70 transition-opacity duration-300"
+              className={`flex items-center justify-center h-6 px-1 text-[9px] tracking-[0.14em] uppercase transition-colors duration-300 ${
+                transparent ? 'text-white/50 hover:text-white' : 'text-black/35 hover:text-black'
+              }`}
               aria-label="בחר שפה"
             >
-              <span className="text-base">{languageFlags[language]}</span>
+              {language}
             </button>
 
             {langDropdownOpen && (
@@ -325,30 +370,43 @@ export default function Header() {
               </>
             )}
           </div>
-
-          <span className={transparent ? '[&_svg]:!text-white' : ''}>
-            <UserMenu />
-          </span>
-
-          <Link
-            href="/cart"
-            className="relative flex items-center justify-center w-8 h-8 hover:opacity-70 transition-opacity duration-300 shrink-0"
-            aria-label={mounted && itemCount > 0 ? `${t('header.cart')} (${itemCount})` : t('header.cart')}
-          >
-            <ShoppingBag size={18} className={`transition-colors duration-300 ${inkText}`} strokeWidth={1.5} aria-hidden="true" />
-            {mounted && itemCount > 0 && (
-              <span
-                className={`absolute -top-0.5 -right-0.5 text-[8px] rounded-full w-4 h-4 flex items-center justify-center font-medium transition-colors duration-300 ${
-                  transparent ? 'bg-white text-black' : 'bg-black text-white'
-                }`}
-                aria-hidden="true"
-              >
-                {itemCount}
-              </span>
-            )}
-          </Link>
         </div>
       </nav>
+
+      {/* Search bar — slides open under the nav row */}
+      {searchOpen && (
+        <div className={`border-t ${transparent ? 'border-white/20' : 'border-black/10 bg-cream'}`}>
+          <form
+            onSubmit={submitSearch}
+            className="max-w-2xl mx-auto flex items-center gap-3 px-4 md:px-8 py-3"
+            role="search"
+          >
+            <Search size={16} strokeWidth={1.5} className={`shrink-0 ${inkText}`} aria-hidden />
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('header.searchPlaceholder')}
+              className={`flex-1 bg-transparent text-sm tracking-wide outline-none border-none focus:!outline-none ${
+                transparent ? 'text-white placeholder:text-white/50' : 'text-black placeholder:text-black/40'
+              }`}
+              aria-label={t('header.search')}
+            />
+            <button
+              type="button"
+              onClick={() => setSearchOpen(false)}
+              className={`flex items-center justify-center w-8 h-8 hover:opacity-70 transition-opacity ${inkText}`}
+              aria-label="סגור חיפוש"
+            >
+              <X size={16} strokeWidth={1.5} />
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Floating cart — appears bottom corner when cart has items */}
+      <FloatingCart />
 
       {/* Side drawer — desktop + mobile (TaliaSol style) */}
       {drawerOpen && (
@@ -467,6 +525,27 @@ export default function Header() {
               >
                 {t('footer.myAccount')}
               </Link>
+
+              {/* Language — compact row (main switcher is hidden on mobile) */}
+              <div className="flex items-center gap-1 py-4 border-b border-black/10">
+                {[
+                  { code: 'he' as const, label: 'עברית' },
+                  { code: 'en' as const, label: 'English' },
+                  { code: 'ru' as const, label: 'Русский' },
+                ].map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => handleLanguageChange(lang.code)}
+                    className={`px-3 py-1.5 text-[11px] tracking-wide transition-colors ${
+                      language === lang.code
+                        ? 'bg-black text-white'
+                        : 'text-black/50 hover:text-black'
+                    }`}
+                  >
+                    {lang.label}
+                  </button>
+                ))}
+              </div>
 
               {/* WhatsApp */}
               <a

@@ -53,13 +53,15 @@ interface Product {
 }
 
 interface MytheresaGridProps {
-  category?: 'bags' | 'belts' | 'wallets' | 'all' | 'ss26';
+  category?: 'bags' | 'belts' | 'wallets' | 'all' | 'ss26' | 'sale';
   maxProducts?: number;
   showViewAll?: boolean;
   /** When embedded on homepage: no #products id (parent section owns anchor) */
   embedOnHome?: boolean;
   /** Pre-filter by brand/vendor (case-insensitive substring, e.g. "valentino") */
   initialVendor?: string;
+  /** Free-text search (?q= from the header search bar) */
+  searchQuery?: string;
 }
 
 const CARD_BACKGROUNDS = ['#f3efe8', '#f5f5f5', '#f0eeef', '#f6f1f3', '#eef1f0', '#f4f2ed'];
@@ -294,6 +296,7 @@ export default function MytheresaGrid({
   showViewAll = false,
   embedOnHome = false,
   initialVendor,
+  searchQuery,
 }: MytheresaGridProps) {
   const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
@@ -348,8 +351,13 @@ export default function MytheresaGrid({
 
         let allProducts = data.products.edges.map((edge) => edge.node);
 
+        // Sale tab — only discounted products
+        if (category === 'sale') {
+          allProducts = allProducts.filter((product) => getSaleInfo(product) !== null);
+        }
+
         // Fallback client filter if Shopify search returns mixed types
-        if (category !== 'all' && category !== 'ss26') {
+        if (category !== 'all' && category !== 'ss26' && category !== 'sale') {
           allProducts = allProducts.filter((product) => {
             const type = (product.productType || '').toLowerCase();
             const title = product.title.toLowerCase();
@@ -418,10 +426,20 @@ export default function MytheresaGrid({
   );
 
   const sortedProducts = useMemo(() => {
-    const filtered =
+    let filtered =
       selectedVendors.size > 0
         ? products.filter((p) => selectedVendors.has(p.vendor || 'KLUMIT'))
         : products;
+
+    // Free-text search from the header (?q=)
+    const q = searchQuery?.trim().toLowerCase();
+    if (q) {
+      filtered = filtered.filter((p) =>
+        [p.title, p.vendor, p.productType, ...(p.tags || [])]
+          .filter(Boolean)
+          .some((field) => field.toLowerCase().includes(q))
+      );
+    }
 
     return [...filtered].sort((a, b) => {
       const aSold = isProductSoldOut(a);
@@ -449,7 +467,7 @@ export default function MytheresaGrid({
         parseFloat(a.priceRange.minVariantPrice.amount)
       );
     });
-  }, [products, selectedVendors, sortBy]);
+  }, [products, selectedVendors, sortBy, searchQuery]);
 
   const productPool = useMemo(
     () => (maxProducts ? sortedProducts.slice(0, maxProducts) : sortedProducts),

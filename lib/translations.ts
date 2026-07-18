@@ -25,6 +25,11 @@ export interface Translations {
   'header.menu': string;
   /** Wordmark next to nav (Hebrew / Latin per language) */
   'header.brand': string;
+  /** Sale nav item */
+  'header.sale': string;
+  /** Search button + input label */
+  'header.search': string;
+  'header.searchPlaceholder': string;
 
   // Home (Biasia-style homepage)
   'home.announcement': string;
@@ -397,6 +402,9 @@ export const translations: Record<Language, Translations> = {
     'header.new': 'חדש',
     'header.menu': 'תפריט',
     'header.brand': 'KLUMIT',
+    'header.sale': 'סייל',
+    'header.search': 'חיפוש',
+    'header.searchPlaceholder': 'חיפוש תיקים, ארנקים, מותגים...',
 
     // Home (Biasia-style)
     'home.announcement': 'משלוח חינם בהזמנות מעל ₪500 · שירות אישי · עור איטלקי אמיתי',
@@ -766,6 +774,9 @@ export const translations: Record<Language, Translations> = {
     'header.new': 'New',
     'header.menu': 'Menu',
     'header.brand': 'KLUMIT',
+    'header.sale': 'Sale',
+    'header.search': 'Search',
+    'header.searchPlaceholder': 'Search bags, wallets, brands...',
 
     // Home (Biasia-style)
     'home.announcement': 'Free shipping on orders over ₪500 · Personal service · Genuine Italian leather',
@@ -1135,6 +1146,9 @@ export const translations: Record<Language, Translations> = {
     'header.new': 'Новинки',
     'header.menu': 'Меню',
     'header.brand': 'KLUMIT',
+    'header.sale': 'Распродажа',
+    'header.search': 'Поиск',
+    'header.searchPlaceholder': 'Поиск сумок, кошельков, брендов...',
 
     // Home (Biasia-style)
     'home.announcement': 'Бесплатная доставка от ₪500 · Персональный сервис · Натуральная итальянская кожа',

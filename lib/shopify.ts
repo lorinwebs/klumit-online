@@ -219,7 +219,7 @@ export const PRODUCTS_LIST_QUERY = `
  * proven client-side title/type filter since store data mixes Hebrew/English.
  */
 export function getCategorySearchQuery(
-  category: 'bags' | 'belts' | 'wallets' | 'all' | 'ss26'
+  category: 'bags' | 'belts' | 'wallets' | 'all' | 'ss26' | 'sale'
 ): string | undefined {
   if (category === 'ss26') {
     return `collection:${SHOPIFY_COLLECTION_SS26_HANDLE}`;

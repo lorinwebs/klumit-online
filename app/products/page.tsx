@@ -11,11 +11,11 @@ export const metadata: Metadata = {
   },
 };
 
-const VALID_TABS = ['all', 'bags', 'belts', 'wallets', 'ss26'] as const;
+const VALID_TABS = ['all', 'bags', 'belts', 'wallets', 'ss26', 'sale'] as const;
 type TabType = (typeof VALID_TABS)[number];
 
 interface PageProps {
-  searchParams: Promise<{ tab?: string; category?: string; vendor?: string }>;
+  searchParams: Promise<{ tab?: string; category?: string; vendor?: string; q?: string }>;
 }
 
 export default async function ProductsPage({ searchParams }: PageProps) {
@@ -23,12 +23,13 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   const raw = (params.category || params.tab || 'all').toLowerCase();
   const activeTab: TabType = VALID_TABS.includes(raw as TabType) ? (raw as TabType) : 'all';
   const vendor = params.vendor?.toLowerCase() || undefined;
+  const query = params.q?.trim() || undefined;
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main id="main-content" className="flex-grow" role="main">
-        <MytheresaGrid category={activeTab} showViewAll={false} initialVendor={vendor} />
+        <MytheresaGrid category={activeTab} showViewAll={false} initialVendor={vendor} searchQuery={query} />
       </main>
       <Footer />
     </div>
