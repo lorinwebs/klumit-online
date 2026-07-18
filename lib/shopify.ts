@@ -583,6 +583,7 @@ export const GET_CART_QUERY = `
               ... on ProductVariant {
                 id
                 title
+                availableForSale
                 quantityAvailable
                 selectedOptions {
                   name

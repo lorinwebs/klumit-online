@@ -16,16 +16,30 @@ export interface CartItem {
   handle?: string;
 }
 
+export function isCartItemSoldOut(item: Pick<CartItem, 'available' | 'quantityAvailable'>): boolean {
+  if (item.available === false) return true;
+  if (item.quantityAvailable !== undefined && item.quantityAvailable !== null && item.quantityAvailable <= 0) {
+    return true;
+  }
+  return false;
+}
+
+export interface SoldOutRemovalNotice {
+  titles: string[];
+}
+
 interface CartStore {
   items: CartItem[];
   cartId: string | null;
   isLoading: boolean;
   isUpdating: boolean; // הוספתי את זה כדי שה-UI יוכל להציג ספינר קטן אם רוצים
+  soldOutRemovalNotice: SoldOutRemovalNotice | null;
   addItem: (item: Omit<CartItem, 'quantity'>) => Promise<void>;
   removeItem: (variantId: string) => Promise<void>;
   updateQuantity: (variantId: string, quantity: number) => Promise<void>;
   clearCart: () => void;
   loadFromShopify: () => Promise<void>;
+  clearSoldOutRemovalNotice: () => void;
   getTotal: () => number;
   getItemCount: () => number;
 }
@@ -73,8 +87,17 @@ function getCartItemsFromLocalStorage(): CartItem[] {
 }
 
 // טעינה ראשונית מ-localStorage
-const initialItems = typeof window !== 'undefined' ? getCartItemsFromLocalStorage() : [];
+const rawInitialItems = typeof window !== 'undefined' ? getCartItemsFromLocalStorage() : [];
+const initialSoldOutLocal = rawInitialItems.filter(isCartItemSoldOut);
+const initialItems = rawInitialItems.filter((item) => !isCartItemSoldOut(item));
+if (typeof window !== 'undefined' && initialSoldOutLocal.length > 0) {
+  saveCartItemsToLocalStorage(initialItems);
+}
 const initialCartId = typeof window !== 'undefined' ? getCartIdFromLocalStorage() : null;
+const initialSoldOutNotice: SoldOutRemovalNotice | null =
+  initialSoldOutLocal.length > 0
+    ? { titles: initialSoldOutLocal.map((item) => item.title) }
+    : null;
 
 export const useCartStore = create<CartStore>()((set, get) => {
   // Helper שמעדכן גם את ה-state וגם את localStorage
@@ -88,6 +111,11 @@ export const useCartStore = create<CartStore>()((set, get) => {
   cartId: initialCartId,
   isLoading: false,
   isUpdating: false,
+  soldOutRemovalNotice: initialSoldOutNotice,
+
+  clearSoldOutRemovalNotice: () => {
+    set({ soldOutRemovalNotice: null });
+  },
   
   loadFromShopify: async () => {
     // 1. הגנות מפני טעינות כפולות או דריסת עדכונים
@@ -197,18 +225,43 @@ export const useCartStore = create<CartStore>()((set, get) => {
           // תיקון כמות שחרגה מהמלאי - Shopify כבר תיקן את זה, אבל נוודא שהכמות לא חורגת
           const correctedItems = loadedItems.map(item => {
             if (item.quantityAvailable !== undefined && item.quantity > item.quantityAvailable) {
-              return { ...item, quantity: item.quantityAvailable };
+              return { ...item, quantity: Math.max(0, item.quantityAvailable) };
             }
             return item;
           });
-          
-          setItems(correctedItems);
-          set({ cartId: targetCartId, isLoading: false });
+
+          const soldOutItems = correctedItems.filter(isCartItemSoldOut);
+          const availableItems = correctedItems.filter((item) => !isCartItemSoldOut(item));
+
+          setItems(availableItems);
+          set({
+            cartId: targetCartId,
+            isLoading: false,
+            ...(soldOutItems.length > 0
+              ? {
+                  soldOutRemovalNotice: {
+                    titles: soldOutItems.map((item) => item.title),
+                  },
+                }
+              : {}),
+          });
           // תמיד שומרים את ה-cartId ב-localStorage כשטוענים את העגלה
           saveCartIdToLocalStorage(targetCartId);
           // שמירה מיידית ב-metafields כדי שדפדפנים אחרים ימצאו אותה
           if (isLoggedIn) {
             saveCartIdToMetafields(targetCartId, true).catch(() => {});
+          }
+
+          // מסנכרנים ל-Shopify כדי למחוק פריטים שאזלו מהמלאי
+          if (soldOutItems.length > 0) {
+            let buyerIdentity: { email?: string; phone?: string } | undefined;
+            if (isLoggedIn && user) {
+              buyerIdentity = {
+                email: user.email || user.user_metadata?.email,
+                phone: user.phone || user.user_metadata?.phone,
+              };
+            }
+            syncCartToShopify(availableItems, targetCartId, buyerIdentity).catch(() => {});
           }
         } else {
           // העגלה לא נמצאה או ריקה - אבל לא נמחק פריטים קיימים!

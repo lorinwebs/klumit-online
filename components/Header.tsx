@@ -6,6 +6,7 @@ import { Menu, X, ChevronDown, Search } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import FloatingCart from './FloatingCart';
+import CartSoldOutNotice from './CartSoldOutNotice';
 import { useLanguage } from '@/lib/LanguageContext';
 
 const BRANDS = [
@@ -414,6 +415,7 @@ export default function Header() {
 
       {/* Floating cart — appears bottom corner when cart has items */}
       <FloatingCart />
+      <CartSoldOutNotice />
 
       {/* Side drawer — desktop + mobile (TaliaSol style) */}
       {drawerOpen && (
