@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { X, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -30,11 +30,11 @@ export default function ImageZoomModal({ images, initialIndex, onClose }: ImageZ
     setPosition({ x: 0, y: 0 });
   }, [currentIndex]);
 
-  const handleZoomIn = () => {
+  const handleZoomIn = useCallback(() => {
     setScale((prev) => Math.min(prev + 0.5, 4));
-  };
+  }, []);
 
-  const handleZoomOut = () => {
+  const handleZoomOut = useCallback(() => {
     setScale((prev) => {
       const newScale = Math.max(prev - 0.5, 1);
       if (newScale === 1) {
@@ -42,15 +42,15 @@ export default function ImageZoomModal({ images, initialIndex, onClose }: ImageZ
       }
       return newScale;
     });
-  };
+  }, []);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % images.length);
-  };
+  }, [images.length]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
+  }, [images.length]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -70,7 +70,7 @@ export default function ImageZoomModal({ images, initialIndex, onClose }: ImageZ
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, scale, images.length]);
+  }, [images.length, onClose, handleNext, handlePrevious, handleZoomIn, handleZoomOut]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {

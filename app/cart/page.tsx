@@ -46,7 +46,7 @@ export default function CartPage() {
         currency: items[0]?.currencyCode || 'ILS',
       });
     }
-  }, [items.length]); // Track only when items count changes
+  }, [items, getTotal]);
 
 
   // פורמט מחיר פרימיום

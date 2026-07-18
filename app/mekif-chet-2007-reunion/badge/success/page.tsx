@@ -5,9 +5,9 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
-function Countdown() {
-  const EVENT_DATE = new Date('2026-06-10T18:00:00+03:00');
+const EVENT_DATE = new Date('2026-06-10T18:00:00+03:00');
 
+function Countdown() {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0 });
 
   useEffect(() => {

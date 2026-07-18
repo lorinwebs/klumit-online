@@ -284,21 +284,29 @@ export function useChatWidget(): UseChatWidgetReturn {
         : `/api/chat/conversations?session_id=${sessionId}`;
       
       const conversationsRes = await fetch(conversationsUrl);
-      
+      const conversationsData = await conversationsRes.json().catch(() => ({}));
+
       if (!conversationsRes.ok) {
-        throw new Error(`Failed to load conversations (${conversationsRes.status})`);
+        console.warn(
+          'Chat conversations unavailable:',
+          conversationsData?.error || conversationsRes.status
+        );
+        return;
       }
-      
-      const conversationsData = await conversationsRes.json();
-      
+
+      if (conversationsData.disabled) {
+        // Supabase env missing — chat soft-disabled
+        return;
+      }
+
       let conversation: Conversation | null = null;
-      
+
       if (conversationsData.conversations && conversationsData.conversations.length > 0) {
         conversation = conversationsData.conversations.find(
           (c: Conversation) => c.status === 'open'
         ) || conversationsData.conversations[0];
       }
-      
+
       if (!conversation) {
         // יצירת שיחה חדשה
         const createRes = await fetch('/api/chat/conversations', {
@@ -306,12 +314,14 @@ export function useChatWidget(): UseChatWidgetReturn {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ session_id: sessionId }),
         });
-        
+
+        const createData = await createRes.json().catch(() => ({}));
+
         if (!createRes.ok) {
-          throw new Error('Failed to create conversation');
+          console.warn('Chat create unavailable:', createData?.error || createRes.status);
+          return;
         }
-        
-        const createData = await createRes.json();
+
         conversation = createData.conversation;
       }
       

@@ -120,6 +120,12 @@ export function MobileSwipeView({
     setIndex(0);
   }, [mode, pendingUploader, aiUploader]);
 
+  const switchMode = (next: SectionMode) => {
+    setMode(next);
+    setDragX(0);
+    setExitDir(null);
+  };
+
   useEffect(() => {
     const counts: Record<SectionMode, number> = {
       yes: picked.length,
@@ -140,12 +146,6 @@ export function MobileSwipeView({
     }
     if (queue.length === 0) setIndex(0);
   }, [queue.length, index]);
-
-  const switchMode = (next: SectionMode) => {
-    setMode(next);
-    setDragX(0);
-    setExitDir(null);
-  };
 
   const advance = useCallback(() => {
     setExitDir(null);

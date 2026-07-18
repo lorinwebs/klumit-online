@@ -10,9 +10,10 @@ import { useLanguage } from '@/lib/LanguageContext';
 
 const BRANDS = [
   { name: 'Valentino', logo: '/brands/valentino.svg', vendor: 'valentino' },
-  { name: 'Renato Angi', logo: '/brands/renato-angi.png', vendor: 'renato' },
+  { name: 'Renato Angi', logo: '/brands/renato-angi.svg', vendor: 'renato' },
   { name: 'Biasia', logo: '/brands/biasia.jpg', vendor: 'biasia' },
-  { name: 'ByByblos', logo: '/brands/bybyblos.png', vendor: 'byblos' },
+  // Lowercase script reads smaller at equal height — scale it up to match visual weight
+  { name: 'ByByblos', logo: '/brands/bybyblos.png', vendor: 'byblos', logoClass: 'h-10 w-auto max-w-[200px] object-contain scale-110' },
 ];
 
 /** Rotating announcement slides: promo ↔ brand, switching every 5s */
@@ -243,7 +244,13 @@ export default function Header() {
                         onClick={() => setOpenDropdown(null)}
                         className="flex items-center justify-center px-6 py-3 hover:bg-black/[0.04] transition-colors duration-200"
                       >
-                        <Image src={brand.logo} alt={brand.name} width={160} height={40} className="h-7 w-auto max-w-[140px] object-contain" />
+                        <Image
+                          src={brand.logo}
+                          alt={brand.name}
+                          width={160}
+                          height={40}
+                          className={brand.logoClass ?? 'h-7 w-auto max-w-[140px] object-contain'}
+                        />
                       </Link>
                     ))}
                   </div>
@@ -501,7 +508,13 @@ export default function Header() {
                         onClick={closeDrawer}
                         className="flex items-center ps-4 py-2.5 hover:opacity-70 transition-opacity"
                       >
-                        <Image src={brand.logo} alt={brand.name} width={150} height={36} className="h-6 w-auto max-w-[130px] object-contain" />
+                        <Image
+                          src={brand.logo}
+                          alt={brand.name}
+                          width={150}
+                          height={36}
+                          className={brand.logoClass ?? 'h-6 w-auto max-w-[130px] object-contain'}
+                        />
                       </Link>
                     ))}
                   </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase, type User } from '@/lib/supabase';
 import { getShopifyCustomerId, clearCustomerIdCache } from '@/lib/sync-customer';
 import { findShopifyCustomerByPhone, saveShopifyCustomerId, verifyEmailOtpServer, updateUserProfile } from '@/app/auth/actions';
@@ -116,7 +116,7 @@ export default function AccountClient({
     };
     
     loadShopifyCustomerId();
-  }, []); // ריק - רק פעם אחת בטעינה הראשונית
+  }, [initialShopifyCustomerId, user]);
 
   // טען הזמנות אם אין
   useEffect(() => {
@@ -138,7 +138,7 @@ export default function AccountClient({
   }, [user, orders.length]);
 
   // חיפוש מיקוד אוטומטי לפי כתובת ועיר
-  const lookupZipCode = async (address: string, city: string) => {
+  const lookupZipCode = useCallback(async (address: string, city: string) => {
     if (!address || !city) return;
     
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -155,14 +155,14 @@ export default function AccountClient({
         const postalCode = data.results[0].address_components.find(
           (c: any) => c.types.includes('postal_code')
         );
-        if (postalCode?.long_name && !formData.shippingZipCode) {
-          setFormData(prev => ({ ...prev, shippingZipCode: postalCode.long_name }));
+        if (postalCode?.long_name) {
+          setFormData(prev => prev.shippingZipCode ? prev : { ...prev, shippingZipCode: postalCode.long_name });
         }
       }
     } catch (err) {
       // ignore
     }
-  };
+  }, []);
 
   // קרא ל-lookup כשמשתנה כתובת או עיר (רק במצב עריכה)
   useEffect(() => {
@@ -175,7 +175,7 @@ export default function AccountClient({
     }, 1000);
     
     return () => clearTimeout(timer);
-  }, [formData.shippingAddress, formData.shippingCity, editing]);
+  }, [formData.shippingAddress, formData.shippingCity, formData.shippingZipCode, editing, lookupZipCode]);
 
   const handleLogout = async () => {
     // פשוט: נקה הכל ונלך לדף הבית

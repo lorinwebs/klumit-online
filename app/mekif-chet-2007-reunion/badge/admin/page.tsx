@@ -24,6 +24,8 @@ interface BadgeRow {
   status?:        string;
 }
 
+const EVENT_DATE = new Date('2026-06-10T18:00:00+03:00');
+
 function getDisplayName(r: BadgeRow): string {
   if (r.first_name) return buildDisplayName(r);
   return r.full_name ?? '';
@@ -242,8 +244,10 @@ export default function AdminPage() {
     setDeleting(null);
   }
 
-  const EVENT_DATE = new Date('2026-06-10T18:00:00+03:00');
-  const daysLeft = Math.max(0, Math.ceil((EVENT_DATE.getTime() - Date.now()) / 86400000));
+  const [daysLeft, setDaysLeft] = useState(0);
+  useEffect(() => {
+    setDaysLeft(Math.max(0, Math.ceil((EVENT_DATE.getTime() - Date.now()) / 86400000)));
+  }, []);
 
   return (
     <div dir="rtl" className="min-h-screen bg-slate-50 p-4 md:p-8">

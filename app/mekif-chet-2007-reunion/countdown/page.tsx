@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { Sparkles } from 'lucide-react';
 
 const EVENT_DATE = new Date('2026-06-10T20:00:00+03:00');
@@ -85,19 +85,37 @@ function FloatingPhotos({ images }: { images: GalleryUpload[] }) {
 }
 
 function FloatingParticles() {
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 30 }, (_, i) => {
+        // Deterministic pseudo-random from index (avoids Math.random during render)
+        const seed = (i + 1) * 9973;
+        const r = (n: number) => ((seed * (n + 1)) % 1000) / 1000;
+        return {
+          width: r(1) * 4 + 1,
+          height: r(2) * 4 + 1,
+          left: r(3) * 100,
+          top: r(4) * 100,
+          animationDelay: r(5) * 8,
+          animationDuration: r(6) * 6 + 6,
+        };
+      }),
+    [],
+  );
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {Array.from({ length: 30 }).map((_, i) => (
+      {particles.map((p, i) => (
         <div
           key={i}
           className="particle absolute rounded-full"
           style={{
-            width: `${Math.random() * 4 + 1}px`,
-            height: `${Math.random() * 4 + 1}px`,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 8}s`,
-            animationDuration: `${Math.random() * 6 + 6}s`,
+            width: `${p.width}px`,
+            height: `${p.height}px`,
+            left: `${p.left}%`,
+            top: `${p.top}%`,
+            animationDelay: `${p.animationDelay}s`,
+            animationDuration: `${p.animationDuration}s`,
           }}
         />
       ))}

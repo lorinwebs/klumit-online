@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useCartStore } from '@/store/cartStore';
 import { shopifyClient, CREATE_CART_MUTATION, ADD_TO_CART_MUTATION, UPDATE_CART_BUYER_IDENTITY_MUTATION, UPDATE_CART_DISCOUNT_CODES_MUTATION, CART_DELIVERY_ADDRESSES_ADD_MUTATION } from '@/lib/shopify';
 import { supabase } from '@/lib/supabase';
@@ -173,7 +173,7 @@ export default function CheckoutPage() {
         subscription.unsubscribe();
       }
     };
-  }, [items]);
+  }, [items, getTotal]);
 
   // שלח הודעה לטלגרם על הגעה לדף checkout (רק פעם אחת)
   useEffect(() => {
@@ -205,14 +205,14 @@ export default function CheckoutPage() {
       
       return () => clearTimeout(timeoutId);
     }
-  }, [items.length, user]);
+  }, [items.length, user, getTotal]);
 
   const formatPrice = (amount: number) => {
     return Math.round(amount).toLocaleString('he-IL');
   };
 
   // חיפוש מיקוד אוטומטי לפי כתובת ועיר
-  const lookupZipCode = async (address: string, city: string) => {
+  const lookupZipCode = useCallback(async (address: string, city: string) => {
     if (!address || !city) return;
     
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -229,14 +229,14 @@ export default function CheckoutPage() {
         const postalCode = data.results[0].address_components.find(
           (c: any) => c.types.includes('postal_code')
         );
-        if (postalCode?.long_name && !formData.zipCode) {
-          setFormData(prev => ({ ...prev, zipCode: postalCode.long_name }));
+        if (postalCode?.long_name) {
+          setFormData(prev => prev.zipCode ? prev : { ...prev, zipCode: postalCode.long_name });
         }
       }
     } catch (err) {
       // ignore - מיקוד לא קריטי
     }
-  };
+  }, []);
 
   // קרא ל-lookup כשמשתנה כתובת או עיר
   useEffect(() => {
@@ -247,7 +247,7 @@ export default function CheckoutPage() {
     }, 1000); // debounce 1 שנייה
     
     return () => clearTimeout(timer);
-  }, [formData.address, formData.city]);
+  }, [formData.address, formData.city, formData.zipCode, lookupZipCode]);
 
   const calculatedTotal = useMemo(() => {
     // אם יש לנו מחיר סופי מ-Shopify (אחרי הנחה ומסים), זה הערך הכי מדויק

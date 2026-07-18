@@ -258,7 +258,7 @@ export default function AdminChatPage() {
         }).catch(() => {});
       }
     };
-  }, [selectedConversation?.id, loadMessages]);
+  }, [selectedConversation, loadMessages]);
 
   // גלילה למטה כשמוסיפים הודעה
   useEffect(() => {

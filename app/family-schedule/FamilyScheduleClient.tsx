@@ -462,6 +462,8 @@ function MobileDayView({ events, date, conflicts, onCellClick, onEventClick, min
       const scrollTo = hourToOffset.get(firstEvent) || 0;
       scrollRef.current.scrollTop = Math.max(0, scrollTo - 60);
     }
+    // Scroll only when the day changes; hourToOffset is layout-derived and would re-fire every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date, dayEvents]);
 
   return (
