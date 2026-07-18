@@ -12,6 +12,7 @@ import LoginModal from '@/components/LoginModal';
 import Link from 'next/link';
 import { Check, User } from 'lucide-react';
 import { trackBeginCheckout } from '@/lib/analytics';
+import posthog from 'posthog-js';
 
 export default function CheckoutPage() {
   const { items, cartId, loadFromShopify, getTotal } = useCartStore();
@@ -365,16 +366,22 @@ export default function CheckoutPage() {
           setAppliedDiscountCode(discountCodeInfo.code);
           const totalAmount = parseFloat(cart.cost?.totalAmount?.amount || '0');
           const subtotalAmount = parseFloat(cart.cost?.subtotalAmount?.amount || '0');
-          
+
           // שמירת מחיר הביניים המעודכן מ-Shopify
           setCartSubtotal(subtotalAmount);
           setCartTotal(totalAmount);
-          
+
           // חישוב ההנחה המדויק כפי ש-Shopify רואה אותו
           // ההנחה היא ההפרש בין subtotal ל-total (כולל מסים)
           const discount = subtotalAmount - totalAmount;
           setDiscountAmount(discount);
           setError(null);
+          posthog.capture('discount_code_applied', {
+            discount_code: discountCodeInfo.code,
+            discount_amount: discount,
+            total_after_discount: totalAmount,
+            currency: 'ILS',
+          });
         } else {
           setError('קוד קופון לא תקין או לא ניתן לשימוש');
           setAppliedDiscountCode(null);
@@ -933,7 +940,16 @@ export default function CheckoutPage() {
         if (checkoutUrl.includes('/password') || checkoutUrl.includes('/en/password')) {
           throw new Error('החנות מוגנת בסיסמה. אנא הסר את ההגנה ב-Shopify Admin → Settings → Store availability');
         }
-        
+
+        posthog.capture('checkout_submitted', {
+          item_count: items.length,
+          total_value: calculatedTotal,
+          currency: items[0]?.currencyCode || 'ILS',
+          has_discount: Boolean(appliedDiscountCode),
+          discount_code: appliedDiscountCode || undefined,
+          is_guest: !user,
+        });
+
         // Redirect
         setTimeout(() => {
           window.location.href = checkoutUrl;

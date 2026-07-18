@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPaymentLink } from '@/lib/grow';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +55,23 @@ export async function POST(request: NextRequest) {
       successUrl,
       cancelUrl,
     });
+
+    try {
+      const posthog = getPostHogClient();
+      posthog.capture({
+        distinctId: reference,
+        event: 'payment_link_created',
+        properties: {
+          amount: parseFloat(amount),
+          currency: 'ILS',
+          order_reference: String(reference),
+          payment_id: paymentLink.paymentId,
+        },
+      });
+      await posthog.shutdown();
+    } catch {
+      // non-critical
+    }
 
     return NextResponse.json({
       success: true,

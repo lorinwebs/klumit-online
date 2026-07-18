@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { shopifyAdminClient } from '@/lib/shopify-admin';
 import { GraphQLClient } from 'graphql-request';
 import { notifyNewUser } from '@/lib/telegram';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 const FIND_CUSTOMER_BY_PHONE_QUERY = `
   query getCustomers($query: String!) {
@@ -158,7 +159,30 @@ export async function verifyOtpServer(prevState: any, formData: FormData) {
         notifyNewUser(phone, user.id, { kind: 'requestHost', host }).catch(() => {});
       }
     }
-    
+
+    if (user?.id) {
+      try {
+        const posthog = getPostHogClient();
+        posthog.capture({
+          distinctId: user.id,
+          event: isNewUser ? 'user_signed_up' : 'user_signed_in',
+          properties: {
+            auth_method: 'phone_otp',
+          },
+        });
+        posthog.identify({
+          distinctId: user.id,
+          properties: {
+            phone,
+            created_at: user.created_at,
+          },
+        });
+        await posthog.shutdown();
+      } catch {
+        // non-critical
+      }
+    }
+
     // סנכרון Shopify Customer הוסר - נעשה בנפרד
 
     // אם skipRedirect הוא true, לא נבצע redirect (למשל מדף checkout)

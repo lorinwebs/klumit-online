@@ -6,7 +6,8 @@ const host = process.env.NEXT_PUBLIC_POSTHOG_HOST;
 // Skip init when env is missing so the app still boots locally
 if (token) {
   posthog.init(token, {
-    api_host: host,
+    api_host: '/ingest',
+    ui_host: 'https://eu.posthog.com',
     defaults: '2026-05-30',
     capture_exceptions: true,
     // Session recording is heavy in Turbopack/dev and can contribute to OOM

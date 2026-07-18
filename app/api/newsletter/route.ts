@@ -6,6 +6,7 @@ import {
   gatePageUrlFromAllowedRequestHost,
 } from '@/lib/telegram';
 import nodemailer from 'nodemailer';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 function optionalString(value: unknown): string | null {
   if (typeof value !== 'string') return null;
@@ -111,6 +112,27 @@ ${detailLines.join('\n')}
       }
     } catch (emailError) {
       console.error('Failed to send email:', emailError);
+    }
+
+    try {
+      const posthog = getPostHogClient();
+      posthog.capture({
+        distinctId: email,
+        event: 'newsletter_subscribed',
+        properties: {
+          signup_type: isKClub ? 'k_club' : 'newsletter',
+          has_phone: Boolean(phone),
+        },
+      });
+      posthog.identify({
+        distinctId: email,
+        properties: {
+          email,
+        },
+      });
+      await posthog.shutdown();
+    } catch {
+      // non-critical
     }
 
     return NextResponse.json({ success: true });
