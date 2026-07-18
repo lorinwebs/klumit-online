@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { notifyNewOrder } from '@/lib/telegram';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +46,24 @@ export async function POST(request: NextRequest) {
       order.shipping_address?.phone ||
       order.billing_address?.phone ||
       undefined;
+
+    try {
+      const posthog = getPostHogClient();
+      posthog.capture({
+        distinctId: order.customer?.id ? `shopify_customer_${order.customer.id}` : `shopify_order_${order.id}`,
+        event: 'order_paid',
+        properties: {
+          order_id: String(order.id),
+          order_number: String(order.order_number || order.name || ''),
+          total_value: Number(order.total_price || 0),
+          currency: order.currency || 'ILS',
+          item_count: order.line_items?.length || 0,
+        },
+      });
+      await posthog.shutdown();
+    } catch (posthogError) {
+      console.warn('PostHog order_paid capture skipped:', posthogError);
+    }
 
     const shopDomain = request.headers.get('x-shopify-shop-domain') || '';
     const telegramResult = await notifyNewOrder(

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { createId } from '@/lib/createId';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 const SESSION_ID_KEY = 'klumit_chat_session_id';
@@ -70,7 +71,7 @@ export function useChatWidget(): UseChatWidgetReturn {
   useEffect(() => {
     let storedSessionId = localStorage.getItem(SESSION_ID_KEY);
     if (!storedSessionId) {
-      storedSessionId = crypto.randomUUID();
+      storedSessionId = createId();
       localStorage.setItem(SESSION_ID_KEY, storedSessionId);
     }
     setSessionId(storedSessionId);

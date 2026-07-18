@@ -7,6 +7,7 @@ import { Suspense } from 'react';
 import AnalyticsProvider from '@/components/Analytics';
 import ConditionalLayout from '@/components/ConditionalLayout';
 import { LanguageProvider } from '@/lib/LanguageContext';
+import PostHogAuth from '@/components/PostHogAuth';
 import './globals.css';
 
 /* TaliaSol-style brand font (Latin) — self-hosted Roundo */
@@ -322,6 +323,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${roundo.variable} ${assistant.variable} font-sans overflow-x-clip`}>
+        <PostHogAuth />
         <LanguageProvider>
           <ConditionalLayout>
             <Suspense fallback={null}>

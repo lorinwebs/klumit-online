@@ -5,6 +5,8 @@
  * ה-checkout יטופל ע"י Custom Pixel ב-Shopify
  */
 
+import posthog from 'posthog-js';
+
 // GA4 Measurement ID - הוסף ל-.env.local:
 // NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
@@ -38,6 +40,11 @@ export function initGA4(): void {
 function sendEvent(eventName: string, params?: Record<string, any>): void {
   if (typeof window === 'undefined' || !(window as any).gtag) return;
   (window as any).gtag('event', eventName, params);
+}
+
+function capturePostHogEvent(eventName: string, properties?: Record<string, unknown>): void {
+  if (typeof window === 'undefined') return;
+  posthog.capture(eventName, properties);
 }
 
 // Helper to send standard events to Meta Pixel
@@ -257,6 +264,14 @@ export function trackPageView(path?: string, title?: string): void {
  * Product Viewed - כשמישהו צופה בדף מוצר
  */
 export function trackProductViewed(product: ProductData): void {
+  capturePostHogEvent('product_viewed', {
+    product_id: product.id,
+    price: product.price,
+    currency: product.currency || 'ILS',
+    category: product.category,
+    variant: product.variant,
+  });
+
   // Google Analytics
   sendEvent('view_item', {
     currency: product.currency || 'ILS',
@@ -311,6 +326,15 @@ export function trackProductListViewed(products: ProductData[], listName?: strin
 export function trackAddToCart(product: ProductData): void {
   const quantity = product.quantity || 1;
   const value = product.price * quantity;
+
+  capturePostHogEvent('product_added_to_cart', {
+    product_id: product.id,
+    price: product.price,
+    currency: product.currency || 'ILS',
+    variant: product.variant,
+    quantity,
+    value,
+  });
   
   // Google Analytics
   sendEvent('add_to_cart', {
@@ -357,6 +381,12 @@ export function trackRemoveFromCart(product: ProductData): void {
  * View Cart - כשצופים בדף העגלה
  */
 export function trackViewCart(cart: CartData): void {
+  capturePostHogEvent('cart_viewed', {
+    item_count: cart.items.reduce((sum, item) => sum + (item.quantity || 1), 0),
+    total_value: cart.totalValue,
+    currency: cart.currency || 'ILS',
+  });
+
   // Google Analytics
   sendEvent('view_cart', {
     currency: cart.currency || 'ILS',
@@ -383,6 +413,12 @@ export function trackViewCart(cart: CartData): void {
  * Begin Checkout - כשמתחילים checkout (לפני המעבר ל-Shopify)
  */
 export function trackBeginCheckout(cart: CartData): void {
+  capturePostHogEvent('checkout_started', {
+    item_count: cart.items.reduce((sum, item) => sum + (item.quantity || 1), 0),
+    total_value: cart.totalValue,
+    currency: cart.currency || 'ILS',
+  });
+
   // Google Analytics
   sendEvent('begin_checkout', {
     currency: cart.currency || 'ILS',

@@ -5,6 +5,8 @@ const nextConfig = {
   experimental: {
     turbopackUseSystemTlsCerts: true,
   },
+  // Allow LAN access in local development without cross-origin warnings
+  allowedDevOrigins: ['127.0.0.1', 'localhost', '192.168.50.237'],
   images: {
     remotePatterns: [
       {

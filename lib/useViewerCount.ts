@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from './supabase';
+import { createId } from './createId';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 const CHANNEL_NAME = 'presence:klumit-ecom';
@@ -15,7 +16,7 @@ function getSessionId(): string {
   let sessionId = localStorage.getItem(storageKey);
   
   if (!sessionId) {
-    sessionId = crypto.randomUUID();
+    sessionId = createId();
     localStorage.setItem(storageKey, sessionId);
   }
   
