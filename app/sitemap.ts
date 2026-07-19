@@ -1,5 +1,7 @@
 import { MetadataRoute } from 'next';
-import { shopifyClient } from '@/lib/shopify';
+import { shopifyClient, SHOPIFY_CATALOG_REVALIDATE_SECONDS } from '@/lib/shopify';
+
+export const revalidate = SHOPIFY_CATALOG_REVALIDATE_SECONDS;
 
 const BASE_URL = 'https://www.klumit-online.co.il';
 

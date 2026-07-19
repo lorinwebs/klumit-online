@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useCartStore } from '@/store/cartStore';
-import { shopifyClient, CREATE_CART_MUTATION, ADD_TO_CART_MUTATION, UPDATE_CART_BUYER_IDENTITY_MUTATION, UPDATE_CART_DISCOUNT_CODES_MUTATION, CART_DELIVERY_ADDRESSES_ADD_MUTATION } from '@/lib/shopify';
+import { shopifyClientDynamic as shopifyClient, CREATE_CART_MUTATION, ADD_TO_CART_MUTATION, UPDATE_CART_BUYER_IDENTITY_MUTATION, UPDATE_CART_DISCOUNT_CODES_MUTATION, CART_DELIVERY_ADDRESSES_ADD_MUTATION } from '@/lib/shopify';
 import { supabase } from '@/lib/supabase';
 import { saveOrderAddress } from '@/lib/order-addresses';
 import AddressAutocomplete from '@/components/AddressAutocomplete';

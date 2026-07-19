@@ -167,8 +167,8 @@ export const useCartStore = create<CartStore>()((set, get) => {
           if (localStorageCartId) {
             try {
               // נבדוק אם העגלה ב-localStorage קיימת
-              const { shopifyClient, GET_CART_QUERY, UPDATE_CART_BUYER_IDENTITY_MUTATION } = await import('@/lib/shopify');
-              const cartResponse = await shopifyClient.request(
+              const { shopifyClientDynamic, GET_CART_QUERY, UPDATE_CART_BUYER_IDENTITY_MUTATION } = await import('@/lib/shopify');
+              const cartResponse = await shopifyClientDynamic.request(
                 GET_CART_QUERY,
                 { id: localStorageCartId }
               ) as { cart?: { id?: string; buyerIdentity?: { email?: string; phone?: string } } };
@@ -185,7 +185,7 @@ export const useCartStore = create<CartStore>()((set, get) => {
                 // עדכן את ה-buyerIdentity של העגלה אם צריך
                 if (needsUpdate) {
                   try {
-                    await shopifyClient.request(UPDATE_CART_BUYER_IDENTITY_MUTATION, {
+                    await shopifyClientDynamic.request(UPDATE_CART_BUYER_IDENTITY_MUTATION, {
                       cartId: localStorageCartId,
                       buyerIdentity: {
                         email: buyerIdentity.email,

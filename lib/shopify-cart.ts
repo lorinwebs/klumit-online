@@ -1,6 +1,6 @@
 'use client';
 
-import { shopifyClient, CREATE_CART_MUTATION, ADD_TO_CART_MUTATION, GET_CART_QUERY, UPDATE_CART_BUYER_IDENTITY_MUTATION, REMOVE_CART_LINES_MUTATION, UPDATE_CART_LINES_MUTATION } from './shopify';
+import { shopifyClientDynamic as shopifyClient, CREATE_CART_MUTATION, ADD_TO_CART_MUTATION, GET_CART_QUERY, UPDATE_CART_BUYER_IDENTITY_MUTATION, REMOVE_CART_LINES_MUTATION, UPDATE_CART_LINES_MUTATION } from './shopify';
 import { supabase } from './supabase';
 import type { CartItem } from '@/store/cartStore';
 import { formatPhoneForShopify } from './utils/phone';
