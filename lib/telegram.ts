@@ -268,7 +268,7 @@ export function breakUrlForTelegram(url: string): string {
 export async function notifyNewUser(
   phone: string,
   userId: string,
-  gate: { kind: 'requestHost'; host: string }
+  gate: TelegramWebsiteSendGate
 ): Promise<boolean> {
   const message = `🆕 <b>משתמש חדש נרשם!</b>
 

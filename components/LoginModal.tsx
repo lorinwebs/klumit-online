@@ -147,6 +147,23 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     try {
       // השתמש במספר המנורמל שנשמר בשליחה, או ננרמל מחדש
       const phoneToVerify = e164Phone || normalizeILPhone(phone);
+
+      // שליחת התראת טלגרם על הצטרפות חדשה למועדון (fire-and-forget)
+      const notifyNewSignup = (user: { id: string; created_at?: string }) => {
+        if (typeof window === 'undefined') return;
+        const createdAt = user.created_at;
+        const isNewUser = createdAt && Date.now() - new Date(createdAt).getTime() < 120000;
+        if (!isNewUser) return;
+        fetch('/api/telegram/notify-new-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pageUrl: window.location.href.replace(/^https?:\/\//, ''),
+            phone: phoneToVerify,
+            userId: user.id,
+          }),
+        }).catch(() => {});
+      };
       
       // בדוק אם אנחנו בדף checkout - אם כן, נשתמש ב-client-side verify
       const isCheckoutPage = typeof window !== 'undefined' && window.location.pathname === '/checkout';
@@ -166,6 +183,8 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         if (!data?.session || !data?.user) {
           throw new Error('אימות נכשל');
         }
+
+        notifyNewSignup(data.user);
 
         // הסשן נשמר אוטומטית ב-localStorage
         // עדכן את הסטטוס מיד לפני רענון
@@ -194,6 +213,8 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
         if (!data?.session || !data?.user) {
           throw new Error('אימות נכשל');
         }
+
+        notifyNewSignup(data.user);
 
         // הסשן נשמר אוטומטית ב-localStorage
         // קריאה ל-onSuccess אם קיים
