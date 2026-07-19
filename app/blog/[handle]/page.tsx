@@ -4,7 +4,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { shopifyClient, ARTICLES_QUERY } from '@/lib/shopify';
+import { shopifyClient, ARTICLES_QUERY, SHOPIFY_CATALOG_REVALIDATE_SECONDS } from '@/lib/shopify';
+
+export const revalidate = SHOPIFY_CATALOG_REVALIDATE_SECONDS;
 
 interface Article {
   id: string;

@@ -36,44 +36,68 @@ export default function ProductCard({
   onSale = false,
   originalPrice,
 }: ProductCardProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const addItem = useCartStore((state) => state.addItem);
   const items = useCartStore((state) => state.items);
   const [showToast, setShowToast] = useState(false);
+  const [showStockToast, setShowStockToast] = useState(false);
 
   const existingItem = items.find((i) => i.variantId === variantId);
   const currentQuantity = existingItem?.quantity || 0;
-  const isMaxStock = quantityAvailable !== undefined &&
-                     currentQuantity >= quantityAvailable;
+  const isSoldOut =
+    !available ||
+    (quantityAvailable !== undefined && quantityAvailable === 0);
+  const isMaxStock =
+    !isSoldOut &&
+    quantityAvailable !== undefined &&
+    currentQuantity >= quantityAvailable;
+
+  const whatsappOrderHref = (() => {
+    const msg =
+      language === 'he'
+        ? `היי, התיק אזל מהמלאי — אשמח להזמין מאיטליה את: ${title}`
+        : language === 'ru'
+          ? `Здравствуйте, товара нет в наличии — хочу заказать из Италии: ${title}`
+          : `Hi — this bag is sold out. I'd like to order from Italy: ${title}`;
+    return `https://wa.me/972549903139?text=${encodeURIComponent(msg)}`;
+  })();
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
-    if (available && !isMaxStock) {
-      await addItem({
-        id: variantId,
-        variantId,
-        title,
-        price,
-        currencyCode,
-        image,
-        available,
-        quantityAvailable,
-        handle,
-      });
+    e.stopPropagation();
 
-      trackAddToCart({
-        id: variantId,
-        name: title,
-        price: parseFloat(price),
-        currency: currencyCode,
-        quantity: 1,
-      });
-
-      setShowToast(true);
-      setTimeout(() => {
-        setShowToast(false);
-      }, 2000);
+    if (isSoldOut) {
+      setShowStockToast(true);
+      setTimeout(() => setShowStockToast(false), 6000);
+      return;
     }
+
+    if (isMaxStock) return;
+
+    await addItem({
+      id: variantId,
+      variantId,
+      title,
+      price,
+      currencyCode,
+      image,
+      available,
+      quantityAvailable,
+      handle,
+    });
+
+    trackAddToCart({
+      id: variantId,
+      name: title,
+      price: parseFloat(price),
+      currency: currencyCode,
+      quantity: 1,
+    });
+
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 2000);
   };
 
   const formatPrice = (amount: string) => {
@@ -117,11 +141,21 @@ export default function ProductCard({
             <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-white/98 border-t border-black/10">
               <button
                 onClick={handleAddToCart}
-                disabled={!available || isMaxStock}
+                disabled={isMaxStock}
                 className="w-full py-2 text-[10px] tracking-[0.18em] uppercase font-light hover:bg-black hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label={isMaxStock ? `${t('products.outOfStock')} (${quantityAvailable} ${t('products.units')})` : `${t('products.addToCart')} ${title}`}
+                aria-label={
+                  isSoldOut
+                    ? t('products.outOfStockMessage')
+                    : isMaxStock
+                      ? `${t('products.outOfStock')} (${quantityAvailable} ${t('products.units')})`
+                      : `${t('products.addToCart')} ${title}`
+                }
               >
-                {isMaxStock ? t('products.outOfStock') : t('products.addToCartShort')}
+                {isSoldOut
+                  ? t('products.outOfStock')
+                  : isMaxStock
+                    ? t('products.outOfStock')
+                    : t('products.addToCartShort')}
               </button>
             </div>
           </div>
@@ -144,6 +178,14 @@ export default function ProductCard({
         </div>
       </Link>
       <Toast show={showToast} message="נוסף לעגלה" showViewCart={true} />
+      <Toast
+        show={showStockToast}
+        message={t('products.outOfStockMessage')}
+        showViewCart={false}
+        type="warning"
+        actionHref={whatsappOrderHref}
+        actionLabel={t('products.outOfStockWhatsAppCta')}
+      />
     </motion.div>
   );
 }

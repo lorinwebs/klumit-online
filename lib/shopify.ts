@@ -33,6 +33,9 @@ const storeDomain = domain.includes('.myshopify.com')
   ? domain
   : `${domain}.myshopify.com`;
 
+/** How long catalog/content Shopify responses may be cached (ISR). */
+export const SHOPIFY_CATALOG_REVALIDATE_SECONDS = 60;
+
 // Shopify credentials check - will fail gracefully if missing
 
 /**
@@ -53,12 +56,12 @@ export function createServerShopifyClient(buyerIp?: string | null) {
     `https://${storeDomain}/api/2024-07/graphql.json`,
     {
       headers,
-      fetch: (url, options) => 
-        fetch(url, { 
-          ...options as RequestInit, 
-          cache: 'no-store',
-          next: { revalidate: 0 }
-        } as RequestInit)
+      fetch: (url, options) =>
+        fetch(url, {
+          ...options as RequestInit,
+          // ISR-friendly: allows /blog and /sitemap.xml to be statically generated
+          next: { revalidate: SHOPIFY_CATALOG_REVALIDATE_SECONDS },
+        } as RequestInit),
     }
   );
 }
@@ -74,6 +77,7 @@ export function getBuyerIpFromHeaders(headers: Headers): string | null {
   return headers.get('x-real-ip') || null;
 }
 
+/** Default client for product/blog/sitemap reads — cacheable for static generation. */
 export const shopifyClient = new GraphQLClient(
   `https://${storeDomain}/api/2024-07/graphql.json`,
   {
@@ -81,13 +85,27 @@ export const shopifyClient = new GraphQLClient(
       'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
       'Content-Type': 'application/json',
     },
-    // ביטול Cache - קריטי! מונע קבלת תשובות ישנות מ-Next.js
-    fetch: (url, options) => 
-      fetch(url, { 
-        ...options as RequestInit, 
+    fetch: (url, options) =>
+      fetch(url, {
+        ...options as RequestInit,
+        next: { revalidate: SHOPIFY_CATALOG_REVALIDATE_SECONDS },
+      } as RequestInit),
+  }
+);
+
+/** Uncached client for cart mutations / fresh cart reads (never use on static pages). */
+export const shopifyClientDynamic = new GraphQLClient(
+  `https://${storeDomain}/api/2024-07/graphql.json`,
+  {
+    headers: {
+      'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
+      'Content-Type': 'application/json',
+    },
+    fetch: (url, options) =>
+      fetch(url, {
+        ...options as RequestInit,
         cache: 'no-store',
-        next: { revalidate: 0 }
-      } as RequestInit)
+      } as RequestInit),
   }
 );
 
@@ -583,6 +601,7 @@ export const GET_CART_QUERY = `
               ... on ProductVariant {
                 id
                 title
+                availableForSale
                 quantityAvailable
                 selectedOptions {
                   name

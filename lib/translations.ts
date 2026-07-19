@@ -108,6 +108,12 @@ export interface Translations {
   'products.purchaseTrustLine': string;
   /** Link label — WhatsApp for pre-purchase questions */
   'products.whatsappContactCta': string;
+  /** Short copy when product is sold out */
+  'products.outOfStockMessage': string;
+  /** CTA to request Italy special order via WhatsApp */
+  'products.outOfStockWhatsAppCta': string;
+  /** Shown when sold-out cart lines are removed on visit */
+  'products.cartSoldOutRemoved': string;
   'products.color': string;
   'products.size': string;
   'products.notifyWhenBack': string;
@@ -496,6 +502,9 @@ export const translations: Record<Language, Translations> = {
     'products.shareViaWhatsApp': 'שתפו בוואטסאפ',
     'products.purchaseTrustLine': 'משלוח חינם מעל ₪500 · תשלום מאובטח',
     'products.whatsappContactCta': 'שאלות לפני הקנייה? נענה בוואטסאפ',
+    'products.outOfStockMessage': 'התיק אזל מהמלאי. אפשר להזמין אותו מאיטליה — כתבו לנו בוואטסאפ.',
+    'products.outOfStockWhatsAppCta': 'הזמנה מאיטליה בוואטסאפ',
+    'products.cartSoldOutRemoved': 'פריטים שאזלו מהמלאי הוסרו מהעגלה. אפשר להזמין מאיטליה בוואטסאפ.',
     'products.color': 'צבע',
     'products.size': 'גודל',
     'products.notifyWhenBack': 'הודיעו לי כשחוזר',
@@ -883,6 +892,9 @@ export const translations: Record<Language, Translations> = {
     'products.shareViaWhatsApp': 'Share via WhatsApp',
     'products.purchaseTrustLine': 'Free shipping over ₪500 · Secure checkout',
     'products.whatsappContactCta': 'Questions before you buy? Message us on WhatsApp',
+    'products.outOfStockMessage': 'This bag is sold out. We can order it from Italy — message us on WhatsApp.',
+    'products.outOfStockWhatsAppCta': 'Order from Italy on WhatsApp',
+    'products.cartSoldOutRemoved': 'Sold-out items were removed from your cart. We can order from Italy — message us on WhatsApp.',
     'products.color': 'Color',
     'products.size': 'Size',
     'products.notifyWhenBack': 'Notify me when back',
@@ -1270,6 +1282,9 @@ export const translations: Record<Language, Translations> = {
     'products.shareViaWhatsApp': 'Поделиться в WhatsApp',
     'products.purchaseTrustLine': 'Бесплатная доставка от ₪500 · Безопасная оплата',
     'products.whatsappContactCta': 'Вопросы перед покупкой? Напишите в WhatsApp',
+    'products.outOfStockMessage': 'Сумка закончилась. Можем заказать из Италии — напишите нам в WhatsApp.',
+    'products.outOfStockWhatsAppCta': 'Заказ из Италии в WhatsApp',
+    'products.cartSoldOutRemoved': 'Товары, которых нет в наличии, удалены из корзины. Можно заказать из Италии в WhatsApp.',
     'products.color': 'Цвет',
     'products.size': 'Размер',
     'products.notifyWhenBack': 'Сообщить о поступлении',

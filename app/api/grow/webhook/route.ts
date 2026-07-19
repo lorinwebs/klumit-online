@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyWebhookSignature } from '@/lib/grow';
 import { updateShopifyOrder } from '@/lib/shopify-admin';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +59,24 @@ export async function POST(request: NextRequest) {
           message: 'Webhook received but order update failed',
           error: error instanceof Error ? error.message : 'Unknown error',
         });
+      }
+
+      try {
+        const posthog = getPostHogClient();
+        posthog.capture({
+          distinctId: String(orderReference),
+          event: 'grow_payment_completed',
+          properties: {
+            order_reference: String(orderReference),
+            payment_status: paymentStatus,
+            event_type: eventType,
+            total_value: typeof body.amount === 'number' ? body.amount : undefined,
+            currency: 'ILS',
+          },
+        });
+        await posthog.shutdown();
+      } catch {
+        // non-critical
       }
     }
 

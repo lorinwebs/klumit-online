@@ -10,9 +10,18 @@ interface ToastProps {
   show: boolean;
   showViewCart?: boolean;
   type?: 'success' | 'warning';
+  actionHref?: string;
+  actionLabel?: string;
 }
 
-export default function Toast({ show, message, showViewCart = true, type = 'success' }: ToastProps) {
+export default function Toast({
+  show,
+  message,
+  showViewCart = true,
+  type = 'success',
+  actionHref,
+  actionLabel,
+}: ToastProps) {
   const isWarning = type === 'warning';
   
   return (
@@ -38,10 +47,20 @@ export default function Toast({ show, message, showViewCart = true, type = 'succ
                 <Check size={18} className="text-white" />
               )}
             </div>
-            <span className="text-sm font-light tracking-luxury uppercase flex-grow break-words whitespace-normal">
+            <span className="text-sm font-light tracking-wide flex-grow break-words whitespace-normal normal-case">
               {message}
             </span>
-            {showViewCart && !isWarning && (
+            {actionHref && actionLabel ? (
+              <a
+                href={actionHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-light tracking-luxury uppercase underline underline-offset-2 hover:opacity-80 transition-opacity whitespace-nowrap flex-shrink-0"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {actionLabel}
+              </a>
+            ) : showViewCart && !isWarning ? (
               <Link
                 href="/cart"
                 className="text-xs font-light tracking-luxury uppercase underline underline-offset-2 hover:opacity-80 transition-opacity whitespace-nowrap flex-shrink-0"
@@ -49,11 +68,10 @@ export default function Toast({ show, message, showViewCart = true, type = 'succ
               >
                 צפה בעגלה
               </Link>
-            )}
+            ) : null}
           </div>
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
-

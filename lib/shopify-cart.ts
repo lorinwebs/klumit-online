@@ -1,6 +1,6 @@
 'use client';
 
-import { shopifyClient, CREATE_CART_MUTATION, ADD_TO_CART_MUTATION, GET_CART_QUERY, UPDATE_CART_BUYER_IDENTITY_MUTATION, REMOVE_CART_LINES_MUTATION, UPDATE_CART_LINES_MUTATION } from './shopify';
+import { shopifyClientDynamic as shopifyClient, CREATE_CART_MUTATION, ADD_TO_CART_MUTATION, GET_CART_QUERY, UPDATE_CART_BUYER_IDENTITY_MUTATION, REMOVE_CART_LINES_MUTATION, UPDATE_CART_LINES_MUTATION } from './shopify';
 import { supabase } from './supabase';
 import type { CartItem } from '@/store/cartStore';
 import { formatPhoneForShopify } from './utils/phone';
@@ -678,6 +678,7 @@ export async function loadCartFromShopify(cartId: string): Promise<CartItem[] | 
             merchandise?: { 
               id?: string;
               title?: string;
+              availableForSale?: boolean;
               quantityAvailable?: number;
               selectedOptions?: Array<{ name?: string; value?: string }>;
               price?: { amount?: string; currencyCode?: string };
@@ -721,7 +722,7 @@ export async function loadCartFromShopify(cartId: string): Promise<CartItem[] | 
           currencyCode: merchandise.price?.currencyCode || 'ILS',
           quantity: node.quantity || 1,
           image: image?.url,
-          available: true,
+          available: merchandise.availableForSale !== false,
           quantityAvailable: merchandise.quantityAvailable ?? undefined,
           handle: product?.handle,
           color: color || undefined,
