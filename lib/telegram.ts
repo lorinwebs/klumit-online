@@ -5,7 +5,11 @@ const TELEGRAM_CHAT_IDS = process.env.TELEGRAM_CHAT_ID_KLUMIT?.split(',').map((i
 
 const MEKIF_PATH_PREFIXES = ['/mekif-chet-2007-reunion', '/mekif-chet-availability-check'] as const;
 
-const ALLOWED_HOSTNAMES = new Set(['klumit-online.co.il', 'www.klumit-online.co.il']);
+const ALLOWED_HOSTNAMES = new Set([
+  'klumit-online.co.il',
+  'www.klumit-online.co.il',
+  'klumit-online.vercel.app',
+]);
 
 function resolveWebsiteMessageBotToken(): string | undefined {
   return (
@@ -100,7 +104,7 @@ export function isAllowedKlumitOnlineWebsiteTelegramPage(pageUrl: string): boole
   }
   const hostname = normalizeTelegramWebsiteHostname(url.hostname);
   if (hostname === 'localhost' || hostname === '127.0.0.1') return false;
-  if (hostname.endsWith('.vercel.app')) return false;
+  if (hostname.endsWith('.vercel.app') && !ALLOWED_HOSTNAMES.has(hostname)) return false;
   if (!ALLOWED_HOSTNAMES.has(hostname)) return false;
   return !isMekifBlockedPath(url.pathname || '/');
 }
