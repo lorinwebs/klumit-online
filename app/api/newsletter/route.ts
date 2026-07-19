@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import {
   sendTelegramMessage,
+  sendCriticalTelegramMessage,
   escapeHtml,
   isAllowedKlumitOnlineWebsiteTelegramPage,
   gatePageUrlFromAllowedRequestHost,
@@ -55,7 +56,9 @@ ${detailLines.join('\n')}
       gateFromOrigin ||
       (gateFromHost && isAllowedKlumitOnlineWebsiteTelegramPage(gateFromHost) ? gateFromHost : null);
     if (gateUrl) {
-      await sendTelegramMessage(telegramMessage, { kind: 'pageUrl', pageUrl: gateUrl });
+      // K Club signup is a critical event → dedicated critical bot; plain newsletter → main bot.
+      const send = isKClub ? sendCriticalTelegramMessage : sendTelegramMessage;
+      await send(telegramMessage, { kind: 'pageUrl', pageUrl: gateUrl });
     }
 
     // 2. Send actual email to klumitltd@gmail.com
