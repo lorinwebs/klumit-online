@@ -359,6 +359,23 @@ export function trackAddToCart(product: ProductData): void {
     currency: product.currency || 'ILS',
     quantity: quantity,
   });
+
+  // Critical-events Telegram bot (fire-and-forget, gated server-side by host)
+  if (typeof window !== 'undefined') {
+    fetch('/api/telegram/notify-add-to-cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pageUrl: window.location.href.replace(/^https?:\/\//, ''),
+        productTitle: product.name,
+        variantTitle: product.variant,
+        price: String(product.price),
+        currency: product.currency || 'ILS',
+      }),
+    }).catch(() => {
+      // Silent fail - never break add-to-cart on notification errors
+    });
+  }
 }
 
 /**

@@ -12,6 +12,8 @@ interface Product {
   handle: string;
   description: string;
   descriptionHtml?: string;
+  productType?: string;
+  vendor?: string;
   priceRange: {
     minVariantPrice: {
       amount: string;
@@ -30,6 +32,7 @@ interface Product {
     edges: Array<{
       node: {
         id: string;
+        sku?: string;
         title: string;
         price: {
           amount: string;
@@ -76,18 +79,30 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const price = parseFloat(product.priceRange.minVariantPrice.amount).toFixed(0);
     const image = product.images.edges[0]?.node.url;
     
+    const description =
+      product.description?.slice(0, 160) ||
+      `${product.title} - תיק יוקרתי מאיטליה. מחיר: ₪${price}. משלוח חינם מעל 500₪.`;
+
     return {
       title: product.title,
-      description: product.description?.slice(0, 160) || `${product.title} - תיק יוקרתי מאיטליה. מחיר: ₪${price}. משלוח חינם מעל 500₪.`,
+      description,
       alternates: {
         canonical: `https://www.klumit-online.co.il/products/${handle}`,
       },
       openGraph: {
         title: `${product.title} | קלומית`,
-        description: product.description?.slice(0, 160) || `${product.title} - תיק יוקרתי מאיטליה`,
+        description,
         type: 'website',
+        locale: 'he_IL',
+        siteName: 'Klumit - קלומית',
         url: `https://www.klumit-online.co.il/products/${handle}`,
-        images: image ? [{ url: image, alt: product.title }] : [],
+        images: image ? [{ url: image, width: 1200, height: 1200, alt: product.title }] : [],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: `${product.title} | קלומית`,
+        description,
+        images: image ? [image] : [],
       },
     };
   } catch {
@@ -134,12 +149,12 @@ export default async function ProductPage({ params }: PageProps) {
       description: product.description,
       handle: product.handle,
       images: product.images.edges.map((e) => ({ url: e.node.url, altText: e.node.altText || undefined })),
-      brand: firstVariant?.title !== 'Default Title' ? undefined : undefined,
-      sku: firstVariant?.id,
+      brand: product.vendor || undefined,
+      sku: firstVariant?.sku || undefined,
       price: product.priceRange.minVariantPrice.amount,
       currency: product.priceRange.minVariantPrice.currencyCode,
       available: firstVariant?.availableForSale ?? true,
-      productType: '',
+      productType: product.productType || '',
     });
 
     const breadcrumbJsonLd = generateBreadcrumbJsonLd([

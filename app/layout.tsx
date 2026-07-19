@@ -258,7 +258,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
+    <html lang="he" dir="rtl" suppressHydrationWarning>
       <head>
         {/* Set language and direction before hydration */}
         <script
@@ -267,7 +267,7 @@ export default function RootLayout({
               (function() {
                 try {
                   var savedLang = localStorage.getItem('language');
-                  var lang = (savedLang && ['he', 'en', 'ru'].includes(savedLang)) ? savedLang : 'en';
+                  var lang = (savedLang && ['he', 'en', 'ru'].includes(savedLang)) ? savedLang : 'he';
                   document.documentElement.setAttribute('lang', lang);
                   document.documentElement.setAttribute('dir', lang === 'he' ? 'rtl' : 'ltr');
                 } catch (e) {}
@@ -306,14 +306,7 @@ export default function RootLayout({
         `}</Script>
         {/* Permissions Policy - allow unload for Supabase Realtime */}
         <meta httpEquiv="Permissions-Policy" content="unload=*" />
-        {/* Preload real LCP hero image */}
-        <link
-          rel="preload"
-          href="/hero-venice.png"
-          as="image"
-          type="image/png"
-          fetchPriority="high"
-        />
+        {/* Hero LCP image is preloaded automatically by next/image (priority) */}
         {/* Preconnect to Shopify CDN for product images */}
         <link rel="preconnect" href="https://cdn.shopify.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://cdn.shopify.com" />

@@ -16,6 +16,9 @@ interface ProductSchemaInput {
 export function generateProductJsonLd(product: ProductSchemaInput) {
   const category = detectCategory(product.productType || '', product.title);
 
+  // Price valid until end of next year — keeps Offer eligible for rich results.
+  const priceValidUntil = `${new Date().getFullYear() + 1}-12-31`;
+
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -35,6 +38,7 @@ export function generateProductJsonLd(product: ProductSchemaInput) {
       url: `${SITE_URL}/products/${product.handle}`,
       priceCurrency: product.currency || 'ILS',
       price: parseFloat(product.price).toFixed(2),
+      priceValidUntil,
       availability: product.available
         ? 'https://schema.org/InStock'
         : 'https://schema.org/OutOfStock',
@@ -45,18 +49,38 @@ export function generateProductJsonLd(product: ProductSchemaInput) {
       },
       shippingDetails: {
         '@type': 'OfferShippingDetails',
+        shippingRate: {
+          '@type': 'MonetaryAmount',
+          value: '0',
+          currency: 'ILS',
+        },
         shippingDestination: {
           '@type': 'DefinedRegion',
           addressCountry: 'IL',
         },
         deliveryTime: {
           '@type': 'ShippingDeliveryTime',
-          businessDays: {
+          handlingTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 0,
+            maxValue: 1,
+            unitCode: 'DAY',
+          },
+          transitTime: {
             '@type': 'QuantitativeValue',
             minValue: 3,
             maxValue: 5,
+            unitCode: 'DAY',
           },
         },
+      },
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'IL',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        merchantReturnDays: 14,
+        returnMethod: 'https://schema.org/ReturnByMail',
+        returnFees: 'https://schema.org/FreeReturn',
       },
     },
   };

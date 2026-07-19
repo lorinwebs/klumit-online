@@ -235,6 +235,8 @@ export const PRODUCT_QUERY = `
       handle
       description
       descriptionHtml
+      productType
+      vendor
       priceRange {
         minVariantPrice {
           amount
@@ -253,6 +255,7 @@ export const PRODUCT_QUERY = `
         edges {
           node {
             id
+            sku
             title
             price {
               amount

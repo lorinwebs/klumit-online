@@ -10,11 +10,11 @@ export default function AccessibilityPage() {
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]" dir={language === 'he' ? 'rtl' : 'ltr'}>
       <Header />
       <main id="main-content" className="flex-grow max-w-4xl mx-auto px-4 py-12 md:py-20" role="main">
-        <h1 className="text-3xl md:text-4xl font-light luxury-font mb-8 text-right">
+        <h1 className="text-3xl md:text-4xl font-light luxury-font mb-8 text-start">
           {t('accessibility.title')}
         </h1>
 
-        <div className="prose prose-lg max-w-none text-right space-y-6 font-light text-gray-700">
+        <div className="prose prose-lg max-w-none text-start space-y-6 font-light text-gray-700">
           <section aria-labelledby="commitment">
             <h2 id="commitment" className="text-xl md:text-2xl font-light luxury-font mt-8 mb-4 text-[#1a1a1a]">
               {t('accessibility.commitment')}
@@ -28,7 +28,7 @@ export default function AccessibilityPage() {
             <h2 id="actions" className="text-xl md:text-2xl font-light luxury-font mt-8 mb-4 text-[#1a1a1a]">
               {t('accessibility.actions')}
             </h2>
-            <ul className="list-disc list-inside space-y-2 mr-4">
+            <ul className="list-disc list-inside space-y-2 ms-4">
               <li>{t('accessibility.actionKeyboard')}</li>
               <li>{t('accessibility.actionScreenReader')}</li>
               <li>{t('accessibility.actionAlt')}</li>
@@ -44,7 +44,7 @@ export default function AccessibilityPage() {
             <h2 id="keyboard" className="text-xl md:text-2xl font-light luxury-font mt-8 mb-4 text-[#1a1a1a]">
               {t('accessibility.keyboard')}
             </h2>
-            <ul className="list-disc list-inside space-y-2 mr-4">
+            <ul className="list-disc list-inside space-y-2 ms-4">
               <li><kbd className="bg-gray-100 px-2 py-1 rounded">{t('accessibility.keyboardTab')}</kbd></li>
               <li><kbd className="bg-gray-100 px-2 py-1 rounded">{t('accessibility.keyboardShiftTab')}</kbd></li>
               <li><kbd className="bg-gray-100 px-2 py-1 rounded">{t('accessibility.keyboardEnter')}</kbd></li>
@@ -68,7 +68,7 @@ export default function AccessibilityPage() {
             <p>
               {t('accessibility.contactText')}
             </p>
-            <ul className="list-none space-y-2 mr-4 mt-4">
+            <ul className="list-none space-y-2 ms-4 mt-4">
               <li>
                 <strong>{t('accessibility.contactEmail')}</strong>{' '}
                 <a href="mailto:klumitltd@gmail.com" className="text-[#1a1a1a] underline hover:no-underline">

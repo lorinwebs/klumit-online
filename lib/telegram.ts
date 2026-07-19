@@ -1,7 +1,11 @@
 // Website Telegram — @Klumitbot (primary: TELEGRAM_BOT_TOKEN_KLUMIT_EVENTS)
 // Sends only for production host klumit-online.co.il / www (not localhost, not *.vercel.app, not מקיף ח paths).
 
-const TELEGRAM_CHAT_IDS = process.env.TELEGRAM_CHAT_ID_KLUMIT?.split(',').map((id) => id.trim()) || [];
+// Single source of chat IDs for all message types — always the same recipients.
+const TELEGRAM_CHAT_IDS =
+  process.env.TELEGRAM_CHAT_ID_KLUMIT?.split(',')
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0) || [];
 
 const MEKIF_PATH_PREFIXES = ['/mekif-chet-2007-reunion', '/mekif-chet-availability-check'] as const;
 
@@ -17,6 +21,11 @@ function resolveWebsiteMessageBotToken(): string | undefined {
     process.env.TELEGRAM_BOT_TOKEN_KLUMIT?.trim() ||
     undefined
   );
+}
+
+// Critical events bot — dedicated token only, no fallback to other bots.
+function resolveCriticalBotToken(): string | undefined {
+  return process.env.TELEGRAM_BOT_TOKEN_CRITICAL?.trim() || undefined;
 }
 
 function resolveWebsiteVisitsBotToken(): string | undefined {
@@ -68,9 +77,12 @@ export function getWebsiteTelegramStatus() {
     hint = 'Set TELEGRAM_CHAT_ID_KLUMIT to your Telegram chat or group id.';
   }
 
+  const criticalToken = resolveCriticalBotToken();
+
   return {
     messageBotTokenSet: Boolean(messageToken),
     visitsBotTokenSet: Boolean(visitsToken),
+    criticalBotTokenSet: Boolean(criticalToken),
     chatIdsConfigured: TELEGRAM_CHAT_IDS.length > 0,
     chatIdsCount: TELEGRAM_CHAT_IDS.length,
     shopifyOrderGateConfigured: shopConfigured,
@@ -151,26 +163,10 @@ interface TelegramMessage {
   disable_web_page_preview?: boolean;
 }
 
-export async function sendTelegramMessage(text: string, gate: TelegramWebsiteSendGate): Promise<boolean> {
-  if (!isSendGateAllowed(gate)) {
-    if (process.env.TELEGRAM_WEBSITE_DEBUG === '1') {
-      console.warn('Telegram: send blocked by gate', gate.kind);
-    }
-    return false;
-  }
-
-  const token = resolveWebsiteMessageBotToken();
-  if (!token || TELEGRAM_CHAT_IDS.length === 0) {
-    console.warn(
-      'Telegram: Missing bot token or chat IDs',
-      JSON.stringify({ hasToken: Boolean(token), chatIds: TELEGRAM_CHAT_IDS.length })
-    );
-    return false;
-  }
-
+async function postTelegramMessages(token: string, chatIds: string[], text: string): Promise<boolean> {
   try {
     const results = await Promise.all(
-      TELEGRAM_CHAT_IDS.map(async (chatId) => {
+      chatIds.map(async (chatId) => {
         const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -200,6 +196,54 @@ export async function sendTelegramMessage(text: string, gate: TelegramWebsiteSen
     console.error('Telegram send error:', error);
     return false;
   }
+}
+
+export async function sendTelegramMessage(text: string, gate: TelegramWebsiteSendGate): Promise<boolean> {
+  if (!isSendGateAllowed(gate)) {
+    if (process.env.TELEGRAM_WEBSITE_DEBUG === '1') {
+      console.warn('Telegram: send blocked by gate', gate.kind);
+    }
+    return false;
+  }
+
+  const token = resolveWebsiteMessageBotToken();
+  if (!token || TELEGRAM_CHAT_IDS.length === 0) {
+    console.warn(
+      'Telegram: Missing bot token or chat IDs',
+      JSON.stringify({ hasToken: Boolean(token), chatIds: TELEGRAM_CHAT_IDS.length })
+    );
+    return false;
+  }
+
+  return postTelegramMessages(token, TELEGRAM_CHAT_IDS, text);
+}
+
+/**
+ * Critical events (club signup, add-to-cart, checkout page). Uses a dedicated bot,
+ * but posts to the same recipients (TELEGRAM_CHAT_ID_KLUMIT) as every other message.
+ * No token fallback: if TELEGRAM_BOT_TOKEN_CRITICAL is unset, nothing is sent.
+ */
+export async function sendCriticalTelegramMessage(
+  text: string,
+  gate: TelegramWebsiteSendGate
+): Promise<boolean> {
+  if (!isSendGateAllowed(gate)) {
+    if (process.env.TELEGRAM_WEBSITE_DEBUG === '1') {
+      console.warn('Telegram Critical: send blocked by gate', gate.kind);
+    }
+    return false;
+  }
+
+  const token = resolveCriticalBotToken();
+  if (!token || TELEGRAM_CHAT_IDS.length === 0) {
+    console.warn(
+      'Telegram Critical: Missing bot token or chat IDs',
+      JSON.stringify({ hasToken: Boolean(token), chatIds: TELEGRAM_CHAT_IDS.length })
+    );
+    return false;
+  }
+
+  return postTelegramMessages(token, TELEGRAM_CHAT_IDS, text);
 }
 
 export function escapeHtml(text: string): string {
@@ -232,7 +276,35 @@ export async function notifyNewUser(
 🆔 User ID: <code>${escapeHtml(userId)}</code>
 📅 תאריך: ${new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}`;
 
-  return sendTelegramMessage(message, gate);
+  return sendCriticalTelegramMessage(message, gate);
+}
+
+export async function notifyAddToCart(
+  data: {
+    productTitle: string;
+    variantTitle?: string;
+    price?: string;
+    currency?: string;
+    userEmail?: string;
+    userPhone?: string;
+  },
+  gate: { kind: 'pageUrl'; pageUrl: string }
+): Promise<boolean> {
+  const variantInfo = data.variantTitle ? ` (${escapeHtml(data.variantTitle)})` : '';
+  const priceInfo = data.price
+    ? `\n💰 מחיר: <b>${escapeHtml(data.price)}${data.currency ? ` ${escapeHtml(data.currency)}` : ''}</b>`
+    : '';
+  const userInfo =
+    data.userEmail || data.userPhone
+      ? `\n👤 ${data.userEmail ? escapeHtml(data.userEmail) : ''}${data.userPhone ? ` (${escapeHtml(data.userPhone)})` : ''}`
+      : '';
+
+  const message = `🛒 <b>מוצר נוסף לסל</b>
+
+📦 ${escapeHtml(data.productTitle)}${variantInfo}${priceInfo}${userInfo}
+📅 ${new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}`;
+
+  return sendCriticalTelegramMessage(message, gate);
 }
 
 export async function notifyNewOrder(
@@ -282,7 +354,7 @@ export async function notifyCheckoutVisit(
 ${userInfo}${itemsInfo}${totalInfo}
 📅 תאריך: ${new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}`;
 
-  return sendTelegramMessage(message, gate);
+  return sendCriticalTelegramMessage(message, gate);
 }
 
 export async function notifyWhatsAppShare(

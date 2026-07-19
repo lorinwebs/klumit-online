@@ -10,9 +10,9 @@ const HomeCategoryGrid = dynamic(() => import('@/components/home/HomeCategoryGri
 const HomeNewsletter = dynamic(() => import('@/components/home/HomeNewsletter'));
 
 export const metadata: Metadata = {
-  title: 'Luxury bags | KLUMIT',
+  title: 'תיקי עור יוקרתיים מאיטליה',
   description:
-    'Exclusive importer in Israel of RENTAO ANGI and CARLINO GROUP bags. Italian leather bags, belts and accessories.',
+    'קלומית - יבואן בלעדי בישראל לתיקי RENTAO ANGI ו-CARLINO GROUP. תיקי עור איטלקי יוקרתיים, חגורות וארנקים היישר מאיטליה. משלוח חינם מעל 500₪.',
   alternates: {
     canonical: 'https://www.klumit-online.co.il',
   },
