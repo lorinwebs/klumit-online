@@ -5,10 +5,10 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { initGA4, trackPageView, trackFirstVisit, trackUserEngagement } from '@/lib/analytics';
 
 /**
- * Analytics Provider Component
- * הוסף ל-layout.tsx כדי להפעיל מעקב אוטומטי
+ * Analytics tracker — must sit alone inside Suspense (uses useSearchParams).
+ * Do NOT wrap page children with this component or static routes will bail out to CSR.
  */
-export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
+export function AnalyticsProvider() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -34,7 +34,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timeoutId);
   }, [pathname, searchParams]);
 
-  return <>{children}</>;
+  return null;
 }
 
 export default AnalyticsProvider;

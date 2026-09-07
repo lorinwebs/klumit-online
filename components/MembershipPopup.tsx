@@ -85,11 +85,11 @@ export default function MembershipPopup() {
                 id="membership-popup-title" 
                 className="text-3xl md:text-4xl font-light luxury-font text-[#1a1a1a]"
               >
-                הצטרף למועדון החברים שלנו
+                The K Club
               </h2>
               
               <p className="text-lg md:text-xl font-light text-gray-700 leading-relaxed">
-                וקבל <span className="font-bold text-[#8B6914]">20% הנחה</span> על קניה ראשונה!
+                הצטרפי וקבלי <span className="font-bold text-[#8B6914]">10% הנחה</span> בקנייה הראשונה
               </p>
 
               <div className="pt-4 space-y-3">

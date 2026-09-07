@@ -2,8 +2,13 @@
 
 import MytheresaGrid from '@/components/MytheresaGrid';
 import { useLanguage } from '@/lib/LanguageContext';
+import type { CatalogProduct } from '@/lib/products-server';
 
-export default function HomeProductSection() {
+export default function HomeProductSection({
+  initialProducts,
+}: {
+  initialProducts?: CatalogProduct[];
+}) {
   const { t } = useLanguage();
   const em = t('home.productsTitleEm');
 
@@ -23,7 +28,13 @@ export default function HomeProductSection() {
           ) : null}
         </h2>
       </div>
-      <MytheresaGrid category="bags" maxProducts={8} showViewAll={true} embedOnHome />
+      <MytheresaGrid
+        category="bags"
+        maxProducts={8}
+        showViewAll={true}
+        embedOnHome
+        initialProducts={initialProducts}
+      />
     </section>
   );
 }

@@ -35,7 +35,7 @@ export default function HomeNewsletter() {
       <p className="text-[11px] tracking-[0.3em] uppercase text-black/50 mb-3">
         {t('home.newsletterEyebrow')}
       </p>
-      <h2 className="font-display text-[clamp(1.75rem,4vw,3rem)] text-black font-light mb-8">
+      <h2 className="font-display text-[clamp(1.75rem,4vw,3rem)] text-black font-light mb-3">
         {t('home.newsletterTitle')}
         {em ? (
           <>
@@ -44,6 +44,7 @@ export default function HomeNewsletter() {
           </>
         ) : null}
       </h2>
+      <p className="text-sm font-light text-black/60 mb-8">{t('footer.kClubTagline')}</p>
       <form
         onSubmit={onSubmit}
         className="mx-auto flex max-w-md flex-col items-stretch gap-3 border-b border-black/20 sm:flex-row sm:items-center sm:gap-2"

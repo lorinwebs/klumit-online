@@ -98,6 +98,27 @@ export default function PaymentIcons({ className = '' }: { className?: string })
           transform="translate(2, -1) scale(0.85)"
         />
       </svg>
+
+      {/* Google Pay */}
+      <svg viewBox="0 0 48 32" className="h-6 w-9" role="img" aria-label="Google Pay">
+        <rect width="48" height="32" rx="4" fill="#fff" stroke="#D9D9D9" />
+        {/* Google "G" mark */}
+        <path d="M17.6 16.2c0-.5-.05-.9-.13-1.3h-5.3v2.4h3.1c-.13.7-.55 1.3-1.17 1.7v1.5h1.9c1.1-1 1.6-2.5 1.6-4.3z" fill="#4285F4" />
+        <path d="M12.2 22c1.6 0 2.9-.5 3.9-1.4l-1.9-1.5c-.5.4-1.2.6-2 .6-1.5 0-2.8-1-3.3-2.4H7v1.6c1 2 3 3.1 5.2 3.1z" fill="#34A853" />
+        <path d="M8.9 17.3c-.1-.4-.2-.8-.2-1.3s.1-.9.2-1.3v-1.6H7c-.4.8-.6 1.8-.6 2.9s.2 2.1.6 2.9l1.9-1.6z" fill="#FBBC04" />
+        <path d="M12.2 12.3c.9 0 1.6.3 2.2.9l1.7-1.7c-1-.9-2.3-1.5-3.9-1.5-2.2 0-4.2 1.3-5.2 3.1l1.9 1.6c.5-1.4 1.8-2.4 3.3-2.4z" fill="#EA4335" />
+        <text
+          x="30"
+          y="20"
+          textAnchor="middle"
+          fill="#3C4043"
+          fontSize="8"
+          fontWeight="500"
+          fontFamily="Arial, sans-serif"
+        >
+          Pay
+        </text>
+      </svg>
     </div>
   );
 }

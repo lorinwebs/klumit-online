@@ -49,12 +49,12 @@ export default function ShippingPage() {
               {t('shipping.moreQuestionsText')}
             </p>
             <a 
-              href="https://wa.me/972549903139" 
+              href="https://wa.me/972542600177" 
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-lg font-light text-[#1a1a1a] hover:opacity-70 transition-opacity"
             >
-              📱 054-990-3139 (וואטסאפ)
+              📱 054-260-0177 (וואטסאפ)
             </a>
           </section>
         </div>

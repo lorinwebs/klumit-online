@@ -175,14 +175,17 @@ export default function Header() {
             return (
               <Link
                 key={`promo-${slideIndex}`}
-                href="/products?tab=ss26"
-                className="flex items-center justify-center gap-3 animate-reveal-fade hover:opacity-80 transition-opacity"
+                href="#k-club"
+                className="animate-reveal-fade hover:opacity-80 transition-opacity"
               >
-                <span className="text-[#e11d2e] text-[10px] md:text-[11px] tracking-[0.18em] uppercase font-medium">
-                  Shop Now
-                </span>
-                <span className="text-white text-[10px] md:text-[11px] tracking-[0.18em] uppercase font-light">
-                  New Arrival
+                <span
+                  className={`text-white font-light ${
+                    language === 'he'
+                      ? 'text-[12px] md:text-[13px]'
+                      : 'text-[10px] md:text-[11px] tracking-[0.18em] uppercase'
+                  }`}
+                >
+                  {t('footer.kClubTagline')}
                 </span>
               </Link>
             );
@@ -521,6 +524,16 @@ export default function Header() {
                 )}
               </div>
 
+              {/* Sale */}
+              <Link
+                href="/products?tab=sale"
+                onClick={closeDrawer}
+                className="flex items-center gap-2 py-4 text-[12px] tracking-[0.18em] uppercase text-black border-b border-black/10 hover:opacity-70 transition-opacity"
+              >
+                <PulseDot color="purple" />
+                {t('header.sale')}
+              </Link>
+
               {/* Magazine */}
               <Link
                 href="/blog"
@@ -562,7 +575,7 @@ export default function Header() {
 
               {/* WhatsApp */}
               <a
-                href="https://wa.me/972549903139"
+                href="https://wa.me/972542600177"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 py-4 text-[12px] tracking-[0.18em] uppercase text-black hover:opacity-70 transition-opacity"

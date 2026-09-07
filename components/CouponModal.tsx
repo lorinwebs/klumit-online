@@ -162,7 +162,7 @@ export default function CouponModal() {
           </div>
 
           <p className="text-sm font-light text-gray-600">
-            השתמשי בקופון בקופה כדי לקבל 20% הנחה על הקניה הראשונה שלך
+            השתמשי בקופון בקופה — הצטרפי וקבלי 10% הנחה בקנייה הראשונה
           </p>
 
           <button

@@ -2,6 +2,7 @@
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { Mail } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
 
 export default function PrivacyPage() {
@@ -183,11 +184,15 @@ export default function PrivacyPage() {
                 <p>
                   {t('privacy.phone')}
                 </p>
-                <p>
-                  {t('privacy.fax')}
-                </p>
-                <p>
-                  {t('privacy.email')}
+                <p className="flex items-center gap-2">
+                  <span>{t('privacy.email')}</span>
+                  <a
+                    href="mailto:klumitltd@gmail.com"
+                    className="text-[#1a1a1a] hover:opacity-70 transition-opacity"
+                    aria-label={t('privacy.email')}
+                  >
+                    <Mail size={18} strokeWidth={1.5} />
+                  </a>
                 </p>
               </div>
             </div>

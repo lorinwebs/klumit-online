@@ -123,7 +123,7 @@ const jsonLd = {
         '@type': 'ImageObject',
         url: `${siteUrl}/logo-klumit.svg`,
       },
-      foundingDate: '1984',
+      foundingDate: '1983',
       email: 'klumitltd@gmail.com',
       brand: [
         { '@type': 'Brand', name: 'Renato Angi Venezia' },
@@ -160,7 +160,7 @@ const jsonLd = {
       '@id': `${siteUrl}/#website`,
       url: siteUrl,
       name: 'קלומית - Klumit',
-      description: 'יבואן בלעדי בישראל לתיקי עור איטלקיים יוקרתיים - Renato Angi Venezia, Carlino Group. תיקים, חגורות וארנקים מעור איטלקי מאז 1984.',
+      description: 'יבואן בלעדי בישראל לתיקי עור איטלקיים יוקרתיים - Renato Angi Venezia, Carlino Group. תיקים, חגורות וארנקים מעור איטלקי מאז 1983.',
       publisher: { '@id': `${siteUrl}/#organization` },
       inLanguage: 'he-IL',
       potentialAction: {
@@ -174,7 +174,7 @@ const jsonLd = {
       '@id': `${siteUrl}/#store`,
       name: 'קלומית - תיקי עור איטלקיים',
       image: `${siteUrl}/hero-venice.jpg`,
-      description: 'חנות תיקי עור יוקרתיים מאיטליה. יבואן בלעדי של Renato Angi Venezia ו-Carlino Group מאז 1984. תיקים, חגורות וארנקים מעור איטלקי אמיתי.',
+      description: 'חנות תיקי עור יוקרתיים מאיטליה. יבואן בלעדי של Renato Angi Venezia ו-Carlino Group מאז 1983. תיקים, חגורות וארנקים מעור איטלקי אמיתי.',
       priceRange: '₪₪₪',
       currenciesAccepted: 'ILS',
       paymentAccepted: 'Cash, Credit Card, Bit, PayPal',
@@ -212,7 +212,7 @@ const jsonLd = {
           name: 'האם התיקים עשויים מעור אמיתי?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'כן! כל התיקים שלנו עשויים מעור איטלקי אמיתי 100%. אנחנו יבואנים בלעדיים מאיטליה מאז 1984 ומתמחים בתיקי עור איכותיים בעבודת יד.',
+            text: 'כן! כל התיקים שלנו עשויים מעור איטלקי אמיתי 100%. אנחנו יבואנים בלעדיים מאיטליה מאז 1983 ומתמחים בתיקי עור איכותיים בעבודת יד.',
           },
         },
         {
@@ -244,7 +244,7 @@ const jsonLd = {
           name: 'מה ההטבה לחברי מועדון?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'חברי מועדון הלקוחות של קלומית מקבלים 20% הנחה על הקנייה הראשונה, גישה מוקדמת למבצעים והטבות בלעדיות לאורך כל השנה.',
+            text: 'הצטרפי וקבלי 10% הנחה בקנייה הראשונה. חברות מועדון הלקוחות של קלומית מקבלות גם גישה מוקדמת למבצעים והטבות בלעדיות לאורך כל השנה.',
           },
         },
       ],
@@ -320,10 +320,9 @@ export default function RootLayout({
         <LanguageProvider>
           <ConditionalLayout>
             <Suspense fallback={null}>
-              <AnalyticsProvider>
-                {children}
-              </AnalyticsProvider>
+              <AnalyticsProvider />
             </Suspense>
+            {children}
             <Analytics />
           </ConditionalLayout>
         </LanguageProvider>

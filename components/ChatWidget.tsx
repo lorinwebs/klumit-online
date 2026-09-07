@@ -9,7 +9,7 @@ import Toast from '@/components/Toast';
 import { useChatWidget } from '@/lib/hooks/useChatWidget';
 import { useLanguage } from '@/lib/LanguageContext';
 
-const WHATSAPP_CHAT_URL = 'https://wa.me/972549903139';
+const WHATSAPP_CHAT_URL = 'https://wa.me/972542600177';
 
 export default function ChatWidget() {
   const { language, t } = useLanguage();

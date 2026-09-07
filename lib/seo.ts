@@ -1,5 +1,7 @@
 const SITE_URL = 'https://www.klumit-online.co.il';
 
+import { detectProductMaterial, materialSchemaValue } from '@/lib/product-material';
+
 interface ProductSchemaInput {
   title: string;
   description: string;
@@ -11,10 +13,18 @@ interface ProductSchemaInput {
   currency?: string;
   available: boolean;
   productType?: string;
+  tags?: string[];
 }
 
 export function generateProductJsonLd(product: ProductSchemaInput) {
   const category = detectCategory(product.productType || '', product.title);
+  const material = detectProductMaterial(
+    product.title,
+    product.description,
+    product.productType,
+    ...(product.tags || [])
+  );
+  const materialValue = materialSchemaValue(material);
 
   // Price valid until end of next year — keeps Offer eligible for rich results.
   const priceValidUntil = `${new Date().getFullYear() + 1}-12-31`;
@@ -23,7 +33,7 @@ export function generateProductJsonLd(product: ProductSchemaInput) {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.title,
-    description: product.description || `${product.title} - תיק עור איטלקי יוקרתי מקלומית`,
+    description: product.description || `${product.title} - תיק יוקרתי מאיטליה מקלומית`,
     url: `${SITE_URL}/products/${product.handle}`,
     image: product.images.map((img) => img.url),
     brand: {
@@ -31,7 +41,7 @@ export function generateProductJsonLd(product: ProductSchemaInput) {
       name: product.brand || 'Klumit',
     },
     ...(product.sku && { sku: product.sku }),
-    material: 'Genuine Italian Leather',
+    ...(materialValue && { material: materialValue }),
     category,
     offers: {
       '@type': 'Offer',
@@ -114,5 +124,5 @@ function detectCategory(productType: string, title: string): string {
   if (type.includes('wallet') || type.includes('ארנק') || t.includes('wallet') || t.includes('ארנק')) {
     return 'ארנקים';
   }
-  return 'אביזרי עור';
+  return 'אביזרי אופנה';
 }

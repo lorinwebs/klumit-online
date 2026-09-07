@@ -154,6 +154,17 @@ section:has([class*="bg-black"]) a:focus-visible,
     text-transform: uppercase;
   }
 
+  /* Catalog grid titles: avoid double letter-spacing that breaks long names on mobile */
+  h3.product-grid-title {
+    letter-spacing: normal;
+  }
+
+  @media (min-width: 768px) {
+    h3.product-grid-title {
+      letter-spacing: 0.04em;
+    }
+  }
+
   /* Refined selection color */
   ::selection {
     background: #C4956A;

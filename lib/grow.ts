@@ -1,165 +1,488 @@
-/**
- * Grow-il Payment Integration
- * 
- * הגדרות נדרשות ב-.env.local:
- * GROW_API_KEY=your-api-key
- * GROW_WEBHOOK_KEY=e485000d-0d0c-012c-f75e-83270122aac5
- * GROW_ENVIRONMENT=sandbox (או production)
- * SHOPIFY_ADMIN_API_TOKEN=your-admin-api-token (לעדכון הזמנות)
- */
-
-const GROW_API_KEY = process.env.GROW_API_KEY;
-const GROW_WEBHOOK_KEY = process.env.GROW_WEBHOOK_KEY || '5e96a9e0-e919-648a-2cd3-0a191c177831';
-const GROW_ENVIRONMENT = process.env.GROW_ENVIRONMENT || 'production';
-
-const GROW_BASE_URL = GROW_ENVIRONMENT === 'production' 
-  ? 'https://api.grow.link'
-  : 'https://sandboxapi.grow.link';
-
-export interface CreatePaymentLinkRequest {
-  amount: number;
-  currency?: string;
-  reference: string; // מזהה הזמנה ב-Shopify
-  description?: string;
-  customerEmail?: string;
-  customerPhone?: string;
-  customerName?: string;
-  successUrl?: string;
-  cancelUrl?: string;
-  metadata?: Record<string, any>;
-}
-
-export interface PaymentLinkResponse {
-  paymentLink: string;
-  paymentId: string;
-  status: string;
-}
+import 'server-only';
 
 /**
- * יצירת Payment Link ב-Grow
+ * Grow (Meshulam) Light API integration.
+ *
+ * Official reference: https://developers.grow.business/reference/the-process
+ *
+ * Rules that matter (and that break integrations when ignored):
+ * - Every request is multipart/form-data, never JSON.
+ * - Every response is HTTP 200; success is `status: 1`, failure is `status: 0` + `err`.
+ * - All calls are server-side only (Grow sends no CORS headers).
+ * - After a successful payment Grow POSTs a "server update" to `notifyUrl`; we must
+ *   reply 200 and then call `approveTransaction` with the data we received.
+ *
+ * Required environment variables (issued by Grow during onboarding):
+ *   GROW_USER_ID      – business identifier (16 hex chars)
+ *   GROW_PAGE_CODE    – payment page identifier (12 hex chars)
+ *   GROW_ENVIRONMENT  – "sandbox" | "production" (default: production)
+ * Optional:
+ *   GROW_MAX_PAYMENTS – if > 1, lets the customer choose up to N installments
  */
-export async function createPaymentLink(data: CreatePaymentLinkRequest): Promise<PaymentLinkResponse> {
-  if (!GROW_API_KEY) {
-    throw new Error('GROW_API_KEY לא מוגדר');
+
+const GROW_ENVIRONMENT = process.env.GROW_ENVIRONMENT === 'sandbox' ? 'sandbox' : 'production';
+
+const GROW_BASE_URL =
+  GROW_ENVIRONMENT === 'sandbox'
+    ? 'https://sandbox.meshulam.co.il/api/light/server/1.0'
+    : 'https://secure.meshulam.co.il/api/light/server/1.0';
+
+const REQUEST_TIMEOUT_MS = 20_000;
+
+/** Grow payment page links stop working after roughly 10 minutes. */
+export const GROW_PAYMENT_URL_TTL_MS = 10 * 60 * 1000;
+
+/** transactionTypeId values reported by Grow. */
+export const GROW_TRANSACTION_TYPES: Record<number, string> = {
+  1: 'כרטיס אשראי',
+  6: 'bit',
+  13: 'Apple Pay',
+  14: 'Google Pay',
+};
+
+export function getGrowConfig() {
+  return {
+    userId: process.env.GROW_USER_ID?.trim() || '',
+    pageCode: process.env.GROW_PAGE_CODE?.trim() || '',
+    environment: GROW_ENVIRONMENT,
+    baseUrl: GROW_BASE_URL,
+    maxPayments: Math.max(1, Number(process.env.GROW_MAX_PAYMENTS || 1) || 1),
+  };
+}
+
+export function isGrowConfigured(): boolean {
+  const { userId, pageCode } = getGrowConfig();
+  return Boolean(userId && pageCode);
+}
+
+export class GrowApiError extends Error {
+  readonly code: number | null;
+  readonly method: string;
+  readonly raw: unknown;
+
+  constructor(method: string, message: string, code: number | null, raw: unknown) {
+    super(`Grow ${method}: ${message}${code !== null ? ` (err ${code})` : ''}`);
+    this.name = 'GrowApiError';
+    this.method = method;
+    this.code = code;
+    this.raw = raw;
+  }
+}
+
+type FormValue = string | number | boolean | null | undefined;
+
+/**
+ * Grow rejects "special characters" in free-text fields. Keep letters (any script),
+ * digits, spaces and a few safe punctuation marks.
+ */
+export function sanitizeGrowText(value: string, maxLength = 120): string {
+  return value
+    .replace(/[^\p{L}\p{N}\s.,:()\-\/]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength);
+}
+
+/** Grow wants an Israeli mobile number in local format: 05XXXXXXXX. */
+export function toIsraeliMobile(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.startsWith('972')) return `0${digits.slice(3)}`;
+  if (digits.startsWith('0')) return digits;
+  return `0${digits}`;
+}
+
+function normalizeError(err: unknown): { code: number | null; message: string } {
+  if (typeof err === 'string') return { code: null, message: err || 'Unknown error' };
+  if (err && typeof err === 'object') {
+    const e = err as { id?: unknown; message?: unknown };
+    let code: number | null = null;
+    let message = typeof e.message === 'string' ? e.message : '';
+    if (typeof e.id === 'number') code = e.id;
+    else if (typeof e.id === 'string' && /^\d+$/.test(e.id)) code = Number(e.id);
+    else if (e.id && typeof e.id === 'object') {
+      const nested = e.id as { id?: unknown; content?: unknown };
+      if (typeof nested.id === 'number') code = nested.id;
+      if (typeof nested.content === 'string' && nested.content) message = nested.content;
+    }
+    return { code, message: message || 'Unknown error' };
+  }
+  return { code: null, message: 'Unknown error' };
+}
+
+async function growRequest<T>(method: string, fields: Record<string, FormValue>): Promise<T> {
+  const body = new FormData();
+  for (const [key, value] of Object.entries(fields)) {
+    if (value === undefined || value === null || value === '') continue;
+    body.append(key, String(value));
   }
 
-  const requestBody: any = {
-    amount: data.amount,
-    currency: data.currency || 'ILS',
-    reference: data.reference,
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(`${GROW_BASE_URL}/${method}`, {
+      method: 'POST',
+      body,
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+  } catch (error) {
+    const reason = error instanceof Error && error.name === 'AbortError' ? 'timeout' : 'network error';
+    throw new GrowApiError(method, `request failed (${reason})`, null, error);
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  const text = await response.text();
+  let json: { status?: unknown; err?: unknown; data?: unknown };
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new GrowApiError(method, `non-JSON response (HTTP ${response.status})`, null, text.slice(0, 300));
+  }
+
+  if (Number(json.status) !== 1) {
+    const { code, message } = normalizeError(json.err);
+    throw new GrowApiError(method, message, code, json);
+  }
+
+  return json.data as T;
+}
+
+// ---------------------------------------------------------------------------
+// createPaymentProcess
+// ---------------------------------------------------------------------------
+
+export interface GrowProductLine {
+  description: string;
+  quantity: number;
+  price: number;
+}
+
+export interface CreatePaymentProcessInput {
+  /** Total amount in ILS. */
+  sum: number;
+  description: string;
+  fullName: string;
+  phone: string;
+  email?: string;
+  successUrl: string;
+  cancelUrl: string;
+  notifyUrl: string;
+  /** Up to 9 custom fields echoed back in the server update. */
+  customFields?: Partial<Record<'cField1' | 'cField2' | 'cField3' | 'cField4' | 'cField5', string>>;
+  /** Optional invoice lines. */
+  products?: GrowProductLine[];
+  invoiceName?: string;
+}
+
+export interface GrowPaymentProcess {
+  processId: string;
+  processToken: string;
+  url: string;
+}
+
+function buildCreateFields(input: CreatePaymentProcessInput, withProducts: boolean): Record<string, FormValue> {
+  const { userId, pageCode, maxPayments } = getGrowConfig();
+
+  const fields: Record<string, FormValue> = {
+    userId,
+    pageCode,
+    chargeType: 1,
+    sum: input.sum.toFixed(2),
+    description: sanitizeGrowText(input.description),
+    successUrl: input.successUrl,
+    cancelUrl: input.cancelUrl,
+    notifyUrl: input.notifyUrl,
+    'pageField[fullName]': sanitizeGrowText(input.fullName, 60),
+    'pageField[phone]': toIsraeliMobile(input.phone),
+    'pageField[email]': input.email,
+    'pageField[invoiceName]': input.invoiceName ? sanitizeGrowText(input.invoiceName, 60) : undefined,
   };
 
-  // הוסף שדות אופציונליים רק אם הם קיימים
-  if (data.description) {
-    requestBody.description = data.description;
-  }
-  if (data.customerEmail) {
-    requestBody.customerEmail = data.customerEmail;
-  }
-  if (data.customerPhone) {
-    requestBody.customerPhone = data.customerPhone;
-  }
-  if (data.customerName) {
-    requestBody.customerName = data.customerName;
-  }
-  if (data.successUrl) {
-    requestBody.successUrl = data.successUrl;
-  }
-  if (data.cancelUrl) {
-    requestBody.cancelUrl = data.cancelUrl;
-  }
-  if (data.metadata) {
-    requestBody.metadata = {
-      ...data.metadata,
-      orderReference: data.reference,
-    };
+  // paymentNum and maxPaymentNum are mutually exclusive (err 736).
+  if (maxPayments > 1) fields.maxPaymentNum = maxPayments;
+  else fields.paymentNum = 1;
+
+  for (const [key, value] of Object.entries(input.customFields || {})) {
+    if (value) fields[key] = sanitizeGrowText(value, 60);
   }
 
-  // בדיקה שהמשתנים מוגדרים
-  if (!GROW_API_KEY) {
-    throw new Error('GROW_API_KEY לא מוגדר - אנא הגדר את המשתנה ב-Vercel Environment Variables');
-  }
-
-  // URL לפי הדוקומנטציה של Grow
-  // בדוק את הדוקומנטציה - יכול להיות שהפורמט שונה
-  const url = `${GROW_BASE_URL}/api/light/server/1.0/CreatePaymentLink`;
-
-  let response;
-  try {
-    // נסה עם fetch רגיל - ללא timeout כי זה יכול לגרום לבעיות ב-Vercel
-    response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': GROW_API_KEY!,
-        'Accept': 'application/json',
-        'User-Agent': 'Klumit-Shopify/1.0',
-      },
-      body: JSON.stringify(requestBody),
-      // הוסף cache control
-      cache: 'no-store',
+  if (withProducts && input.products?.length) {
+    input.products.forEach((line, index) => {
+      fields[`productData[${index}][itemDescription]`] = sanitizeGrowText(line.description, 80);
+      fields[`productData[${index}][quantity]`] = line.quantity;
+      fields[`productData[${index}][price]`] = line.price.toFixed(2);
     });
-  } catch (fetchError: any) {
-
-    if (fetchError instanceof Error) {
-      // בדיקה אם זו שגיאת רשת
-      if (fetchError.name === 'AbortError') {
-        throw new Error('בקשה ל-Grow API נכשלה - timeout (30 שניות)');
-      }
-      if (fetchError.message.includes('fetch failed') || 
-          fetchError.message.includes('ECONNREFUSED') ||
-          fetchError.message.includes('ENOTFOUND') ||
-          fetchError.message.includes('network') ||
-          fetchError.message.includes('Failed to fetch')) {
-        throw new Error(`לא ניתן להתחבר ל-Grow API. URL: ${url}. בדוק: 1) שהחיבור לאינטרנט תקין, 2) שה-URL נכון (${GROW_BASE_URL}), 3) שה-GROW_API_KEY מוגדר ב-Vercel.`);
-      }
-      throw new Error(`שגיאת רשת: ${fetchError.message} (${fetchError.name})`);
-    }
-    throw new Error(`שגיאה לא ידועה ביצירת קישור תשלום: ${JSON.stringify(fetchError)}`);
   }
 
-  const responseText = await response.text();
+  return fields;
+}
 
-  if (!response.ok) {
-    let errorMessage = `Grow API error: ${response.status} ${response.statusText}`;
-    try {
-      const errorJson = JSON.parse(responseText);
-      errorMessage += ` - ${JSON.stringify(errorJson)}`;
-    } catch {
-      errorMessage += ` - ${responseText.substring(0, 200)}`;
-    }
-    throw new Error(errorMessage);
+export async function createPaymentProcess(input: CreatePaymentProcessInput): Promise<GrowPaymentProcess> {
+  if (!isGrowConfigured()) {
+    throw new GrowApiError('createPaymentProcess', 'GROW_USER_ID / GROW_PAGE_CODE are not configured', null, null);
   }
 
-  let result;
+  const parse = (data: unknown): GrowPaymentProcess => {
+    const d = (data || {}) as { processId?: unknown; processToken?: unknown; url?: unknown };
+    if (!d.url || !d.processId || !d.processToken) {
+      throw new GrowApiError('createPaymentProcess', 'response is missing url/processId/processToken', null, data);
+    }
+    return {
+      processId: String(d.processId),
+      processToken: String(d.processToken),
+      url: String(d.url).replace(/\\\//g, '/'),
+    };
+  };
+
   try {
-    result = JSON.parse(responseText);
-  } catch (e) {
-    throw new Error(`Invalid JSON response from Grow: ${responseText.substring(0, 200)}`);
+    return parse(await growRequest('createPaymentProcess', buildCreateFields(input, true)));
+  } catch (error) {
+    // Invoice lines are optional; if Grow rejects them, retry with the bare request.
+    if (error instanceof GrowApiError && error.code !== null && input.products?.length) {
+      return parse(await growRequest('createPaymentProcess', buildCreateFields(input, false)));
+    }
+    throw error;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Server update (notifyUrl) parsing
+// ---------------------------------------------------------------------------
+
+export interface GrowServerUpdate {
+  transactionId: string;
+  transactionToken: string;
+  processId: string;
+  processToken: string;
+  statusCode: number | null;
+  status: string;
+  sum: number;
+  transactionTypeId: number | null;
+  paymentType: number | null;
+  paymentsNum: number | null;
+  allPaymentsNum: number | null;
+  firstPaymentSum: number;
+  periodicalPaymentSum: number;
+  paymentDate: string;
+  asmachta: string;
+  description: string;
+  fullName: string;
+  payerPhone: string;
+  payerEmail: string;
+  cardSuffix: string;
+  cardType: string;
+  cardTypeCode: number | null;
+  cardBrand: string;
+  cardBrandCode: number | null;
+  cardExp: string;
+  customFields: Record<string, string>;
+  /** Every field Grow sent, flattened, for approveTransaction passthrough. */
+  raw: Record<string, string>;
+}
+
+function flattenGrowPayload(input: Record<string, unknown>): Record<string, string> {
+  const out: Record<string, string> = {};
+
+  const visit = (value: unknown, prefix: string) => {
+    if (value === null || value === undefined) return;
+    if (Array.isArray(value)) {
+      value.forEach((item, index) => visit(item, prefix ? `${prefix}[${index}]` : String(index)));
+      return;
+    }
+    if (typeof value === 'object') {
+      for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+        visit(nested, prefix ? `${prefix}[${key}]` : key);
+      }
+      return;
+    }
+    out[prefix] = String(value);
+  };
+
+  for (const [key, value] of Object.entries(input)) {
+    // Grow may send the payload nested under "data" (as an object or as a JSON string).
+    if (key === 'data') {
+      let data: unknown = value;
+      if (typeof value === 'string') {
+        try {
+          data = JSON.parse(value);
+        } catch {
+          data = value;
+        }
+      }
+      if (data && typeof data === 'object') {
+        for (const [k, v] of Object.entries(data as Record<string, unknown>)) visit(v, k);
+        continue;
+      }
+    }
+    if (typeof value === 'string') {
+      // Bracket-style keys: data[transactionId]
+      const match = key.match(/^data\[(.+)\]$/);
+      if (match) {
+        out[match[1]] = value;
+        continue;
+      }
+    }
+    visit(value, key);
   }
 
-  // בדיקה שהתקבל payment link
-  const paymentLink = result.paymentLink || result.url || result.link || result.payment_url;
-  if (!paymentLink) {
+  return out;
+}
 
-    throw new Error(`No payment link in response: ${JSON.stringify(result)}`);
+const num = (value: string | undefined): number | null => {
+  if (value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+};
+
+export function parseGrowServerUpdate(payload: Record<string, unknown>): GrowServerUpdate {
+  const raw = flattenGrowPayload(payload);
+
+  const customFields: Record<string, string> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    const direct = key.match(/^cField(\d)$/);
+    const nested = key.match(/^customFields?\[(cField\d)\]$/);
+    if (direct) customFields[`cField${direct[1]}`] = value;
+    else if (nested) customFields[nested[1]] = value;
   }
 
   return {
-    paymentLink,
-    paymentId: result.paymentId || result.id || result.payment_id || '',
-    status: result.status || 'pending',
+    transactionId: raw.transactionId || '',
+    transactionToken: raw.transactionToken || '',
+    processId: raw.processId || '',
+    processToken: raw.processToken || '',
+    statusCode: num(raw.statusCode),
+    status: raw.status || '',
+    sum: num(raw.sum) ?? 0,
+    transactionTypeId: num(raw.transactionTypeId ?? raw.TransactionTypeId),
+    paymentType: num(raw.paymentType),
+    paymentsNum: num(raw.paymentsNum),
+    allPaymentsNum: num(raw.allPaymentsNum),
+    firstPaymentSum: num(raw.firstPaymentSum) ?? 0,
+    periodicalPaymentSum: num(raw.periodicalPaymentSum) ?? 0,
+    paymentDate: raw.paymentDate || '',
+    asmachta: raw.asmachta || '',
+    description: raw.description || '',
+    fullName: raw.fullName || '',
+    payerPhone: raw.payerPhone || '',
+    payerEmail: raw.payerEmail || '',
+    cardSuffix: raw.cardSuffix || '',
+    cardType: raw.cardType || '',
+    cardTypeCode: num(raw.cardTypeCode),
+    cardBrand: raw.cardBrand || '',
+    cardBrandCode: num(raw.cardBrandCode),
+    cardExp: raw.cardExp || '',
+    customFields,
+    raw,
   };
 }
 
-/**
- * אימות Webhook מ-Grow
- */
-export function verifyWebhookSignature(body: any, signature?: string): boolean {
-  // Grow שולחים את ה-webhook key בשדה או ב-header
-  // כאן אתה יכול להוסיף לוגיקת אימות נוספת אם נדרש
-  return true; // בינתיים נחזיר true - צריך לבדוק את הדוקומנטציה של Grow
+// ---------------------------------------------------------------------------
+// getPaymentProcessInfo – authoritative status check (server to server)
+// ---------------------------------------------------------------------------
+
+export interface GrowProcessInfo {
+  statusCode: number | null;
+  status: string;
+  sum: number;
+  transactionId: string;
+  transactionToken: string;
+  transactionTypeId: number | null;
+  asmachta: string;
+  cardSuffix: string;
+  cardBrand: string;
+  fullName: string;
+  payerPhone: string;
+  payerEmail: string;
+  customFields: Record<string, string>;
+  raw: Record<string, string>;
 }
 
-export { GROW_WEBHOOK_KEY };
+export async function getPaymentProcessInfo(processId: string, processToken: string): Promise<GrowProcessInfo> {
+  const { pageCode } = getGrowConfig();
+  const data = await growRequest<Record<string, unknown>>('getPaymentProcessInfo', {
+    pageCode,
+    processId,
+    processToken,
+  });
+  const parsed = parseGrowServerUpdate(data || {});
+  return {
+    statusCode: parsed.statusCode,
+    status: parsed.status,
+    sum: parsed.sum,
+    transactionId: parsed.transactionId,
+    transactionToken: parsed.transactionToken,
+    transactionTypeId: parsed.transactionTypeId,
+    asmachta: parsed.asmachta,
+    cardSuffix: parsed.cardSuffix,
+    cardBrand: parsed.cardBrand,
+    fullName: parsed.fullName,
+    payerPhone: parsed.payerPhone,
+    payerEmail: parsed.payerEmail,
+    customFields: parsed.customFields,
+    raw: parsed.raw,
+  };
+}
 
+// ---------------------------------------------------------------------------
+// approveTransaction – mandatory acknowledgement after a successful payment
+// ---------------------------------------------------------------------------
+
+const APPROVE_PASSTHROUGH_FIELDS = [
+  'transactionId',
+  'transactionToken',
+  'transactionTypeId',
+  'paymentType',
+  'sum',
+  'firstPaymentSum',
+  'periodicalPaymentSum',
+  'paymentsNum',
+  'allPaymentsNum',
+  'paymentDate',
+  'asmachta',
+  'description',
+  'fullName',
+  'payerPhone',
+  'payerEmail',
+  'cardSuffix',
+  'cardType',
+  'cardTypeCode',
+  'cardBrand',
+  'cardBrandCode',
+  'cardExp',
+  'processId',
+  'processToken',
+  'paymentLinkProcessId',
+  'paymentLinkProcessToken',
+] as const;
+
+/**
+ * Returns true when Grow acknowledged the approval (or had already done so).
+ * Throws GrowApiError on a hard failure so callers can log/alert.
+ */
+export async function approveTransaction(update: GrowServerUpdate): Promise<boolean> {
+  const { pageCode } = getGrowConfig();
+  const fields: Record<string, FormValue> = { pageCode };
+
+  for (const key of APPROVE_PASSTHROUGH_FIELDS) {
+    const value = update.raw[key];
+    if (value !== undefined && value !== '') fields[key] = value;
+  }
+  // Ensure the essentials are present even if the raw payload used odd casing.
+  fields.transactionId = update.transactionId;
+  fields.transactionToken = update.transactionToken;
+  fields.processId = update.processId;
+  fields.processToken = update.processToken;
+  if (update.transactionTypeId !== null) fields.transactionTypeId = update.transactionTypeId;
+
+  try {
+    await growRequest('approveTransaction', fields);
+    return true;
+  } catch (error) {
+    // 712 = transaction already processed/approved – treat as success.
+    if (error instanceof GrowApiError && error.code === 712) return true;
+    throw error;
+  }
+}

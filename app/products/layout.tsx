@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'תיקים יוקרתיים מאיטליה',
-  description: 'קולקציית תיקים יוקרתיים מאיטליה - RENTAO ANGI ו-CARLINO GROUP. תיקי עור איכותיים, תיקי גב, תיקי צד וחגורות. משלוח חינם מעל 500₪.',
+  description: 'קולקציית תיקים יוקרתיים מאיטליה - RENTAO ANGI ו-CARLINO GROUP. תיקים, תיקי גב, תיקי צד וחגורות. משלוח חינם מעל 500₪.',
   alternates: {
     canonical: 'https://www.klumit-online.co.il/products',
   },

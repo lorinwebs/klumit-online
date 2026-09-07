@@ -13,8 +13,8 @@ const props = [
   {
     icon: HeadphonesIcon,
     title: 'שירות לקוחות',
-    subtitle: '054-990-3139 (וואטסאפ)',
-    whatsappLink: 'https://wa.me/972549903139',
+    subtitle: '054-260-0177 (וואטסאפ)',
+    whatsappLink: 'https://wa.me/972542600177',
   },
   {
     icon: Truck,
@@ -28,8 +28,8 @@ const props = [
   },
   {
     icon: Award,
-    title: 'עור איטלקי',
-    subtitle: 'איכות פרימיום מ-1984',
+    title: 'יבוא מאיטליה',
+    subtitle: 'איכות פרימיום מ-1983',
   },
   {
     icon: Shield,

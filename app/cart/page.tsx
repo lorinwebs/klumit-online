@@ -9,8 +9,11 @@ import Link from 'next/link';
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import Toast from '@/components/Toast';
 import { trackViewCart, trackBeginCheckout } from '@/lib/analytics';
+import { useLanguage } from '@/lib/LanguageContext';
+import { getVariantStockState } from '@/lib/product-availability';
 
 export default function CartPage() {
+  const { t } = useLanguage();
   const {
     items,
     removeItem,
@@ -233,9 +236,13 @@ export default function CartPage() {
                           </button>
                         </div>
                         {/* Inventory Notice - מתחת לכפתורי כמות */}
-                        {item.quantityAvailable !== undefined && item.quantity >= item.quantityAvailable && (
-                          <span className="text-xs text-amber-600 font-light">
-                            אזל המלאי ({item.quantityAvailable} יחידות)
+                        {getVariantStockState({
+                          availableForSale: item.available,
+                          quantityAvailable: item.quantityAvailable,
+                          cartQuantity: item.quantity,
+                        }) === 'in_cart' && (
+                          <span className="text-xs text-stone-dark font-light">
+                            {t('products.inYourCart')}
                           </span>
                         )}
                       </div>

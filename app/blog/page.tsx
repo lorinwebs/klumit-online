@@ -3,9 +3,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { shopifyClient, ARTICLES_QUERY, SHOPIFY_CATALOG_REVALIDATE_SECONDS } from '@/lib/shopify';
+import { shopifyClient, ARTICLES_QUERY } from '@/lib/shopify';
 
-export const revalidate = SHOPIFY_CATALOG_REVALIDATE_SECONDS;
+// Must be a numeric literal for Next.js segment config static analysis
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'המגזין | KLUMIT - טיפים, השראה ועולם העור האיטלקי',
@@ -58,7 +59,7 @@ export default async function BlogPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {articles.map((article) => (
+            {articles.map((article, index) => (
               <Link
                 key={article.id}
                 href={`/blog/${article.handle}`}
@@ -70,6 +71,8 @@ export default async function BlogPage() {
                       src={article.image.url}
                       alt={article.image.altText || article.title}
                       fill
+                      // First row is above the fold (LCP) – load it eagerly
+                      priority={index < 3}
                       className="object-cover transition-transform duration-700 group-hover:scale-105"
                       sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />

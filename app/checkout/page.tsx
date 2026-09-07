@@ -10,10 +10,20 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import LoginModal from '@/components/LoginModal';
 import Link from 'next/link';
-import { Check, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Check } from 'lucide-react';
 import { trackBeginCheckout } from '@/lib/analytics';
+import CheckoutSteps from '@/components/checkout/CheckoutSteps';
+import TrustStrip from '@/components/checkout/TrustStrip';
+import {
+  saveCheckoutSession,
+  saveCheckoutForm,
+  loadCheckoutForm,
+  type CheckoutSession,
+} from '@/lib/checkout-session';
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const { items, cartId, loadFromShopify, getTotal } = useCartStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,10 +112,19 @@ export default function CheckoutPage() {
           // אין משתמש מחובר - נסיים מיד בלי לנסות fallback
           setUser(null);
         }
+        // Whatever the shopper already typed in this session wins (e.g. back from the payment page)
+        const stored = loadCheckoutForm();
+        if (stored) {
+          setFormData((prev) => ({ ...prev, ...stored }));
+        }
         setLoadingProfile(false);
       } catch (err) {
         clearTimeout(timeoutId);
         setUser(null);
+        const stored = loadCheckoutForm();
+        if (stored) {
+          setFormData((prev) => ({ ...prev, ...stored }));
+        }
         setLoadingProfile(false);
       }
     }
@@ -206,6 +225,12 @@ export default function CheckoutPage() {
       return () => clearTimeout(timeoutId);
     }
   }, [items.length, user, getTotal]);
+
+  // Persist the form for this tab so returning from /checkout/payment keeps everything filled
+  useEffect(() => {
+    if (loadingProfile) return;
+    saveCheckoutForm(formData);
+  }, [formData, loadingProfile]);
 
   const formatPrice = (amount: number) => {
     return Math.round(amount).toLocaleString('he-IL');
@@ -446,6 +471,115 @@ export default function CheckoutPage() {
     }
   };
 
+  // שמירת הכתובת בפרופיל (Supabase + Shopify) אם המשתמש ביקש
+  const persistAddressIfRequested = async () => {
+    if (!saveAddressPermanently) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      await supabase.auth.updateUser({
+        data: {
+          shipping_address: formData.address,
+          shipping_city: formData.city,
+          shipping_zip_code: formData.zipCode,
+          shipping_apartment: formData.apartment,
+          shipping_floor: formData.floor,
+          shipping_notes: formData.notes,
+          phone: formData.phone,
+        },
+      });
+
+      try {
+        await fetch('/api/shopify/update-customer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            address: formData.address,
+            city: formData.city,
+            zipCode: formData.zipCode,
+            apartment: formData.apartment,
+            floor: formData.floor,
+            notes: formData.notes,
+          }),
+        });
+      } catch {
+        // ignore
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  /**
+   * Creates the Shopify draft order + Grow payment session and moves to /checkout/payment.
+   * Returns false when the server asks to fall back to Shopify Checkout (Grow not configured).
+   */
+  const startEmbeddedPayment = async (): Promise<boolean> => {
+    const response = await fetch('/api/checkout/create-and-pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customer: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          zipCode: formData.zipCode,
+          apartment: formData.apartment,
+          floor: formData.floor,
+          notes: formData.notes,
+        },
+        lines: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
+        discountCode: appliedDiscountCode,
+        subtotalHint: getSubtotal(),
+      }),
+    });
+
+    const data = (await response.json().catch(() => null)) as (CheckoutSession & { fallback?: string; message?: string }) | null;
+
+    if (response.status === 503 && data?.fallback === 'shopify') {
+      return false;
+    }
+    if (!response.ok || !data?.paymentUrl) {
+      throw new Error(data?.message || 'לא ניתן להמשיך לתשלום כרגע. נסו שוב בעוד רגע.');
+    }
+
+    saveCheckoutSession(data);
+
+    // Keep the shipping details of this purchase for logged-in customers
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await saveOrderAddress({
+          user_id: session.user.id,
+          order_reference: `draft-${data.ref}`,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          zip_code: formData.zipCode,
+          apartment: formData.apartment,
+          floor: formData.floor,
+          notes: formData.notes,
+        });
+      }
+    } catch {
+      // best-effort only
+    }
+
+    router.push('/checkout/payment');
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -460,7 +594,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.zipCode) {
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.address || !formData.city) {
       const message = 'אנא מלא את כל השדות הנדרשים';
       setError(message);
       setButtonError(message);
@@ -468,14 +602,16 @@ export default function CheckoutPage() {
       return;
     }
 
-    // ולידציה של מיקוד ישראלי (7 ספרות)
-    const cleanZip = formData.zipCode.replace(/\D/g, '');
-    if (cleanZip.length !== 7) {
-      const message = 'מיקוד לא תקין';
-      setError('מיקוד לא תקין - מיקוד ישראלי צריך להכיל 7 ספרות');
-      setButtonError(message);
-      setTimeout(() => setButtonError(null), 2000);
-      return;
+    // מיקוד רשות — אם הוזן, חייב להיות 7 ספרות
+    if (formData.zipCode) {
+      const cleanZip = formData.zipCode.replace(/\D/g, '');
+      if (cleanZip.length !== 7) {
+        const message = 'מיקוד לא תקין';
+        setError('מיקוד לא תקין - מיקוד ישראלי צריך להכיל 7 ספרות');
+        setButtonError(message);
+        setTimeout(() => setButtonError(null), 2000);
+        return;
+      }
     }
 
     // ולידציה של טלפון ישראלי
@@ -491,6 +627,20 @@ export default function CheckoutPage() {
 
     setError(null);
     setLoading(true);
+
+    // Save the address to the profile if requested (independent of the payment flow)
+    await persistAddressIfRequested();
+
+    // Preferred flow: draft order + embedded Grow payment on /checkout/payment.
+    // Falls back to Shopify Checkout only while Grow is not configured yet.
+    try {
+      const navigated = await startEmbeddedPayment();
+      if (navigated) return;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'לא ניתן להמשיך לתשלום כרגע. נסו שוב בעוד רגע.');
+      setLoading(false);
+      return;
+    }
 
       try {
         let currentCartId = cartId;
@@ -645,51 +795,6 @@ export default function CheckoutPage() {
           }
         }
 
-
-      // שמור כתובת בפרופיל אם המשתמש בחר לשמור לתמיד
-      if (saveAddressPermanently) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            // שמור ב-Supabase user_metadata
-            await supabase.auth.updateUser({
-              data: {
-                shipping_address: formData.address,
-                shipping_city: formData.city,
-                shipping_zip_code: formData.zipCode,
-                shipping_apartment: formData.apartment,
-                shipping_floor: formData.floor,
-                shipping_notes: formData.notes,
-                phone: formData.phone,
-              },
-            });
-            
-            // שמור גם ב-Shopify Customer
-            try {
-              await fetch('/api/shopify/update-customer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  firstName: formData.firstName,
-                  lastName: formData.lastName,
-                  email: formData.email,
-                  phone: formData.phone,
-                  address: formData.address,
-                  city: formData.city,
-                  zipCode: formData.zipCode,
-                  apartment: formData.apartment,
-                  floor: formData.floor,
-                  notes: formData.notes,
-                }),
-              });
-            } catch (shopifyErr) {
-              // ignore
-            }
-          }
-        } catch (err) {
-          // ignore
-        }
-      }
 
       // Always update buyer identity and delivery address before checkout
       // This ensures the form data is used, not old cart data
@@ -975,9 +1080,12 @@ export default function CheckoutPage() {
       <main id="main-content" className="flex-1 md:overflow-hidden overflow-y-auto" role="main">
         <div className="md:h-full max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-3">
           <div className="md:h-full flex flex-col">
+            <div className="mb-4 md:mb-3">
+              <CheckoutSteps current={1} />
+            </div>
             <div className="flex items-center justify-between mb-4 md:mb-3">
               <h1 className="text-lg md:text-xl font-light luxury-font text-right">
-                תשלום
+                פרטי ההזמנה
               </h1>
               {/* Guest Checkout Notice - Compact */}
               {!user && (
@@ -1120,7 +1228,7 @@ export default function CheckoutPage() {
                   </div>
                   <div>
                     <label htmlFor="zipCode" className="block text-xs font-light mb-1 text-right text-gray-600">
-                      מיקוד *
+                      מיקוד
                     </label>
                     <input
                       id="zipCode"
@@ -1137,8 +1245,7 @@ export default function CheckoutPage() {
                           ? 'border-red-300 focus:border-red-500'
                           : 'border-gray-200 focus:border-[#1a1a1a]'
                       }`}
-                      placeholder="7 ספרות"
-                      required
+                      placeholder="אופציונלי"
                       autoComplete="postal-code"
                       aria-describedby={formData.zipCode && formData.zipCode.length > 0 && formData.zipCode.length !== 7 ? 'zip-error' : undefined}
                     />
@@ -1368,7 +1475,7 @@ export default function CheckoutPage() {
                 >
                   {loading ? 'מעבר לתשלום...' : buttonError || 'המשך לתשלום מאובטח'}
                 </button>
-                {(!acceptedTerms || !formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.zipCode) && (
+                {(!acceptedTerms || !formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.address || !formData.city) && (
                   <p className="text-xs text-gray-500 mt-2 text-right">
                     אנא מלא/י את כל הפרטים הנדרשים
                   </p>
@@ -1376,9 +1483,10 @@ export default function CheckoutPage() {
               </div>
               
               <div className="pt-4 border-t border-gray-200 mt-4">
-                <p className="text-xs font-light text-gray-600 leading-relaxed">
-                  משלוח חינם מעל 500 ₪ • החזרה תוך 14 ימים
+                <p className="text-xs font-light text-gray-600 leading-relaxed mb-3">
+                  משלוח חינם מעל 500 ₪ • משלוח עד הבית תוך 2–5 ימי עסקים
                 </p>
+                <TrustStrip compact />
               </div>
             </div>
           </div>

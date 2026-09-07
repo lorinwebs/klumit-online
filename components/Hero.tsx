@@ -9,7 +9,7 @@ export default function Hero() {
       {/* Full-screen Image */}
       <Image
         src="/coverimage.jpeg"
-        alt="קלומית - מוצרי עור מאיטליה"
+        alt="קלומית - תיקים יוקרתיים מאיטליה"
         fill
         className="object-cover object-center"
         priority
@@ -61,7 +61,7 @@ export default function Hero() {
               <m.p 
                 className="text-xs md:text-sm lg:text-base font-light tracking-[0.2em] uppercase text-white/70 leading-relaxed"
               >
-                משנת 1984
+                משנת 1983
               </m.p>
             </m.div>
             

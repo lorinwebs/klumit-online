@@ -3,6 +3,7 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
+import { Mail } from 'lucide-react';
 import { useLanguage } from '@/lib/LanguageContext';
 
 export default function TermsPage() {
@@ -207,11 +208,15 @@ export default function TermsPage() {
                 <p>
                   {t('terms.phone')}
                 </p>
-                <p>
-                  {t('terms.fax')}
-                </p>
-                <p>
-                  {t('terms.email')}
+                <p className="flex items-center gap-2">
+                  <span>{t('terms.email')}</span>
+                  <a
+                    href="mailto:klumitltd@gmail.com"
+                    className="text-[#1a1a1a] hover:opacity-70 transition-opacity"
+                    aria-label={t('terms.email')}
+                  >
+                    <Mail size={18} strokeWidth={1.5} />
+                  </a>
                 </p>
               </div>
             </div>

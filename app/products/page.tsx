@@ -1,11 +1,13 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MytheresaGrid from '@/components/MytheresaGrid';
+import { fetchCatalogProducts } from '@/lib/products-server';
+import type { CatalogCategory } from '@/lib/product-search';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'קטלוג מוצרים',
-  description: 'קולקציית תיקים יוקרתיים מאיטליה - RENTAO ANGI ו-CARLINO GROUP. תיקי עור איכותיים, תיקי גב, תיקי צד וחגורות. משלוח חינם מעל 500₪.',
+  description: 'קולקציית תיקים יוקרתיים מאיטליה - RENTAO ANGI ו-CARLINO GROUP. תיקים, תיקי גב, תיקי צד וחגורות. משלוח חינם מעל 500₪.',
   alternates: {
     canonical: 'https://www.klumit-online.co.il/products',
   },
@@ -25,11 +27,19 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   const vendor = params.vendor?.toLowerCase() || undefined;
   const query = params.q?.trim() || undefined;
 
+  const initialProducts = await fetchCatalogProducts(activeTab as CatalogCategory);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main id="main-content" className="flex-grow" role="main">
-        <MytheresaGrid category={activeTab} showViewAll={false} initialVendor={vendor} searchQuery={query} />
+        <MytheresaGrid
+          category={activeTab}
+          showViewAll={false}
+          initialVendor={vendor}
+          searchQuery={query}
+          initialProducts={initialProducts}
+        />
       </main>
       <Footer />
     </div>

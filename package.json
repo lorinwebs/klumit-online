@@ -11,7 +11,8 @@
     "lint:fix": "next lint --fix",
     "type-check": "tsc --noEmit",
     "prebuild": "npm run type-check",
-    "check": "npm run lint && npm run type-check"
+    "check": "npm run lint && npm run type-check",
+    "audit:product-copy": "tsx scripts/audit-product-copy.ts"
   },
   "dependencies": {
     "@hebcal/core": "^5.10.1",

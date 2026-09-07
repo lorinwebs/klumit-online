@@ -347,7 +347,7 @@ function CategoryCarousel({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
+        viewport={{ once: true, amount: 0.01, margin: '120px 0px' }}
         transition={{ duration: 0.4, delay: index * 0.05 }}
         className="group relative"
       >

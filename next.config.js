@@ -2,9 +2,6 @@
 const nextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ['@resvg/resvg-js', 'satori'],
-  experimental: {
-    turbopackUseSystemTlsCerts: true,
-  },
   // Allow LAN access in local development without cross-origin warnings
   allowedDevOrigins: ['127.0.0.1', 'localhost', '192.168.50.237'],
   images: {
@@ -59,18 +56,9 @@ const nextConfig = {
           },
         ],
       },
-      {
-        // JS/CSS - cache with revalidation in production, no cache in dev
-        source: '/_next/static/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: isDev
-              ? 'no-cache, no-store, must-revalidate'
-              : 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
+      // Note: /_next/static/* is content-hashed and already served by Next.js with
+      // "public, max-age=31536000, immutable" in production. Overriding Cache-Control
+      // there breaks chunk loading in development (ChunkLoadError), so it is left alone.
     ];
   },
 }

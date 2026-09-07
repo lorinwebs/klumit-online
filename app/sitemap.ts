@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next';
-import { shopifyClient, SHOPIFY_CATALOG_REVALIDATE_SECONDS } from '@/lib/shopify';
+import { shopifyClient } from '@/lib/shopify';
 
-export const revalidate = SHOPIFY_CATALOG_REVALIDATE_SECONDS;
+// Must be a numeric literal for Next.js segment config static analysis
+export const revalidate = 60;
 
 const BASE_URL = 'https://www.klumit-online.co.il';
 

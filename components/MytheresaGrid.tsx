@@ -8,49 +8,12 @@ import { motion } from 'framer-motion';
 import { shopifyClient, PRODUCTS_LIST_QUERY, getCategorySearchQuery } from '@/lib/shopify';
 import { useLanguage } from '@/lib/LanguageContext';
 import { isProductSoldOut } from '@/lib/product-availability';
+import { getSaleInfo } from '@/lib/product-sale';
+import { matchesCatalogCategory } from '@/lib/product-search';
+import type { CatalogProduct } from '@/lib/products-server';
 import SoldOutBadge from '@/components/SoldOutBadge';
 
-interface Product {
-  id: string;
-  title: string;
-  handle: string;
-  vendor: string;
-  productType: string;
-  tags: string[];
-  createdAt: string;
-  priceRange: {
-    minVariantPrice: {
-      amount: string;
-      currencyCode: string;
-    };
-  };
-  compareAtPriceRange?: {
-    minVariantPrice: {
-      amount: string;
-      currencyCode: string;
-    };
-  };
-  images: {
-    edges: Array<{
-      node: {
-        url: string;
-        altText: string | null;
-      };
-    }>;
-  };
-  variants?: {
-    edges: Array<{
-      node: {
-        id: string;
-        title: string;
-        availableForSale: boolean;
-        price?: { amount: string; currencyCode: string };
-        compareAtPrice?: { amount: string; currencyCode: string } | null;
-        selectedOptions?: Array<{ name: string; value: string }>;
-      };
-    }>;
-  };
-}
+type Product = CatalogProduct;
 
 interface MytheresaGridProps {
   category?: 'bags' | 'belts' | 'wallets' | 'all' | 'ss26' | 'sale';
@@ -62,6 +25,8 @@ interface MytheresaGridProps {
   initialVendor?: string;
   /** Free-text search (?q= from the header search bar) */
   searchQuery?: string;
+  /** Server-fetched products so SSR HTML includes /products/{handle} links */
+  initialProducts?: CatalogProduct[];
 }
 
 const CARD_BACKGROUNDS = ['#f3efe8', '#f5f5f5', '#f0eeef', '#f6f1f3', '#eef1f0', '#f4f2ed'];
@@ -88,19 +53,6 @@ function getCardBackground(id: string) {
   let hash = 0;
   for (let i = 0; i < id.length; i++) hash = (hash + id.charCodeAt(i) * (i + 1)) % CARD_BACKGROUNDS.length;
   return CARD_BACKGROUNDS[Math.abs(hash) % CARD_BACKGROUNDS.length];
-}
-
-function getSaleInfo(product: Product) {
-  const price = parseFloat(product.priceRange.minVariantPrice.amount);
-  const compareAt = parseFloat(product.compareAtPriceRange?.minVariantPrice?.amount || '0');
-  const variantCompare = product.variants?.edges
-    .map((e) => parseFloat(e.node.compareAtPrice?.amount || '0'))
-    .find((v) => v > price);
-  const original = compareAt > price ? compareAt : variantCompare && variantCompare > price ? variantCompare : 0;
-  if (!original || original <= price) return null;
-  const percent = Math.round(((original - price) / original) * 100);
-  if (percent <= 0) return null;
-  return { original, percent, price };
 }
 
 function getSizeOptions(product: Product) {
@@ -297,10 +249,11 @@ export default function MytheresaGrid({
   embedOnHome = false,
   initialVendor,
   searchQuery,
+  initialProducts,
 }: MytheresaGridProps) {
   const { t } = useLanguage();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
+  const [loading, setLoading] = useState(!initialProducts);
   const [sortBy, setSortBy] = useState<'new' | 'price-low' | 'price-high'>('new');
   const [showSort, setShowSort] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -309,6 +262,7 @@ export default function MytheresaGrid({
   const [loadingMore, setLoadingMore] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const loadingMoreLock = useRef(false);
+  const skipFirstFetchFor = useRef(initialProducts ? category : null);
 
   useEffect(() => {
     setSelectedVendors(new Set());
@@ -327,6 +281,11 @@ export default function MytheresaGrid({
   }, [initialVendor, products]);
 
   useEffect(() => {
+    if (skipFirstFetchFor.current === category) {
+      skipFirstFetchFor.current = null;
+      return;
+    }
+
     let cancelled = false;
     async function fetchProducts() {
       setLoading(true);
@@ -357,21 +316,8 @@ export default function MytheresaGrid({
         }
 
         // Fallback client filter if Shopify search returns mixed types
-        if (category !== 'all' && category !== 'ss26' && category !== 'sale') {
-          allProducts = allProducts.filter((product) => {
-            const type = (product.productType || '').toLowerCase();
-            const title = product.title.toLowerCase();
-            if (category === 'bags') {
-              return type.includes('bag') || type.includes('תיק') || title.includes('תיק') || title.includes('bag');
-            }
-            if (category === 'wallets') {
-              return type.includes('wallet') || type.includes('ארנק') || title.includes('ארנק') || title.includes('wallet');
-            }
-            if (category === 'belts') {
-              return type.includes('belt') || type.includes('חגור') || title.includes('חגור') || title.includes('belt');
-            }
-            return true;
-          });
+        if (category === 'bags' || category === 'wallets' || category === 'belts') {
+          allProducts = allProducts.filter((product) => matchesCatalogCategory(product, category));
         }
 
         setProducts(allProducts);
@@ -557,11 +503,25 @@ export default function MytheresaGrid({
     );
   }
 
+  const catalogHeading = (() => {
+    const q = searchQuery?.trim();
+    if (q) return `${t('products.noProducts').includes('לא') ? 'חיפוש' : 'Search'}: ${q}`;
+    if (category === 'bags') return t('products.shopBags');
+    if (category === 'belts') return t('products.shopBelts');
+    if (category === 'wallets') return t('products.shopWallets');
+    if (category === 'ss26') return t('products.shopSpringSummer2026');
+    if (category === 'sale') return t('header.sale');
+    return t('header.shopAll');
+  })();
+
   return (
     <div
       {...(embedOnHome ? {} : { id: 'products' })}
       className={embedOnHome ? 'min-h-0 bg-cream' : 'min-h-screen bg-cream'}
     >
+      {/* Catalog pages have no visual title by design; keep one for SEO / screen readers */}
+      {!embedOnHome && <h1 className="sr-only">{catalogHeading}</h1>}
+
       {/* Overlay for dropdowns */}
       {(showSort || showFilters) && (
         <div
@@ -809,7 +769,7 @@ export default function MytheresaGrid({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: index < 8 ? Math.min(index * 0.03, 0.2) : 0 }}
-              className="group relative [content-visibility:auto] [contain-intrinsic-size:auto_420px]"
+              className="group relative"
             >
               <div className="block">
                 <ProductImageSlider
@@ -828,7 +788,7 @@ export default function MytheresaGrid({
                   <p className="text-[10px] md:text-[11px] font-normal tracking-[0.16em] uppercase text-black/40">
                     {product.vendor || 'KLUMIT'}
                   </p>
-                  <h3 className="text-[11px] md:text-[13px] font-semibold uppercase tracking-[0.04em] text-black line-clamp-2 leading-snug">
+                  <h3 className="product-grid-title text-[11px] md:text-[13px] font-semibold uppercase tracking-normal md:tracking-[0.04em] text-black line-clamp-2 leading-snug min-h-[2.6em] break-words">
                     {product.title}
                   </h3>
                   <div className="flex items-baseline justify-center gap-2 pt-0.5">
@@ -853,6 +813,17 @@ export default function MytheresaGrid({
             );
           })}
         </div>
+
+        {/* Crawlable product links beyond the first visible rows (load-more UX) */}
+        {productPool.length > visibleProducts.length && (
+          <nav className="sr-only" aria-label="כל המוצרים בקטגוריה">
+            {productPool.slice(visibleProducts.length).map((product) => (
+              <Link key={`seo-${product.id}`} href={`/products/${product.handle}`}>
+                {product.title}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         {/* Infinite scroll sentinel — loads next 2 rows */}
         {hasMore && (

@@ -95,7 +95,7 @@ export default function AboutPage() {
               className="mt-10 md:mt-14 inline-flex flex-col items-center"
             >
               <span className="text-[10px] tracking-editorial uppercase text-cream/30 mb-2">Since</span>
-              <span className="font-display text-5xl md:text-6xl font-light text-terracotta-light/40">1984</span>
+              <span className="font-display text-5xl md:text-6xl font-light text-terracotta-light/40">1983</span>
             </motion.div>
           </div>
         </section>

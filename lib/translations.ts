@@ -108,6 +108,8 @@ export interface Translations {
   'products.purchaseTrustLine': string;
   /** Link label — WhatsApp for pre-purchase questions */
   'products.whatsappContactCta': string;
+  /** Last unit(s) already held in the shopper's cart */
+  'products.inYourCart': string;
   'products.color': string;
   'products.size': string;
   'products.notifyWhenBack': string;
@@ -427,24 +429,24 @@ export const translations: Record<Language, Translations> = {
     'home.marquee2': 'Renato Angi · Carlino Group',
     'home.marquee3': 'אביב–קיץ 2026',
     'home.marquee4': 'יבוא בלעדי מאיטליה',
-    'home.heroEyebrow': 'Summer 2026',
-    'home.heroTitle': 'New Collection',
+    'home.heroEyebrow': 'קיץ 2026',
+    'home.heroTitle': 'תיקים יוקרתיים מאיטליה',
     'home.heroTitleItalic': '',
-    'home.heroDescription': 'תיקים, חגורות וארנקים מאיטליה — עיצוב נצחי, איכות שמורגשת במגע.',
-    'home.heroCta': 'Shop Now',
+    'home.heroDescription': 'תיקים, חגורות וארנקים מאיטליה - במחירים מהיבואן לצרכן',
+    'home.heroCta': 'לצפייה בקולקציה',
     'home.heroCtaSecondary': 'הסיפור שלנו',
     'home.categoryEyebrow': 'קנו לפי קטגוריה',
     'home.categoryTitle': 'נבחרו במיוחד',
     'home.categoryTitleEm': 'בשבילך',
     'home.categoryShop': 'לקנייה',
     'home.editorialEyebrow': 'השראה',
-    'home.editorialTitle': 'מאז 1984 — אותה מחויבות לאיכות.',
+    'home.editorialTitle': 'מאז 1983 — אותה מחויבות לאיכות.',
     'home.editorialBody': 'קלומית מייבאת באופן בלעדי את המותגים המובילים מאיטליה. כל פריט נבחר בקפידה, כדי שתיק הנשיאה שלך ילווה אותך שנים.',
     'home.editorialCta': 'אודות קלומית',
     'home.editorialCtaBlog': 'למגזין',
     'home.editorialImageAlt': 'כיכר דיזנגוף בתל אביב, צילום היסטורי בשחור־לבן',
-    'home.productsEyebrow': 'Featured collection',
-    'home.productsTitle': 'New Arrivals',
+    'home.productsEyebrow': 'קולקציה נבחרת',
+    'home.productsTitle': 'חדש באתר',
     'home.productsTitleEm': '',
     'home.newsletterEyebrow': 'מועדון הלקוחות',
     'home.newsletterTitle': 'הישארו',
@@ -468,7 +470,7 @@ export const translations: Record<Language, Translations> = {
     'value.physicalStore': 'חנות פיזית',
     'value.physicalStoreDetail': 'גאולה 45, תל אביב',
     'value.italianLeather': 'עור איטלקי',
-    'value.italianLeatherDetail': 'איכות פרימיום מ-1984',
+    'value.italianLeatherDetail': 'איכות פרימיום מ-1983',
     'value.securePayment': 'תשלום מאובטח',
     'value.securePaymentDetail': '100% הגנה על הפרטים',
     
@@ -496,6 +498,7 @@ export const translations: Record<Language, Translations> = {
     'products.shareViaWhatsApp': 'שתפו בוואטסאפ',
     'products.purchaseTrustLine': 'משלוח חינם מעל ₪500 · תשלום מאובטח',
     'products.whatsappContactCta': 'שאלות לפני הקנייה? נענה בוואטסאפ',
+    'products.inYourCart': 'נמצא בסל שלך',
     'products.color': 'צבע',
     'products.size': 'גודל',
     'products.notifyWhenBack': 'הודיעו לי כשחוזר',
@@ -514,7 +517,7 @@ export const translations: Record<Language, Translations> = {
     'products.resetFilters': 'נקה סינונים',
     'products.addToCartShort': 'הוספה לסל',
     'products.soldOut': 'אזל מהמלאי',
-    'products.sale': 'SALE',
+    'products.sale': 'סייל',
     'products.quickView': 'צפייה מהירה',
     'products.addingToCart': 'נוסף לעגלה',
     'products.includingVAT': 'כולל מע״מ',
@@ -568,17 +571,17 @@ export const translations: Record<Language, Translations> = {
     
     // Returns Page
     'returns.title': 'מדיניות החזרות והחלפות',
-    'returns.intro': 'אתר "קלומית" עושה הכל כדי שתהיי מרוצה מהרכישה. עם זאת, במידה ואת מעוניינת לבצע שינוי בהזמנה, להלן המדיניות הרשמית של האתר הפועלת על פי חוק הגנת הצרכן:',
+    'returns.intro': 'אתר "קלומית" עושה הכל כדי שתהיו מרוצים מהרכישה. עם זאת, במידה ואתם מעוניינים לבצע שינוי בהזמנה, להלן המדיניות הרשמית של האתר הפועלת על פי חוק הגנת הצרכן:',
     'returns.conditions': 'תנאי סף לביצוע החלפה או החזרה',
     'returns.conditionsText': 'כל בקשה להחלפה או החזרה תיבחן אך ורק אם המוצר עומד בתנאים הבאים:',
     'returns.conditionNew': 'המוצר חדש לחלוטין, לא נעשה בו כל שימוש, לא נפגם והוא נמצא באריזתו המקורית.',
     'returns.conditionTag': 'התווית המקורית מחוברת למוצר ולא הוסרה.',
-    'returns.conditionInspection': 'בדיקת תקינות: כל פריט המוחזר עובר בדיקה קפדנית. מוצר שיגיע עם ריח של בושם, סיגריות, סימני איפור או ללא אריזתו המקורית (כולל מגני פלסטיק על אבזמים במידה והיו) – לא יתקבל. במקרה כזה, המוצר יישלח בחזרה ללקוחה והיא תישא בעלות המשלוח.',
+    'returns.conditionInspection': 'בדיקת תקינות: כל פריט המוחזר עובר בדיקה קפדנית. מוצר שיגיע עם ריח של בושם, סיגריות, סימני איפור או ללא אריזתו המקורית (כולל מגני פלסטיק על אבזמים במידה והיו) – לא יתקבל. במקרה כזה, המוצר יישלח בחזרה, ועלות המשלוח תחול על המזמין/ה.',
     'returns.cancellation': 'ביטול עסקה והחזר כספי (המסלול היקר)',
     'returns.cancellationText': 'ביטול עסקה לקבלת החזר כספי יתאפשר בתוך 14 ימים מיום קבלת המוצר, בכפוף לניכויים הבאים:',
     'returns.cancellationFee': 'דמי ביטול: בהתאם לחוק, ינוכו דמי ביטול בשיעור של 5% ממחיר המוצר או 100 ש"ח – הנמוך מביניהם.',
     'returns.cancellationProcessing': 'דמי סליקה: במידה והעסקה בוצעה בכרטיס אשראי, ינוכו בנוסף דמי סליקת האשראי שנגבו מהחברה בגין העסקה (בשיעור של עד 2.5%).',
-    'returns.cancellationShipping': 'עלויות שילוח: דמי המשלוח המקוריים (ככל ששולמו) אינם מוחזרים. עלות השילוח חזרה למחסני החברה חלה על הלקוחה בלבד.',
+    'returns.cancellationShipping': 'עלויות שילוח: דמי המשלוח המקוריים (ככל ששולמו) אינם מוחזרים. עלות השילוח חזרה למחסני החברה חלה על המזמין/ה בלבד.',
     'returns.exchange': 'החלפת פריט או קבלת שובר זיכוי (המסלול המשתלם)',
     'returns.exchangeText': 'כדי להימנע מתשלום דמי ביטול ועמלות סליקה, אנו מאפשרים להחליף את הפריט או לקבל שובר זיכוי (Credit) לרכישה עתידית באתר בשווי מלא של המוצר (ללא ניכוי דמי ביטול).',
     'returns.exchangeTime': 'החלפה/זיכוי יתאפשר בתוך 14 יום ממועד קבלת הפריט.',
@@ -736,9 +739,9 @@ export const translations: Record<Language, Translations> = {
     'products.dimensions': 'מידות',
     
     // Membership
-    'membership.topBar': 'הצטרפו למועדון הלקוחות ותקבלו',
-    'membership.discount': '20%',
-    'membership.firstPurchase': 'בקניה ראשונה!',
+    'membership.topBar': 'הצטרפי וקבלי 10% הנחה בקנייה הראשונה',
+    'membership.discount': '10%',
+    'membership.firstPurchase': 'בקנייה הראשונה',
     
     // Accessibility Links
     'skipToMain': 'דלג לתוכן הראשי',
@@ -746,13 +749,13 @@ export const translations: Record<Language, Translations> = {
     // Footer
     'footer.brand': 'KLUMIT',
     'footer.brandDesc': 'יבואן בלעדי של תיקים יוקרתיים היישר מאיטליה',
-    'footer.site': 'SITE',
-    'footer.shop': 'SHOP',
+    'footer.site': 'האתר',
+    'footer.shop': 'קנייה',
     'footer.home': 'בית',
     'footer.products': 'מוצרים',
     'footer.cart': 'עגלת קניות',
     'footer.myAccount': 'החשבון שלי',
-    'footer.contact': 'CONTACT',
+    'footer.contact': 'יצירת קשר',
     'footer.about': 'אודות',
     'footer.shipping': 'משלוחים',
     'footer.returns': 'החזרות',
@@ -774,7 +777,7 @@ export const translations: Record<Language, Translations> = {
     'footer.pciSecure': 'הקניה באתר מאובטחת בתקן PCI',
     'footer.accessibilityButton': 'נגישות',
     'footer.kClubTitle': 'THE K CLUB',
-    'footer.kClubTagline': 'הצטרפי וקבלי 20% הנחה בקנייה הראשונה',
+    'footer.kClubTagline': 'הצטרפי וקבלי 10% הנחה בקנייה הראשונה',
     'footer.firstName': 'שם פרטי *',
     'footer.lastName': 'שם משפחה *',
     'footer.phoneField': 'טלפון נייד *',
@@ -825,7 +828,7 @@ export const translations: Record<Language, Translations> = {
     'home.categoryTitleEm': 'you',
     'home.categoryShop': 'Shop now',
     'home.editorialEyebrow': 'Heritage',
-    'home.editorialTitle': 'Since 1984 — the same commitment to quality.',
+    'home.editorialTitle': 'Since 1983 — the same commitment to quality.',
     'home.editorialBody': 'Klumit is the exclusive importer of Italy’s leading brands. Every piece is chosen with care, so your bag stays with you for years.',
     'home.editorialCta': 'About Klumit',
     'home.editorialCtaBlog': 'Read the magazine',
@@ -855,7 +858,7 @@ export const translations: Record<Language, Translations> = {
     'value.physicalStore': 'Physical Store',
     'value.physicalStoreDetail': 'Geula 45, Tel Aviv',
     'value.italianLeather': 'Italian Leather',
-    'value.italianLeatherDetail': 'Premium quality since 1984',
+    'value.italianLeatherDetail': 'Premium quality since 1983',
     'value.securePayment': 'Secure Payment',
     'value.securePaymentDetail': '100% Privacy Protection',
     
@@ -883,6 +886,7 @@ export const translations: Record<Language, Translations> = {
     'products.shareViaWhatsApp': 'Share via WhatsApp',
     'products.purchaseTrustLine': 'Free shipping over ₪500 · Secure checkout',
     'products.whatsappContactCta': 'Questions before you buy? Message us on WhatsApp',
+    'products.inYourCart': 'In your cart',
     'products.color': 'Color',
     'products.size': 'Size',
     'products.notifyWhenBack': 'Notify me when back',
@@ -1123,9 +1127,9 @@ export const translations: Record<Language, Translations> = {
     'products.dimensions': 'Dimensions',
     
     // Membership
-    'membership.topBar': 'Join our customer club and get',
-    'membership.discount': '20%',
-    'membership.firstPurchase': 'on your first purchase!',
+    'membership.topBar': 'Join and get 10% off your first purchase',
+    'membership.discount': '10%',
+    'membership.firstPurchase': 'on your first purchase',
     
     // Accessibility Links
     'skipToMain': 'Skip to main content',
@@ -1161,7 +1165,7 @@ export const translations: Record<Language, Translations> = {
     'footer.pciSecure': 'Shopping on this site is secured with PCI standard',
     'footer.accessibilityButton': 'Accessibility',
     'footer.kClubTitle': 'THE K CLUB',
-    'footer.kClubTagline': 'Join and get 20% off your first purchase',
+    'footer.kClubTagline': 'Join and get 10% off your first purchase',
     'footer.firstName': 'First name *',
     'footer.lastName': 'Last name *',
     'footer.phoneField': 'Mobile phone *',
@@ -1212,7 +1216,7 @@ export const translations: Record<Language, Translations> = {
     'home.categoryTitleEm': 'для вас',
     'home.categoryShop': 'Смотреть',
     'home.editorialEyebrow': 'Наследие',
-    'home.editorialTitle': 'С 1984 года — та же приверженность качеству.',
+    'home.editorialTitle': 'С 1983 года — та же приверженность качеству.',
     'home.editorialBody': 'Klumit — эксклюзивный импортер ведущих итальянских брендов. Каждая вещь отобрана с заботой.',
     'home.editorialCta': 'О Klumit',
     'home.editorialCtaBlog': 'Журнал',
@@ -1242,7 +1246,7 @@ export const translations: Record<Language, Translations> = {
     'value.physicalStore': 'Физический магазин',
     'value.physicalStoreDetail': 'Геула 45, Тель-Авив',
     'value.italianLeather': 'Итальянская кожа',
-    'value.italianLeatherDetail': 'Премиум качество с 1984',
+    'value.italianLeatherDetail': 'Премиум качество с 1983',
     'value.securePayment': 'Безопасная оплата',
     'value.securePaymentDetail': '100% защита данных',
     
@@ -1270,6 +1274,7 @@ export const translations: Record<Language, Translations> = {
     'products.shareViaWhatsApp': 'Поделиться в WhatsApp',
     'products.purchaseTrustLine': 'Бесплатная доставка от ₪500 · Безопасная оплата',
     'products.whatsappContactCta': 'Вопросы перед покупкой? Напишите в WhatsApp',
+    'products.inYourCart': 'Уже в вашей корзине',
     'products.color': 'Цвет',
     'products.size': 'Размер',
     'products.notifyWhenBack': 'Сообщить о поступлении',
@@ -1510,9 +1515,9 @@ export const translations: Record<Language, Translations> = {
     'products.dimensions': 'Размеры',
     
     // Membership
-    'membership.topBar': 'Присоединяйтесь к клубу клиентов и получите',
-    'membership.discount': '20%',
-    'membership.firstPurchase': 'при первой покупке!',
+    'membership.topBar': 'Присоединяйтесь и получите 10% скидку на первую покупку',
+    'membership.discount': '10%',
+    'membership.firstPurchase': 'при первой покупке',
     
     // Accessibility Links
     'skipToMain': 'Перейти к основному контенту',
@@ -1548,7 +1553,7 @@ export const translations: Record<Language, Translations> = {
     'footer.pciSecure': 'Покупки на сайте защищены стандартом PCI',
     'footer.accessibilityButton': 'Доступность',
     'footer.kClubTitle': 'THE K CLUB',
-    'footer.kClubTagline': 'Присоединяйтесь и получите 20% скидку на первую покупку',
+    'footer.kClubTagline': 'Присоединяйтесь и получите 10% скидку на первую покупку',
     'footer.firstName': 'Имя *',
     'footer.lastName': 'Фамилия *',
     'footer.phoneField': 'Мобильный телефон *',

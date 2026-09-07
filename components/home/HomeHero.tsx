@@ -38,7 +38,11 @@ export default function HomeHero() {
 
       <div className="relative z-10 flex h-full min-h-0 flex-col justify-center px-5 pb-16 pt-24 text-center text-white sm:px-6">
         <div className="mx-auto max-w-3xl space-y-5">
-          <p className="text-[11px] tracking-[0.35em] uppercase opacity-90">
+          <p
+            className={`text-[11px] uppercase opacity-90 ${
+              language === 'he' ? 'tracking-[0.12em]' : 'tracking-[0.35em]'
+            }`}
+          >
             {t('home.heroEyebrow')}
           </p>
           <h1 className="font-display font-light text-[clamp(2.75rem,8vw,5.5rem)] leading-[1.05] tracking-tight">
@@ -60,7 +64,9 @@ export default function HomeHero() {
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
             <Link
               href="/products"
-              className="inline-block border-b border-white pb-1 text-[12px] tracking-[0.22em] uppercase text-white transition-opacity hover:opacity-70"
+              className={`inline-block border-b border-white pb-1 text-[12px] uppercase text-white transition-opacity hover:opacity-70 ${
+                language === 'he' ? 'tracking-[0.12em]' : 'tracking-[0.22em]'
+              }`}
             >
               {t('home.heroCta')}
             </Link>

@@ -12,7 +12,7 @@ export default function ValuePropsBar() {
       icon: Phone,
       title: t('value.customerService'),
       subtitle: t('value.customerServiceDetail'),
-      link: 'https://wa.me/972549903139',
+      link: 'https://wa.me/972542600177',
       external: true,
     },
     {
