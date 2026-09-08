@@ -5,7 +5,14 @@ import { useLanguage } from '@/lib/LanguageContext';
 
 interface AddressAutocompleteProps {
   value: string;
-  onChange: (address: string, city: string, zipCode: string, apartment?: string, floor?: string) => void;
+  /** Typing updates address only; place selection may also pass city/zip/apartment/floor. */
+  onChange: (
+    address: string,
+    city?: string,
+    zipCode?: string,
+    apartment?: string,
+    floor?: string
+  ) => void;
   placeholder?: string;
   className?: string;
   required?: boolean;
@@ -194,7 +201,8 @@ export default function AddressAutocomplete({
       type="text"
       value={value}
       onChange={(e) => {
-        onChange(e.target.value, '', '', '', '');
+        // Address only — never clear city/zip/personal fields while typing
+        onChange(e.target.value);
       }}
       placeholder={placeholder}
       className={className}

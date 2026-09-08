@@ -54,89 +54,54 @@ export default function CheckoutPage() {
 
   const hasTrackedCheckout = useRef(false);
   const hasNotifiedCheckout = useRef(false);
+  const profileHydratedRef = useRef(false);
 
+  type CheckoutFormState = typeof formData;
+
+  /** Fill only blank fields — never wipe what the shopper already typed. */
+  const fillEmptyFields = useCallback(
+    (prev: CheckoutFormState, defaults: Partial<CheckoutFormState>): CheckoutFormState => {
+      const next = { ...prev };
+      (Object.keys(defaults) as (keyof CheckoutFormState)[]).forEach((key) => {
+        const incoming = defaults[key];
+        if (incoming && !String(prev[key] ?? '').trim()) {
+          next[key] = incoming;
+        }
+      });
+      return next;
+    },
+    []
+  );
+
+  const profileDefaultsFromUser = useCallback((currentUser: {
+    email?: string | null;
+    phone?: string | null;
+    user_metadata?: Record<string, string | undefined>;
+  }): Partial<CheckoutFormState> => {
+    const currentEmail = currentUser.email || currentUser.user_metadata?.email || '';
+    return {
+      firstName: currentUser.user_metadata?.first_name || '',
+      lastName: currentUser.user_metadata?.last_name || '',
+      email: currentEmail,
+      phone: currentUser.phone || currentUser.user_metadata?.phone || '',
+      address: currentUser.user_metadata?.shipping_address || '',
+      city: currentUser.user_metadata?.shipping_city || '',
+      zipCode: currentUser.user_metadata?.shipping_zip_code || '',
+      apartment: currentUser.user_metadata?.shipping_apartment || '',
+      floor: currentUser.user_metadata?.shipping_floor || '',
+      notes: currentUser.user_metadata?.shipping_notes || '',
+    };
+  }, []);
+
+  // Redirect empty cart — separate from profile hydrate so cart sync can't wipe the form
   useEffect(() => {
-    // טען פרטים מהפרופיל אם המשתמש מחובר
-    async function loadProfileData() {
-      // Timeout של 1.5 שניות - אם זה לוקח יותר מדי זמן, נעצור מיד
-      const timeoutId = setTimeout(() => {
-        setLoadingProfile(false);
-      }, 1500);
-
-      try {
-        // שימוש ישיר ב-supabase.auth.getUser() במקום דרך API
-        const { supabase } = await import('@/lib/supabase');
-        
-        // ננסה עם timeout קצר
-        let currentUser = null;
-        let error = null;
-        
-        try {
-          const result = await Promise.race([
-            supabase.auth.getUser(),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Timeout')), 1000)
-            )
-          ]) as { data: { user: any }, error: any };
-          
-          if (result?.data) {
-            currentUser = result.data.user;
-            error = result.error;
-          }
-        } catch (timeoutErr) {
-          // אם יש timeout, ננסה getSession
-          error = { message: 'Timeout' };
-        }
-          
-        clearTimeout(timeoutId);
-          
-        // אם יש משתמש, נטען את הפרטים שלו
-        if (!error && currentUser) {
-          setUser(currentUser);
-          const currentEmail = currentUser.email || currentUser.user_metadata?.email || '';
-          
-          // טען פרטים מהפרופיל כ-default
-          setFormData({
-            firstName: currentUser.user_metadata?.first_name || '',
-            lastName: currentUser.user_metadata?.last_name || '',
-            email: currentEmail,
-            phone: currentUser.phone || currentUser.user_metadata?.phone || '',
-            address: currentUser.user_metadata?.shipping_address || '',
-            city: currentUser.user_metadata?.shipping_city || '',
-            zipCode: currentUser.user_metadata?.shipping_zip_code || '',
-            apartment: currentUser.user_metadata?.shipping_apartment || '',
-            floor: currentUser.user_metadata?.shipping_floor || '',
-            notes: currentUser.user_metadata?.shipping_notes || '',
-          });
-        } else {
-          // אין משתמש מחובר - נסיים מיד בלי לנסות fallback
-          setUser(null);
-        }
-        // Whatever the shopper already typed in this session wins (e.g. back from the payment page)
-        const stored = loadCheckoutForm();
-        if (stored) {
-          setFormData((prev) => ({ ...prev, ...stored }));
-        }
-        setLoadingProfile(false);
-      } catch (err) {
-        clearTimeout(timeoutId);
-        setUser(null);
-        const stored = loadCheckoutForm();
-        if (stored) {
-          setFormData((prev) => ({ ...prev, ...stored }));
-        }
-        setLoadingProfile(false);
-      }
-    }
-
-    loadProfileData();
-
     if (items.length === 0) {
       window.location.href = '/cart';
-      return;
     }
+  }, [items.length]);
 
-    // Track begin checkout event (only once)
+  // Track begin checkout once
+  useEffect(() => {
     if (items.length > 0 && !hasTrackedCheckout.current) {
       trackBeginCheckout({
         items: items.map(item => ({
@@ -150,49 +115,103 @@ export default function CheckoutPage() {
       });
       hasTrackedCheckout.current = true;
     }
+  }, [items, getTotal]);
 
-    // האזן לשינויים בסטטוס ההתחברות (רק אחרי שהטעינה הראשונית הסתיימה)
+  // Hydrate profile + session form once; auth updates only fill empty fields
+  useEffect(() => {
+    let cancelled = false;
     let subscription: { unsubscribe: () => void } | null = null;
-    
-    // נמתין קצת לפני שניצור את ה-subscription כדי לא להפריע לטעינה הראשונית
+
+    async function loadProfileData() {
+      const timeoutId = setTimeout(() => {
+        if (!cancelled) setLoadingProfile(false);
+      }, 1500);
+
+      try {
+        const { supabase } = await import('@/lib/supabase');
+
+        let currentUser = null;
+        let error = null;
+
+        try {
+          const result = await Promise.race([
+            supabase.auth.getUser(),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Timeout')), 1000)
+            ),
+          ]) as { data: { user: any }; error: any };
+
+          if (result?.data) {
+            currentUser = result.data.user;
+            error = result.error;
+          }
+        } catch {
+          error = { message: 'Timeout' };
+        }
+
+        clearTimeout(timeoutId);
+        if (cancelled) return;
+
+        const stored = loadCheckoutForm();
+
+        if (!error && currentUser) {
+          setUser(currentUser);
+          const defaults = profileDefaultsFromUser(currentUser);
+          // One atomic update: profile defaults → keep typed/stored values on top
+          setFormData((prev) => {
+            const withProfile = fillEmptyFields(prev, defaults);
+            return stored ? { ...withProfile, ...stored } : withProfile;
+          });
+        } else {
+          setUser(null);
+          if (stored) {
+            setFormData((prev) => ({ ...prev, ...stored }));
+          }
+        }
+
+        profileHydratedRef.current = true;
+        setLoadingProfile(false);
+      } catch {
+        clearTimeout(timeoutId);
+        if (cancelled) return;
+        setUser(null);
+        const stored = loadCheckoutForm();
+        if (stored) {
+          setFormData((prev) => ({ ...prev, ...stored }));
+        }
+        profileHydratedRef.current = true;
+        setLoadingProfile(false);
+      }
+    }
+
+    loadProfileData();
+
     const subscriptionTimeout = setTimeout(() => {
       try {
-        const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        const {
+          data: { subscription: authSubscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
           if (session?.user) {
             setUser(session.user);
-            const currentUser = session.user;
-            const currentEmail = currentUser.email || currentUser.user_metadata?.email || '';
-            
-            // טען פרטים מהפרופיל כ-default
-            setFormData({
-              firstName: currentUser.user_metadata?.first_name || '',
-              lastName: currentUser.user_metadata?.last_name || '',
-              email: currentEmail,
-              phone: currentUser.phone || currentUser.user_metadata?.phone || '',
-              address: currentUser.user_metadata?.shipping_address || '',
-              city: currentUser.user_metadata?.shipping_city || '',
-              zipCode: currentUser.user_metadata?.shipping_zip_code || '',
-              apartment: currentUser.user_metadata?.shipping_apartment || '',
-              floor: currentUser.user_metadata?.shipping_floor || '',
-              notes: currentUser.user_metadata?.shipping_notes || '',
-            });
+            const defaults = profileDefaultsFromUser(session.user);
+            // Never replace the whole form — only seed blank fields (e.g. after login)
+            setFormData((prev) => fillEmptyFields(prev, defaults));
           } else {
             setUser(null);
           }
         });
         subscription = authSubscription;
-      } catch (err) {
-        // אם יש שגיאה ב-subscription, נמשיך בלי זה
+      } catch {
+        // continue without auth subscription
       }
     }, 1000);
 
     return () => {
+      cancelled = true;
       clearTimeout(subscriptionTimeout);
-      if (subscription) {
-        subscription.unsubscribe();
-      }
+      subscription?.unsubscribe();
     };
-  }, [items, getTotal]);
+  }, [fillEmptyFields, profileDefaultsFromUser]);
 
   // שלח הודעה לטלגרם על הגעה לדף checkout (רק פעם אחת)
   useEffect(() => {
@@ -228,7 +247,7 @@ export default function CheckoutPage() {
 
   // Persist the form for this tab so returning from /checkout/payment keeps everything filled
   useEffect(() => {
-    if (loadingProfile) return;
+    if (loadingProfile || !profileHydratedRef.current) return;
     saveCheckoutForm(formData);
   }, [formData, loadingProfile]);
 
@@ -1116,7 +1135,7 @@ export default function CheckoutPage() {
                       id="firstName"
                       type="text"
                       value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                       required
                       autoComplete="given-name"
@@ -1130,7 +1149,7 @@ export default function CheckoutPage() {
                       id="lastName"
                       type="text"
                       value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                       required
                       autoComplete="family-name"
@@ -1145,7 +1164,7 @@ export default function CheckoutPage() {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                     required
                     autoComplete="email"
@@ -1167,7 +1186,7 @@ export default function CheckoutPage() {
                       } else {
                         value = value.replace(/[^\d]/g, '');
                       }
-                      setFormData({ ...formData, phone: value });
+                      setFormData((prev) => ({ ...prev, phone: value }));
                     }}
                     className={`w-full px-3 py-2 border bg-white font-light text-sm focus:outline-none transition-luxury text-right ${
                       formData.phone && !/^(\+972|972|0)\d{8,9}$/.test(formData.phone.replace(/[\s\-]/g, ''))
@@ -1197,14 +1216,14 @@ export default function CheckoutPage() {
                   <AddressAutocomplete
                     value={formData.address}
                     onChange={(address, city, zipCode, apartment, floor) => {
-                      setFormData({
-                        ...formData,
+                      setFormData((prev) => ({
+                        ...prev,
                         address,
-                        city: city || formData.city,
-                        zipCode: zipCode || formData.zipCode,
-                        apartment: apartment || formData.apartment,
-                        floor: floor || formData.floor,
-                      });
+                        ...(city ? { city } : {}),
+                        ...(zipCode ? { zipCode } : {}),
+                        ...(apartment ? { apartment } : {}),
+                        ...(floor ? { floor } : {}),
+                      }));
                     }}
                     placeholder="הזן כתובת (או בחר מהרשימה)"
                     className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
@@ -1220,7 +1239,7 @@ export default function CheckoutPage() {
                       id="city"
                       type="text"
                       value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                       required
                       autoComplete="address-level2"
@@ -1238,7 +1257,7 @@ export default function CheckoutPage() {
                       onChange={(e) => {
                         // רק ספרות, מקסימום 7
                         const value = e.target.value.replace(/\D/g, '').slice(0, 7);
-                        setFormData({ ...formData, zipCode: value });
+                        setFormData((prev) => ({ ...prev, zipCode: value }));
                       }}
                       className={`w-full px-3 py-2 border bg-white font-light text-sm focus:outline-none transition-luxury text-right ${
                         formData.zipCode && formData.zipCode.length > 0 && formData.zipCode.length !== 7
@@ -1263,7 +1282,7 @@ export default function CheckoutPage() {
                       id="apartment"
                       type="text"
                       value={formData.apartment}
-                      onChange={(e) => setFormData({ ...formData, apartment: e.target.value })}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, apartment: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                       placeholder="מספר דירה"
                     />
@@ -1276,7 +1295,7 @@ export default function CheckoutPage() {
                       id="floor"
                       type="text"
                       value={formData.floor}
-                      onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, floor: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right"
                       placeholder="מספר קומה"
                     />
@@ -1289,7 +1308,7 @@ export default function CheckoutPage() {
                   <textarea
                     id="notes"
                     value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-200 bg-white font-light text-sm focus:border-[#1a1a1a] focus:outline-none transition-luxury text-right resize-none"
                     placeholder="קוד ללובי, הוראות משלוח, הערות נוספות..."
                     rows={2}
