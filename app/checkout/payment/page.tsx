@@ -17,6 +17,8 @@ import {
 
 const formatPrice = (amount: number) => Math.round(amount).toLocaleString('he-IL');
 
+type PayMethod = 'card' | 'apple';
+
 function PaymentPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,6 +31,7 @@ function PaymentPageInner() {
   const [expired, setExpired] = useState(false);
   const [frameLoaded, setFrameLoaded] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [method, setMethod] = useState<PayMethod>('card');
   const refreshedForCancel = useRef(false);
 
   // Grow redirects to cancelUrl *inside* the iframe – move the whole window.
@@ -40,37 +43,40 @@ function PaymentPageInner() {
       return;
     }
     setSession(stored);
+    setMethod(stored.method === 'apple' ? 'apple' : 'card');
     setReady(true);
   }, [router]);
 
   const requestFreshSession = useCallback(
-    async (current: CheckoutSession) => {
+    async (current: CheckoutSession, nextMethod: PayMethod = 'card') => {
       setRefreshing(true);
       setRefreshError(null);
       try {
         const response = await fetch('/api/checkout/payment-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ref: current.ref, sig: current.sig }),
+          body: JSON.stringify({ ref: current.ref, sig: current.sig, method: nextMethod }),
         });
         const data = (await response.json().catch(() => null)) as
           | (CheckoutSession & { error?: string; orderName?: string; message?: string })
           | null;
 
         if (response.status === 409) {
-          // Already paid – go to the confirmation page.
           router.replace(`/checkout/success?ref=${current.ref}&sig=${current.sig}`);
-          return;
+          return null;
         }
         if (!response.ok || !data?.paymentUrl) {
           throw new Error(data?.message || 'לא ניתן לפתוח את טופס התשלום כרגע. נסו שוב בעוד רגע.');
         }
         saveCheckoutSession(data);
         setSession(data);
+        setMethod(data.method === 'apple' ? 'apple' : 'card');
         setExpired(false);
         setFrameLoaded(false);
+        return data;
       } catch (error) {
         setRefreshError(error instanceof Error ? error.message : 'שגיאה בפתיחת טופס התשלום');
+        return null;
       } finally {
         setRefreshing(false);
       }
@@ -83,7 +89,7 @@ function PaymentPageInner() {
     if (!ready || !session || !cancelled || refreshedForCancel.current) return;
     refreshedForCancel.current = true;
     setNotice('התשלום לא הושלם. אפשר לנסות שוב או לבחור אמצעי תשלום אחר — הפרטים שלך נשמרו.');
-    requestFreshSession(session);
+    requestFreshSession(session, session.method === 'apple' ? 'apple' : 'card');
     router.replace('/checkout/payment');
   }, [ready, session, cancelled, requestFreshSession, router]);
 
@@ -99,8 +105,37 @@ function PaymentPageInner() {
     return () => clearTimeout(timer);
   }, [session]);
 
+  const selectMethod = useCallback(
+    async (next: PayMethod) => {
+      if (!session || next === method || refreshing) return;
+      if (next === 'apple' && session.applePayAvailable === false) {
+        setRefreshError('Apple Pay עדיין לא מופעל בחשבון הסליקה.');
+        return;
+      }
+      const data = await requestFreshSession(session, next);
+      // Apple Pay must open top-level (not iframe) so Safari can show the wallet sheet.
+      if (data?.openMode === 'redirect' && data.paymentUrl) {
+        window.location.assign(data.paymentUrl);
+      }
+    },
+    [session, method, refreshing, requestFreshSession]
+  );
+
+  const startApplePay = useCallback(async () => {
+    if (!session) return;
+    const data =
+      session.method === 'apple' && session.paymentUrl && !expired
+        ? session
+        : await requestFreshSession(session, 'apple');
+    if (data?.paymentUrl) {
+      window.location.assign(data.paymentUrl);
+    }
+  }, [session, expired, requestFreshSession]);
+
   const summary = session?.summary;
   const itemCount = useMemo(() => summary?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0, [summary]);
+  const appleAvailable = session?.applePayAvailable === true;
+  const showApple = appleAvailable;
 
   if (!ready || !session || !summary) {
     return (
@@ -115,6 +150,8 @@ function PaymentPageInner() {
       </div>
     );
   }
+
+  const isAppleView = method === 'apple';
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
@@ -146,7 +183,6 @@ function PaymentPageInner() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-5">
-            {/* Order summary – first in RTL reading order */}
             <aside className="md:col-span-2 order-2 md:order-1">
               <div className="bg-white border border-gray-200 p-5 md:p-6">
                 <h2 className="text-base md:text-lg font-light luxury-font mb-4 text-right">
@@ -215,7 +251,6 @@ function PaymentPageInner() {
               </div>
             </aside>
 
-            {/* Embedded Grow payment form */}
             <section className="md:col-span-3 order-1 md:order-2" aria-label="טופס תשלום">
               <div className="bg-white border border-gray-200">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
@@ -228,20 +263,70 @@ function PaymentPageInner() {
                   </p>
                 </div>
 
-                <div className="relative min-h-[560px] md:min-h-[680px]">
-                  {expired ? (
+                {showApple && (
+                  <div
+                    className="grid grid-cols-2 border-b border-gray-100"
+                    role="tablist"
+                    aria-label="אמצעי תשלום"
+                  >
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={!isAppleView}
+                      onClick={() => selectMethod('card')}
+                      disabled={refreshing}
+                      className={`px-4 py-3 text-sm font-light transition-colors disabled:opacity-60 ${
+                        !isAppleView ? 'bg-white text-black border-b-2 border-black' : 'bg-[#faf9f7] text-black/55'
+                      }`}
+                    >
+                      כרטיס אשראי
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={isAppleView}
+                      onClick={() => selectMethod('apple')}
+                      disabled={refreshing}
+                      className={`px-4 py-3 text-sm font-light transition-colors disabled:opacity-60 ${
+                        isAppleView ? 'bg-white text-black border-b-2 border-black' : 'bg-[#faf9f7] text-black/55'
+                      }`}
+                    >
+                      Apple Pay
+                    </button>
+                  </div>
+                )}
+
+                <div className="relative min-h-[420px] md:min-h-[560px]">
+                  {expired && !isAppleView ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
                       <p className="text-sm font-light text-black/70">
                         טופס התשלום פג תוקף מטעמי אבטחה. הפרטים שלך נשמרו — אפשר לפתוח אותו מחדש.
                       </p>
                       <button
                         type="button"
-                        onClick={() => requestFreshSession(session)}
+                        onClick={() => requestFreshSession(session, 'card')}
                         disabled={refreshing}
                         className="inline-flex items-center gap-2 bg-[#1a1a1a] text-white px-6 py-3 text-xs tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:opacity-60"
                       >
                         <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} aria-hidden />
                         {refreshing ? 'פותח מחדש...' : 'פתיחת טופס תשלום'}
+                      </button>
+                      {refreshError && <p className="text-xs text-red-600">{refreshError}</p>}
+                    </div>
+                  ) : isAppleView ? (
+                    <div className="flex flex-col items-center justify-center gap-5 px-6 py-16 text-center">
+                      <p className="text-sm font-light text-black/70 max-w-sm leading-relaxed">
+                        תשלום מהיר ומאובטח עם Apple Pay. נפתח בדף מאובטח של Grow — לאחר האישור תחזרו אוטומטית לאישור ההזמנה.
+                      </p>
+                      <p className="text-[11px] font-light text-black/45">דורש Safari באייפון / מק עם כרטיס ב־Wallet</p>
+                      <button
+                        type="button"
+                        onClick={startApplePay}
+                        disabled={refreshing}
+                        className="inline-flex items-center justify-center min-w-[220px] bg-black text-white px-8 py-3.5 text-sm font-medium rounded-md hover:bg-[#111] transition-colors disabled:opacity-60"
+                        aria-label="שלם עם Apple Pay"
+                      >
+                        {refreshing ? 'מכין תשלום...' : 'שלם עם Apple Pay'}
                       </button>
                       {refreshError && <p className="text-xs text-red-600">{refreshError}</p>}
                     </div>

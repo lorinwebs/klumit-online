@@ -17,10 +17,14 @@ import 'server-only';
  *   GROW_PAGE_CODE    – payment page identifier (12 hex chars)
  *   GROW_ENVIRONMENT  – "sandbox" | "production" (default: production)
  * Optional:
+ *   GROW_APPLE_PAGE_CODE – Apple Pay page identifier (sandbox demo: 9eeea7787d67)
  *   GROW_MAX_PAYMENTS – if > 1, lets the customer choose up to N installments
  */
 
 const GROW_ENVIRONMENT = process.env.GROW_ENVIRONMENT === 'sandbox' ? 'sandbox' : 'production';
+
+/** Grow docs demo Apple Pay page — only used automatically in sandbox. */
+const SANDBOX_APPLE_PAGE_CODE = '9eeea7787d67';
 
 const GROW_BASE_URL =
   GROW_ENVIRONMENT === 'sandbox'
@@ -32,6 +36,8 @@ const REQUEST_TIMEOUT_MS = 20_000;
 /** Grow payment page links stop working after roughly 10 minutes. */
 export const GROW_PAYMENT_URL_TTL_MS = 10 * 60 * 1000;
 
+export type GrowPaymentMethod = 'card' | 'apple';
+
 /** transactionTypeId values reported by Grow. */
 export const GROW_TRANSACTION_TYPES: Record<number, string> = {
   1: 'כרטיס אשראי',
@@ -41,9 +47,12 @@ export const GROW_TRANSACTION_TYPES: Record<number, string> = {
 };
 
 export function getGrowConfig() {
+  const explicitApple = process.env.GROW_APPLE_PAGE_CODE?.trim() || '';
   return {
     userId: process.env.GROW_USER_ID?.trim() || '',
     pageCode: process.env.GROW_PAGE_CODE?.trim() || '',
+    applePageCode:
+      explicitApple || (GROW_ENVIRONMENT === 'sandbox' ? SANDBOX_APPLE_PAGE_CODE : ''),
     environment: GROW_ENVIRONMENT,
     baseUrl: GROW_BASE_URL,
     maxPayments: Math.max(1, Number(process.env.GROW_MAX_PAYMENTS || 1) || 1),
@@ -53,6 +62,22 @@ export function getGrowConfig() {
 export function isGrowConfigured(): boolean {
   const { userId, pageCode } = getGrowConfig();
   return Boolean(userId && pageCode);
+}
+
+export function isApplePayConfigured(): boolean {
+  const { userId, applePageCode } = getGrowConfig();
+  return Boolean(userId && applePageCode);
+}
+
+export function pageCodeForMethod(method: GrowPaymentMethod = 'card'): string {
+  const { pageCode, applePageCode } = getGrowConfig();
+  if (method === 'apple') {
+    if (!applePageCode) {
+      throw new GrowApiError('createPaymentProcess', 'GROW_APPLE_PAGE_CODE is not configured', null, null);
+    }
+    return applePageCode;
+  }
+  return pageCode;
 }
 
 export class GrowApiError extends Error {
@@ -170,6 +195,8 @@ export interface CreatePaymentProcessInput {
   successUrl: string;
   cancelUrl: string;
   notifyUrl: string;
+  /** card (default GROW_PAGE_CODE) or apple (GROW_APPLE_PAGE_CODE). */
+  method?: GrowPaymentMethod;
   /** Up to 9 custom fields echoed back in the server update. */
   customFields?: Partial<Record<'cField1' | 'cField2' | 'cField3' | 'cField4' | 'cField5', string>>;
   /** Optional invoice lines. */
@@ -184,7 +211,8 @@ export interface GrowPaymentProcess {
 }
 
 function buildCreateFields(input: CreatePaymentProcessInput, withProducts: boolean): Record<string, FormValue> {
-  const { userId, pageCode, maxPayments } = getGrowConfig();
+  const { userId, maxPayments } = getGrowConfig();
+  const pageCode = pageCodeForMethod(input.method || 'card');
 
   const fields: Record<string, FormValue> = {
     userId,

@@ -32,6 +32,14 @@ const nextConfig = {
     
     return [
       {
+        // Apple Pay domain verification (Grow / Meshulam PSP file). Must be 200, no redirect.
+        source: '/.well-known/apple-developer-merchantid-domain-association',
+        headers: [
+          { key: 'Content-Type', value: 'application/octet-stream' },
+          { key: 'Cache-Control', value: 'public, max-age=86400' },
+        ],
+      },
+      {
         source: '/:path*',
         headers: [
           {

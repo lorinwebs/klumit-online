@@ -18,6 +18,9 @@ export interface CheckoutSession {
   paymentUrl: string;
   processId: string;
   expiresAt: number;
+  method?: 'card' | 'apple';
+  openMode?: 'iframe' | 'redirect';
+  applePayAvailable?: boolean;
   summary: {
     currency: string;
     subtotal: number;

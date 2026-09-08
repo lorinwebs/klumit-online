@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDraftOrderSummary, refToDraftGid, verifyRef } from '@/lib/checkout-orders';
 import { createPaymentSessionForDraft } from '@/lib/checkout-payment';
-import { isGrowConfigured } from '@/lib/grow';
+import { isApplePayConfigured, isGrowConfigured, type GrowPaymentMethod } from '@/lib/grow';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * Re-opens a Grow payment process for an existing draft order.
- * Used when the customer cancels inside the payment form or the Grow link expired.
+ * Used when the customer cancels inside the payment form, the Grow link expired,
+ * or they switch between card and Apple Pay.
  */
 export async function POST(request: NextRequest) {
   if (!isGrowConfigured()) {
@@ -16,16 +17,25 @@ export async function POST(request: NextRequest) {
 
   let ref = '';
   let sig = '';
+  let method: GrowPaymentMethod = 'card';
   try {
-    const body = (await request.json()) as { ref?: string; sig?: string };
+    const body = (await request.json()) as { ref?: string; sig?: string; method?: string };
     ref = String(body.ref || '');
     sig = String(body.sig || '');
+    if (body.method === 'apple') method = 'apple';
   } catch {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
   }
 
   if (!verifyRef(ref, sig)) {
     return NextResponse.json({ error: 'invalid_reference' }, { status: 403 });
+  }
+
+  if (method === 'apple' && !isApplePayConfigured()) {
+    return NextResponse.json(
+      { error: 'apple_not_configured', message: 'Apple Pay עדיין לא מופעל בחשבון הסליקה.' },
+      { status: 503 }
+    );
   }
 
   try {
@@ -37,7 +47,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'already_paid', orderName: draft.order?.name ?? null }, { status: 409 });
     }
 
-    const session = await createPaymentSessionForDraft(draft);
+    const session = await createPaymentSessionForDraft(draft, method);
     return NextResponse.json(session);
   } catch (error) {
     console.error('payment-session failed:', error);
