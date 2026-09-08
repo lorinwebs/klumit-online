@@ -3,6 +3,7 @@ import {
   createPaymentProcess,
   GROW_PAYMENT_URL_TTL_MS,
   isApplePayConfigured,
+  isGooglePayConfigured,
   type GrowPaymentMethod,
 } from '@/lib/grow';
 import { SITE_URL, type DraftOrderSummary } from '@/lib/checkout-orders';
@@ -18,6 +19,7 @@ export interface CheckoutPaymentSession {
   /** Prefer top-level navigation for Apple Pay (Grow requires domain approval for iframe). */
   openMode: 'iframe' | 'redirect';
   applePayAvailable: boolean;
+  googlePayAvailable: boolean;
   summary: {
     currency: string;
     subtotal: number;
@@ -74,8 +76,10 @@ export async function createPaymentSessionForDraft(
     processId: process.processId,
     expiresAt: Date.now() + GROW_PAYMENT_URL_TTL_MS,
     method,
+    // Apple Pay needs a top-level page; Google Pay works in iframe with allow="payment".
     openMode: method === 'apple' ? 'redirect' : 'iframe',
     applePayAvailable: isApplePayConfigured(),
+    googlePayAvailable: isGooglePayConfigured(),
     summary: {
       currency: draft.currency,
       subtotal: draft.subtotal,

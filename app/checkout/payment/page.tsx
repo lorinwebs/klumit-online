@@ -17,7 +17,12 @@ import {
 
 const formatPrice = (amount: number) => Math.round(amount).toLocaleString('he-IL');
 
-type PayMethod = 'card' | 'apple';
+type PayMethod = 'card' | 'apple' | 'google';
+
+function asPayMethod(value: string | undefined | null): PayMethod {
+  if (value === 'apple' || value === 'google') return value;
+  return 'card';
+}
 
 function PaymentPageInner() {
   const router = useRouter();
@@ -43,7 +48,7 @@ function PaymentPageInner() {
       return;
     }
     setSession(stored);
-    setMethod(stored.method === 'apple' ? 'apple' : 'card');
+    setMethod(asPayMethod(stored.method));
     setReady(true);
   }, [router]);
 
@@ -70,7 +75,7 @@ function PaymentPageInner() {
         }
         saveCheckoutSession(data);
         setSession(data);
-        setMethod(data.method === 'apple' ? 'apple' : 'card');
+        setMethod(asPayMethod(data.method));
         setExpired(false);
         setFrameLoaded(false);
         return data;
@@ -89,7 +94,7 @@ function PaymentPageInner() {
     if (!ready || !session || !cancelled || refreshedForCancel.current) return;
     refreshedForCancel.current = true;
     setNotice('התשלום לא הושלם. אפשר לנסות שוב או לבחור אמצעי תשלום אחר — הפרטים שלך נשמרו.');
-    requestFreshSession(session, session.method === 'apple' ? 'apple' : 'card');
+    requestFreshSession(session, asPayMethod(session.method));
     router.replace('/checkout/payment');
   }, [ready, session, cancelled, requestFreshSession, router]);
 
@@ -110,6 +115,10 @@ function PaymentPageInner() {
       if (!session || next === method || refreshing) return;
       if (next === 'apple' && session.applePayAvailable === false) {
         setRefreshError('Apple Pay עדיין לא מופעל בחשבון הסליקה.');
+        return;
+      }
+      if (next === 'google' && session.googlePayAvailable === false) {
+        setRefreshError('Google Pay עדיין לא מופעל בחשבון הסליקה.');
         return;
       }
       const data = await requestFreshSession(session, next);
@@ -134,8 +143,10 @@ function PaymentPageInner() {
 
   const summary = session?.summary;
   const itemCount = useMemo(() => summary?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0, [summary]);
-  const appleAvailable = session?.applePayAvailable === true;
-  const showApple = appleAvailable;
+  const showApple = session?.applePayAvailable === true;
+  const showGoogle = session?.googlePayAvailable === true;
+  const methodTabCount = 1 + (showApple ? 1 : 0) + (showGoogle ? 1 : 0);
+  const showMethodTabs = methodTabCount > 1;
 
   if (!ready || !session || !summary) {
     return (
@@ -152,6 +163,12 @@ function PaymentPageInner() {
   }
 
   const isAppleView = method === 'apple';
+  const isGoogleView = method === 'google';
+  const usesIframe = method === 'card' || method === 'google';
+  const tabClass = (active: boolean) =>
+    `px-3 py-3 text-sm font-light transition-colors disabled:opacity-60 ${
+      active ? 'bg-white text-black border-b-2 border-black' : 'bg-[#faf9f7] text-black/55'
+    }`;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
@@ -263,48 +280,60 @@ function PaymentPageInner() {
                   </p>
                 </div>
 
-                {showApple && (
+                {showMethodTabs && (
                   <div
-                    className="grid grid-cols-2 border-b border-gray-100"
+                    className={`grid border-b border-gray-100 ${
+                      methodTabCount === 3 ? 'grid-cols-3' : 'grid-cols-2'
+                    }`}
                     role="tablist"
                     aria-label="אמצעי תשלום"
                   >
                     <button
                       type="button"
                       role="tab"
-                      aria-selected={!isAppleView}
+                      aria-selected={method === 'card'}
                       onClick={() => selectMethod('card')}
                       disabled={refreshing}
-                      className={`px-4 py-3 text-sm font-light transition-colors disabled:opacity-60 ${
-                        !isAppleView ? 'bg-white text-black border-b-2 border-black' : 'bg-[#faf9f7] text-black/55'
-                      }`}
+                      className={tabClass(method === 'card')}
                     >
-                      כרטיס אשראי
+                      כרטיס
                     </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={isAppleView}
-                      onClick={() => selectMethod('apple')}
-                      disabled={refreshing}
-                      className={`px-4 py-3 text-sm font-light transition-colors disabled:opacity-60 ${
-                        isAppleView ? 'bg-white text-black border-b-2 border-black' : 'bg-[#faf9f7] text-black/55'
-                      }`}
-                    >
-                      Apple Pay
-                    </button>
+                    {showApple && (
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={isAppleView}
+                        onClick={() => selectMethod('apple')}
+                        disabled={refreshing}
+                        className={tabClass(isAppleView)}
+                      >
+                        Apple Pay
+                      </button>
+                    )}
+                    {showGoogle && (
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={isGoogleView}
+                        onClick={() => selectMethod('google')}
+                        disabled={refreshing}
+                        className={tabClass(isGoogleView)}
+                      >
+                        Google Pay
+                      </button>
+                    )}
                   </div>
                 )}
 
                 <div className="relative min-h-[420px] md:min-h-[560px]">
-                  {expired && !isAppleView ? (
+                  {expired && usesIframe ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
                       <p className="text-sm font-light text-black/70">
                         טופס התשלום פג תוקף מטעמי אבטחה. הפרטים שלך נשמרו — אפשר לפתוח אותו מחדש.
                       </p>
                       <button
                         type="button"
-                        onClick={() => requestFreshSession(session, 'card')}
+                        onClick={() => requestFreshSession(session, method === 'google' ? 'google' : 'card')}
                         disabled={refreshing}
                         className="inline-flex items-center gap-2 bg-[#1a1a1a] text-white px-6 py-3 text-xs tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:opacity-60"
                       >
@@ -332,6 +361,11 @@ function PaymentPageInner() {
                     </div>
                   ) : (
                     <>
+                      {isGoogleView && (
+                        <p className="px-4 pt-3 text-[11px] font-light text-black/50 text-right">
+                          Google Pay זמין ב־Chrome באנדרואיד בלבד.
+                        </p>
+                      )}
                       {(!frameLoaded || refreshing) && (
                         <div className="absolute inset-0 flex items-center justify-center bg-white" aria-hidden>
                           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1a1a1a]" />
@@ -341,7 +375,7 @@ function PaymentPageInner() {
                         <iframe
                           key={session.processId}
                           src={session.paymentUrl}
-                          title="טופס תשלום מאובטח – Grow"
+                          title={isGoogleView ? 'Google Pay – Grow' : 'טופס תשלום מאובטח – Grow'}
                           allow="payment *"
                           className={`block w-full h-[560px] md:h-[680px] border-0 transition-opacity duration-300 ${
                             frameLoaded ? 'opacity-100' : 'opacity-0'

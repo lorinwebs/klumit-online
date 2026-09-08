@@ -18,9 +18,10 @@ export interface CheckoutSession {
   paymentUrl: string;
   processId: string;
   expiresAt: number;
-  method?: 'card' | 'apple';
+  method?: 'card' | 'apple' | 'google';
   openMode?: 'iframe' | 'redirect';
   applePayAvailable?: boolean;
+  googlePayAvailable?: boolean;
   summary: {
     currency: string;
     subtotal: number;
