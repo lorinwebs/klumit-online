@@ -23,7 +23,7 @@ interface StatusResponse {
 
 const POLL_INTERVAL_MS = 2500;
 const POLL_TIMEOUT_MS = 90_000;
-const WHATSAPP = 'https://wa.me/972542600177';
+const WHATSAPP = 'https://wa.me/972549903139';
 
 const formatPrice = (amount: number) => Math.round(amount).toLocaleString('he-IL');
 
@@ -213,7 +213,7 @@ function SuccessPageInner() {
                   <div>
                     <p className="text-sm font-light">שאלות?</p>
                     <a href={WHATSAPP} target="_blank" rel="noopener noreferrer" className="text-xs font-light text-black underline hover:no-underline mt-0.5 inline-block">
-                      ווטסאפ 054-2600177
+                      ווטסאפ 054-990-3139
                     </a>
                   </div>
                 </div>

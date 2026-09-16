@@ -282,14 +282,26 @@ export async function findUnavailableLines(lines: CheckoutLineInput[]): Promise<
   for (const line of lines) {
     const node = byId.get(line.variantId);
     if (!node) continue; // unknown variant – let Shopify decide at draft creation
-    const available = node.quantityAvailable ?? (node.availableForSale ? line.quantity : 0);
-    if (!node.availableForSale || available < line.quantity) {
+    const remaining = node.quantityAvailable;
+
+    // Remaining stock is inventory *outside* Storefront carts. After the last unit
+    // is held in the shopper's cart, Shopify often reports remaining=0 / not for sale.
+    // Do not block checkout for that pattern — draft-order creation is authoritative.
+    if (remaining !== null && remaining !== undefined) {
+      if (remaining >= line.quantity) continue;
+      if (remaining === 0) continue;
       unavailable.push({
         variantId: line.variantId,
         title: node.title && node.title !== 'Default Title' ? `${node.product.title} – ${node.title}` : node.product.title,
         requested: line.quantity,
-        available: Math.max(0, available),
+        available: Math.max(0, remaining),
       });
+      continue;
+    }
+
+    if (!node.availableForSale) {
+      // No quantity data and marked unavailable — may still be cart-held; allow through.
+      continue;
     }
   }
   return unavailable;

@@ -5,19 +5,61 @@ import { fetchCatalogProducts } from '@/lib/products-server';
 import type { CatalogCategory } from '@/lib/product-search';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'קטלוג מוצרים',
-  description: 'קולקציית תיקים יוקרתיים מאיטליה - RENTAO ANGI ו-CARLINO GROUP. תיקים, תיקי גב, תיקי צד וחגורות. משלוח חינם מעל 500₪.',
-  alternates: {
-    canonical: 'https://www.klumit-online.co.il/products',
-  },
-};
-
 const VALID_TABS = ['all', 'bags', 'belts', 'wallets', 'ss26', 'sale'] as const;
 type TabType = (typeof VALID_TABS)[number];
 
+const TAB_META: Record<
+  TabType,
+  { title: string; description: string; canonical: string }
+> = {
+  all: {
+    title: 'קטלוג מוצרים | קלומית - Klumit',
+    description:
+      'כל הקולקציה של קלומית — תיקים, חגורות וארנקים מאיטליה. Renato Angi מעור אמיתי; מותגים נוספים לפי המצוין בכל מוצר.',
+    canonical: 'https://www.klumit-online.co.il/products',
+  },
+  bags: {
+    title: 'תיקים | קלומית - Klumit',
+    description: 'תיקים יוקרתיים מאיטליה — קולקציית Renato Angi מעור אמיתי ומותגים נוספים.',
+    canonical: 'https://www.klumit-online.co.il/products?tab=bags',
+  },
+  belts: {
+    title: 'חגורות | קלומית - Klumit',
+    description: 'חגורות איטלקיות מקלומית — עיצוב קלאסי ואיכות פרימיום.',
+    canonical: 'https://www.klumit-online.co.il/products?tab=belts',
+  },
+  wallets: {
+    title: 'ארנקים | קלומית - Klumit',
+    description: 'ארנקים מעור עם מפרט ומידות מלאים — קלומית.',
+    canonical: 'https://www.klumit-online.co.il/products?tab=wallets',
+  },
+  ss26: {
+    title: 'אביב-קיץ 2026 | קלומית - Klumit',
+    description: 'קולקציית האביב-קיץ 2026 — עיצובים חדשים מאיטליה.',
+    canonical: 'https://www.klumit-online.co.il/products?tab=ss26',
+  },
+  sale: {
+    title: 'סייל | קלומית - Klumit',
+    description: 'מבצעים והנחות על תיקים ופריטי אופנה נבחרים בקלומית.',
+    canonical: 'https://www.klumit-online.co.il/products?tab=sale',
+  },
+};
+
 interface PageProps {
   searchParams: Promise<{ tab?: string; category?: string; vendor?: string; q?: string }>;
+}
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const params = await searchParams;
+  const raw = (params.category || params.tab || 'all').toLowerCase();
+  const tab: TabType = VALID_TABS.includes(raw as TabType) ? (raw as TabType) : 'all';
+  const meta = TAB_META[tab];
+  const q = params.q?.trim();
+  return {
+    title: { absolute: q ? `חיפוש: ${q} | קלומית - Klumit` : meta.title },
+    description: meta.description,
+    alternates: { canonical: meta.canonical },
+  };
 }
 
 export default async function ProductsPage({ searchParams }: PageProps) {

@@ -1,16 +1,10 @@
 import type { Metadata } from 'next';
 
+/** Base metadata; page-level generateMetadata overrides per tab. */
 export const metadata: Metadata = {
-  title: 'תיקים יוקרתיים מאיטליה',
-  description: 'קולקציית תיקים יוקרתיים מאיטליה - RENTAO ANGI ו-CARLINO GROUP. תיקים, תיקי גב, תיקי צד וחגורות. משלוח חינם מעל 500₪.',
-  alternates: {
-    canonical: 'https://www.klumit-online.co.il/products',
-  },
-  openGraph: {
-    title: 'תיקים יוקרתיים מאיטליה | קלומית',
-    description: 'קולקציית תיקים יוקרתיים מאיטליה - RENTAO ANGI ו-CARLINO GROUP',
-    type: 'website',
-  },
+  title: 'תיקים יוקרתיים מאיטליה | קלומית - Klumit',
+  description:
+    'קולקציית תיקים יוקרתיים מאיטליה - RENATO ANGI ו-CARLINO GROUP. תיקים, תיקי גב, תיקי צד וחגורות. משלוח חינם מעל 500₪.',
 };
 
 export default function ProductsLayout({
@@ -20,8 +14,3 @@ export default function ProductsLayout({
 }) {
   return children;
 }
-
-
-
-
-

@@ -678,6 +678,7 @@ export async function loadCartFromShopify(cartId: string): Promise<CartItem[] | 
             merchandise?: { 
               id?: string;
               title?: string;
+              availableForSale?: boolean;
               quantityAvailable?: number;
               selectedOptions?: Array<{ name?: string; value?: string }>;
               price?: { amount?: string; currencyCode?: string };
@@ -721,7 +722,7 @@ export async function loadCartFromShopify(cartId: string): Promise<CartItem[] | 
           currencyCode: merchandise.price?.currencyCode || 'ILS',
           quantity: node.quantity || 1,
           image: image?.url,
-          available: true,
+          available: merchandise.availableForSale !== false,
           quantityAvailable: merchandise.quantityAvailable ?? undefined,
           handle: product?.handle,
           color: color || undefined,

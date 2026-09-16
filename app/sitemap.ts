@@ -1,14 +1,14 @@
 import { MetadataRoute } from 'next';
 import { shopifyClient } from '@/lib/shopify';
 
-// Must be a numeric literal for Next.js segment config static analysis
 export const revalidate = 60;
 
 const BASE_URL = 'https://www.klumit-online.co.il';
 
-const SITEMAP_PRODUCTS_QUERY = `
-  query getSitemapProducts($first: Int!) {
-    products(first: $first, sortKey: UPDATED_AT, reverse: true) {
+const SITEMAP_PRODUCTS_PAGE = `
+  query getSitemapProducts($first: Int!, $after: String) {
+    products(first: $first, after: $after, sortKey: UPDATED_AT, reverse: true) {
+      pageInfo { hasNextPage endCursor }
       edges {
         node {
           handle
@@ -32,6 +32,35 @@ const SITEMAP_ARTICLES_QUERY = `
   }
 `;
 
+async function fetchAllProductHandles(): Promise<
+  Array<{ handle: string; updatedAt: string }>
+> {
+  const all: Array<{ handle: string; updatedAt: string }> = [];
+  let after: string | null = null;
+  let hasNext = true;
+
+  while (hasNext) {
+    const cursor: string | null = after;
+    const data: {
+      products: {
+        pageInfo: { hasNextPage: boolean; endCursor: string | null };
+        edges: Array<{ node: { handle: string; updatedAt: string } }>;
+      };
+    } = await shopifyClient.request(SITEMAP_PRODUCTS_PAGE, {
+      first: 100,
+      after: cursor,
+    });
+
+    for (const edge of data.products.edges) {
+      all.push(edge.node);
+    }
+    hasNext = data.products.pageInfo.hasNextPage;
+    after = data.products.pageInfo.endCursor;
+    if (all.length > 2000) break;
+  }
+  return all;
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     {
@@ -42,6 +71,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/products`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${BASE_URL}/products?tab=bags`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.9,
@@ -60,6 +95,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/products?tab=ss26`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${BASE_URL}/products?tab=sale`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.9,
@@ -98,11 +139,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let productPages: MetadataRoute.Sitemap = [];
   try {
-    const data = await shopifyClient.request<{
-      products: { edges: Array<{ node: { handle: string; updatedAt: string } }> };
-    }>(SITEMAP_PRODUCTS_QUERY, { first: 250 });
-
-    productPages = data.products.edges.map(({ node }) => ({
+    const products = await fetchAllProductHandles();
+    productPages = products.map((node) => ({
       url: `${BASE_URL}/products/${node.handle}`,
       lastModified: new Date(node.updatedAt),
       changeFrequency: 'weekly' as const,

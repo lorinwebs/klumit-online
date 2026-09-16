@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         {
           error: 'out_of_stock',
           unavailable,
-          message: `${names} — אזל מהמלאי בזמן שמילאת את הפרטים. אפשר להזמין מאיטליה בוואטסאפ 054-2600177.`,
+          message: `${names} — אזל מהמלאי בזמן שמילאת את הפרטים. אפשר להזמין מאיטליה בוואטסאפ 054-990-3139.`,
         },
         { status: 409 }
       );

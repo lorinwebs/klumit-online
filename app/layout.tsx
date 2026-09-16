@@ -50,14 +50,14 @@ export const metadata: Metadata = {
     default: 'קלומית - תיקים יוקרתיים מאיטליה | Klumit',
     template: '%s | קלומית - Klumit',
   },
-  description: 'יבואן בלעדי בישראל לתיקי RENTAO ANGI ו-CARLINO GROUP. תיקים יוקרתיים מעור איטלקי איכותי, חגורות ואביזרי אופנה היישר מאיטליה. משלוח חינם מעל 500₪.',
+  description: 'יבואן בלעדי בישראל לתיקי RENATO ANGI ו-CARLINO GROUP. קולקציית Renato Angi מעור אמיתי; מותגים נוספים לפי המצוין בכל מוצר. משלוח חינם מעל 500₪.',
   keywords: [
     'תיקים יוקרתיים',
     'תיקי עור',
     'תיקים מאיטליה',
     'קלומית',
     'klumit',
-    'RENTAO ANGI',
+    'RENATO ANGI',
     'CARLINO GROUP',
     'תיקי נשים',
     'תיקי גב',
@@ -86,7 +86,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'קלומית - תיקים יוקרתיים מאיטליה',
-    description: 'יבואן בלעדי בישראל לתיקי RENTAO ANGI ו-CARLINO GROUP. תיקים יוקרתיים מעור איטלקי היישר מאיטליה.',
+    description: 'יבואן בלעדי בישראל לתיקי RENATO ANGI ו-CARLINO GROUP. קולקציית Renato Angi מעור אמיתי; מותגים נוספים לפי המצוין בכל מוצר.',
     url: siteUrl,
     locale: 'he_IL',
     type: 'website',
@@ -103,7 +103,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'קלומית - תיקים יוקרתיים מאיטליה',
-    description: 'יבואן בלעדי בישראל לתיקי RENTAO ANGI ו-CARLINO GROUP היישר מאיטליה',
+    description: 'יבואן בלעדי בישראל לתיקי RENATO ANGI ו-CARLINO GROUP היישר מאיטליה',
     images: ['/og-image.png'],
   },
   category: 'shopping',
@@ -133,14 +133,8 @@ const jsonLd = {
       contactPoint: [
         {
           '@type': 'ContactPoint',
-          telephone: '+972-3-5178502',
+          telephone: '+972-54-990-3139',
           contactType: 'customer service',
-          availableLanguage: ['Hebrew', 'English'],
-        },
-        {
-          '@type': 'ContactPoint',
-          telephone: '+972-54-2600177',
-          contactType: 'sales',
           availableLanguage: ['Hebrew', 'English'],
         },
       ],
@@ -160,7 +154,7 @@ const jsonLd = {
       '@id': `${siteUrl}/#website`,
       url: siteUrl,
       name: 'קלומית - Klumit',
-      description: 'יבואן בלעדי בישראל לתיקי עור איטלקיים יוקרתיים - Renato Angi Venezia, Carlino Group. תיקים, חגורות וארנקים מעור איטלקי מאז 1983.',
+      description: 'יבואן בלעדי בישראל לתיקים יוקרתיים מאיטליה - Renato Angi Venezia, Carlino Group. קולקציית Renato Angi מעור אמיתי; מותגים נוספים לפי המצוין בכל מוצר. מאז 1983.',
       publisher: { '@id': `${siteUrl}/#organization` },
       inLanguage: 'he-IL',
       potentialAction: {
@@ -174,7 +168,7 @@ const jsonLd = {
       '@id': `${siteUrl}/#store`,
       name: 'קלומית - תיקי עור איטלקיים',
       image: `${siteUrl}/hero-venice.jpg`,
-      description: 'חנות תיקי עור יוקרתיים מאיטליה. יבואן בלעדי של Renato Angi Venezia ו-Carlino Group מאז 1983. תיקים, חגורות וארנקים מעור איטלקי אמיתי.',
+      description: 'חנות תיקים יוקרתיים מאיטליה. יבואן בלעדי של Renato Angi Venezia ו-Carlino Group מאז 1983. קולקציית Renato Angi מעור אמיתי; מותגים נוספים לפי המצוין בכל מוצר.',
       priceRange: '₪₪₪',
       currenciesAccepted: 'ILS',
       paymentAccepted: 'Cash, Credit Card, Bit, PayPal',
@@ -190,7 +184,7 @@ const jsonLd = {
         latitude: 32.0654,
         longitude: 34.7731,
       },
-      telephone: '+972-3-5178502',
+      telephone: '+972-54-990-3139',
       email: 'klumitltd@gmail.com',
       openingHoursSpecification: {
         '@type': 'OpeningHoursSpecification',
@@ -212,7 +206,7 @@ const jsonLd = {
           name: 'האם התיקים עשויים מעור אמיתי?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'כן! כל התיקים שלנו עשויים מעור איטלקי אמיתי 100%. אנחנו יבואנים בלעדיים מאיטליה מאז 1983 ומתמחים בתיקי עור איכותיים בעבודת יד.',
+            text: 'קולקציית Renato Angi עשויה מעור איטלקי אמיתי. במוצרי מותגים אחרים (כגון Mario Valentino) החומר מצוין בעמוד המוצר — עור אמיתי או דמוי עור. אנחנו יבואנים בלעדיים מאיטליה מאז 1983.',
           },
         },
         {
@@ -228,7 +222,7 @@ const jsonLd = {
           name: 'האם אפשר לראות את התיקים בחנות פיזית?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'בהחלט! החנות שלנו ממוקמת ברחוב גאולה 45, תל אביב. פתוח א\'-ה\' בין השעות 10:00-17:00. מומלץ לתאם פגישה בטלפון 054-2600177.',
+            text: 'בהחלט! החנות שלנו ממוקמת ברחוב גאולה 45, תל אביב. פתוח א\'-ה\' בין השעות 10:00-17:00. מומלץ לתאם פגישה בוואטסאפ 054-990-3139.',
           },
         },
         {
@@ -266,10 +260,9 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var savedLang = localStorage.getItem('language');
-                  var lang = (savedLang && ['he', 'en', 'ru'].includes(savedLang)) ? savedLang : 'he';
-                  document.documentElement.setAttribute('lang', lang);
-                  document.documentElement.setAttribute('dir', lang === 'he' ? 'rtl' : 'ltr');
+                  // Prefer Hebrew first paint for this storefront; language switcher updates after hydration.
+                  document.documentElement.setAttribute('lang', 'he');
+                  document.documentElement.setAttribute('dir', 'rtl');
                 } catch (e) {}
               })();
             `,

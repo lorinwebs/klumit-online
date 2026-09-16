@@ -13,7 +13,13 @@ import { trackProductViewed, trackAddToCart } from '@/lib/analytics';
 import { useLanguage } from '@/lib/LanguageContext';
 import { useTranslateHTML } from '@/lib/hooks/useTranslateHTML';
 import SoldOutBadge from '@/components/SoldOutBadge';
-import { isProductSoldOut } from '@/lib/product-availability';
+import { getVariantStockState, isProductSoldOut } from '@/lib/product-availability';
+import {
+  detectProductMaterial,
+  materialTranslationKey,
+} from '@/lib/product-material';
+import { parseProductDimensions } from '@/lib/product-dimensions';
+import { whatsappUrl } from '@/lib/contact';
 
 interface Product {
   id: string;
@@ -21,6 +27,9 @@ interface Product {
   handle: string;
   description: string;
   descriptionHtml?: string;
+  productType?: string;
+  vendor?: string;
+  tags?: string[];
   priceRange: {
     minVariantPrice: {
       amount: string;
@@ -161,6 +170,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const [showFloatingCart, setShowFloatingCart] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [relatedProducts] = useState<Product[]>(initialRelatedProducts);
+  const availableRelatedProducts = relatedProducts.filter((p) => !isProductSoldOut(p));
   const [showZoomModal, setShowZoomModal] = useState(false);
   const [zoomImageIndex, setZoomImageIndex] = useState(0);
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -192,7 +202,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
         : language === 'ru'
           ? `Здравствуйте, вопрос по товару: ${product.title}`
           : `Hi — a question about: ${product.title}`;
-    return `https://wa.me/972549903139?text=${encodeURIComponent(msg)}`;
+    return whatsappUrl(msg);
   }, [language, product.title]);
 
   // Type for variant node
@@ -504,80 +514,82 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   };
 
   const handleAddToCart = async () => {
-    if (!product || !selectedVariant || isAddingToCart) return;
-    
-    if (currentVariant && currentVariant.availableForSale) {
-      // בדיקת מלאי לפני הוספה
-      const existingItem = items.find((i) => i.variantId === currentVariant.id);
-      const currentQuantity = existingItem?.quantity || 0;
-      const newQuantity = currentQuantity + 1;
-      
-      // בדיקת מלאי: רק אם יש מידע על מלאי (לא undefined ולא null)
-      const quantityAvailable = currentVariant.quantityAvailable;
-      if (quantityAvailable !== undefined && quantityAvailable !== null) {
-        // אם המלאי הוא 0 - חוסמים (אזל במלאי)
-        if (quantityAvailable === 0) {
-          setStockMessage(t('products.outOfStock'));
-          setShowStockToast(true);
-          setTimeout(() => {
-            setShowStockToast(false);
-          }, 3000);
-          return;
-        }
-        
-        // אם הכמות החדשה גדולה מהמלאי הזמין - חוסמים
-        if (newQuantity > quantityAvailable) {
-          setStockMessage(`${t('products.stockWarning')} ${quantityAvailable} ${t('products.stockLeft')}`);
-          setShowStockToast(true);
-          setTimeout(() => {
-            setShowStockToast(false);
-          }, 3000);
-          return;
-        }
-      }
-      // אם quantityAvailable הוא undefined או null - מאפשרים הוספה (אין מידע על מלאי)
-      
-      // Set loading state
-      setIsAddingToCart(true);
-      
-      // Use variant image if available, otherwise use selected image
-      const imageToUse = currentVariant.image?.url || selectedImage;
-      
-      await addItem({
-        id: currentVariant.id,
-        variantId: currentVariant.id,
-        title: product.title,
-        price: currentVariant.price.amount,
-        currencyCode: currentVariant.price.currencyCode,
-        image: imageToUse,
-        available: currentVariant.availableForSale,
-        quantityAvailable: currentVariant.quantityAvailable,
-        color: currentColor || undefined,
-        variantTitle: currentVariant.title,
-        handle: product.handle,
-      });
+    if (!product || !selectedVariant || isAddingToCart || !currentVariant) return;
 
-      // Track add to cart
-      trackAddToCart({
-        id: currentVariant.id,
-        name: product.title,
-        price: parseFloat(currentVariant.price.amount),
-        currency: currentVariant.price.currencyCode,
-        variant: currentVariant.title,
-        quantity: 1,
-      });
-      
-      // Show toast
-      setShowToast(true);
-      setTimeout(() => {
-        setShowToast(false);
-      }, 2000);
+    const existingItem = items.find((i) => i.variantId === currentVariant.id);
+    const currentQuantity = existingItem?.quantity || 0;
+    const stockState = getVariantStockState({
+      availableForSale: currentVariant.availableForSale,
+      quantityAvailable: currentVariant.quantityAvailable,
+      cartQuantity: currentQuantity,
+    });
 
-      // Keep button disabled for 500ms to prevent double clicks
-      setTimeout(() => {
-        setIsAddingToCart(false);
-      }, 500);
+    if (stockState === 'in_cart') {
+      setStockMessage(t('products.inYourCart'));
+      setShowStockToast(true);
+      setTimeout(() => setShowStockToast(false), 3000);
+      return;
     }
+
+    if (stockState === 'sold_out') {
+      setStockMessage(t('products.outOfStock'));
+      setShowStockToast(true);
+      setTimeout(() => setShowStockToast(false), 3000);
+      return;
+    }
+
+    const quantityAvailable = currentVariant.quantityAvailable;
+    if (
+      quantityAvailable !== undefined &&
+      quantityAvailable !== null &&
+      currentQuantity + 1 > quantityAvailable
+    ) {
+      setStockMessage(`${t('products.stockWarning')} ${quantityAvailable} ${t('products.stockLeft')}`);
+      setShowStockToast(true);
+      setTimeout(() => setShowStockToast(false), 3000);
+      return;
+    }
+
+    // Set loading state
+    setIsAddingToCart(true);
+
+    // Use variant image if available, otherwise use selected image
+    const imageToUse = currentVariant.image?.url || selectedImage;
+
+    await addItem({
+      id: currentVariant.id,
+      variantId: currentVariant.id,
+      title: product.title,
+      price: currentVariant.price.amount,
+      currencyCode: currentVariant.price.currencyCode,
+      image: imageToUse,
+      available: currentVariant.availableForSale,
+      quantityAvailable: currentVariant.quantityAvailable,
+      color: currentColor || undefined,
+      variantTitle: currentVariant.title,
+      handle: product.handle,
+    });
+
+    // Track add to cart
+    trackAddToCart({
+      id: currentVariant.id,
+      name: product.title,
+      price: parseFloat(currentVariant.price.amount),
+      currency: currentVariant.price.currencyCode,
+      variant: currentVariant.title,
+      quantity: 1,
+    });
+
+    // Show toast
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 2000);
+
+    // Keep button disabled for 500ms to prevent double clicks
+    setTimeout(() => {
+      setIsAddingToCart(false);
+    }, 500);
   };
 
   // Handle color selection
@@ -760,8 +772,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     return cleaned || description;
   };
 
-  // Use translated description
-  const descriptionToUse = translatedDescription || product.descriptionHtml || product.description;
+  // Use translated description — strip accidental Shopify paste artifacts
+  const descriptionToUse = (translatedDescription || product.descriptionHtml || product.description || '')
+    .replace(/<meta\s+charset=["']?utf-8["']?\s*\/?>/gi, '');
   const firstLine = extractFirstLine(descriptionToUse);
   const descriptionWithoutFirstLine = getDescriptionWithoutFirstLine(descriptionToUse);
 
@@ -769,18 +782,36 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   const renderCTAs = (isMobile: boolean = false) => {
     const existingItem = items.find((i) => i.variantId === currentVariant?.id);
     const currentQuantity = existingItem?.quantity || 0;
-    const isMaxStock = currentVariant?.quantityAvailable !== undefined && 
-                       currentQuantity >= currentVariant.quantityAvailable;
-    const tooltipText = isMaxStock ? `${t('products.outOfStock')} (${currentVariant?.quantityAvailable} ${t('products.units')})` : undefined;
-    const isDisabled = !currentVariant?.availableForSale || isMaxStock || isAddingToCart;
+    const stockState = getVariantStockState({
+      availableForSale: currentVariant?.availableForSale,
+      quantityAvailable: currentVariant?.quantityAvailable,
+      cartQuantity: currentQuantity,
+    });
+    const isInCart = stockState === 'in_cart';
+    const isSoldOut = stockState === 'sold_out';
+    const tooltipText = isInCart
+      ? t('products.inYourCart')
+      : isSoldOut
+        ? t('products.outOfStock')
+        : undefined;
+    const isDisabled = isSoldOut || isInCart || isAddingToCart;
+    const buttonLabel = isAddingToCart
+      ? t('products.addingToCart')
+      : isInCart
+        ? t('products.inYourCart')
+        : isSoldOut
+          ? t('products.outOfStock')
+          : t('products.addToCart');
     const button = (
       <button
         onClick={handleAddToCart}
         disabled={isDisabled}
         className={`w-full text-white ${isMobile ? 'py-3 px-6' : 'py-4 px-6'} text-sm tracking-luxury uppercase font-light transition-luxury flex items-center justify-center gap-2 ${
-          isAddingToCart 
-            ? 'bg-emerald-600 cursor-wait' 
-            : 'bg-espresso hover:bg-espresso-light'
+          isAddingToCart
+            ? 'bg-emerald-600 cursor-wait'
+            : isDisabled
+              ? 'bg-sand text-stone cursor-not-allowed'
+              : 'bg-espresso hover:bg-espresso-light'
         } disabled:bg-sand disabled:text-stone disabled:cursor-not-allowed disabled:hover:bg-sand`}
       >
         {isAddingToCart ? (
@@ -788,7 +819,9 @@ export default function ProductClient({ product, relatedProducts: initialRelated
             <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             {t('products.addedToCart')}
           </>
-        ) : isMaxStock ? t('products.outOfStock') : t('products.addToCart')}
+        ) : (
+          buttonLabel
+        )}
       </button>
     );
     const addToCartButton = tooltipText ? (
@@ -1006,6 +1039,39 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                       {firstLine}
                     </p>
                   )}
+                  {(() => {
+                    const material = detectProductMaterial(
+                      product.title,
+                      product.description,
+                      product.descriptionHtml,
+                      product.productType,
+                      product.vendor,
+                      ...(product.tags || [])
+                    );
+                    const materialKey = materialTranslationKey(material);
+                    if (!materialKey) return null;
+                    return (
+                      <p
+                        className={`mt-3 inline-flex items-center text-[11px] md:text-xs tracking-[0.14em] uppercase px-2.5 py-1 border ${
+                          material === 'leather'
+                            ? 'border-espresso/30 text-espresso bg-cream-warm'
+                            : 'border-sand-dark text-stone-dark bg-sand/40'
+                        }`}
+                      >
+                        {t(materialKey)}
+                        {product.vendor ? (
+                          <span className="mx-1.5 opacity-40" aria-hidden>
+                            ·
+                          </span>
+                        ) : null}
+                        {product.vendor ? (
+                          <span className="normal-case tracking-normal font-light opacity-80">
+                            {product.vendor}
+                          </span>
+                        ) : null}
+                      </p>
+                    );
+                  })()}
                 </div>
 
                 {/* Price */}
@@ -1083,28 +1149,70 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                 </div>
 
                 {/* Stock Status */}
-                {currentVariant && (
-                  <div className="pt-2">
-                    {currentVariant.availableForSale ? (
+                {currentVariant && (() => {
+                  const cartQty = items.find((i) => i.variantId === currentVariant.id)?.quantity || 0;
+                  const stockState = getVariantStockState({
+                    availableForSale: currentVariant.availableForSale,
+                    quantityAvailable: currentVariant.quantityAvailable,
+                    cartQuantity: cartQty,
+                  });
+                  if (stockState === 'in_cart') {
+                    return (
+                      <div className="pt-2">
+                        <p className="text-sm font-light text-espresso">{t('products.inYourCart')}</p>
+                      </div>
+                    );
+                  }
+                  if (stockState === 'sold_out') {
+                    return (
+                      <div className="pt-2 space-y-2">
+                        <p className="text-sm font-light text-stone">{t('products.outOfStock')}</p>
+                        <button className="text-xs font-light underline text-stone hover:text-espresso transition-colors">
+                          {t('products.notifyWhenBack')}
+                        </button>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="pt-2">
                       <p className="text-sm font-light text-stone-dark">
                         {t('products.inStock')}
                         {currentVariant.quantityAvailable > 0 && (
                           <span className="text-stone"> • {currentVariant.quantityAvailable} {t('products.units')}</span>
                         )}
                       </p>
-                    ) : (
-                      <div className="space-y-2">
-                        <p className="text-sm font-light text-stone">{t('products.outOfStock')}</p>
-                        <button className="text-xs font-light underline text-stone hover:text-espresso transition-colors">
-                          {t('products.notifyWhenBack')}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  );
+                })()}
 
                 {/* Product Details */}
                 <div className="pt-8 space-y-6 border-t border-sand">
+                  {(() => {
+                    const isBag = /bag|תיק/i.test(product.productType || '') ||
+                      (!product.productType && !/wallet|belt|ארנק|חגור/i.test(product.title));
+                    if (!isBag) return null;
+                    const dims = parseProductDimensions(
+                      product.descriptionHtml,
+                      product.description
+                    );
+                    if (!dims || (dims.lengthCm == null && dims.widthCm == null && dims.heightCm == null)) {
+                      return null;
+                    }
+                    const parts: string[] = [];
+                    if (dims.lengthCm != null) parts.push(`${t('products.dimLength')}: ${dims.lengthCm} ס״מ`);
+                    if (dims.widthCm != null) parts.push(`${t('products.dimWidth')}: ${dims.widthCm} ס״מ`);
+                    if (dims.heightCm != null) parts.push(`${t('products.dimHeight')}: ${dims.heightCm} ס״מ`);
+                    return (
+                      <div className="space-y-2">
+                        <h2 className="text-xs tracking-[0.18em] uppercase text-stone font-light">
+                          {t('products.dimensions')}
+                        </h2>
+                        <p className="text-sm font-light text-stone-dark leading-relaxed">
+                          {parts.join(' · ')}
+                        </p>
+                      </div>
+                    );
+                  })()}
                   {descriptionWithoutFirstLine && (
                     <div
                       className="product-description text-sm font-light text-stone-dark leading-relaxed"
@@ -1133,7 +1241,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
         </div>
 
         {/* Related Products */}
-        {relatedProducts.length > 0 && (
+        {availableRelatedProducts.length > 0 && (
           <section className="mt-16 md:mt-24 overflow-hidden">
             <div className="border-t border-sand pt-10 md:pt-14 mb-8 md:mb-10 px-4">
               <div className="max-w-[1400px] mx-auto flex items-center justify-between">
@@ -1175,7 +1283,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                 className="flex gap-3 md:gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-                {relatedProducts.slice(0, 8).map((relatedProduct) => (
+                {availableRelatedProducts.slice(0, 8).map((relatedProduct) => (
                   <RelatedProductCard
                     key={relatedProduct.id}
                     relatedProduct={relatedProduct}
@@ -1189,7 +1297,42 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       </main>
       
       {/* Floating Add to Cart - Mobile only */}
-      {showFloatingCart && currentVariant?.availableForSale && (
+      {showFloatingCart && currentVariant && (() => {
+        const cartQty = items.find((i) => i.variantId === currentVariant.id)?.quantity || 0;
+        const stockState = getVariantStockState({
+          availableForSale: currentVariant.availableForSale,
+          quantityAvailable: currentVariant.quantityAvailable,
+          cartQuantity: cartQty,
+        });
+        if (stockState === 'sold_out') return null;
+        const isInCart = stockState === 'in_cart';
+        const isDisabled = isInCart || isAddingToCart;
+        const buttonLabel = isAddingToCart
+          ? t('products.addedToCart')
+          : isInCart
+            ? t('products.inYourCart')
+            : t('products.addToCart');
+        const button = (
+          <button
+            onClick={handleAddToCart}
+            disabled={isDisabled}
+            className={`text-white py-3 px-8 text-sm tracking-luxury uppercase font-light transition-luxury flex-shrink-0 flex items-center justify-center gap-2 ${
+              isAddingToCart
+                ? 'bg-emerald-600 cursor-wait'
+                : 'bg-espresso hover:bg-espresso-light'
+            } disabled:bg-sand disabled:text-stone disabled:cursor-not-allowed disabled:hover:bg-sand`}
+          >
+            {isAddingToCart ? (
+              <>
+                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                {t('products.addedToCart')}
+              </>
+            ) : (
+              buttonLabel
+            )}
+          </button>
+        );
+        return (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-sand bg-cream shadow-lg pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 px-4">
           <p className="mb-1.5 text-center text-[10px] font-light leading-snug text-stone">
             {t('products.purchaseTrustLine')}
@@ -1207,40 +1350,17 @@ export default function ProductClient({ product, relatedProducts: initialRelated
               <p className="text-lg font-light text-espresso">₪{price}</p>
               <p className="line-clamp-2 text-xs font-light text-stone">{product.title}</p>
             </div>
-            {(() => {
-              const existingItem = items.find((i) => i.variantId === currentVariant?.id);
-              const currentQuantity = existingItem?.quantity || 0;
-              const isMaxStock = currentVariant?.quantityAvailable !== undefined && 
-                                 currentQuantity >= currentVariant.quantityAvailable;
-              const tooltipText = isMaxStock ? `${t('products.outOfStock')} (${currentVariant?.quantityAvailable} ${t('products.units')})` : undefined;
-              const isDisabled = !currentVariant?.availableForSale || isMaxStock || isAddingToCart;
-              const button = (
-                <button
-                  onClick={handleAddToCart}
-                  disabled={isDisabled}
-                  className={`text-white py-3 px-8 text-sm tracking-luxury uppercase font-light transition-luxury flex-shrink-0 flex items-center justify-center gap-2 ${
-                    isAddingToCart 
-                      ? 'bg-emerald-600 cursor-wait' 
-                      : 'bg-espresso hover:bg-espresso-light'
-                  } disabled:bg-sand disabled:text-stone disabled:cursor-not-allowed disabled:hover:bg-sand`}
-                >
-                  {isAddingToCart ? (
-                    <>
-                      <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                      נוסף
-                    </>
-                  ) : isMaxStock ? 'אזל המלאי' : 'הוסף לעגלה'}
-                </button>
-              );
-              return tooltipText ? (
-                <Tooltip content={tooltipText} position="top" disabled={isAddingToCart}>
-                  {button}
-                </Tooltip>
-              ) : button;
-            })()}
+            {isInCart ? (
+              <Tooltip content={t('products.inYourCart')} position="top">
+                {button}
+              </Tooltip>
+            ) : (
+              button
+            )}
           </div>
         </div>
-      )}
+        );
+      })()}
       
       <Toast show={showToast} message="נוסף לעגלה" showViewCart={true} />
       <Toast show={showStockToast} message={stockMessage} showViewCart={false} type="warning" />

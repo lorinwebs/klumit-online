@@ -24,6 +24,24 @@ function asPayMethod(value: string | undefined | null): PayMethod {
   return 'card';
 }
 
+/** Prefer Apple Pay on Safari/iOS and Google Pay on Android Chrome when available. */
+function preferredWalletMethod(opts: {
+  apple: boolean;
+  google: boolean;
+}): PayMethod | null {
+  if (typeof navigator === 'undefined') return null;
+  const ua = navigator.userAgent || '';
+  const isAppleDevice = /iPhone|iPad|iPod|Macintosh/.test(ua);
+  const isSafari = /Safari/.test(ua) && !/Chrome|CriOS|Edg|Firefox/.test(ua);
+  const isAndroid = /Android/.test(ua);
+  if (opts.apple && (isAppleDevice || isSafari)) return 'apple';
+  if (opts.google && isAndroid) return 'google';
+  if (opts.apple && isAppleDevice) return 'apple';
+  if (opts.google) return 'google';
+  if (opts.apple) return 'apple';
+  return null;
+}
+
 function PaymentPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -37,6 +55,7 @@ function PaymentPageInner() {
   const [frameLoaded, setFrameLoaded] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [method, setMethod] = useState<PayMethod>('card');
+  const preferredApplied = useRef(false);
   const refreshedForCancel = useRef(false);
 
   // Grow redirects to cancelUrl *inside* the iframe – move the whole window.
@@ -48,8 +67,33 @@ function PaymentPageInner() {
       return;
     }
     setSession(stored);
-    setMethod(asPayMethod(stored.method));
+    const apple = stored.applePayAvailable === true;
+    const google = stored.googlePayAvailable === true;
+    const preferred = preferredWalletMethod({ apple, google });
+    const initial = preferred && !preferredApplied.current ? preferred : asPayMethod(stored.method);
+    preferredApplied.current = true;
+    setMethod(initial);
     setReady(true);
+    if (preferred && preferred !== asPayMethod(stored.method) && (apple || google)) {
+      // Switch Grow session to the preferred wallet so it opens first.
+      void (async () => {
+        try {
+          const response = await fetch('/api/checkout/payment-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ref: stored.ref, sig: stored.sig, method: preferred }),
+          });
+          const data = (await response.json().catch(() => null)) as CheckoutSession | null;
+          if (response.ok && data?.paymentUrl) {
+            saveCheckoutSession(data);
+            setSession(data);
+            setMethod(asPayMethod(data.method));
+          }
+        } catch {
+          /* keep card session */
+        }
+      })();
+    }
   }, [router]);
 
   const requestFreshSession = useCallback(
@@ -288,41 +332,42 @@ function PaymentPageInner() {
                     role="tablist"
                     aria-label="אמצעי תשלום"
                   >
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={method === 'card'}
-                      onClick={() => selectMethod('card')}
-                      disabled={refreshing}
-                      className={tabClass(method === 'card')}
-                    >
-                      כרטיס
-                    </button>
-                    {showApple && (
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={isAppleView}
-                        onClick={() => selectMethod('apple')}
-                        disabled={refreshing}
-                        className={tabClass(isAppleView)}
-                      >
-                        Apple Pay
-                      </button>
-                    )}
-                    {showGoogle && (
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={isGoogleView}
-                        onClick={() => selectMethod('google')}
-                        disabled={refreshing}
-                        className={tabClass(isGoogleView)}
-                      >
-                        Google Pay
-                      </button>
-                    )}
+                    {(() => {
+                      const tabs: Array<{ id: PayMethod; label: string; show: boolean }> = [
+                        { id: 'apple', label: 'Apple Pay', show: showApple },
+                        { id: 'google', label: 'Google Pay', show: showGoogle },
+                        { id: 'card', label: 'כרטיס / Bit', show: true },
+                      ];
+                      // Preferred wallet first, then the other wallet, then card
+                      const preferred = preferredWalletMethod({ apple: showApple, google: showGoogle });
+                      const ordered = [...tabs].filter((t) => t.show).sort((a, b) => {
+                        if (preferred && a.id === preferred) return -1;
+                        if (preferred && b.id === preferred) return 1;
+                        if (a.id === 'card') return 1;
+                        if (b.id === 'card') return -1;
+                        return 0;
+                      });
+                      return ordered.map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={method === tab.id}
+                          onClick={() => selectMethod(tab.id)}
+                          disabled={refreshing}
+                          className={tabClass(method === tab.id)}
+                        >
+                          {tab.label}
+                        </button>
+                      ));
+                    })()}
                   </div>
+                )}
+
+                {!showMethodTabs && (
+                  <p className="px-4 py-2 text-[11px] font-light text-black/50 text-right border-b border-gray-100">
+                    אפשר לשלם גם ב־Bit מתוך טופס הכרטיס של Grow.
+                  </p>
                 )}
 
                 <div className="relative min-h-[420px] md:min-h-[560px]">
@@ -361,6 +406,11 @@ function PaymentPageInner() {
                     </div>
                   ) : (
                     <>
+                      {method === 'card' && (
+                        <p className="px-4 pt-3 text-[11px] font-light text-black/50 text-right">
+                          בטופס אפשר לשלם בכרטיס אשראי או ב־Bit.
+                        </p>
+                      )}
                       {isGoogleView && (
                         <p className="px-4 pt-3 text-[11px] font-light text-black/50 text-right">
                           Google Pay זמין ב־Chrome באנדרואיד בלבד.
@@ -394,7 +444,7 @@ function PaymentPageInner() {
               </div>
 
               <p className="mt-3 text-[11px] font-light text-black/50 text-right leading-relaxed">
-                לאחר אישור התשלום תועברו לעמוד אישור ההזמנה ותקבלו מייל עם פרטי ההזמנה. שאלות? ווטסאפ 054-2600177.
+                לאחר אישור התשלום תועברו לעמוד אישור ההזמנה ותקבלו מייל עם פרטי ההזמנה. שאלות? ווטסאפ 054-990-3139.
               </p>
             </section>
           </div>

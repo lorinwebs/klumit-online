@@ -56,6 +56,14 @@ export interface Translations {
   'home.productsEyebrow': string;
   'home.productsTitle': string;
   'home.productsTitleEm': string;
+  'home.brandLeatherEyebrow': string;
+  'home.brandLeatherTitle': string;
+  'home.brandLeatherBody': string;
+  'home.brandLeatherCta': string;
+  'home.brandOtherEyebrow': string;
+  'home.brandOtherTitle': string;
+  'home.brandOtherBody': string;
+  'home.brandOtherCta': string;
   'home.newsletterEyebrow': string;
   'home.newsletterTitle': string;
   'home.newsletterTitleEm': string;
@@ -95,6 +103,13 @@ export interface Translations {
   'products.shopWallets': string;
   'products.shopBelts': string;
   'products.shopBags': string;
+  'products.productCount': string;
+  'products.categoryIntroBags': string;
+  'products.categoryIntroBelts': string;
+  'products.categoryIntroWallets': string;
+  'products.categoryIntroSs26': string;
+  'products.categoryIntroSale': string;
+  'products.categoryIntroAll': string;
   'products.shopSpringSummer2026': string;
   'products.addToCart': string;
   'products.outOfStock': string;
@@ -110,6 +125,8 @@ export interface Translations {
   'products.whatsappContactCta': string;
   /** Last unit(s) already held in the shopper's cart */
   'products.inYourCart': string;
+  'products.materialLeather': string;
+  'products.materialFaux': string;
   'products.color': string;
   'products.size': string;
   'products.notifyWhenBack': string;
@@ -348,6 +365,9 @@ export interface Translations {
   'products.closureFit': string;
   'products.qualityFinish': string;
   'products.dimensions': string;
+  'products.dimLength': string;
+  'products.dimWidth': string;
+  'products.dimHeight': string;
   
   // Membership
   'membership.topBar': string;
@@ -424,7 +444,7 @@ export const translations: Record<Language, Translations> = {
     'header.searchPlaceholder': 'חיפוש תיקים, ארנקים, מותגים...',
 
     // Home (Biasia-style)
-    'home.announcement': 'משלוח חינם בהזמנות מעל ₪500 · שירות אישי · עור איטלקי אמיתי',
+    'home.announcement': 'משלוח חינם בהזמנות מעל ₪500 · שירות אישי · Renato Angi מעור אמיתי',
     'home.marquee1': 'חדש באתר',
     'home.marquee2': 'Renato Angi · Carlino Group',
     'home.marquee3': 'אביב–קיץ 2026',
@@ -448,6 +468,14 @@ export const translations: Record<Language, Translations> = {
     'home.productsEyebrow': 'קולקציה נבחרת',
     'home.productsTitle': 'חדש באתר',
     'home.productsTitleEm': '',
+    'home.brandLeatherEyebrow': 'עור אמיתי',
+    'home.brandLeatherTitle': 'Renato Angi',
+    'home.brandLeatherBody': 'קולקציית עור איטלקי אמיתי — היבואן הבלעדי בישראל.',
+    'home.brandLeatherCta': 'לקולקציה',
+    'home.brandOtherEyebrow': 'מותגים נוספים',
+    'home.brandOtherTitle': 'Mario Valentino ועוד',
+    'home.brandOtherBody': 'החומר מצוין בכל עמוד מוצר — עור אמיתי או דמוי עור.',
+    'home.brandOtherCta': 'לצפייה',
     'home.newsletterEyebrow': 'מועדון הלקוחות',
     'home.newsletterTitle': 'הישארו',
     'home.newsletterTitleEm': 'בקשר',
@@ -458,7 +486,7 @@ export const translations: Record<Language, Translations> = {
 
     // Hero
     'hero.title': 'קולקציית 2026',
-    'hero.description': 'תיקים יוקרתיים מעור איטלקי. עיצובים חדשים מ-RENATO ANGI ו-CARLINO GROUP',
+    'hero.description': 'תיקים יוקרתיים מאיטליה. עיצובים חדשים מ-RENATO ANGI ו-CARLINO GROUP — החומר מצוין בכל מוצר',
     'hero.cta': 'הסיפור שלנו',
     'hero.newTag': 'נחתה באתר',
     
@@ -469,8 +497,8 @@ export const translations: Record<Language, Translations> = {
     'value.freeShippingDetail': 'בהזמנות מעל ₪500',
     'value.physicalStore': 'חנות פיזית',
     'value.physicalStoreDetail': 'גאולה 45, תל אביב',
-    'value.italianLeather': 'עור איטלקי',
-    'value.italianLeatherDetail': 'איכות פרימיום מ-1983',
+    'value.italianLeather': 'Renato Angi',
+    'value.italianLeatherDetail': 'עור אמיתי · מאז 1983',
     'value.securePayment': 'תשלום מאובטח',
     'value.securePaymentDetail': '100% הגנה על הפרטים',
     
@@ -488,6 +516,13 @@ export const translations: Record<Language, Translations> = {
     'products.shopBelts': 'כל החגורות',
     'products.shopBags': 'כל התיקים',
     'products.shopSpringSummer2026': 'קולקציית אביב-קיץ 2026',
+    'products.productCount': 'מוצרים',
+    'products.categoryIntroBags': 'תיקים יוקרתיים מאיטליה — Renato Angi מעור אמיתי ומותגים נוספים לפי המצוין בכל מוצר.',
+    'products.categoryIntroBelts': 'חגורות איטלקיות בעיצוב קלאסי — השלמה מושלמת ללוק.',
+    'products.categoryIntroWallets': 'ארנקים קומפקטיים מעור — מפרט מלא ומידות בכל עמוד מוצר.',
+    'products.categoryIntroSs26': 'קולקציית האביב-קיץ החדשה — עיצובים שנחתו זה עתה מאיטליה.',
+    'products.categoryIntroSale': 'מבצעים והנחות על תיקים ופריטי אופנה נבחרים.',
+    'products.categoryIntroAll': 'כל הקולקציה במקום אחד — תיקים, חגורות וארנקים מאיטליה.',
     'products.addToCart': 'הוסף לסל',
     'products.outOfStock': 'אזל מהמלאי',
     'products.addedToCart': 'הוסף לעגלה',
@@ -499,6 +534,8 @@ export const translations: Record<Language, Translations> = {
     'products.purchaseTrustLine': 'משלוח חינם מעל ₪500 · תשלום מאובטח',
     'products.whatsappContactCta': 'שאלות לפני הקנייה? נענה בוואטסאפ',
     'products.inYourCart': 'נמצא בסל שלך',
+    'products.materialLeather': 'עור אמיתי',
+    'products.materialFaux': 'דמוי עור',
     'products.color': 'צבע',
     'products.size': 'גודל',
     'products.notifyWhenBack': 'הודיעו לי כשחוזר',
@@ -523,7 +560,7 @@ export const translations: Record<Language, Translations> = {
     'products.includingVAT': 'כולל מע״מ',
     'products.inStock': 'במלאי',
     'products.shippingAndReturns': 'משלוחים והחזרות',
-    'products.freeShippingOver': 'משלוח חינם מעל 500 ₪ • החזרה תוך 14 ימים',
+    'products.freeShippingOver': 'משלוח חינם מעל ₪500 · החזרה 14 יום · מוצרי מבצע: 48 שעות',
     'products.shipping': 'משלוחים',
     'products.returns': 'החזרות',
     'products.recommended': 'מומלץ',
@@ -541,8 +578,8 @@ export const translations: Record<Language, Translations> = {
     'about.image2Alt': 'משה חייט',
     'about.image2Caption': 'משה חייט עם פליפו אנג\'י הבן של Renato Angi והמנהל בפועל של החברה',
     'about.image3Alt': 'משה חייט עם הבעלים של Renato Angi',
-    'about.image3Caption': 'משה חייט עם רנטו האנגי הבעלים של Rento Angi',
-    'about.exclusiveText': 'כיבואנים הבלעדיים בישראל של מותגי RENTAO ANGI ו-CARLINO GROUP, אנו מביאים אליכם את מיטב האומנות האיטלקית – תיקים יוקרתיים המגיעים היישר מאיטליה. כל פריט משלב עיצוב אלגנטי וקלאסי, עור איטלקי משובח ואיכות ללא פשרות.',
+    'about.image3Caption': 'משה חייט עם רנטו האנגי הבעלים של Renato Angi',
+    'about.exclusiveText': 'כיבואנים הבלעדיים בישראל של מותגי RENATO ANGI ו-CARLINO GROUP, אנו מביאים אליכם את מיטב האומנות האיטלקית – תיקים יוקרתיים המגיעים היישר מאיטליה. קולקציית Renato Angi מעור איטלקי אמיתי; במוצרי מותגים אחרים החומר מצוין בעמוד המוצר.',
     'about.collectionsText': 'הקולקציות שלנו משקפות את המסורת האיטלקית העתיקה, המשולבת עם עיצוב עכשווי ופונקציונלי. כל פריט שאנו מייבאים עובר בחירה קפדנית כדי להבטיח איכות ללא פשרות.',
     'about.ourFamily': 'המשפחה שלנו, התיק שלכם',
     'about.whatMakesUsUnique': 'מה שמייחד אותנו',
@@ -571,31 +608,31 @@ export const translations: Record<Language, Translations> = {
     
     // Returns Page
     'returns.title': 'מדיניות החזרות והחלפות',
-    'returns.intro': 'אתר "קלומית" עושה הכל כדי שתהיו מרוצים מהרכישה. עם זאת, במידה ואתם מעוניינים לבצע שינוי בהזמנה, להלן המדיניות הרשמית של האתר הפועלת על פי חוק הגנת הצרכן:',
+    'returns.intro': 'אנחנו רוצות שתהיי מרוצה מהרכישה. אם בכל זאת תרצי להחליף או להחזיר — הנה המדיניות בשפה ברורה, בהתאם לחוק הגנת הצרכן:',
     'returns.conditions': 'תנאי סף לביצוע החלפה או החזרה',
-    'returns.conditionsText': 'כל בקשה להחלפה או החזרה תיבחן אך ורק אם המוצר עומד בתנאים הבאים:',
-    'returns.conditionNew': 'המוצר חדש לחלוטין, לא נעשה בו כל שימוש, לא נפגם והוא נמצא באריזתו המקורית.',
+    'returns.conditionsText': 'כל בקשה להחלפה או החזרה תיבחן אם המוצר עומד בתנאים הבאים:',
+    'returns.conditionNew': 'המוצר חדש לחלוטין, לא נעשה בו שימוש, לא נפגם, ובאריזתו המקורית.',
     'returns.conditionTag': 'התווית המקורית מחוברת למוצר ולא הוסרה.',
-    'returns.conditionInspection': 'בדיקת תקינות: כל פריט המוחזר עובר בדיקה קפדנית. מוצר שיגיע עם ריח של בושם, סיגריות, סימני איפור או ללא אריזתו המקורית (כולל מגני פלסטיק על אבזמים במידה והיו) – לא יתקבל. במקרה כזה, המוצר יישלח בחזרה, ועלות המשלוח תחול על המזמין/ה.',
-    'returns.cancellation': 'ביטול עסקה והחזר כספי (המסלול היקר)',
-    'returns.cancellationText': 'ביטול עסקה לקבלת החזר כספי יתאפשר בתוך 14 ימים מיום קבלת המוצר, בכפוף לניכויים הבאים:',
-    'returns.cancellationFee': 'דמי ביטול: בהתאם לחוק, ינוכו דמי ביטול בשיעור של 5% ממחיר המוצר או 100 ש"ח – הנמוך מביניהם.',
-    'returns.cancellationProcessing': 'דמי סליקה: במידה והעסקה בוצעה בכרטיס אשראי, ינוכו בנוסף דמי סליקת האשראי שנגבו מהחברה בגין העסקה (בשיעור של עד 2.5%).',
-    'returns.cancellationShipping': 'עלויות שילוח: דמי המשלוח המקוריים (ככל ששולמו) אינם מוחזרים. עלות השילוח חזרה למחסני החברה חלה על המזמין/ה בלבד.',
-    'returns.exchange': 'החלפת פריט או קבלת שובר זיכוי (המסלול המשתלם)',
-    'returns.exchangeText': 'כדי להימנע מתשלום דמי ביטול ועמלות סליקה, אנו מאפשרים להחליף את הפריט או לקבל שובר זיכוי (Credit) לרכישה עתידית באתר בשווי מלא של המוצר (ללא ניכוי דמי ביטול).',
-    'returns.exchangeTime': 'החלפה/זיכוי יתאפשר בתוך 14 יום ממועד קבלת הפריט.',
-    'returns.exchangeSale': 'על פריטים שנרכשו במבצעי סוף עונה (Sale) או ב-Outlet, תינתן אפשרות להחלפה/זיכוי בתוך יומיים (48 שעות) בלבד ממועד קבלתם.',
-    'returns.process': 'אופן ביצוע הפעולה',
-    'returns.processNote': 'שימי לב: לא תתקבל כל החזרה או החלפה ללא תיאום מראש מול שירות הלקוחות.',
-    'returns.processWhatsApp': 'יש לפנות לשירות הלקוחות בווטסאפ למספר: 054-990-3139 (וואטסאפ) לצורך פתיחת בקשה וקבלת אישור.',
-    'returns.processOptions': 'אפשרויות החזרה/החלפה לאחר אישור:',
-    'returns.processPhysical': 'הגעה פיזית: הגעה ל-Showroom שלנו ברחוב גאולה 45, תל אביב, בתיאום מראש בלבד.',
-    'returns.processCourier': 'שירות שליחים: ניתן לתאם שליח שיאסוף ממך את הפריט בעלות של 29.90 ש"ח (עלות זו לא תוחזר ותקוזז מהזיכוי/ההחזר).',
+    'returns.conditionInspection': 'בדיקת תקינות: כל פריט שחוזר עובר בדיקה. מוצר שיגיע עם ריח של בושם או סיגריות, סימני איפור, או בלי האריזה המקורית (כולל מגני פלסטיק על אבזמים אם היו) — לא יתקבל ויוחזר אליך, ועלות המשלוח תחול עלייך.',
+    'returns.cancellation': 'החזר כספי (ביטול עסקה)',
+    'returns.cancellationText': 'ניתן לבטל עסקה לקבלת החזר כספי תוך 14 ימים מקבלת המוצר. שימי לב לניכויים הקבועים בחוק:',
+    'returns.cancellationFee': 'דמי ביטול: 5% ממחיר המוצר או ₪100 — הנמוך מביניהם (לפי חוק).',
+    'returns.cancellationProcessing': 'עמלת סליקה: אם שילמת בכרטיס אשראי, עשויה להיות מנוכה גם עמלת הסליקה שנגבתה בפועל (עד 2.5%).',
+    'returns.cancellationShipping': 'משלוחים: דמי המשלוח המקוריים (אם שולמו) אינם מוחזרים. עלות השילוח חזרה אלינו חלה עלייך.',
+    'returns.exchange': 'החלפה או שובר זיכוי (המסלול המומלץ)',
+    'returns.exchangeText': 'כדי להימנע מדמי ביטול ועמלות סליקה, אפשר להחליף את הפריט או לקבל שובר זיכוי בשווי מלא של המוצר.',
+    'returns.exchangeTime': 'החלפה או זיכוי: תוך 14 יום מקבלת הפריט (מוצרים במחיר מלא).',
+    'returns.exchangeSale': 'מוצרי מבצע / Outlet: החלפה או זיכוי תוך 48 שעות מקבלת הפריט בלבד.',
+    'returns.process': 'איך מבצעים החזרה או החלפה',
+    'returns.processNote': 'חשוב: כל החזרה או החלפה דורשת תיאום מראש עם שירות הלקוחות.',
+    'returns.processWhatsApp': 'פתיחת בקשה בוואטסאפ: 054-990-3139 — נאשר ונלווה אותך בתהליך.',
+    'returns.processOptions': 'אחרי האישור אפשר:',
+    'returns.processPhysical': 'להגיע לשואו־רום בגאולה 45, תל אביב — בתיאום מראש.',
+    'returns.processCourier': 'לתאם שליח שיאסוף את הפריט בעלות ₪29.90 (מקוזזת מהזיכוי/ההחזר).',
     'returns.notes': 'דגשים נוספים',
-    'returns.noteMinPrice': 'אין החזר כספי על מוצר שערכו נמוך מ-50 ש"ח.',
+    'returns.noteMinPrice': 'אין החזר כספי על מוצר שערכו נמוך מ־₪50.',
     'returns.noteAccessories': 'אביזרים שהוצאו מאריזתם אינם ניתנים להחזרה.',
-    'returns.noteWarranty': 'אין אחריות על איבוד/נפילה של אבנים, ניטים או אבזמים דקורטיביים לאחר השימוש במוצר.',
+    'returns.noteWarranty': 'אין אחריות על איבוד או נפילה של אבנים, ניטים או אבזמים דקורטיביים לאחר שימוש.',
     
     // Terms Page
     'terms.title': 'תקנון',
@@ -654,8 +691,8 @@ export const translations: Record<Language, Translations> = {
     'terms.contactText': 'לשאלות או הבהרות בנוגע לתקנון זה, אנא צרו קשר עם שירות הלקוחות שלנו:',
     'terms.companyName': 'קלומית',
     'terms.address': 'כתובת: גאולה 45, תל אביב יפו 6330447',
-    'terms.phone': 'טלפון: 03-5178502',
-    'terms.fax': 'פקס: 03-5106781',
+    'terms.phone': 'וואטסאפ: 054-990-3139',
+    'terms.fax': '',
     'terms.email': 'אימייל: klumitltd@gmail.com',
     
     // Privacy Page
@@ -700,8 +737,8 @@ export const translations: Record<Language, Translations> = {
     'privacy.contactText': 'לשאלות או בקשות בנוגע למדיניות הפרטיות או למימוש זכויותיכם, אנא צרו קשר עם שירות הלקוחות שלנו:',
     'privacy.companyName': 'קלומית',
     'privacy.address': 'כתובת: גאולה 45, תל אביב יפו 6330447',
-    'privacy.phone': 'טלפון: 03-5178502',
-    'privacy.fax': 'פקס: 03-5106781',
+    'privacy.phone': 'וואטסאפ: 054-990-3139',
+    'privacy.fax': '',
     'privacy.email': 'אימייל: klumitltd@gmail.com',
     
     // Accessibility Page
@@ -737,6 +774,9 @@ export const translations: Record<Language, Translations> = {
     'products.closureFit': 'סגירה והתאמה',
     'products.qualityFinish': 'איכות וגימור',
     'products.dimensions': 'מידות',
+    'products.dimLength': 'אורך',
+    'products.dimWidth': 'רוחב',
+    'products.dimHeight': 'גובה',
     
     // Membership
     'membership.topBar': 'הצטרפי וקבלי 10% הנחה בקנייה הראשונה',
@@ -782,7 +822,7 @@ export const translations: Record<Language, Translations> = {
     'footer.lastName': 'שם משפחה *',
     'footer.phoneField': 'טלפון נייד *',
     'footer.emailField': 'דואר אלקטרוני *',
-    'footer.consent': 'אני מאשר/ת קבלת תוכן פרסומי',
+    'footer.consent': 'אני מאשרת קבלת תוכן פרסומי',
     'footer.join': 'גם אני רוצה להצטרף!',
     'footer.joinSuccess': 'תודה! הצטרפת ל-The K Club',
     'footer.joinError': 'משהו השתבש, נסי שוב',
@@ -812,7 +852,7 @@ export const translations: Record<Language, Translations> = {
     'header.searchPlaceholder': 'Search bags, wallets, brands...',
 
     // Home (Biasia-style)
-    'home.announcement': 'Free shipping on orders over ₪500 · Personal service · Genuine Italian leather',
+    'home.announcement': 'Free shipping on orders over ₪500 · Personal service · Renato Angi genuine leather',
     'home.marquee1': 'New arrivals',
     'home.marquee2': 'Renato Angi · Carlino Group',
     'home.marquee3': 'Spring / Summer 2026',
@@ -836,6 +876,14 @@ export const translations: Record<Language, Translations> = {
     'home.productsEyebrow': 'Featured collection',
     'home.productsTitle': 'New Arrivals',
     'home.productsTitleEm': '',
+    'home.brandLeatherEyebrow': 'Genuine leather',
+    'home.brandLeatherTitle': 'Renato Angi',
+    'home.brandLeatherBody': 'Genuine Italian leather collection — exclusive importer in Israel.',
+    'home.brandLeatherCta': 'Shop collection',
+    'home.brandOtherEyebrow': 'Other brands',
+    'home.brandOtherTitle': 'Mario Valentino & more',
+    'home.brandOtherBody': 'Material is listed on every product page — genuine or faux leather.',
+    'home.brandOtherCta': 'Browse',
     'home.newsletterEyebrow': 'Klumit world',
     'home.newsletterTitle': 'Stay in',
     'home.newsletterTitleEm': 'touch',
@@ -857,8 +905,8 @@ export const translations: Record<Language, Translations> = {
     'value.freeShippingDetail': 'On orders over ₪500',
     'value.physicalStore': 'Physical Store',
     'value.physicalStoreDetail': 'Geula 45, Tel Aviv',
-    'value.italianLeather': 'Italian Leather',
-    'value.italianLeatherDetail': 'Premium quality since 1983',
+    'value.italianLeather': 'Renato Angi',
+    'value.italianLeatherDetail': 'Genuine leather · since 1983',
     'value.securePayment': 'Secure Payment',
     'value.securePaymentDetail': '100% Privacy Protection',
     
@@ -876,6 +924,13 @@ export const translations: Record<Language, Translations> = {
     'products.shopBelts': 'SHOP BELTS',
     'products.shopBags': 'SHOP BAGS',
     'products.shopSpringSummer2026': 'SPRING SUMMER 2026',
+    'products.productCount': 'products',
+    'products.categoryIntroBags': 'Luxury bags from Italy — Renato Angi in genuine leather; other brands as listed on each product.',
+    'products.categoryIntroBelts': 'Classic Italian belts — the perfect finishing touch.',
+    'products.categoryIntroWallets': 'Compact leather wallets — full specs and dimensions on every page.',
+    'products.categoryIntroSs26': 'The new spring–summer collection — just arrived from Italy.',
+    'products.categoryIntroSale': 'Sale and discounts on selected bags and accessories.',
+    'products.categoryIntroAll': 'The full collection — bags, belts and wallets from Italy.',
     'products.addToCart': 'Add to Cart',
     'products.outOfStock': 'Out of Stock',
     'products.addedToCart': 'Added to Cart',
@@ -887,6 +942,8 @@ export const translations: Record<Language, Translations> = {
     'products.purchaseTrustLine': 'Free shipping over ₪500 · Secure checkout',
     'products.whatsappContactCta': 'Questions before you buy? Message us on WhatsApp',
     'products.inYourCart': 'In your cart',
+    'products.materialLeather': 'Genuine leather',
+    'products.materialFaux': 'Faux leather',
     'products.color': 'Color',
     'products.size': 'Size',
     'products.notifyWhenBack': 'Notify me when back',
@@ -911,7 +968,7 @@ export const translations: Record<Language, Translations> = {
     'products.includingVAT': 'Including VAT',
     'products.inStock': 'In Stock',
     'products.shippingAndReturns': 'Shipping & Returns',
-    'products.freeShippingOver': 'Free shipping over ₪500 • Returns within 14 days',
+    'products.freeShippingOver': 'Free shipping over ₪500 · Returns 14 days · Sale items: 48 hours',
     'products.shipping': 'Shipping',
     'products.returns': 'Returns',
     'products.recommended': 'Recommended',
@@ -959,31 +1016,31 @@ export const translations: Record<Language, Translations> = {
     
     // Returns Page
     'returns.title': 'Returns & Exchanges Policy',
-    'returns.intro': 'Klumit website does everything to ensure your satisfaction with your purchase. However, if you wish to make changes to your order, here is the official website policy operating according to the Consumer Protection Law:',
-    'returns.conditions': 'Conditions for Exchange or Return',
-    'returns.conditionsText': 'Any request for exchange or return will only be considered if the product meets the following conditions:',
-    'returns.conditionNew': 'The product is completely new, unused, undamaged, and in its original packaging.',
-    'returns.conditionTag': 'The original tag is attached to the product and has not been removed.',
-    'returns.conditionInspection': 'Quality inspection: Every returned item undergoes a thorough inspection. A product that arrives with perfume smell, cigarette smell, makeup marks, or without its original packaging (including plastic protectors on clasps if they existed) will not be accepted. In such a case, the product will be sent back to the customer, who will bear the shipping costs.',
-    'returns.cancellation': 'Transaction Cancellation and Refund (Expensive Route)',
-    'returns.cancellationText': 'Transaction cancellation for a refund will be possible within 14 days of receiving the product, subject to the following deductions:',
-    'returns.cancellationFee': 'Cancellation fee: According to the law, a cancellation fee of 5% of the product price or ₪100 – whichever is lower – will be deducted.',
-    'returns.cancellationProcessing': 'Processing fee: If the transaction was made with a credit card, credit card processing fees charged to the company for the transaction (up to 2.5%) will also be deducted.',
-    'returns.cancellationShipping': 'Shipping costs: Original shipping fees (if paid) are not refunded. The cost of shipping back to the company warehouse is borne solely by the customer.',
-    'returns.exchange': 'Item Exchange or Credit Voucher (Beneficial Route)',
-    'returns.exchangeText': 'To avoid cancellation fees and processing charges, we allow exchanging the item or receiving a credit voucher (Credit) for future purchases on the website for the full value of the product (without cancellation fee deduction).',
-    'returns.exchangeTime': 'Exchange/credit will be possible within 14 days of receiving the item.',
-    'returns.exchangeSale': 'For items purchased during end-of-season sales (Sale) or at the Outlet, exchange/credit will only be available within two days (48 hours) of receipt.',
-    'returns.process': 'How to Proceed',
-    'returns.processNote': 'Please note: No return or exchange will be accepted without prior coordination with customer service.',
-    'returns.processWhatsApp': 'Please contact customer service on WhatsApp at: 054-990-3139 (WhatsApp) to open a request and receive approval.',
-    'returns.processOptions': 'Return/exchange options after approval:',
-    'returns.processPhysical': 'Physical visit: Visit our Showroom at Geula 45, Tel Aviv, by prior appointment only.',
-    'returns.processCourier': 'Courier service: You can arrange for a courier to pick up the item from you at a cost of ₪29.90 (this cost will not be refunded and will be deducted from the credit/refund).',
-    'returns.notes': 'Additional Notes',
-    'returns.noteMinPrice': 'No refund for products valued under ₪50.',
-    'returns.noteAccessories': 'Accessories removed from their packaging are not returnable.',
-    'returns.noteWarranty': 'No warranty for loss/falling of stones, studs, or decorative clasps after product use.',
+    'returns.intro': 'We want you to be happy with your purchase. If you still need to exchange or return an item, here is the policy in plain language, in line with Israeli consumer protection law:',
+    'returns.conditions': 'Basic conditions for exchange or return',
+    'returns.conditionsText': 'An exchange or return request is reviewed when the product meets the following:',
+    'returns.conditionNew': 'The product is unused, undamaged, and in its original packaging.',
+    'returns.conditionTag': 'The original tag is still attached.',
+    'returns.conditionInspection': 'Quality check: every returned item is inspected. Items with perfume or cigarette smell, makeup marks, or missing original packaging (including plastic protectors on clasps if they were present) cannot be accepted and will be sent back at your shipping cost.',
+    'returns.cancellation': 'Cash refund (transaction cancellation)',
+    'returns.cancellationText': 'You can cancel for a cash refund within 14 days of receiving the product. Please note the legally allowed deductions:',
+    'returns.cancellationFee': 'Cancellation fee: 5% of the product price or ₪100 — whichever is lower (by law).',
+    'returns.cancellationProcessing': 'Card processing fee: if you paid by credit card, the actual processing fee charged for the transaction may also be deducted (up to 2.5%).',
+    'returns.cancellationShipping': 'Shipping: original shipping fees (if paid) are not refunded. Return shipping to us is at your expense.',
+    'returns.exchange': 'Exchange or store credit (recommended)',
+    'returns.exchangeText': 'To avoid cancellation and processing fees, you can exchange the item or receive store credit for the full product value.',
+    'returns.exchangeTime': 'Exchange or credit: within 14 days of receiving a full-price item.',
+    'returns.exchangeSale': 'Sale / Outlet items: exchange or credit only within 48 hours of receipt.',
+    'returns.process': 'How to return or exchange',
+    'returns.processNote': 'Important: every return or exchange must be coordinated with customer service first.',
+    'returns.processWhatsApp': 'Open a request on WhatsApp: 054-990-3139 — we will approve and guide you.',
+    'returns.processOptions': 'After approval you can:',
+    'returns.processPhysical': 'Visit the showroom at Geula 45, Tel Aviv — by appointment.',
+    'returns.processCourier': 'Arrange a courier pickup for ₪29.90 (deducted from the credit/refund).',
+    'returns.notes': 'Additional notes',
+    'returns.noteMinPrice': 'No cash refund for products under ₪50.',
+    'returns.noteAccessories': 'Accessories removed from packaging are not returnable.',
+    'returns.noteWarranty': 'No warranty for loss of stones, studs, or decorative clasps after use.',
     
     // Terms Page
     'terms.title': 'Terms & Conditions',
@@ -1042,8 +1099,8 @@ export const translations: Record<Language, Translations> = {
     'terms.contactText': 'For questions or clarifications regarding these terms, please contact our customer service:',
     'terms.companyName': 'Klumit',
     'terms.address': 'Address: Geula 45, Tel Aviv Yafo 6330447',
-    'terms.phone': 'Phone: 03-5178502',
-    'terms.fax': 'Fax: 03-5106781',
+    'terms.phone': 'WhatsApp: 054-990-3139',
+    'terms.fax': '',
     'terms.email': 'Email: klumitltd@gmail.com',
     
     // Privacy Page
@@ -1088,8 +1145,8 @@ export const translations: Record<Language, Translations> = {
     'privacy.contactText': 'For questions or requests regarding the privacy policy or exercising your rights, please contact our customer service:',
     'privacy.companyName': 'Klumit',
     'privacy.address': 'Address: Geula 45, Tel Aviv Yafo 6330447',
-    'privacy.phone': 'Phone: 03-5178502',
-    'privacy.fax': 'Fax: 03-5106781',
+    'privacy.phone': 'WhatsApp: 054-990-3139',
+    'privacy.fax': '',
     'privacy.email': 'Email: klumitltd@gmail.com',
     
     // Accessibility Page
@@ -1125,6 +1182,9 @@ export const translations: Record<Language, Translations> = {
     'products.closureFit': 'Closure & Fit',
     'products.qualityFinish': 'Quality & Finish',
     'products.dimensions': 'Dimensions',
+    'products.dimLength': 'Length',
+    'products.dimWidth': 'Width',
+    'products.dimHeight': 'Height',
     
     // Membership
     'membership.topBar': 'Join and get 10% off your first purchase',
@@ -1200,7 +1260,7 @@ export const translations: Record<Language, Translations> = {
     'header.searchPlaceholder': 'Поиск сумок, кошельков, брендов...',
 
     // Home (Biasia-style)
-    'home.announcement': 'Бесплатная доставка от ₪500 · Персональный сервис · Натуральная итальянская кожа',
+    'home.announcement': 'Бесплатная доставка от ₪500 · Персональный сервис · Renato Angi — натуральная кожа',
     'home.marquee1': 'Новинки',
     'home.marquee2': 'Renato Angi · Carlino Group',
     'home.marquee3': 'Весна / лето 2026',
@@ -1224,6 +1284,14 @@ export const translations: Record<Language, Translations> = {
     'home.productsEyebrow': 'Featured collection',
     'home.productsTitle': 'New Arrivals',
     'home.productsTitleEm': '',
+    'home.brandLeatherEyebrow': 'Натуральная кожа',
+    'home.brandLeatherTitle': 'Renato Angi',
+    'home.brandLeatherBody': 'Коллекция из натуральной итальянской кожи — эксклюзивный импортер в Израиле.',
+    'home.brandLeatherCta': 'К коллекции',
+    'home.brandOtherEyebrow': 'Другие бренды',
+    'home.brandOtherTitle': 'Mario Valentino и другие',
+    'home.brandOtherBody': 'Материал указан на каждой странице товара — натуральная или искусственная кожа.',
+    'home.brandOtherCta': 'Смотреть',
     'home.newsletterEyebrow': 'Мир Klumit',
     'home.newsletterTitle': 'Будьте',
     'home.newsletterTitleEm': 'на связи',
@@ -1245,8 +1313,8 @@ export const translations: Record<Language, Translations> = {
     'value.freeShippingDetail': 'При заказе от ₪500',
     'value.physicalStore': 'Физический магазин',
     'value.physicalStoreDetail': 'Геула 45, Тель-Авив',
-    'value.italianLeather': 'Итальянская кожа',
-    'value.italianLeatherDetail': 'Премиум качество с 1983',
+    'value.italianLeather': 'Renato Angi',
+    'value.italianLeatherDetail': 'Натуральная кожа · с 1983',
     'value.securePayment': 'Безопасная оплата',
     'value.securePaymentDetail': '100% защита данных',
     
@@ -1264,6 +1332,13 @@ export const translations: Record<Language, Translations> = {
     'products.shopBelts': 'ВСЕ РЕМНИ',
     'products.shopBags': 'ВСЕ СУМКИ',
     'products.shopSpringSummer2026': 'ВЕСНА-ЛЕТО 2026',
+    'products.productCount': 'товаров',
+    'products.categoryIntroBags': 'Роскошные сумки из Италии — Renato Angi из натуральной кожи; другие бренды указаны на странице товара.',
+    'products.categoryIntroBelts': 'Классические итальянские ремни.',
+    'products.categoryIntroWallets': 'Компактные кожаные кошельки — полный размер на каждой странице.',
+    'products.categoryIntroSs26': 'Новая коллекция весна–лето — только из Италии.',
+    'products.categoryIntroSale': 'Скидки на выбранные сумки и аксессуары.',
+    'products.categoryIntroAll': 'Вся коллекция — сумки, ремни и кошельки из Италии.',
     'products.addToCart': 'Добавить в корзину',
     'products.outOfStock': 'Нет в наличии',
     'products.addedToCart': 'Добавлено в корзину',
@@ -1275,6 +1350,8 @@ export const translations: Record<Language, Translations> = {
     'products.purchaseTrustLine': 'Бесплатная доставка от ₪500 · Безопасная оплата',
     'products.whatsappContactCta': 'Вопросы перед покупкой? Напишите в WhatsApp',
     'products.inYourCart': 'Уже в вашей корзине',
+    'products.materialLeather': 'Натуральная кожа',
+    'products.materialFaux': 'Искусственная кожа',
     'products.color': 'Цвет',
     'products.size': 'Размер',
     'products.notifyWhenBack': 'Сообщить о поступлении',
@@ -1430,8 +1507,8 @@ export const translations: Record<Language, Translations> = {
     'terms.contactText': 'По вопросам или разъяснениям относительно этих условий, пожалуйста, свяжитесь с нашей службой поддержки клиентов:',
     'terms.companyName': 'Klumit',
     'terms.address': 'Адрес: ул. Геула 45, Тель-Авив Яффо 6330447',
-    'terms.phone': 'Телефон: 03-5178502',
-    'terms.fax': 'Факс: 03-5106781',
+    'terms.phone': 'WhatsApp: 054-990-3139',
+    'terms.fax': '',
     'terms.email': 'Email: klumitltd@gmail.com',
     
     // Privacy Page
@@ -1476,8 +1553,8 @@ export const translations: Record<Language, Translations> = {
     'privacy.contactText': 'По вопросам или запросам относительно политики конфиденциальности или осуществления ваших прав, пожалуйста, свяжитесь с нашей службой поддержки клиентов:',
     'privacy.companyName': 'Klumit',
     'privacy.address': 'Адрес: ул. Геула 45, Тель-Авив Яффо 6330447',
-    'privacy.phone': 'Телефон: 03-5178502',
-    'privacy.fax': 'Факс: 03-5106781',
+    'privacy.phone': 'WhatsApp: 054-990-3139',
+    'privacy.fax': '',
     'privacy.email': 'Email: klumitltd@gmail.com',
     
     // Accessibility Page
@@ -1513,6 +1590,9 @@ export const translations: Record<Language, Translations> = {
     'products.closureFit': 'Застежка и посадка',
     'products.qualityFinish': 'Качество и отделка',
     'products.dimensions': 'Размеры',
+    'products.dimLength': 'Длина',
+    'products.dimWidth': 'Ширина',
+    'products.dimHeight': 'Высота',
     
     // Membership
     'membership.topBar': 'Присоединяйтесь и получите 10% скидку на первую покупку',

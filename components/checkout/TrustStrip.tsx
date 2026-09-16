@@ -8,9 +8,9 @@ import PaymentIcons from '@/components/PaymentIcons';
 export default function TrustStrip({ compact = false }: { compact?: boolean }) {
   const items = [
     { icon: ShieldCheck, text: 'תשלום מאובטח PCI DSS · 3D Secure' },
-    { icon: RotateCcw, text: 'החזרה או החלפה תוך 14 יום' },
+    { icon: RotateCcw, text: 'החזרה 14 יום · מוצרי מבצע: 48 שעות' },
     { icon: Store, text: 'חנות פיזית · גאולה 45, תל אביב' },
-    { icon: Phone, text: '03-5178502 · א׳–ה׳ 10:00–17:00' },
+    { icon: Phone, text: 'וואטסאפ 054-990-3139 · א׳–ה׳ 10:00–17:00' },
   ];
 
   return (

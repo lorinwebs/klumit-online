@@ -13,8 +13,8 @@ const props = [
   {
     icon: HeadphonesIcon,
     title: 'שירות לקוחות',
-    subtitle: '054-260-0177 (וואטסאפ)',
-    whatsappLink: 'https://wa.me/972542600177',
+    subtitle: '054-990-3139 (וואטסאפ)',
+    whatsappLink: 'https://wa.me/972549903139',
   },
   {
     icon: Truck,

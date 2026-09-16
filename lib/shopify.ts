@@ -218,6 +218,7 @@ export const PRODUCTS_LIST_QUERY = `
                   currencyCode
                 }
                 availableForSale
+                quantityAvailable
                 selectedOptions {
                   name
                   value
@@ -255,6 +256,7 @@ export const PRODUCT_QUERY = `
       descriptionHtml
       productType
       vendor
+      tags
       priceRange {
         minVariantPrice {
           amount
@@ -604,6 +606,7 @@ export const GET_CART_QUERY = `
               ... on ProductVariant {
                 id
                 title
+                availableForSale
                 quantityAvailable
                 selectedOptions {
                   name

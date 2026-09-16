@@ -9,6 +9,7 @@ import Toast from './Toast';
 import { trackAddToCart } from '@/lib/analytics';
 import { useLanguage } from '@/lib/LanguageContext';
 import SoldOutBadge from '@/components/SoldOutBadge';
+import { getVariantStockState } from '@/lib/product-availability';
 
 interface ProductCardProps {
   id: string;
@@ -43,37 +44,41 @@ export default function ProductCard({
 
   const existingItem = items.find((i) => i.variantId === variantId);
   const currentQuantity = existingItem?.quantity || 0;
-  const isMaxStock = quantityAvailable !== undefined &&
-                     currentQuantity >= quantityAvailable;
+  const stockState = getVariantStockState({
+    availableForSale: available,
+    quantityAvailable,
+    cartQuantity: currentQuantity,
+  });
+  const isInCart = stockState === 'in_cart';
+  const isSoldOut = stockState === 'sold_out';
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
-    if (available && !isMaxStock) {
-      await addItem({
-        id: variantId,
-        variantId,
-        title,
-        price,
-        currencyCode,
-        image,
-        available,
-        quantityAvailable,
-        handle,
-      });
+    if (isSoldOut || isInCart) return;
+    await addItem({
+      id: variantId,
+      variantId,
+      title,
+      price,
+      currencyCode,
+      image,
+      available,
+      quantityAvailable,
+      handle,
+    });
 
-      trackAddToCart({
-        id: variantId,
-        name: title,
-        price: parseFloat(price),
-        currency: currencyCode,
-        quantity: 1,
-      });
+    trackAddToCart({
+      id: variantId,
+      name: title,
+      price: parseFloat(price),
+      currency: currencyCode,
+      quantity: 1,
+    });
 
-      setShowToast(true);
-      setTimeout(() => {
-        setShowToast(false);
-      }, 2000);
-    }
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 2000);
   };
 
   const formatPrice = (amount: string) => {
@@ -107,21 +112,31 @@ export default function ProductCard({
             )}
             {onSale && (
               <div
-                className={`absolute top-3 bg-black text-white px-2.5 py-1 text-[10px] tracking-[0.18em] uppercase font-light ${available ? 'right-3' : 'left-3'}`}
+                className={`absolute top-3 bg-black text-white px-2.5 py-1 text-[10px] tracking-[0.18em] uppercase font-light ${!isSoldOut ? 'right-3' : 'left-3'}`}
                 aria-label="מוצר במבצע"
               >
                 מבצע
               </div>
             )}
-            {!available && <SoldOutBadge className="top-3 right-3" />}
+            {isSoldOut && <SoldOutBadge className="top-3 right-3" />}
             <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-white/98 border-t border-black/10">
               <button
                 onClick={handleAddToCart}
-                disabled={!available || isMaxStock}
+                disabled={isSoldOut || isInCart}
                 className="w-full py-2 text-[10px] tracking-[0.18em] uppercase font-light hover:bg-black hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label={isMaxStock ? `${t('products.outOfStock')} (${quantityAvailable} ${t('products.units')})` : `${t('products.addToCart')} ${title}`}
+                aria-label={
+                  isInCart
+                    ? t('products.inYourCart')
+                    : isSoldOut
+                      ? t('products.outOfStock')
+                      : `${t('products.addToCart')} ${title}`
+                }
               >
-                {isMaxStock ? t('products.outOfStock') : t('products.addToCartShort')}
+                {isInCart
+                  ? t('products.inYourCart')
+                  : isSoldOut
+                    ? t('products.outOfStock')
+                    : t('products.addToCartShort')}
               </button>
             </div>
           </div>

@@ -12,12 +12,20 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(() => {
-    if (typeof window === 'undefined') return 'he';
-    const savedLang = localStorage.getItem('language') as Language;
-    if (savedLang && ['he', 'en', 'ru'].includes(savedLang)) return savedLang;
-    return 'he';
-  });
+  // Always start Hebrew so first paint / SSR match the Hebrew storefront.
+  // Restore saved language after mount to avoid English flash from localStorage.
+  const [language, setLanguageState] = useState<Language>('he');
+
+  useEffect(() => {
+    try {
+      const savedLang = localStorage.getItem('language') as Language | null;
+      if (savedLang && ['he', 'en', 'ru'].includes(savedLang) && savedLang !== 'he') {
+        setLanguageState(savedLang);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('dir', language === 'he' ? 'rtl' : 'ltr');

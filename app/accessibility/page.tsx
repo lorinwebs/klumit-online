@@ -77,8 +77,8 @@ export default function AccessibilityPage() {
               </li>
               <li>
                 <strong>{t('accessibility.contactPhone')}</strong>{' '}
-                <a href="tel:+97235178502" className="text-[#1a1a1a] underline hover:no-underline">
-                  03-5178502
+                <a href="https://wa.me/972549903139" className="text-[#1a1a1a] underline hover:no-underline">
+                  054-990-3139
                 </a>
               </li>
             </ul>

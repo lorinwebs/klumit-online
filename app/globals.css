@@ -154,14 +154,16 @@ section:has([class*="bg-black"]) a:focus-visible,
     text-transform: uppercase;
   }
 
-  /* Catalog grid titles: avoid double letter-spacing that breaks long names on mobile */
+  /* Catalog grid titles: readable on mobile 2-col (no forced uppercase) */
   h3.product-grid-title {
     letter-spacing: normal;
+    text-transform: none;
+    font-weight: 500;
   }
 
   @media (min-width: 768px) {
     h3.product-grid-title {
-      letter-spacing: 0.04em;
+      letter-spacing: 0.02em;
     }
   }
 

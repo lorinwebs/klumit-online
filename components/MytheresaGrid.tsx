@@ -9,7 +9,7 @@ import { shopifyClient, PRODUCTS_LIST_QUERY, getCategorySearchQuery } from '@/li
 import { useLanguage } from '@/lib/LanguageContext';
 import { isProductSoldOut } from '@/lib/product-availability';
 import { getSaleInfo } from '@/lib/product-sale';
-import { matchesCatalogCategory } from '@/lib/product-search';
+import { matchesCatalogCategory, productMatchesSearch } from '@/lib/product-search';
 import type { CatalogProduct } from '@/lib/products-server';
 import SoldOutBadge from '@/components/SoldOutBadge';
 
@@ -127,6 +127,11 @@ function ProductImageSlider({
       onMouseLeave={() => setIsHovered(false)}
     >
       <Link href={`/products/${handle}`} className="absolute inset-0 z-0 block">
+        <span
+          className="absolute inset-0 animate-pulse opacity-40"
+          style={{ backgroundColor: background }}
+          aria-hidden
+        />
         {images[currentImageIndex] ? (
           <Image
             key={currentImageIndex}
@@ -136,12 +141,12 @@ function ProductImageSlider({
             priority={priority}
             loading={priority ? 'eager' : 'lazy'}
             quality={70}
-            decoding="async"
-            className="object-contain object-center p-3 md:p-5"
+            decoding={priority ? 'sync' : 'async'}
+            className="object-contain object-center p-3 md:p-5 relative z-[1]"
             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
         ) : (
-          <span className="absolute inset-0 flex items-center justify-center text-black/30 text-sm font-light">
+          <span className="absolute inset-0 flex items-center justify-center text-black/30 text-sm font-light z-[1]">
             —
           </span>
         )}
@@ -377,14 +382,10 @@ export default function MytheresaGrid({
         ? products.filter((p) => selectedVendors.has(p.vendor || 'KLUMIT'))
         : products;
 
-    // Free-text search from the header (?q=)
-    const q = searchQuery?.trim().toLowerCase();
+    // Free-text search from the header (?q=) — expands Hebrew category words (e.g. ארנק)
+    const q = searchQuery?.trim();
     if (q) {
-      filtered = filtered.filter((p) =>
-        [p.title, p.vendor, p.productType, ...(p.tags || [])]
-          .filter(Boolean)
-          .some((field) => field.toLowerCase().includes(q))
-      );
+      filtered = filtered.filter((p) => productMatchesSearch(p, q));
     }
 
     return [...filtered].sort((a, b) => {
@@ -505,7 +506,7 @@ export default function MytheresaGrid({
 
   const catalogHeading = (() => {
     const q = searchQuery?.trim();
-    if (q) return `${t('products.noProducts').includes('לא') ? 'חיפוש' : 'Search'}: ${q}`;
+    if (q) return `${t('header.search')}: ${q}`;
     if (category === 'bags') return t('products.shopBags');
     if (category === 'belts') return t('products.shopBelts');
     if (category === 'wallets') return t('products.shopWallets');
@@ -514,13 +515,36 @@ export default function MytheresaGrid({
     return t('header.shopAll');
   })();
 
+  const catalogIntro = (() => {
+    if (searchQuery?.trim()) return null;
+    if (category === 'bags') return t('products.categoryIntroBags');
+    if (category === 'belts') return t('products.categoryIntroBelts');
+    if (category === 'wallets') return t('products.categoryIntroWallets');
+    if (category === 'ss26') return t('products.categoryIntroSs26');
+    if (category === 'sale') return t('products.categoryIntroSale');
+    return t('products.categoryIntroAll');
+  })();
+
   return (
     <div
       {...(embedOnHome ? {} : { id: 'products' })}
       className={embedOnHome ? 'min-h-0 bg-cream' : 'min-h-screen bg-cream'}
     >
-      {/* Catalog pages have no visual title by design; keep one for SEO / screen readers */}
-      {!embedOnHome && <h1 className="sr-only">{catalogHeading}</h1>}
+      {!embedOnHome && (
+        <div className="mx-auto max-w-7xl px-4 md:px-6 pt-8 md:pt-10 pb-2 text-center md:text-start">
+          <h1 className="font-display text-2xl md:text-3xl font-light text-black normal-case tracking-normal">
+            {catalogHeading}
+          </h1>
+          {catalogIntro ? (
+            <p className="mt-2 text-sm font-light text-black/60 max-w-2xl mx-auto md:mx-0 leading-relaxed">
+              {catalogIntro}
+            </p>
+          ) : null}
+          <p className="mt-2 text-[11px] tracking-[0.14em] uppercase text-black/40">
+            {productPool.length} {t('products.productCount')}
+          </p>
+        </div>
+      )}
 
       {/* Overlay for dropdowns */}
       {(showSort || showFilters) && (
@@ -766,9 +790,7 @@ export default function MytheresaGrid({
             return (
             <motion.div
               key={product.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: index < 8 ? Math.min(index * 0.03, 0.2) : 0 }}
+              initial={false}
               className="group relative"
             >
               <div className="block">
@@ -781,14 +803,14 @@ export default function MytheresaGrid({
                   background={getCardBackground(product.id)}
                   salePercent={sale?.percent}
                   isNew={isNew}
-                  priority={index < 4}
+                  priority={index < 8}
                 />
 
                 <Link href={`/products/${product.handle}`} className="block space-y-1 text-center pt-1 px-1">
                   <p className="text-[10px] md:text-[11px] font-normal tracking-[0.16em] uppercase text-black/40">
                     {product.vendor || 'KLUMIT'}
                   </p>
-                  <h3 className="product-grid-title text-[11px] md:text-[13px] font-semibold uppercase tracking-normal md:tracking-[0.04em] text-black line-clamp-2 leading-snug min-h-[2.6em] break-words">
+                  <h3 className="product-grid-title text-[11px] md:text-[13px] font-medium normal-case tracking-normal text-black line-clamp-2 leading-snug min-h-[2.6em] break-words [overflow-wrap:anywhere]">
                     {product.title}
                   </h3>
                   <div className="flex items-baseline justify-center gap-2 pt-0.5">

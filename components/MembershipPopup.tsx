@@ -97,7 +97,7 @@ export default function MembershipPopup() {
                   onClick={handleJoin}
                   className="w-full bg-[#1a1a1a] text-white py-4 px-6 text-sm tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury"
                 >
-                  הצטרף עכשיו
+                  הצטרפי עכשיו
                 </button>
                 <button
                   onClick={handleClose}

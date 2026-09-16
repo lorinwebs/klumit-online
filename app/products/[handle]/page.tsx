@@ -5,6 +5,7 @@ import Footer from '@/components/Footer';
 import { shopifyClient, PRODUCT_QUERY, PRODUCTS_QUERY } from '@/lib/shopify';
 import ProductClient from './ProductClient';
 import { generateProductJsonLd, generateBreadcrumbJsonLd } from '@/lib/seo';
+import { isProductSoldOut } from '@/lib/product-availability';
 
 interface Product {
   id: string;
@@ -14,6 +15,7 @@ interface Product {
   descriptionHtml?: string;
   productType?: string;
   vendor?: string;
+  tags?: string[];
   priceRange: {
     minVariantPrice: {
       amount: string;
@@ -136,8 +138,10 @@ export default async function ProductPage({ params }: PageProps) {
         first: 50,
       });
       const allProducts = productsData.products.edges.map((edge) => edge.node);
-      // Filter out current product
-      relatedProducts = allProducts.filter((p) => p.id !== productData.product.id);
+      // Exclude current product and anything sold out
+      relatedProducts = allProducts.filter(
+        (p) => p.id !== productData.product.id && !isProductSoldOut(p)
+      );
     } catch (error) {
       // Continue without related products
     }
@@ -155,6 +159,7 @@ export default async function ProductPage({ params }: PageProps) {
       currency: product.priceRange.minVariantPrice.currencyCode,
       available: firstVariant?.availableForSale ?? true,
       productType: product.productType || '',
+      tags: product.tags || [],
     });
 
     const breadcrumbJsonLd = generateBreadcrumbJsonLd([

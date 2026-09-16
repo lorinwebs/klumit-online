@@ -322,10 +322,10 @@ export default function Header() {
             {t('header.magazine')}
           </Link>
 
-          {/* Sale — desktop only, purple blinking dot */}
+          {/* Sale — visible on mobile + desktop */}
           <Link
             href="/products?tab=sale"
-            className={`hidden md:flex items-center gap-1.5 text-[11px] tracking-[0.18em] uppercase transition-colors duration-300 py-1 ${inkLink}`}
+            className={`flex items-center gap-1.5 text-[11px] tracking-[0.18em] uppercase transition-colors duration-300 py-1 ${inkLink}`}
           >
             <PulseDot color="purple" />
             {t('header.sale')}
@@ -575,7 +575,7 @@ export default function Header() {
 
               {/* WhatsApp */}
               <a
-                href="https://wa.me/972542600177"
+                href="https://wa.me/972549903139"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 py-4 text-[12px] tracking-[0.18em] uppercase text-black hover:opacity-70 transition-opacity"

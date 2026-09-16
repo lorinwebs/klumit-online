@@ -1465,7 +1465,7 @@ export default function CheckoutPage() {
                     required
                   />
                   <label htmlFor="terms" className="text-xs font-light text-gray-700 text-right flex-1 cursor-pointer leading-relaxed">
-                    אני מאשר/ת שקראתי והבנתי את <Link href="/terms" target="_blank" className="text-[#1a1a1a] underline hover:no-underline">תנאי הרכישה והתקנון</Link> ואני מסכים/ה להם. אני מאשר/ת כי גילי הוא 18 שנים ומעלה.
+                    אני מאשרת שקראתי והבנתי את <Link href="/terms" target="_blank" className="text-[#1a1a1a] underline hover:no-underline">תנאי הרכישה והתקנון</Link> ואני מסכימה להם. אני מאשרת כי גילי הוא 18 שנים ומעלה.
                   </label>
                 </div>
               </div>

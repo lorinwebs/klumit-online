@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   Instagram,
-  Facebook,
   Globe,
   Wallet,
   Mail,
@@ -180,7 +179,7 @@ export default function Footer() {
             </div>
             <div className="flex items-center gap-4 mt-5">
               <a
-                href="https://wa.me/972542600177"
+                href="https://wa.me/972549903139"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-black/40 hover:text-black transition-colors duration-300"
@@ -205,15 +204,6 @@ export default function Footer() {
                 aria-label="Instagram"
               >
                 <Instagram size={18} strokeWidth={1.5} />
-              </a>
-              <a
-                href="https://www.facebook.com/klomitltd"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-black/40 hover:text-black transition-colors duration-300"
-                aria-label="Facebook"
-              >
-                <Facebook size={18} strokeWidth={1.5} />
               </a>
             </div>
           </div>
