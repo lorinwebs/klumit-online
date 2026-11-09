@@ -23,7 +23,7 @@ export default function ConditionalLayout({ children }: { children: ReactNode })
     () => false,
   );
 
-  const excludedPaths = ['/mekif-chet-availability-check', '/mekif-chet-2007-reunion', '/moving-sale', '/loricountdown'];
+  const excludedPaths = ['/mekif-chet-availability-check', '/mekif-chet-2007-reunion', '/moving-sale', '/loricountdown', '/lorin-mor-wedding-gifts'];
   const isExcluded = excludedPaths.some(p => pathname === p || pathname.startsWith(p + '/'));
 
   if (!isMounted) {

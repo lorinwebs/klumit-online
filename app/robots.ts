@@ -13,6 +13,7 @@ export default function robots(): MetadataRoute.Robots {
           '/cart/',
           '/account/',
           '/payment/',
+          '/lorin-mor-wedding-gifts',
           '/*?orderby=',
           '/*?add-to-cart=',
           '/*?filter=',
@@ -25,7 +26,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: 'Googlebot',
         allow: '/',
-        disallow: ['/api/', '/auth/', '/checkout/', '/cart/', '/account/', '/payment/'],
+        disallow: ['/api/', '/auth/', '/checkout/', '/cart/', '/account/', '/payment/', '/lorin-mor-wedding-gifts'],
       },
       // AI answer-engine crawlers (AEO): allow indexing of public content
       {
@@ -42,7 +43,7 @@ export default function robots(): MetadataRoute.Robots {
           'CCBot',
         ],
         allow: '/',
-        disallow: ['/api/', '/auth/', '/checkout/', '/cart/', '/account/', '/payment/'],
+        disallow: ['/api/', '/auth/', '/checkout/', '/cart/', '/account/', '/payment/', '/lorin-mor-wedding-gifts'],
       },
     ],
     sitemap: 'https://www.klumit-online.co.il/sitemap.xml',
