@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Assistant, Frank_Ruhl_Libre } from 'next/font/google';
+import { Assistant, David_Libre } from 'next/font/google';
 import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/react';
 import { Suspense } from 'react';
@@ -11,10 +11,13 @@ import { hasSaleProducts } from '@/lib/products-server';
 import PostHogAuth from '@/components/PostHogAuth';
 import './globals.css';
 
-/* Display serif for headings and the wordmark — Hebrew + Latin in one family (variable weight) */
-const frank = Frank_Ruhl_Libre({
+/* Display serif for headings and the wordmark — Hebrew + Latin in one family.
+   To try another face, swap the font here; everything reads it through --font-display.
+   David Libre has no light weight, so font-light on headings renders as regular (400). */
+const displayFont = David_Libre({
+  weight: ['400', '500', '700'],
   subsets: ['latin', 'hebrew'],
-  variable: '--font-frank',
+  variable: '--font-display',
   display: 'swap',
   preload: true,
 });
@@ -261,7 +264,7 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${frank.variable} ${assistant.variable} font-sans overflow-x-clip`}>
+      <body className={`${displayFont.variable} ${assistant.variable} font-sans overflow-x-clip`}>
         <PostHogAuth />
         <LanguageProvider>
           <SaleProvider hasSale={hasSale}>

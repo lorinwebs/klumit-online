@@ -56,8 +56,8 @@ module.exports = {
       fontFamily: {
         // Both families cover Hebrew and Latin, so mixed lines never fall back to a second font.
         sans: ['var(--font-assistant)', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
-        serif: ['var(--font-frank)', 'var(--font-assistant)', 'Georgia', 'serif'],
-        display: ['var(--font-frank)', 'var(--font-assistant)', 'Georgia', 'serif'],
+        serif: ['var(--font-display)', 'var(--font-assistant)', 'Georgia', 'serif'],
+        display: ['var(--font-display)', 'var(--font-assistant)', 'Georgia', 'serif'],
       },
       screens: {
         'landscape': { 'raw': '(orientation: landscape) and (max-height: 500px)' },

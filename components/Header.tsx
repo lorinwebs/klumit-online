@@ -150,15 +150,19 @@ export default function Header() {
       suppressHydrationWarning
     >
       {/* Announcement bar — rotates every 5s between the club offer and brands */}
-      <div className="focus-light flex min-h-[34px] items-center justify-center bg-espresso px-4 py-2 text-center text-cream">
+      {/* The link fills the whole bar, so the bar is the tap target and stays one line tall —
+          `!min-h-0` overrides the global 44px minimum for links on touch screens */}
+      <div className="focus-light flex min-h-[34px] bg-espresso text-center text-cream">
         {(() => {
           const slide = ANNOUNCEMENT_SLIDES[slideIndex];
+          const slideLink =
+            'animate-reveal-fade flex !min-h-0 flex-1 items-center justify-center px-4 py-2 transition-opacity hover:opacity-80';
           if (slide.type === 'promo') {
             return (
               <Link
                 key={`promo-${slideIndex}`}
                 href="#k-club"
-                className={`animate-reveal-fade transition-opacity hover:opacity-80 ${
+                className={`${slideLink} ${
                   isHe ? 'text-[13px]' : 'text-[11px] uppercase tracking-[0.16em]'
                 }`}
               >
@@ -170,7 +174,7 @@ export default function Header() {
             <Link
               key={`brand-${slideIndex}`}
               href={slide.href}
-              className="animate-reveal-fade text-[11px] uppercase tracking-[0.22em] transition-opacity hover:opacity-80"
+              className={`${slideLink} text-[11px] uppercase tracking-[0.22em]`}
             >
               {slide.name}
             </Link>

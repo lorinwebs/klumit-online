@@ -153,7 +153,7 @@ section:has([class*="bg-black"]) a:focus-visible,
   /* Page and section titles: display serif. No forced uppercase or tracking —
      Hebrew has no capitals, so wide tracking only makes it harder to read. */
   h1, h2, .luxury-font {
-    font-family: var(--font-frank), var(--font-assistant), Georgia, serif;
+    font-family: var(--font-display), var(--font-assistant), Georgia, serif;
     font-weight: 400;
     letter-spacing: 0;
   }
