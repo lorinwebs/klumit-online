@@ -43,12 +43,19 @@ export interface Translations {
   'home.heroDescription': string;
   'home.heroCta': string;
   'home.heroCtaSecondary': string;
+  'home.heroPauseMotion': string;
+  'home.heroPlayMotion': string;
   'home.categoryEyebrow': string;
   'home.categoryTitle': string;
   'home.categoryTitleEm': string;
   'home.categoryShop': string;
   'home.editorialEyebrow': string;
-  'home.editorialTitle': string;
+  'home.editorialSince': string;
+  'home.editorialTagline': string;
+  'home.editorialYearsLabel': string;
+  'home.editorialExclusiveLabel': string;
+  'home.editorialImageCaption': string;
+  'home.editorialArchive': string;
   'home.editorialBody': string;
   'home.editorialCta': string;
   'home.editorialCtaBlog': string;
@@ -192,6 +199,8 @@ export interface Translations {
   'shipping.costs': string;
   'shipping.freeShippingOver': string;
   'shipping.homeDelivery': string;
+  'shipping.pickup': string;
+  'shipping.pickupPrice': string;
   'shipping.tracking': string;
   'shipping.trackingText': string;
   'shipping.moreQuestions': string;
@@ -390,6 +399,7 @@ export interface Translations {
   'footer.about': string;
   'footer.shipping': string;
   'footer.returns': string;
+  'footer.faq': string;
   'footer.terms': string;
   'footer.privacy': string;
   'footer.accessibility': string;
@@ -417,6 +427,12 @@ export interface Translations {
   'footer.join': string;
   'footer.joinSuccess': string;
   'footer.joinError': string;
+  'footer.errorFirstName': string;
+  'footer.errorLastName': string;
+  'footer.errorEmail': string;
+  'footer.errorEmailInvalid': string;
+  'footer.errorPhone': string;
+  'footer.errorPhoneInvalid': string;
 }
 
 export const translations: Record<Language, Translations> = {
@@ -449,18 +465,25 @@ export const translations: Record<Language, Translations> = {
     'home.marquee2': 'Renato Angi · Carlino Group',
     'home.marquee3': 'אביב–קיץ 2026',
     'home.marquee4': 'יבוא בלעדי מאיטליה',
-    'home.heroEyebrow': 'קיץ 2026',
+    'home.heroEyebrow': 'חורף 2026',
     'home.heroTitle': 'תיקים יוקרתיים מאיטליה',
     'home.heroTitleItalic': '',
     'home.heroDescription': 'תיקים, חגורות וארנקים מאיטליה - במחירים מהיבואן לצרכן',
     'home.heroCta': 'לצפייה בקולקציה',
     'home.heroCtaSecondary': 'הסיפור שלנו',
+    'home.heroPauseMotion': 'עצירת התנועה בתמונה',
+    'home.heroPlayMotion': 'הפעלת התנועה בתמונה',
     'home.categoryEyebrow': 'קנו לפי קטגוריה',
     'home.categoryTitle': 'נבחרו במיוחד',
     'home.categoryTitleEm': 'בשבילך',
     'home.categoryShop': 'לקנייה',
-    'home.editorialEyebrow': 'השראה',
-    'home.editorialTitle': 'מאז 1983 — אותה מחויבות לאיכות.',
+    'home.editorialEyebrow': 'המורשת שלנו',
+    'home.editorialSince': 'מאז',
+    'home.editorialTagline': 'אותה מחויבות לאיכות.',
+    'home.editorialYearsLabel': 'שנות יבוא מאיטליה',
+    'home.editorialExclusiveLabel': 'ייצוג בלעדי בישראל',
+    'home.editorialImageCaption': 'כיכר דיזנגוף, תל אביב',
+    'home.editorialArchive': 'מהארכיון',
     'home.editorialBody': 'קלומית מייבאת באופן בלעדי את המותגים המובילים מאיטליה. כל פריט נבחר בקפידה, כדי שתיק הנשיאה שלך ילווה אותך שנים.',
     'home.editorialCta': 'אודות קלומית',
     'home.editorialCtaBlog': 'למגזין',
@@ -601,6 +624,8 @@ export const translations: Record<Language, Translations> = {
     'shipping.costs': 'עלויות משלוח',
     'shipping.freeShippingOver': 'משלוח חינם להזמנות מעל ₪500',
     'shipping.homeDelivery': 'משלוח עד הבית:',
+    'shipping.pickup': 'איסוף עצמי מהחנות בגאולה 45, תל אביב (א׳–ה׳ 10:00–17:00), בתשלום באתר:',
+    'shipping.pickupPrice': 'חינם',
     'shipping.tracking': 'מעקב אחר משלוח',
     'shipping.trackingText': 'לאחר ביצוע ההזמנה, תקבלו אימייל עם מספר מעקב. תוכלו לעקוב אחר סטטוס המשלוח דרך הקישור באימייל או באזור האישי שלכם.',
     'shipping.moreQuestions': 'שאלות נוספות',
@@ -799,6 +824,7 @@ export const translations: Record<Language, Translations> = {
     'footer.about': 'אודות',
     'footer.shipping': 'משלוחים',
     'footer.returns': 'החזרות',
+    'footer.faq': 'שאלות נפוצות',
     'footer.terms': 'תקנון',
     'footer.privacy': 'מדיניות פרטיות',
     'footer.accessibility': 'הצהרת נגישות',
@@ -826,6 +852,12 @@ export const translations: Record<Language, Translations> = {
     'footer.join': 'גם אני רוצה להצטרף!',
     'footer.joinSuccess': 'תודה! הצטרפת ל-The K Club',
     'footer.joinError': 'משהו השתבש, נסי שוב',
+    'footer.errorFirstName': 'נא למלא שם פרטי',
+    'footer.errorLastName': 'נא למלא שם משפחה',
+    'footer.errorEmail': 'נא למלא כתובת מייל',
+    'footer.errorEmailInvalid': 'כתובת המייל לא תקינה',
+    'footer.errorPhone': 'נא למלא מספר טלפון',
+    'footer.errorPhoneInvalid': 'מספר הטלפון לא תקין',
   },
   
   en: {
@@ -857,18 +889,25 @@ export const translations: Record<Language, Translations> = {
     'home.marquee2': 'Renato Angi · Carlino Group',
     'home.marquee3': 'Spring / Summer 2026',
     'home.marquee4': 'Exclusive import from Italy',
-    'home.heroEyebrow': 'Summer 2026',
+    'home.heroEyebrow': 'Winter 2026',
     'home.heroTitle': 'New Collection',
     'home.heroTitleItalic': '',
     'home.heroDescription': 'Bags, belts and wallets in Italian leather — timeless design you can feel.',
     'home.heroCta': 'Shop Now',
     'home.heroCtaSecondary': 'Our story',
+    'home.heroPauseMotion': 'Pause the motion in the photo',
+    'home.heroPlayMotion': 'Play the motion in the photo',
     'home.categoryEyebrow': 'Shop by category',
     'home.categoryTitle': 'Crafted for',
     'home.categoryTitleEm': 'you',
     'home.categoryShop': 'Shop now',
     'home.editorialEyebrow': 'Heritage',
-    'home.editorialTitle': 'Since 1983 — the same commitment to quality.',
+    'home.editorialSince': 'Since',
+    'home.editorialTagline': 'The same commitment to quality.',
+    'home.editorialYearsLabel': 'years importing from Italy',
+    'home.editorialExclusiveLabel': 'Exclusive in Israel',
+    'home.editorialImageCaption': 'Dizengoff Square, Tel Aviv',
+    'home.editorialArchive': 'From the archive',
     'home.editorialBody': 'Klumit is the exclusive importer of Italy’s leading brands. Every piece is chosen with care, so your bag stays with you for years.',
     'home.editorialCta': 'About Klumit',
     'home.editorialCtaBlog': 'Read the magazine',
@@ -1009,6 +1048,8 @@ export const translations: Record<Language, Translations> = {
     'shipping.costs': 'Shipping Costs',
     'shipping.freeShippingOver': 'Free shipping for orders over ₪500',
     'shipping.homeDelivery': 'Home Delivery:',
+    'shipping.pickup': 'Store pickup at Geula 45, Tel Aviv (Sun–Thu 10:00–17:00), paid online:',
+    'shipping.pickupPrice': 'Free',
     'shipping.tracking': 'Track Your Shipment',
     'shipping.trackingText': 'After placing your order, you will receive an email with a tracking number. You can track the shipment status via the link in the email or in your personal area.',
     'shipping.moreQuestions': 'More Questions',
@@ -1207,6 +1248,7 @@ export const translations: Record<Language, Translations> = {
     'footer.about': 'About',
     'footer.shipping': 'Shipping',
     'footer.returns': 'Returns',
+    'footer.faq': 'FAQ',
     'footer.terms': 'Terms',
     'footer.privacy': 'Privacy Policy',
     'footer.accessibility': 'Accessibility Statement',
@@ -1234,6 +1276,12 @@ export const translations: Record<Language, Translations> = {
     'footer.join': 'I want to join!',
     'footer.joinSuccess': 'Thank you! You joined The K Club',
     'footer.joinError': 'Something went wrong, please try again',
+    'footer.errorFirstName': 'Please enter your first name',
+    'footer.errorLastName': 'Please enter your last name',
+    'footer.errorEmail': 'Please enter your email',
+    'footer.errorEmailInvalid': 'This email address isn’t valid',
+    'footer.errorPhone': 'Please enter your phone number',
+    'footer.errorPhoneInvalid': 'This phone number isn’t valid',
   },
   
   ru: {
@@ -1265,18 +1313,25 @@ export const translations: Record<Language, Translations> = {
     'home.marquee2': 'Renato Angi · Carlino Group',
     'home.marquee3': 'Весна / лето 2026',
     'home.marquee4': 'Эксклюзивный импорт из Италии',
-    'home.heroEyebrow': 'Summer 2026',
+    'home.heroEyebrow': 'Зима 2026',
     'home.heroTitle': 'New Collection',
     'home.heroTitleItalic': '',
     'home.heroDescription': 'Сумки, ремни и кошельки из итальянской кожи — вечный дизайн и ощутимое качество.',
     'home.heroCta': 'Shop Now',
     'home.heroCtaSecondary': 'О нас',
+    'home.heroPauseMotion': 'Остановить движение на фото',
+    'home.heroPlayMotion': 'Включить движение на фото',
     'home.categoryEyebrow': 'Категории',
     'home.categoryTitle': 'Создано',
     'home.categoryTitleEm': 'для вас',
     'home.categoryShop': 'Смотреть',
     'home.editorialEyebrow': 'Наследие',
-    'home.editorialTitle': 'С 1983 года — та же приверженность качеству.',
+    'home.editorialSince': 'С',
+    'home.editorialTagline': 'Та же приверженность качеству.',
+    'home.editorialYearsLabel': 'лет импорта из Италии',
+    'home.editorialExclusiveLabel': 'Эксклюзивно в Израиле',
+    'home.editorialImageCaption': 'Площадь Дизенгоф, Тель-Авив',
+    'home.editorialArchive': 'Из архива',
     'home.editorialBody': 'Klumit — эксклюзивный импортер ведущих итальянских брендов. Каждая вещь отобрана с заботой.',
     'home.editorialCta': 'О Klumit',
     'home.editorialCtaBlog': 'Журнал',
@@ -1417,6 +1472,8 @@ export const translations: Record<Language, Translations> = {
     'shipping.costs': 'Стоимость доставки',
     'shipping.freeShippingOver': 'Бесплатная доставка для заказов свыше ₪500',
     'shipping.homeDelivery': 'Доставка на дом:',
+    'shipping.pickup': 'Самовывоз из магазина на Геула 45, Тель-Авив (вс–чт 10:00–17:00), оплата на сайте:',
+    'shipping.pickupPrice': 'Бесплатно',
     'shipping.tracking': 'Отслеживание доставки',
     'shipping.trackingText': 'После оформления заказа вы получите email с номером отслеживания. Вы можете отслеживать статус доставки по ссылке в email или в личном кабинете.',
     'shipping.moreQuestions': 'Дополнительные вопросы',
@@ -1615,6 +1672,7 @@ export const translations: Record<Language, Translations> = {
     'footer.about': 'О нас',
     'footer.shipping': 'Доставка',
     'footer.returns': 'Возврат',
+    'footer.faq': 'Вопросы и ответы',
     'footer.terms': 'Условия',
     'footer.privacy': 'Конфиденциальность',
     'footer.accessibility': 'Заявление о доступности',
@@ -1642,6 +1700,12 @@ export const translations: Record<Language, Translations> = {
     'footer.join': 'Хочу присоединиться!',
     'footer.joinSuccess': 'Спасибо! Вы вступили в The K Club',
     'footer.joinError': 'Что-то пошло не так, попробуйте снова',
+    'footer.errorFirstName': 'Пожалуйста, укажите имя',
+    'footer.errorLastName': 'Пожалуйста, укажите фамилию',
+    'footer.errorEmail': 'Пожалуйста, укажите электронную почту',
+    'footer.errorEmailInvalid': 'Неверный адрес электронной почты',
+    'footer.errorPhone': 'Пожалуйста, укажите номер телефона',
+    'footer.errorPhoneInvalid': 'Неверный номер телефона',
   },
 };
 

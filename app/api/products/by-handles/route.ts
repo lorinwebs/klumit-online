@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { shopifyClient, PRODUCT_QUERY } from '@/lib/shopify';
+import { isDevOnlyProductHidden } from '@/lib/dev-only-products';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
             id: string;
             title: string;
             handle: string;
+            tags?: string[];
             images: {
               edges: Array<{
                 node: {
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
           } | null;
         }>(PRODUCT_QUERY, { handle });
 
-        if (productData.product) {
+        if (productData.product && !isDevOnlyProductHidden(productData.product)) {
           return {
             handle: productData.product.handle,
             title: productData.product.title,

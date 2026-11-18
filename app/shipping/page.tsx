@@ -33,6 +33,10 @@ export default function ShippingPage() {
                 <span className="text-[#1a1a1a] mt-1">•</span>
                 <span>{t('shipping.homeDelivery')} <strong>₪39</strong></span>
               </li>
+              <li className="flex items-start gap-3">
+                <span className="text-[#1a1a1a] mt-1">•</span>
+                <span>{t('shipping.pickup')} <strong>{t('shipping.pickupPrice')}</strong></span>
+              </li>
             </ul>
           </section>
 

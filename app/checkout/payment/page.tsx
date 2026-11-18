@@ -15,6 +15,7 @@ import {
   type CheckoutSession,
 } from '@/lib/checkout-session';
 import { formatShekels as formatPrice } from '@/lib/format-price';
+import { PICKUP_LABEL } from '@/lib/store-policy';
 
 function PaymentPageInner() {
   const router = useRouter();
@@ -123,6 +124,7 @@ function PaymentPageInner() {
   }, [session, expired, refreshing, requestFreshSession]);
 
   const summary = session?.summary;
+  const isPickup = summary?.deliveryMethod === 'pickup';
   const itemCount = useMemo(() => summary?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0, [summary]);
 
   if (!ready || !session || !summary) {
@@ -207,7 +209,7 @@ function PaymentPageInner() {
                     </div>
                   )}
                   <div className="flex justify-between text-gray-600">
-                    <span>משלוח</span>
+                    <span>{isPickup ? 'איסוף עצמי' : 'משלוח'}</span>
                     <span>{summary.shipping > 0 ? `₪${formatPrice(summary.shipping)}` : 'חינם'}</span>
                   </div>
                   <div className="flex justify-between text-base pt-3 border-t border-gray-200">
@@ -218,11 +220,11 @@ function PaymentPageInner() {
                 </div>
 
                 <div className="border-t border-gray-200 pt-4 mt-4 text-right">
-                  <h3 className="text-xs font-light text-gray-600 mb-1">משלוח אל</h3>
+                  <h3 className="text-xs font-light text-gray-600 mb-1">{isPickup ? 'איסוף עצמי' : 'משלוח אל'}</h3>
                   <p className="text-sm font-light text-black">{summary.customer.fullName}</p>
                   <p className="text-sm font-light text-black/70">
-                    {summary.customer.addressLine}
-                    {summary.customer.city ? `, ${summary.customer.city}` : ''}
+                    {isPickup ? PICKUP_LABEL : summary.customer.addressLine}
+                    {!isPickup && summary.customer.city ? `, ${summary.customer.city}` : ''}
                   </p>
                   <p className="text-xs font-light text-black/50 mt-1">
                     {summary.customer.phone}

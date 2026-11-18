@@ -937,7 +937,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                           alt={`${product.title} - תמונה ${index + 1}`}
                           width={2000}
                           height={2500}
-                          className="max-h-[min(85dvh,920px)] h-auto w-full object-contain object-center"
+                          className="studio-photo max-h-[min(85dvh,920px)] h-auto w-full object-contain object-center"
                           priority={index === 0}
                           loading={index <= 1 ? 'eager' : 'lazy'}
                           sizes="100vw"
@@ -994,7 +994,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                           alt={node.altText || product.title}
                           width={2000}
                           height={2500}
-                        className="w-full h-auto max-h-[min(92vh,1100px)] md:max-h-none object-contain object-center"
+                        className="studio-photo w-full h-auto max-h-[min(92vh,1100px)] md:max-h-none object-contain object-center"
                         priority={selectedImage === node.url}
                         sizes="(max-width: 768px) 100vw, 55vw"
                         />

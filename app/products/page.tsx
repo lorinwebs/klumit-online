@@ -18,20 +18,21 @@ const TAB_META: Record<
       'כל הקולקציה של קלומית — תיקים, חגורות וארנקים מאיטליה. Renato Angi מעור אמיתי; מותגים נוספים לפי המצוין בכל מוצר.',
     canonical: 'https://www.klumit-online.co.il/products',
   },
+  // Filtered views (?tab=bags&vendor=…) stay here; the plain category lives at its own URL
   bags: {
     title: 'תיקים | קלומית - Klumit',
     description: 'תיקים יוקרתיים מאיטליה — קולקציית Renato Angi מעור אמיתי ומותגים נוספים.',
-    canonical: 'https://www.klumit-online.co.il/products?tab=bags',
+    canonical: 'https://www.klumit-online.co.il/bags',
   },
   belts: {
     title: 'חגורות | קלומית - Klumit',
     description: 'חגורות איטלקיות מקלומית — עיצוב קלאסי ואיכות פרימיום.',
-    canonical: 'https://www.klumit-online.co.il/products?tab=belts',
+    canonical: 'https://www.klumit-online.co.il/belts',
   },
   wallets: {
     title: 'ארנקים | קלומית - Klumit',
     description: 'ארנקים מעור עם מפרט ומידות מלאים — קלומית.',
-    canonical: 'https://www.klumit-online.co.il/products?tab=wallets',
+    canonical: 'https://www.klumit-online.co.il/wallets',
   },
   ss26: {
     title: 'אביב-קיץ 2026 | קלומית - Klumit',

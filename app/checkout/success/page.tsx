@@ -4,13 +4,14 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle2, Mail, MessageCircle, Truck } from 'lucide-react';
+import { CheckCircle2, Mail, MessageCircle, Store, Truck } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CheckoutSteps from '@/components/checkout/CheckoutSteps';
 import { useCartStore } from '@/store/cartStore';
 import { breakOutOfIframe, clearCheckoutSession, loadCheckoutSession } from '@/lib/checkout-session';
 import { formatShekels as formatPrice } from '@/lib/format-price';
+import { PICKUP_LABEL, type DeliveryMethod } from '@/lib/store-policy';
 
 interface StatusResponse {
   state: 'paid' | 'pending' | 'not_found' | 'error';
@@ -19,6 +20,7 @@ interface StatusResponse {
   total?: number;
   currency?: string;
   items?: Array<{ title: string; variantTitle: string | null; quantity: number; unitPrice: number; image: string | null }>;
+  deliveryMethod?: DeliveryMethod;
   customer?: { fullName: string; email: string; addressLine: string; city: string };
 }
 
@@ -196,17 +198,29 @@ function SuccessPageInner() {
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-3">
-                  <Truck size={18} strokeWidth={1.5} className="shrink-0 text-black/50 mt-0.5" aria-hidden />
-                  <div>
-                    <p className="text-sm font-light">משלוח עד הבית</p>
-                    <p className="text-xs font-light text-black/55 mt-0.5">
-                      {status?.customer?.addressLine
-                        ? `${status.customer.addressLine}${status.customer.city ? `, ${status.customer.city}` : ''} · 2–5 ימי עסקים`
-                        : 'תוך 2–5 ימי עסקים, עם מספר מעקב במייל'}
-                    </p>
+                {status?.deliveryMethod === 'pickup' ? (
+                  <div className="flex gap-3">
+                    <Store size={18} strokeWidth={1.5} className="shrink-0 text-black/50 mt-0.5" aria-hidden />
+                    <div>
+                      <p className="text-sm font-light">איסוף עצמי</p>
+                      <p className="text-xs font-light text-black/55 mt-0.5">
+                        {PICKUP_LABEL} · ניצור קשר כשההזמנה מוכנה לאיסוף
+                      </p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex gap-3">
+                    <Truck size={18} strokeWidth={1.5} className="shrink-0 text-black/50 mt-0.5" aria-hidden />
+                    <div>
+                      <p className="text-sm font-light">משלוח עד הבית</p>
+                      <p className="text-xs font-light text-black/55 mt-0.5">
+                        {status?.customer?.addressLine
+                          ? `${status.customer.addressLine}${status.customer.city ? `, ${status.customer.city}` : ''} · 2–5 ימי עסקים`
+                          : 'תוך 2–5 ימי עסקים, עם מספר מעקב במייל'}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <div className="flex gap-3">
                   <MessageCircle size={18} strokeWidth={1.5} className="shrink-0 text-black/50 mt-0.5" aria-hidden />
                   <div>

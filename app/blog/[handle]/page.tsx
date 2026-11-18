@@ -4,7 +4,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import JsonLd from '@/components/seo/JsonLd';
+import { SITE_URL, generateArticleJsonLd, generateBreadcrumbJsonLd } from '@/lib/seo';
 import { shopifyClient, ARTICLES_QUERY } from '@/lib/shopify';
+import { getArticleCover, coverAbsoluteUrl } from '@/lib/blog-covers';
 
 // Must be a numeric literal for Next.js segment config static analysis
 export const revalidate = 60;
@@ -82,8 +85,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: 'מאמר לא נמצא | קלומית' };
   }
 
+  const cover = getArticleCover(article);
+
   return {
-    title: `${article.title} | המגזין - קלומית`,
+    title: { absolute: `${article.title} | המגזין - קלומית` },
     description: article.excerpt?.slice(0, 160) || `${article.title} - מגזין קלומית`,
     alternates: {
       canonical: `https://www.klumit-online.co.il/blog/${handle}`,
@@ -93,7 +98,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: article.excerpt || undefined,
       type: 'article',
       url: `https://www.klumit-online.co.il/blog/${handle}`,
-      images: article.image?.url ? [{ url: article.image.url, alt: article.title }] : [],
+      images: cover ? [{ url: coverAbsoluteUrl(cover), alt: article.title }] : [],
       publishedTime: article.publishedAt,
     },
   };
@@ -120,56 +125,83 @@ export default async function BlogPostPage({ params }: PageProps) {
     // continue without related articles
   }
 
+  const articleUrl = `${SITE_URL}/blog/${handle}`;
+  const cover = getArticleCover(article);
+
   return (
     <div className="min-h-screen flex flex-col bg-cream">
+      <JsonLd
+        data={generateArticleJsonLd({
+          title: article.title,
+          url: articleUrl,
+          excerpt: article.excerpt,
+          imageUrl: cover ? coverAbsoluteUrl(cover) : undefined,
+          publishedAt: article.publishedAt,
+          authorName: article.authorV2?.name,
+        })}
+      />
+      <JsonLd
+        data={generateBreadcrumbJsonLd([
+          { name: 'בית', url: SITE_URL },
+          { name: 'המגזין', url: `${SITE_URL}/blog` },
+          { name: article.title, url: articleUrl },
+        ])}
+      />
       <Header />
       <main className="flex-grow">
-        {/* Hero image */}
-        {article.image?.url && (
-          <div className="relative w-full aspect-[16/9] md:aspect-[21/9] max-h-[70vh] bg-cream-warm">
-            <Image
-              src={article.image.url}
-              alt={article.image.altText || article.title}
-              fill
-              className="object-cover"
-              style={{ objectPosition: 'center 40%' }}
-              priority
-              sizes="100vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-espresso/50 via-espresso/10 to-transparent" />
+        {/* Header: the title beside the cover. Covers are portrait, so the cover keeps its own
+            shape here; stretched into a wide banner it was cut to a blurry strip. */}
+        <header className="bg-cream-deep">
+          <div
+            className={`mx-auto grid items-center gap-8 px-4 py-8 md:gap-14 md:py-14 ${
+              cover ? 'max-w-[1200px] md:grid-cols-2' : 'max-w-[800px]'
+            }`}
+          >
+            <div>
+              {/* Breadcrumb */}
+              <nav className="mb-8">
+                <ol className="flex items-center gap-2 text-xs font-light text-stone">
+                  <li><Link href="/" className="hover:text-espresso transition-colors">בית</Link></li>
+                  <li>/</li>
+                  <li><Link href="/blog" className="hover:text-espresso transition-colors">המגזין</Link></li>
+                  <li>/</li>
+                  <li className="text-stone-dark truncate max-w-[200px]">{article.title}</li>
+                </ol>
+              </nav>
+
+              {/* Meta */}
+              <p className="mb-4 text-[10px] font-medium text-stone tracking-editorial uppercase">
+                {new Date(article.publishedAt).toLocaleDateString('he-IL', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+                {article.authorV2?.name && ` • ${article.authorV2.name}`}
+              </p>
+
+              {/* Title */}
+              <h1 className="text-balance text-2xl md:text-4xl font-light font-display text-espresso leading-snug">
+                {article.title}
+              </h1>
+            </div>
+
+            {cover && (
+              <div className="relative mx-auto aspect-[4/5] w-full max-w-[440px] overflow-hidden bg-sand">
+                <Image
+                  src={cover.src}
+                  alt={cover.alt}
+                  fill
+                  className="object-cover"
+                  priority
+                  sizes="(max-width: 768px) 100vw, 440px"
+                />
+              </div>
+            )}
           </div>
-        )}
+        </header>
 
         {/* Article content */}
         <article className="max-w-[800px] mx-auto px-4 py-10 md:py-16">
-          {/* Breadcrumb */}
-          <nav className="mb-8">
-            <ol className="flex items-center gap-2 text-xs font-light text-stone">
-              <li><Link href="/" className="hover:text-espresso transition-colors">בית</Link></li>
-              <li>/</li>
-              <li><Link href="/blog" className="hover:text-espresso transition-colors">המגזין</Link></li>
-              <li>/</li>
-              <li className="text-stone-dark truncate max-w-[200px]">{article.title}</li>
-            </ol>
-          </nav>
-
-          {/* Meta */}
-          <div className="mb-6 space-y-2">
-            <p className="text-[10px] font-medium text-stone tracking-editorial uppercase">
-              {new Date(article.publishedAt).toLocaleDateString('he-IL', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-              {article.authorV2?.name && ` • ${article.authorV2.name}`}
-            </p>
-          </div>
-
-          {/* Title */}
-          <h1 className="text-2xl md:text-4xl font-light font-display text-espresso leading-snug mb-8">
-            {article.title}
-          </h1>
-
           {/* Body */}
           <style dangerouslySetInnerHTML={{ __html: `
             .blog-content { font-size: 1.05rem; line-height: 1.9; color: #8C7E73; }
@@ -179,7 +211,8 @@ export default async function BlogPostPage({ params }: PageProps) {
             .blog-content p { margin: 0 0 1.25rem; }
             .blog-content a { color: #C4956A; text-decoration: none; transition: color 0.3s; }
             .blog-content a:hover { color: #A67B52; text-decoration: underline; }
-            .blog-content img { max-width: 100%; height: auto; margin: 1.5rem auto; display: block; }
+            .blog-content img { max-width: 100%; max-height: 640px; width: auto; height: auto; margin: 1.5rem auto; display: block; }
+            .blog-content img:not([src]) { display: none; }
             .blog-content ul, .blog-content ol { padding-right: 1.5rem; margin: 1rem 0; }
             .blog-content li { margin: 0.4rem 0; }
             .blog-content ul li { list-style-type: disc; }
@@ -192,6 +225,11 @@ export default async function BlogPostPage({ params }: PageProps) {
             .blog-content th, .blog-content td { border: 1px solid #E8E2DB; padding: 0.5rem 0.75rem; text-align: right; }
             .blog-content th { background: #F2ECE4; font-weight: 500; }
             .blog-content iframe, .blog-content video { max-width: 100%; margin: 1.5rem auto; display: block; }
+            .blog-content .product-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin: 1.5rem 0; }
+            @media (min-width: 768px) { .blog-content .product-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+            .blog-content .product-card, .blog-content .product-card:hover { display: block; color: #2C2420; text-decoration: none; }
+            .blog-content .product-card img { width: 100%; aspect-ratio: 4 / 5; object-fit: contain; background: #fff; padding: 0.5rem; margin: 0 0 0.5rem; }
+            .blog-content .product-card span { display: block; font-size: 0.85rem; line-height: 1.4; }
           `}} />
           <div
             className="blog-content max-w-none"
@@ -216,29 +254,32 @@ export default async function BlogPostPage({ params }: PageProps) {
             <h2 className="font-display text-xl md:text-2xl font-light text-espresso tracking-editorial uppercase text-center mb-8">
               עוד במגזין
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {moreArticles.map((a) => (
-                <Link key={a.id} href={`/blog/${a.handle}`} className="group block">
-                  <div className="relative aspect-[4/3] overflow-hidden bg-cream-warm border border-sand/60 mb-3">
-                    {a.image?.url ? (
-                      <Image
-                        src={a.image.url}
-                        alt={a.image.altText || a.title}
-                        fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-105"
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center bg-cream-warm">
-                        <span className="text-sand-dark text-4xl font-display">K</span>
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="text-sm font-light text-espresso group-hover:text-terracotta transition-colors duration-500">
-                    {a.title}
-                  </h3>
-                </Link>
-              ))}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+              {moreArticles.map((a) => {
+                const moreCover = getArticleCover(a);
+                return (
+                  <Link key={a.id} href={`/blog/${a.handle}`} className="group block">
+                    <div className="relative aspect-[4/5] overflow-hidden bg-cream-warm border border-sand/60 mb-3">
+                      {moreCover ? (
+                        <Image
+                          src={moreCover.src}
+                          alt={moreCover.alt}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                          sizes="(max-width: 768px) 100vw, 400px"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center bg-cream-warm">
+                          <span className="text-sand-dark text-4xl font-display">K</span>
+                        </div>
+                      )}
+                    </div>
+                    <h3 className="text-sm font-light text-espresso group-hover:text-terracotta transition-colors duration-500">
+                      {a.title}
+                    </h3>
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}

@@ -1,29 +1,25 @@
 import type { Metadata, Viewport } from 'next';
-import { Assistant } from 'next/font/google';
-import localFont from 'next/font/local';
+import { Assistant, Frank_Ruhl_Libre } from 'next/font/google';
 import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/react';
 import { Suspense } from 'react';
 import AnalyticsProvider from '@/components/Analytics';
 import ConditionalLayout from '@/components/ConditionalLayout';
 import { LanguageProvider } from '@/lib/LanguageContext';
+import { SaleProvider } from '@/lib/SaleContext';
+import { hasSaleProducts } from '@/lib/products-server';
 import PostHogAuth from '@/components/PostHogAuth';
 import './globals.css';
 
-/* TaliaSol-style brand font (Latin) — self-hosted Roundo */
-const roundo = localFont({
-  src: [
-    { path: './fonts/roundo-400.woff2', weight: '400', style: 'normal' },
-    { path: './fonts/roundo-500.woff2', weight: '500', style: 'normal' },
-    { path: './fonts/roundo-600.woff2', weight: '600', style: 'normal' },
-    { path: './fonts/roundo-700.woff2', weight: '700', style: 'normal' },
-  ],
-  variable: '--font-roundo',
+/* Display serif for headings and the wordmark — Hebrew + Latin in one family (variable weight) */
+const frank = Frank_Ruhl_Libre({
+  subsets: ['latin', 'hebrew'],
+  variable: '--font-frank',
   display: 'swap',
   preload: true,
 });
 
-/* Hebrew fallback (Roundo has no Hebrew glyphs) */
+/* Body / UI text — Hebrew + Latin in one family */
 const assistant = Assistant({ 
   subsets: ['latin', 'latin-ext', 'hebrew'],
   weight: ['400', '500', '600'],
@@ -38,7 +34,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#F5F5F5',
+  themeColor: '#FFFFFF',
 };
 
 export const metadata: Metadata = {
@@ -171,7 +167,7 @@ const jsonLd = {
       description: 'חנות תיקים יוקרתיים מאיטליה. יבואן בלעדי של Renato Angi Venezia ו-Carlino Group מאז 1983. קולקציית Renato Angi מעור אמיתי; מותגים נוספים לפי המצוין בכל מוצר.',
       priceRange: '₪₪₪',
       currenciesAccepted: 'ILS',
-      paymentAccepted: 'Cash, Credit Card, Bit, PayPal',
+      paymentAccepted: 'Cash, Credit Card, Bit, Apple Pay, Google Pay',
       address: {
         '@type': 'PostalAddress',
         streetAddress: 'גאולה 45',
@@ -181,9 +177,10 @@ const jsonLd = {
       },
       geo: {
         '@type': 'GeoCoordinates',
-        latitude: 32.0654,
-        longitude: 34.7731,
+        latitude: 32.0714,
+        longitude: 34.7689,
       },
+      parentOrganization: { '@id': `${siteUrl}/#organization` },
       telephone: '+972-54-990-3139',
       email: 'klumitltd@gmail.com',
       openingHoursSpecification: {
@@ -197,60 +194,16 @@ const jsonLd = {
         { '@type': 'Country', name: 'IL' },
       ],
     },
-    {
-      '@type': 'FAQPage',
-      '@id': `${siteUrl}/#faq`,
-      mainEntity: [
-        {
-          '@type': 'Question',
-          name: 'האם התיקים עשויים מעור אמיתי?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'קולקציית Renato Angi עשויה מעור איטלקי אמיתי. במוצרי מותגים אחרים (כגון Mario Valentino) החומר מצוין בעמוד המוצר — עור אמיתי או דמוי עור. אנחנו יבואנים בלעדיים מאיטליה מאז 1983.',
-          },
-        },
-        {
-          '@type': 'Question',
-          name: 'האם יש משלוח חינם?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'כן! משלוח חינם בכל הזמנה מעל ₪500. משלוח מהיר תוך 3-5 ימי עסקים לכל רחבי הארץ.',
-          },
-        },
-        {
-          '@type': 'Question',
-          name: 'האם אפשר לראות את התיקים בחנות פיזית?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'בהחלט! החנות שלנו ממוקמת ברחוב גאולה 45, תל אביב. פתוח א\'-ה\' בין השעות 10:00-17:00. מומלץ לתאם פגישה בוואטסאפ 054-990-3139.',
-          },
-        },
-        {
-          '@type': 'Question',
-          name: 'מה מדיניות ההחזרות?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'ניתן להחזיר מוצרים תוך 14 יום מקבלת ההזמנה, בתנאי שהמוצר לא נעשה בו שימוש ובאריזתו המקורית. החזרה בחנות הפיזית או באמצעות שליח.',
-          },
-        },
-        {
-          '@type': 'Question',
-          name: 'מה ההטבה לחברי מועדון?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'הצטרפי וקבלי 10% הנחה בקנייה הראשונה. חברות מועדון הלקוחות של קלומית מקבלות גם גישה מוקדמת למבצעים והטבות בלעדיות לאורך כל השנה.',
-          },
-        },
-      ],
-    },
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const hasSale = await hasSaleProducts();
+
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning>
       <head>
@@ -308,16 +261,18 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${roundo.variable} ${assistant.variable} font-sans overflow-x-clip`}>
+      <body className={`${frank.variable} ${assistant.variable} font-sans overflow-x-clip`}>
         <PostHogAuth />
         <LanguageProvider>
-          <ConditionalLayout>
-            <Suspense fallback={null}>
-              <AnalyticsProvider />
-            </Suspense>
-            {children}
-            <Analytics />
-          </ConditionalLayout>
+          <SaleProvider hasSale={hasSale}>
+            <ConditionalLayout>
+              <Suspense fallback={null}>
+                <AnalyticsProvider />
+              </Suspense>
+              {children}
+              <Analytics />
+            </ConditionalLayout>
+          </SaleProvider>
         </LanguageProvider>
       </body>
     </html>

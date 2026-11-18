@@ -1,6 +1,12 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+const CATEGORY_PATHS: Record<string, string> = {
+  bags: '/bags',
+  belts: '/belts',
+  wallets: '/wallets',
+};
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -10,6 +16,17 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = newPathname;
     return NextResponse.redirect(url);
+  }
+
+  // Plain category tabs moved to their own pages; filtered or searched views stay on /products
+  const { searchParams } = request.nextUrl;
+  const categoryPath = CATEGORY_PATHS[(searchParams.get('tab') || searchParams.get('category') || '').toLowerCase()];
+  if (pathname === '/products' && categoryPath && !searchParams.has('vendor') && !searchParams.has('q')) {
+    const url = request.nextUrl.clone();
+    url.pathname = categoryPath;
+    url.searchParams.delete('tab');
+    url.searchParams.delete('category');
+    return NextResponse.redirect(url, 308);
   }
 
   let response = NextResponse.next({

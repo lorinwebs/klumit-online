@@ -13,31 +13,36 @@ module.exports = {
           dark: '#111111',
           light: '#f5f5f5',
         },
-        // Daniel Yona–style minimal palette (white / black)
+        // Warm Italian palette: white page, espresso ink, ivory accent sections, one cognac-leather accent.
+        // Text-safe pairs (WCAG AA): espresso / stone / stone-dark / terracotta on cream and cream-deep;
+        // cream and terracotta-light on espresso.
         espresso: {
-          DEFAULT: '#111111',
-          light: '#2a2a2a',
+          DEFAULT: '#2B211B', // ink + dark surfaces
+          light: '#4A3A30',
         },
         stone: {
-          DEFAULT: '#888888',
-          light: '#b0b0b0',
-          dark: '#666666',
+          DEFAULT: '#74685E', // muted text
+          light: '#A89F96', // decorative only (fails AA as text)
+          dark: '#5E534A',
         },
         cream: {
-          DEFAULT: '#F5F5F5',
-          warm: '#fafafa',
-          deep: '#eeeeee',
+          // Page background. Pure white on purpose: product photos are shot on white,
+          // so they blend into the page instead of sitting in visible boxes.
+          DEFAULT: '#FFFFFF',
+          warm: '#FFFDFA',
+          deep: '#F2ECE3', // alternate section background
         },
         terracotta: {
-          DEFAULT: '#111111',
-          light: '#333333',
-          dark: '#000000',
+          DEFAULT: '#9A5A32', // cognac accent
+          light: '#D9A77C', // accent on dark surfaces
+          dark: '#7A4322',
         },
         sand: {
-          DEFAULT: '#e5e5e5',
-          light: '#f0f0f0',
-          dark: '#d4d4d4',
+          DEFAULT: '#E5DDD1', // hairlines
+          light: '#EEE8DE',
+          dark: '#D3C8B9',
         },
+        sale: '#B3261E',
         // Homepage tokens mapped to same minimal system
         biasia: {
           bg: '#F5F5F5',
@@ -49,9 +54,10 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-roundo)', 'var(--font-assistant)', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
-        serif: ['var(--font-roundo)', 'var(--font-assistant)', 'Georgia', 'serif'],
-        display: ['var(--font-roundo)', 'var(--font-assistant)', 'sans-serif'],
+        // Both families cover Hebrew and Latin, so mixed lines never fall back to a second font.
+        sans: ['var(--font-assistant)', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+        serif: ['var(--font-frank)', 'var(--font-assistant)', 'Georgia', 'serif'],
+        display: ['var(--font-frank)', 'var(--font-assistant)', 'Georgia', 'serif'],
       },
       screens: {
         'landscape': { 'raw': '(orientation: landscape) and (max-height: 500px)' },

@@ -25,6 +25,7 @@ export interface CheckoutPaymentSession {
     discount: number;
     total: number;
     items: DraftOrderSummary['items'];
+    deliveryMethod: DraftOrderSummary['deliveryMethod'];
     customer: DraftOrderSummary['customer'];
   };
 }
@@ -109,6 +110,7 @@ export async function createPaymentSessionForDraft(draft: DraftOrderSummary): Pr
       discount: draft.discount,
       total: draft.total,
       items: draft.items,
+      deliveryMethod: draft.deliveryMethod,
       customer: draft.customer,
     },
   };

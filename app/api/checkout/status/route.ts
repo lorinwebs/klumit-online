@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
         total: draft.total,
         currency: draft.currency,
         items: draft.items,
+        deliveryMethod: draft.deliveryMethod,
         customer: {
           fullName: draft.customer.fullName,
           email: draft.customer.email,

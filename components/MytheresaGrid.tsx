@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import { motion } from 'framer-motion';
+import ProductGridCard from '@/components/catalog/ProductGridCard';
 import {
   shopifyClient,
   PRODUCTS_LIST_QUERY,
@@ -49,186 +49,6 @@ function LoadMoreDots() {
       <span className="w-1.5 h-1.5 rounded-full bg-black/25 animate-pulse" style={{ animationDelay: '0ms' }} />
       <span className="w-1.5 h-1.5 rounded-full bg-black/35 animate-pulse" style={{ animationDelay: '150ms' }} />
       <span className="w-1.5 h-1.5 rounded-full bg-black/25 animate-pulse" style={{ animationDelay: '300ms' }} />
-    </div>
-  );
-}
-
-function getSizeOptions(product: Product) {
-  const sizes: string[] = [];
-  const seen = new Set<string>();
-  for (const edge of product.variants?.edges || []) {
-    const sizeOpt = edge.node.selectedOptions?.find((o) =>
-      /size|מידה|מידת|pointure|taille/i.test(o.name)
-    );
-    const value = sizeOpt?.value || (edge.node.title !== 'Default Title' ? edge.node.title : null);
-    if (!value || seen.has(value) || !edge.node.availableForSale) continue;
-    // Skip if looks like a full color name without size digits for bag products
-    seen.add(value);
-    sizes.push(value);
-  }
-  return sizes.slice(0, 8);
-}
-
-// Product image with arrows + optional size row (TaliaSol style)
-function ProductImageSlider({
-  images,
-  title,
-  handle,
-  sizes,
-  salePercent,
-  isNew,
-  priority = false,
-}: {
-  images: Array<{ node: { url: string; altText: string | null } }>;
-  title: string;
-  handle: string;
-  sizes: string[];
-  salePercent?: number | null;
-  isNew?: boolean;
-  priority?: boolean;
-}) {
-  const { t } = useLanguage();
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-
-  // Preload alternate images only on hover (keeps first paint fast)
-  useEffect(() => {
-    if (!isHovered || images.length < 2) return;
-    images.slice(1, 3).forEach((edge) => {
-      const img = new window.Image();
-      img.src = edge.node.url;
-    });
-  }, [isHovered, images]);
-
-  const goPrev = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCurrentImageIndex((i) => (i - 1 + images.length) % images.length);
-  };
-
-  const goNext = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCurrentImageIndex((i) => (i + 1) % images.length);
-  };
-
-  return (
-    <div
-      className="relative aspect-[3/4] mb-3 overflow-hidden bg-white group/image"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <Link href={`/products/${handle}`} className="absolute inset-0 z-0 block">
-        {images[currentImageIndex] ? (
-          <Image
-            key={currentImageIndex}
-            src={images[currentImageIndex].node.url}
-            alt={images[currentImageIndex].node.altText || title}
-            fill
-            priority={priority}
-            loading={priority ? 'eager' : 'lazy'}
-            quality={70}
-            decoding={priority ? 'sync' : 'async'}
-            className="object-contain object-center p-3 md:p-5 relative z-[1]"
-            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          />
-        ) : (
-          <span className="absolute inset-0 flex items-center justify-center text-black/30 text-sm font-light z-[1]">
-            —
-          </span>
-        )}
-      </Link>
-
-      {/* Sale badges — top start (TaliaSol) */}
-      {salePercent != null && salePercent > 0 && (
-        <div className="absolute top-2 start-2 z-20 flex flex-col items-stretch gap-0 pointer-events-none">
-          <span className="bg-white border border-black px-2 py-0.5 text-[10px] md:text-[11px] font-medium tracking-[0.12em] uppercase text-black text-center leading-none">
-            {t('products.sale')}
-          </span>
-          <span className="bg-black px-2 py-0.5 text-[10px] md:text-[11px] font-medium tracking-[0.08em] text-white text-center leading-none">
-            - {salePercent}%
-          </span>
-        </div>
-      )}
-
-      {isNew && (
-        <div className="absolute top-2 end-2 z-20 bg-white border border-black px-2 py-0.5 text-[10px] md:text-[11px] font-medium tracking-[0.12em] uppercase text-black leading-none pointer-events-none">
-          {t('products.newTag')}
-        </div>
-      )}
-
-      {/* Image arrows — always on mobile, on hover on desktop (TaliaSol style) */}
-      {images.length > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={goPrev}
-            className={`absolute left-1 md:left-1.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 md:w-10 md:h-10 flex items-center justify-center text-black/55 hover:text-black transition-all duration-300 opacity-100 md:opacity-0 ${
-              isHovered ? 'md:opacity-100' : ''
-            }`}
-            aria-label={t('products.previousImage')}
-          >
-            <ChevronLeft size={26} strokeWidth={2.25} />
-          </button>
-          <button
-            type="button"
-            onClick={goNext}
-            className={`absolute right-1 md:right-1.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 md:w-10 md:h-10 flex items-center justify-center text-black/55 hover:text-black transition-all duration-300 opacity-100 md:opacity-0 ${
-              isHovered ? 'md:opacity-100' : ''
-            }`}
-            aria-label={t('products.nextImage')}
-          >
-            <ChevronRight size={26} strokeWidth={2.25} />
-          </button>
-
-          {/* Image position dots */}
-          <div className="absolute bottom-2 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 z-10 flex items-center gap-1 pointer-events-none">
-            {images.slice(0, 6).map((_, i) => (
-              <span
-                key={i}
-                className={`w-1 h-1 rounded-full transition-colors duration-200 ${
-                  i === currentImageIndex ? 'bg-black/70' : 'bg-black/20'
-                }`}
-              />
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Size row on hover */}
-      {sizes.length > 1 && (
-        <div
-          className={`hidden md:flex absolute bottom-0 inset-x-0 z-30 items-center gap-1.5 px-2.5 py-2 bg-gradient-to-t from-black/5 to-transparent transition-opacity duration-300 ${
-            isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-        >
-          <span className="text-[9px] font-semibold tracking-[0.14em] uppercase text-black/45 shrink-0">
-            {t('products.size')}
-          </span>
-          <div className="flex flex-wrap gap-1 justify-end flex-1">
-            {sizes.map((size) => (
-              <button
-                key={size}
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setSelectedSize(size);
-                  window.location.href = `/products/${handle}`;
-                }}
-                className={`min-w-[28px] h-7 px-1.5 flex items-center justify-center text-[10px] border transition-colors ${
-                  selectedSize === size
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white text-black border-black/25 hover:border-black'
-                }`}
-              >
-                {size}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -350,11 +170,6 @@ export default function MytheresaGrid({
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, []);
-
-  const formatPrice = (amount: string) => {
-    const num = parseFloat(amount);
-    return Math.round(num).toLocaleString('he-IL');
-  };
 
   const toggleVendor = (vendor: string) => {
     setSelectedVendors(prev => {
@@ -776,55 +591,9 @@ export default function MytheresaGrid({
         className={`mx-auto max-w-7xl py-6 md:py-8 ${embedOnHome ? 'px-5 md:px-6' : 'px-4 md:px-6'}`}
       >
         <div className="grid grid-cols-2 gap-x-2 gap-y-8 md:grid-cols-3 md:gap-x-3 md:gap-y-10 lg:grid-cols-4 lg:gap-x-4">
-          {visibleProducts.map((product, index) => {
-            const sale = getSaleInfo(product);
-            const sizes = getSizeOptions(product);
-            const isNew = product.tags?.some((tag) => tag.toLowerCase() === 'new_arrival');
-            return (
-            <motion.div
-              key={product.id}
-              initial={false}
-              className="group relative"
-            >
-              <div className="block">
-                <ProductImageSlider
-                  images={product.images.edges}
-                  title={product.title}
-                  handle={product.handle}
-                  sizes={sizes}
-                  salePercent={sale?.percent}
-                  isNew={isNew}
-                  priority={index < 8}
-                />
-
-                <Link href={`/products/${product.handle}`} className="block space-y-1 text-center pt-1 px-1">
-                  <p className="text-[10px] md:text-[11px] font-normal tracking-[0.16em] uppercase text-black/40">
-                    {product.vendor || 'KLUMIT'}
-                  </p>
-                  <h3 className="product-grid-title text-[11px] md:text-[13px] font-medium normal-case tracking-normal text-black line-clamp-2 leading-snug min-h-[2.6em] break-words [overflow-wrap:anywhere]">
-                    {product.title}
-                  </h3>
-                  <div className="flex items-baseline justify-center gap-2 pt-0.5">
-                    {sale ? (
-                      <>
-                        <span className="text-[12px] md:text-[14px] font-medium text-[#e11d2e]">
-                          {formatPrice(String(sale.price))} ₪
-                        </span>
-                        <span className="text-[11px] md:text-[12px] text-black/35 line-through">
-                          {formatPrice(String(sale.original))}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-[12px] md:text-[14px] font-medium text-black">
-                        {formatPrice(product.priceRange.minVariantPrice.amount)} ₪
-                      </span>
-                    )}
-                  </div>
-                </Link>
-              </div>
-            </motion.div>
-            );
-          })}
+          {visibleProducts.map((product, index) => (
+            <ProductGridCard key={product.id} product={product} priority={index < 8} />
+          ))}
         </div>
 
         {/* Crawlable product links beyond the first visible rows (load-more UX) */}
@@ -858,7 +627,7 @@ export default function MytheresaGrid({
         <div className="flex flex-col md:flex-row gap-3 md:gap-4 justify-center items-center">
           {(showViewAll || category !== 'bags') && (
             <a
-              href="/products?tab=bags"
+              href="/bags"
               className="group w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium bg-white text-black border border-black hover:bg-black hover:text-white transition-all duration-300"
             >
               <span>{t('products.shopBags')}</span>
@@ -866,7 +635,7 @@ export default function MytheresaGrid({
           )}
           {(showViewAll || category !== 'belts') && (
             <a
-              href="/products?tab=belts"
+              href="/belts"
               className="group w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium bg-white text-black border border-black hover:bg-black hover:text-white transition-all duration-300"
             >
               <span>{t('products.shopBelts')}</span>
@@ -874,7 +643,7 @@ export default function MytheresaGrid({
           )}
           {(showViewAll || category !== 'wallets') && (
             <a
-              href="/products?tab=wallets"
+              href="/wallets"
               className="group w-full md:w-auto inline-flex items-center justify-center gap-2 px-8 md:px-12 py-3.5 text-[11px] tracking-[0.18em] uppercase font-medium bg-white text-black border border-black hover:bg-black hover:text-white transition-all duration-300"
             >
               <span>{t('products.shopWallets')}</span>

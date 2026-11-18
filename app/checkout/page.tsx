@@ -22,6 +22,8 @@ import {
   type CheckoutSession,
 } from '@/lib/checkout-session';
 import { formatShekels as formatPrice } from '@/lib/format-price';
+import { CONTACT } from '@/lib/contact';
+import { STORE_POLICY, deliveryFee, type DeliveryMethod } from '@/lib/store-policy';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -51,19 +53,23 @@ export default function CheckoutPage() {
     apartment: '',
     floor: '',
     notes: '',
+    deliveryMethod: 'shipping' as DeliveryMethod,
   });
+  const isPickup = formData.deliveryMethod === 'pickup';
+  const missingAddress = !isPickup && (!formData.address || !formData.city);
 
   const hasTrackedCheckout = useRef(false);
   const hasNotifiedCheckout = useRef(false);
   const profileHydratedRef = useRef(false);
 
   type CheckoutFormState = typeof formData;
+  type ProfileFields = Omit<CheckoutFormState, 'deliveryMethod'>;
 
   /** Fill only blank fields — never wipe what the shopper already typed. */
   const fillEmptyFields = useCallback(
-    (prev: CheckoutFormState, defaults: Partial<CheckoutFormState>): CheckoutFormState => {
+    (prev: CheckoutFormState, defaults: Partial<ProfileFields>): CheckoutFormState => {
       const next = { ...prev };
-      (Object.keys(defaults) as (keyof CheckoutFormState)[]).forEach((key) => {
+      (Object.keys(defaults) as (keyof ProfileFields)[]).forEach((key) => {
         const incoming = defaults[key];
         if (incoming && !String(prev[key] ?? '').trim()) {
           next[key] = incoming;
@@ -78,7 +84,7 @@ export default function CheckoutPage() {
     email?: string | null;
     phone?: string | null;
     user_metadata?: Record<string, string | undefined>;
-  }): Partial<CheckoutFormState> => {
+  }): Partial<ProfileFields> => {
     const currentEmail = currentUser.email || currentUser.user_metadata?.email || '';
     return {
       firstName: currentUser.user_metadata?.first_name || '',
@@ -305,6 +311,9 @@ export default function CheckoutPage() {
     return localSubtotal;
   }, [items, cartTotal, appliedDiscountCode, discountAmount]);
 
+  // Estimate only — the payment page shows the amount Shopify actually charges
+  const shippingFee = deliveryFee(formData.deliveryMethod, calculatedTotal);
+
   const getSubtotal = () => {
     // העדפה ל-subtotal מ-Shopify אם קיים
     if (cartSubtotal !== null) {
@@ -489,7 +498,7 @@ export default function CheckoutPage() {
 
   // שמירת הכתובת בפרופיל (Supabase + Shopify) אם המשתמש ביקש
   const persistAddressIfRequested = async () => {
-    if (!saveAddressPermanently) return;
+    if (!saveAddressPermanently || isPickup) return;
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
@@ -555,6 +564,7 @@ export default function CheckoutPage() {
         lines: items.map((item) => ({ variantId: item.variantId, quantity: item.quantity })),
         discountCode: appliedDiscountCode,
         subtotalHint: getSubtotal(),
+        deliveryMethod: formData.deliveryMethod,
       }),
     });
 
@@ -572,7 +582,7 @@ export default function CheckoutPage() {
     // Keep the shipping details of this purchase for logged-in customers
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
+      if (session?.user && !isPickup) {
         await saveOrderAddress({
           user_id: session.user.id,
           order_reference: `draft-${data.ref}`,
@@ -610,7 +620,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.address || !formData.city) {
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || missingAddress) {
       const message = 'אנא מלא את כל השדות הנדרשים';
       setError(message);
       setButtonError(message);
@@ -619,7 +629,7 @@ export default function CheckoutPage() {
     }
 
     // מיקוד רשות — אם הוזן, חייב להיות 7 ספרות
-    if (formData.zipCode) {
+    if (!isPickup && formData.zipCode) {
       const cleanZip = formData.zipCode.replace(/\D/g, '');
       if (cleanZip.length !== 7) {
         const message = 'מיקוד לא תקין';
@@ -1201,7 +1211,57 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {/* Delivery method */}
+              <fieldset className="bg-white border border-gray-200 p-4">
+                <legend className="sr-only">אופן קבלת ההזמנה</legend>
+                <h2 className="text-base md:text-lg font-light luxury-font mb-3 text-right" aria-hidden>
+                  אופן קבלת ההזמנה
+                </h2>
+                <div className="grid md:grid-cols-2 gap-3">
+                  {(
+                    [
+                      {
+                        value: 'shipping',
+                        title: 'משלוח עד הבית',
+                        detail: `${STORE_POLICY.deliveryBusinessDays.min}–${STORE_POLICY.deliveryBusinessDays.max} ימי עסקים · ₪${STORE_POLICY.standardShippingPrice}, חינם מעל ₪${STORE_POLICY.freeShippingThreshold}`,
+                      },
+                      {
+                        value: 'pickup',
+                        title: 'איסוף עצמי מהחנות',
+                        detail: `${CONTACT.address} · ${CONTACT.hours} · חינם`,
+                      },
+                    ] as const
+                  ).map((option) => (
+                    <label
+                      key={option.value}
+                      className={`flex items-start gap-3 border p-3 cursor-pointer transition-luxury text-right ${
+                        formData.deliveryMethod === option.value ? 'border-[#1a1a1a]' : 'border-gray-200 hover:border-gray-400'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="deliveryMethod"
+                        value={option.value}
+                        checked={formData.deliveryMethod === option.value}
+                        onChange={() => setFormData((prev) => ({ ...prev, deliveryMethod: option.value }))}
+                        className="mt-1 w-4 h-4 accent-[#1a1a1a]"
+                      />
+                      <span className="flex-1">
+                        <span className="block text-sm font-light text-[#1a1a1a]">{option.title}</span>
+                        <span className="block text-xs font-light text-gray-500 mt-0.5">{option.detail}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {isPickup && (
+                  <p className="text-xs font-light text-gray-600 mt-3 text-right leading-relaxed">
+                    משלמים עכשיו באתר ואוספים מהחנות ברחוב {CONTACT.address}. ניצור איתך קשר כשההזמנה מוכנה לאיסוף.
+                  </p>
+                )}
+              </fieldset>
+
               {/* Shipping Address */}
+              {!isPickup && (
               <div className="bg-white border border-gray-200 p-4">
                 <h2 className="text-base md:text-lg font-light luxury-font mb-3 text-right">
                   כתובת משלוח
@@ -1328,6 +1388,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </div>
+              )}
 
 
               {error && (
@@ -1378,10 +1439,14 @@ export default function CheckoutPage() {
                       <span className="font-light">מוחל</span>
                     </div>
                   )}
+                  <div className="flex justify-between text-sm">
+                    <span className="font-light text-gray-600">{isPickup ? 'איסוף עצמי' : 'משלוח עד הבית'}</span>
+                    <span className="font-light">{shippingFee > 0 ? `₪${formatPrice(shippingFee)}` : 'חינם'}</span>
+                  </div>
                   <div className="flex justify-between text-base pt-3 border-t border-gray-200">
                     <span className="font-light">סה״כ</span>
                     <span className="font-light text-[#1a1a1a]">
-                      ₪{formatPrice(calculatedTotal)}
+                      ₪{formatPrice(calculatedTotal + shippingFee)}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 mt-2 text-right">כולל מע״מ</p>
@@ -1491,7 +1556,7 @@ export default function CheckoutPage() {
                 >
                   {loading ? 'מעבר לתשלום...' : buttonError || 'המשך לתשלום מאובטח'}
                 </button>
-                {(!acceptedTerms || !formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.address || !formData.city) && (
+                {(!acceptedTerms || !formData.firstName || !formData.lastName || !formData.email || !formData.phone || missingAddress) && (
                   <p className="text-xs text-gray-500 mt-2 text-right">
                     אנא מלא/י את כל הפרטים הנדרשים
                   </p>
@@ -1500,7 +1565,7 @@ export default function CheckoutPage() {
               
               <div className="pt-4 border-t border-gray-200 mt-4">
                 <p className="text-xs font-light text-gray-600 leading-relaxed mb-3">
-                  משלוח חינם מעל 500 ₪ • משלוח עד הבית תוך 2–5 ימי עסקים
+                  משלוח חינם מעל 500 ₪ • משלוח עד הבית תוך 2–5 ימי עסקים • איסוף עצמי מהחנות בחינם
                 </p>
                 <TrustStrip compact />
               </div>

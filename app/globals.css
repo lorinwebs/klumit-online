@@ -10,7 +10,7 @@
   top: -100px;
   left: 50%;
   transform: translateX(-50%);
-  background: #111111;
+  background: #2B211B;
   color: white;
   padding: 0.75rem 1.5rem;
   z-index: 9999;
@@ -25,7 +25,7 @@
 
 /* Focus indicators - WCAG 2.4.7 */
 :focus-visible {
-  outline: 2px solid #111111 !important;
+  outline: 2px solid #2B211B !important;
   outline-offset: 2px !important;
 }
 
@@ -37,22 +37,25 @@ select:focus-visible,
 textarea:focus-visible,
 [role="button"]:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid #111111 !important;
+  outline: 2px solid #2B211B !important;
   outline-offset: 2px !important;
 }
 
-/* High contrast focus for dark backgrounds */
+/* High contrast focus for dark backgrounds.
+   The ring is drawn outside the element, so what matters is the surface behind it:
+   espresso is matched as a whole class token on the container (not "hover:bg-espresso",
+   and not a dark button sitting on a light page, which needs the dark ring). */
 .dark a:focus-visible,
 .dark button:focus-visible,
-[class*="bg-espresso"]:focus-visible,
 [class*="bg-black"]:focus-visible,
 [class*="bg-black"] a:focus-visible,
 [class*="bg-black"] button:focus-visible,
-[class*="bg-espresso"] a:focus-visible,
-[class*="bg-espresso"] button:focus-visible,
+[class~="bg-espresso"] a:focus-visible,
+[class~="bg-espresso"] button:focus-visible,
 section:has([class*="bg-black"]) a:focus-visible,
 .focus-light a:focus-visible,
 .focus-light button:focus-visible,
+.focus-light input:focus-visible,
 .focus-light:focus-visible {
   outline-color: white !important;
 }
@@ -123,10 +126,10 @@ section:has([class*="bg-black"]) a:focus-visible,
   }
 
   body {
-    @apply bg-cream text-black;
+    @apply bg-cream text-espresso;
     direction: inherit;
     text-align: start;
-    font-family: var(--font-roundo), var(--font-assistant), 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: var(--font-assistant), 'Helvetica Neue', Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -147,8 +150,17 @@ section:has([class*="bg-black"]) a:focus-visible,
     }
   }
 
-  h1, h2, h3, .luxury-font {
-    font-family: var(--font-roundo), var(--font-assistant), sans-serif;
+  /* Page and section titles: display serif. No forced uppercase or tracking —
+     Hebrew has no capitals, so wide tracking only makes it harder to read. */
+  h1, h2, .luxury-font {
+    font-family: var(--font-frank), var(--font-assistant), Georgia, serif;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  /* Small sub-headings stay in the UI sans */
+  h3 {
+    font-family: var(--font-assistant), 'Helvetica Neue', sans-serif;
     font-weight: 500;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -165,6 +177,13 @@ section:has([class*="bg-black"]) a:focus-visible,
     h3.product-grid-title {
       letter-spacing: 0.02em;
     }
+  }
+
+  /* Studio product photos. Many arrive with a faintly grey backdrop or retouching patches
+     (values around 245–253 instead of 255); a small brightness lift pushes those to pure white
+     so the photo melts into the white page. The product itself is barely affected. */
+  .studio-photo {
+    filter: brightness(1.06);
   }
 
   /* Refined selection color */
@@ -275,14 +294,14 @@ section:has([class*="bg-black"]) a:focus-visible,
   display: block;
   font-size: 0.75rem !important;
   font-weight: 500 !important;
-  font-family: var(--font-roundo), var(--font-assistant), 'Helvetica Neue', sans-serif !important;
+  font-family: var(--font-assistant), 'Helvetica Neue', sans-serif !important;
   letter-spacing: 0.2em !important;
   text-transform: uppercase !important;
   margin-bottom: 0.75rem !important;
   margin-top: 1.5rem !important;
   padding-bottom: 0.75rem !important;
   border-bottom: 1px solid #E8E2DB !important;
-  color: #111111 !important;
+  color: #2B211B !important;
   line-height: 1.5 !important;
 }
 
@@ -294,7 +313,7 @@ section:has([class*="bg-black"]) a:focus-visible,
   display: block;
   font-size: 0.75rem !important;
   font-weight: 600 !important;
-  font-family: var(--font-roundo), var(--font-assistant), 'Helvetica Neue', sans-serif !important;
+  font-family: var(--font-assistant), 'Helvetica Neue', sans-serif !important;
   letter-spacing: 0.15em !important;
   text-transform: uppercase !important;
   color: #A69585 !important;

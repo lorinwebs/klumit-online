@@ -98,6 +98,12 @@ export async function fetchCatalogProducts(
   }
 }
 
+/** Whether the sale tab would list anything; the sale nav links and sitemap entry hide when it wouldn't. */
+export async function hasSaleProducts(): Promise<boolean> {
+  const saleProducts = await fetchCatalogProducts('sale');
+  return saleProducts.length > 0;
+}
+
 /** Server-side fetch of one collection, in its Shopify admin order — same as MytheresaGrid's collectionHandle. */
 export async function fetchCollectionProducts(handle: string): Promise<CatalogProduct[]> {
   try {

@@ -1,5 +1,6 @@
 import 'server-only';
 import { createHmac, timingSafeEqual } from 'crypto';
+import { PICKUP_LABEL, deliveryFee, type DeliveryMethod } from '@/lib/store-policy';
 
 /**
  * Shopify Admin API helpers for the two-step checkout:
@@ -15,10 +16,6 @@ const ADMIN_API_VERSION = '2026-07';
  * showing as available to everyone until a payment is actually confirmed. Stock is
  * committed only when the Grow webhook completes the draft order.
  */
-
-/** Fallback shipping rule (matches the store's terms) if Shopify returns no rates. */
-const FREE_SHIPPING_THRESHOLD = 500;
-const STANDARD_SHIPPING_PRICE = 39;
 
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.klumit-online.co.il').replace(/\/$/, '');
 
@@ -126,6 +123,7 @@ export interface DraftOrderSummary {
   discount: number;
   total: number;
   items: OrderSummaryItem[];
+  deliveryMethod: DeliveryMethod;
   customer: {
     fullName: string;
     email: string;
@@ -149,6 +147,7 @@ const CUSTOMER_ATTRIBUTE_KEYS = {
   email: 'customer_email',
   addressLine: 'shipping_address',
   city: 'shipping_city',
+  deliveryMethod: 'delivery_method',
 } as const;
 
 const DRAFT_ORDER_FIELDS = `
@@ -218,6 +217,7 @@ function toSummary(node: DraftOrderNode): DraftOrderSummary {
       unitPrice: Number(line.originalUnitPriceSet.shopMoney.amount),
       image: line.image?.url ?? null,
     })),
+    deliveryMethod: attr(CUSTOMER_ATTRIBUTE_KEYS.deliveryMethod) === 'pickup' ? 'pickup' : 'shipping',
     customer: {
       fullName: attr(CUSTOMER_ATTRIBUTE_KEYS.fullName),
       email: attr(CUSTOMER_ATTRIBUTE_KEYS.email),
@@ -371,11 +371,12 @@ async function pickShippingLine(baseInput: Record<string, unknown>, subtotalHint
     return { shippingRateHandle: cheapest.handle };
   }
 
+  // Fallback rule (matches the store's terms) if Shopify returns no rates
   const subtotal = Number(result.calculatedDraftOrder?.subtotalPriceSet.shopMoney.amount ?? subtotalHint);
   return {
     title: 'משלוח עד הבית',
     priceWithCurrency: {
-      amount: subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_PRICE,
+      amount: deliveryFee('shipping', subtotal),
       currencyCode: 'ILS',
     },
   };
@@ -386,8 +387,10 @@ export async function createCheckoutDraftOrder(params: {
   lines: CheckoutLineInput[];
   discountCode?: string | null;
   subtotalHint?: number;
+  deliveryMethod?: DeliveryMethod;
 }): Promise<DraftOrderSummary> {
   const { customer, lines, discountCode } = params;
+  const isPickup = params.deliveryMethod === 'pickup';
 
   const address2 = [
     customer.apartment ? `דירה ${customer.apartment}` : '',
@@ -411,31 +414,42 @@ export async function createCheckoutDraftOrder(params: {
     lineItems: lines.map((line) => ({ variantId: line.variantId, quantity: line.quantity })),
     email: customer.email,
     phone: customer.phone,
-    shippingAddress: mailingAddress,
-    billingAddress: mailingAddress,
+    // Pickup orders have no delivery address; the customer is reached by phone/email
+    ...(isPickup ? {} : { shippingAddress: mailingAddress, billingAddress: mailingAddress }),
     acceptAutomaticDiscounts: true,
     ...(discountCode ? { discountCodes: [discountCode] } : {}),
   };
 
   const [shippingLine, customerId] = await Promise.all([
-    pickShippingLine(baseInput, params.subtotalHint ?? 0),
+    isPickup
+      ? { title: PICKUP_LABEL, priceWithCurrency: { amount: 0, currencyCode: 'ILS' } }
+      : pickShippingLine(baseInput, params.subtotalHint ?? 0),
     findCustomerIdByEmail(customer.email),
   ]);
+
+  const noteLines = [
+    isPickup ? PICKUP_LABEL : '',
+    customer.notes ? `הערות לקוח: ${customer.notes}` : '',
+  ].filter(Boolean);
 
   const input: Record<string, unknown> = {
     ...baseInput,
     shippingLine,
-    tags: ['klumit-web', 'grow', 'awaiting-payment'],
-    note: customer.notes ? `הערות לקוח: ${customer.notes}` : undefined,
+    tags: ['klumit-web', 'grow', 'awaiting-payment', ...(isPickup ? ['pickup'] : [])],
+    note: noteLines.length ? noteLines.join('\n') : undefined,
     customAttributes: [
       { key: 'source', value: 'klumit-online.co.il' },
       { key: 'payment_provider', value: 'grow' },
+      { key: CUSTOMER_ATTRIBUTE_KEYS.deliveryMethod, value: isPickup ? 'pickup' : 'shipping' },
       { key: CUSTOMER_ATTRIBUTE_KEYS.fullName, value: `${customer.firstName} ${customer.lastName}`.trim() },
       { key: CUSTOMER_ATTRIBUTE_KEYS.phone, value: customer.phone },
       { key: CUSTOMER_ATTRIBUTE_KEYS.email, value: customer.email },
-      { key: CUSTOMER_ATTRIBUTE_KEYS.addressLine, value: [customer.address, address2].filter(Boolean).join(', ') },
-      { key: CUSTOMER_ATTRIBUTE_KEYS.city, value: customer.city },
-      ...(customer.notes ? [{ key: 'הערות משלוח', value: customer.notes }] : []),
+      {
+        key: CUSTOMER_ATTRIBUTE_KEYS.addressLine,
+        value: isPickup ? PICKUP_LABEL : [customer.address, address2].filter(Boolean).join(', '),
+      },
+      { key: CUSTOMER_ATTRIBUTE_KEYS.city, value: isPickup ? '' : customer.city },
+      ...(customer.notes ? [{ key: isPickup ? 'הערות לקוח' : 'הערות משלוח', value: customer.notes }] : []),
     ],
     ...(customerId ? { purchasingEntity: { customerId } } : {}),
   };

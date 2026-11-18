@@ -1,9 +1,13 @@
 import { MetadataRoute } from 'next';
+import { BRAND_PAGES, brandPath } from '@/lib/brand-pages';
+import { CATEGORY_PAGES } from '@/lib/category-pages';
+import { SITE_URL } from '@/lib/seo';
 import { shopifyClient } from '@/lib/shopify';
+import { hasSaleProducts } from '@/lib/products-server';
 
 export const revalidate = 60;
 
-const BASE_URL = 'https://www.klumit-online.co.il';
+const BASE_URL = SITE_URL;
 
 const SITEMAP_PRODUCTS_PAGE = `
   query getSitemapProducts($first: Int!, $after: String) {
@@ -62,6 +66,8 @@ async function fetchAllProductHandles(): Promise<
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const hasSale = await hasSaleProducts();
+
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: BASE_URL,
@@ -75,38 +81,42 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.9,
     },
-    {
-      url: `${BASE_URL}/products?tab=bags`,
+    ...Object.values(CATEGORY_PAGES).map((page) => ({
+      url: `${BASE_URL}${page.path}`,
       lastModified: new Date(),
-      changeFrequency: 'daily',
+      changeFrequency: 'daily' as const,
       priority: 0.9,
-    },
-    {
-      url: `${BASE_URL}/products?tab=belts`,
+    })),
+    ...BRAND_PAGES.map((brand) => ({
+      url: `${BASE_URL}${brandPath(brand)}`,
       lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.9,
-    },
-    {
-      url: `${BASE_URL}/products?tab=wallets`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.9,
-    },
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    })),
     {
       url: `${BASE_URL}/products?tab=ss26`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.9,
     },
-    {
-      url: `${BASE_URL}/products?tab=sale`,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.9,
-    },
+    ...(hasSale
+      ? [
+          {
+            url: `${BASE_URL}/products?tab=sale`,
+            lastModified: new Date(),
+            changeFrequency: 'daily' as const,
+            priority: 0.9,
+          },
+        ]
+      : []),
     {
       url: `${BASE_URL}/about`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${BASE_URL}/faq`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.7,

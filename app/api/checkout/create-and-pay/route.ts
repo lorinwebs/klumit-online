@@ -23,8 +23,8 @@ const bodySchema = z.object({
     lastName: z.string().trim().min(1).max(60),
     email: z.string().trim().email().max(120),
     phone: z.string().trim().min(9).max(20),
-    address: z.string().trim().min(2).max(200),
-    city: z.string().trim().min(2).max(80),
+    address: z.string().trim().max(200).optional().default(''),
+    city: z.string().trim().max(80).optional().default(''),
     zipCode: z.string().trim().max(10).optional().default(''),
     apartment: z.string().trim().max(20).optional().default(''),
     floor: z.string().trim().max(20).optional().default(''),
@@ -41,6 +41,15 @@ const bodySchema = z.object({
     .max(50),
   discountCode: z.string().trim().max(60).nullable().optional(),
   subtotalHint: z.number().nonnegative().optional(),
+  deliveryMethod: z.enum(['shipping', 'pickup']).optional().default('shipping'),
+}).superRefine((body, ctx) => {
+  if (body.deliveryMethod !== 'shipping') return;
+  if (body.customer.address.length < 2) {
+    ctx.addIssue({ code: 'custom', path: ['customer', 'address'], message: 'Address is required for delivery' });
+  }
+  if (body.customer.city.length < 2) {
+    ctx.addIssue({ code: 'custom', path: ['customer', 'city'], message: 'City is required for delivery' });
+  }
 });
 
 function toE164(phone: string): string {
@@ -95,6 +104,7 @@ export async function POST(request: NextRequest) {
       lines: body.lines,
       discountCode: body.discountCode || null,
       subtotalHint: body.subtotalHint,
+      deliveryMethod: body.deliveryMethod,
     });
 
     const session = await createPaymentSessionForDraft(draft);

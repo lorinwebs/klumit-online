@@ -3,6 +3,8 @@
  * Stored in sessionStorage so a refresh on the payment page keeps working.
  */
 
+import type { DeliveryMethod } from '@/lib/store-policy';
+
 export interface CheckoutSessionItem {
   title: string;
   variantTitle: string | null;
@@ -28,6 +30,8 @@ export interface CheckoutSession {
     discount: number;
     total: number;
     items: CheckoutSessionItem[];
+    /** Missing on sessions saved before store pickup existed — treat as shipping */
+    deliveryMethod?: DeliveryMethod;
     customer: {
       fullName: string;
       email: string;
@@ -52,6 +56,7 @@ export interface CheckoutFormValues {
   apartment: string;
   floor: string;
   notes: string;
+  deliveryMethod: DeliveryMethod;
 }
 
 /** Keep what the shopper typed so "edit details" from the payment page never empties the form. */

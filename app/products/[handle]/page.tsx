@@ -4,8 +4,12 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { shopifyClient, PRODUCT_QUERY, PRODUCTS_QUERY } from '@/lib/shopify';
 import ProductClient from './ProductClient';
-import { generateProductJsonLd, generateBreadcrumbJsonLd } from '@/lib/seo';
+import JsonLd from '@/components/seo/JsonLd';
+import { CATEGORY_PAGES } from '@/lib/category-pages';
+import { SITE_URL, generateProductJsonLd, generateBreadcrumbJsonLd } from '@/lib/seo';
 import { isProductSoldOut } from '@/lib/product-availability';
+import { isDevOnlyProductHidden } from '@/lib/dev-only-products';
+import { matchesCatalogCategory } from '@/lib/product-search';
 
 interface Product {
   id: string;
@@ -71,7 +75,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       { handle }
     );
     
-    if (!productData.product) {
+    if (!productData.product || isDevOnlyProductHidden(productData.product)) {
       return {
         title: 'מוצר לא נמצא',
       };
@@ -125,7 +129,7 @@ export default async function ProductPage({ params }: PageProps) {
       { handle }
     );
 
-    if (!productData.product) {
+    if (!productData.product || isDevOnlyProductHidden(productData.product)) {
       notFound();
     }
 
@@ -157,27 +161,26 @@ export default async function ProductPage({ params }: PageProps) {
       sku: firstVariant?.sku || undefined,
       price: product.priceRange.minVariantPrice.amount,
       currency: product.priceRange.minVariantPrice.currencyCode,
-      available: firstVariant?.availableForSale ?? true,
+      available: product.variants.edges.some((edge) => edge.node.availableForSale),
       productType: product.productType || '',
       tags: product.tags || [],
     });
 
+    const categoryPage = Object.values(CATEGORY_PAGES).find((page) =>
+      matchesCatalogCategory(product, page.category)
+    );
     const breadcrumbJsonLd = generateBreadcrumbJsonLd([
-      { name: 'בית', url: 'https://www.klumit-online.co.il' },
-      { name: 'מוצרים', url: 'https://www.klumit-online.co.il/products' },
-      { name: product.title, url: `https://www.klumit-online.co.il/products/${handle}` },
+      { name: 'בית', url: SITE_URL },
+      categoryPage
+        ? { name: categoryPage.name, url: `${SITE_URL}${categoryPage.path}` }
+        : { name: 'מוצרים', url: `${SITE_URL}/products` },
+      { name: product.title, url: `${SITE_URL}/products/${handle}` },
     ]);
 
     return (
       <div className="min-h-screen flex flex-col bg-cream overflow-x-clip">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-        />
+        <JsonLd data={productJsonLd} />
+        <JsonLd data={breadcrumbJsonLd} />
         <Header />
         <ProductClient product={product} relatedProducts={relatedProducts} />
         <Footer />
