@@ -5,14 +5,16 @@ import { createCheckoutDraftOrder, findUnavailableLines } from '@/lib/checkout-o
 import { createPaymentSessionForDraft } from '@/lib/checkout-payment';
 
 export const dynamic = 'force-dynamic';
+// Shopify draft order + Make → Grow payment link round-trip.
+export const maxDuration = 60;
 
 /**
  * Step 1 → 2 of the checkout.
- * Creates a Shopify draft order (inventory reserved) and opens a Grow payment process.
+ * Creates a Shopify draft order and opens a Grow payment link (through the Grow app for Make).
  * Returns everything /checkout/payment needs to render the embedded payment form.
  *
- * If Grow is not configured yet, responds 503 with { fallback: "shopify" } so the
- * client can keep using Shopify Checkout until the Grow identifiers are in place.
+ * If the Make webhooks are not configured yet, responds 503 with { fallback: "shopify" } so
+ * the client can keep using Shopify Checkout until they are in place.
  */
 
 const bodySchema = z.object({

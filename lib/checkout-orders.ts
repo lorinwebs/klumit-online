@@ -329,11 +329,13 @@ interface ShippingRate {
   price: { amount: string };
 }
 
+/** Returns the shipping line for the draft order, or `undefined` when nothing in it is shipped. */
 async function pickShippingLine(baseInput: Record<string, unknown>, subtotalHint: number) {
   const data = await adminGraphQL<{
     draftOrderCalculate: {
       calculatedDraftOrder: {
         subtotalPriceSet: { shopMoney: { amount: string } };
+        lineItems: Array<{ requiresShipping: boolean }>;
         availableShippingRates: ShippingRate[];
       } | null;
       userErrors: Array<{ field: string[] | null; message: string }>;
@@ -343,6 +345,7 @@ async function pickShippingLine(baseInput: Record<string, unknown>, subtotalHint
       draftOrderCalculate(input: $input) {
         calculatedDraftOrder {
           subtotalPriceSet ${MONEY}
+          lineItems { requiresShipping }
           availableShippingRates { handle title price { amount } }
         }
         userErrors { field message }
@@ -354,6 +357,12 @@ async function pickShippingLine(baseInput: Record<string, unknown>, subtotalHint
   const result = data.draftOrderCalculate;
   if (result.userErrors.length) {
     throw new Error(result.userErrors.map((e) => e.message).join('; '));
+  }
+
+  // Nothing physical in the order (e.g. the payment-test product) → no shipping charge.
+  const lineItems = result.calculatedDraftOrder?.lineItems ?? [];
+  if (lineItems.length > 0 && lineItems.every((line) => !line.requiresShipping)) {
+    return undefined;
   }
 
   const rates = result.calculatedDraftOrder?.availableShippingRates ?? [];

@@ -29,6 +29,9 @@ yarn-error.log*
 .env
 .env*.local
 
+# Cursor MCP config (contains the Make API token)
+.cursor/mcp.json
+
 # vercel
 .vercel
 

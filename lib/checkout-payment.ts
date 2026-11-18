@@ -1,10 +1,10 @@
 import 'server-only';
 import {
-  createPaymentProcess,
+  createPaymentLink,
+  getGrowConfig,
   GROW_PAYMENT_URL_TTL_MS,
-  isApplePayConfigured,
-  isGooglePayConfigured,
-  type GrowPaymentMethod,
+  type GrowOpenMode,
+  type GrowProductLine,
 } from '@/lib/grow';
 import { SITE_URL, type DraftOrderSummary } from '@/lib/checkout-orders';
 
@@ -13,13 +13,11 @@ export interface CheckoutPaymentSession {
   sig: string;
   draftName: string;
   paymentUrl: string;
+  /** Grow paymentLinkProcessId – used as the iframe key; never shown to the customer. */
   processId: string;
   expiresAt: number;
-  method: GrowPaymentMethod;
-  /** Prefer top-level navigation for Apple Pay (Grow requires domain approval for iframe). */
-  openMode: 'iframe' | 'redirect';
-  applePayAvailable: boolean;
-  googlePayAvailable: boolean;
+  /** Full-page redirect to the Grow payment page (default) or iframe (GROW_OPEN_MODE). */
+  openMode: GrowOpenMode;
   summary: {
     currency: string;
     subtotal: number;
@@ -31,55 +29,79 @@ export interface CheckoutPaymentSession {
   };
 }
 
+const roundMoney = (value: number) => Math.round(value * 100) / 100;
+
 /**
- * Opens a Grow payment process for an existing draft order and returns everything the
- * payment page needs. The Grow URL is short-lived, so the page can call this again.
+ * Grow derives the payment-link total from its product lines, so the lines must add up to
+ * the draft total exactly. Itemise when they do (nicer invoice); otherwise – e.g. when a
+ * discount code was applied – collapse to a single line for the order total.
  */
-export async function createPaymentSessionForDraft(
-  draft: DraftOrderSummary,
-  method: GrowPaymentMethod = 'card'
-): Promise<CheckoutPaymentSession> {
+export function buildPaymentLinkProducts(draft: DraftOrderSummary): GrowProductLine[] {
+  const itemised: GrowProductLine[] = draft.items.map((item) => ({
+    productName: item.variantTitle ? `${item.title} ${item.variantTitle}` : item.title,
+    quantity: item.quantity,
+    price: roundMoney(item.unitPrice),
+  }));
+  if (draft.shipping > 0) {
+    itemised.push({ productName: 'משלוח', quantity: 1, price: roundMoney(draft.shipping) });
+  }
+
+  const itemisedTotal = roundMoney(itemised.reduce((sum, line) => sum + line.price * line.quantity, 0));
+  if (itemised.length && Math.abs(itemisedTotal - draft.total) < 0.01) {
+    return itemised;
+  }
+
+  const itemCount = draft.items.reduce((sum, item) => sum + item.quantity, 0);
+  return [
+    {
+      productName: `הזמנה ${draft.name.replace(/^#/, '')} (${itemCount} פריטים${draft.shipping > 0 ? ' כולל משלוח' : ''})`,
+      quantity: 1,
+      price: roundMoney(draft.total),
+    },
+  ];
+}
+
+function splitName(fullName: string): { firstName: string; lastName: string } {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return { firstName: parts[0] || '', lastName: '' };
+  return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
+}
+
+/**
+ * Creates a Grow payment link (through Make) for an existing draft order and returns
+ * everything the payment page needs. Safe to call again for the same draft – e.g. after a
+ * cancel inside the form or when the stored session expired.
+ */
+export async function createPaymentSessionForDraft(draft: DraftOrderSummary): Promise<CheckoutPaymentSession> {
   const successUrl = `${SITE_URL}/checkout/success?ref=${draft.ref}&sig=${draft.sig}`;
   const cancelUrl = `${SITE_URL}/checkout/payment?response=cancel`;
-  const notifyUrl = `${SITE_URL}/api/grow/webhook`;
+  const orderNumber = draft.name.replace(/^#/, '');
+  const { firstName, lastName } = splitName(draft.customer.fullName);
 
-  const process = await createPaymentProcess({
+  const link = await createPaymentLink({
+    reference: draft.ref,
+    title: `KLUMIT הזמנה ${orderNumber}`,
+    description: `KLUMIT הזמנה ${orderNumber}`,
     sum: draft.total,
-    description: `KLUMIT הזמנה ${draft.name.replace(/^#/, '')}`,
     fullName: draft.customer.fullName,
+    firstName,
+    lastName,
     phone: draft.customer.phone,
     email: draft.customer.email || undefined,
-    invoiceName: draft.customer.fullName,
     successUrl,
     cancelUrl,
-    notifyUrl,
-    method,
-    customFields: {
-      cField1: draft.ref,
-      cField2: 'klumit-web',
-    },
-    products: [
-      ...draft.items.map((item) => ({
-        description: item.variantTitle ? `${item.title} ${item.variantTitle}` : item.title,
-        quantity: item.quantity,
-        price: item.unitPrice,
-      })),
-      ...(draft.shipping > 0 ? [{ description: 'משלוח', quantity: 1, price: draft.shipping }] : []),
-    ],
+    products: buildPaymentLinkProducts(draft),
+    customField2: 'klumit-web',
   });
 
   return {
     ref: draft.ref,
     sig: draft.sig,
     draftName: draft.name,
-    paymentUrl: process.url,
-    processId: process.processId,
+    paymentUrl: link.url,
+    processId: link.paymentLinkProcessId || `${draft.ref}-${Date.now()}`,
     expiresAt: Date.now() + GROW_PAYMENT_URL_TTL_MS,
-    method,
-    // Apple Pay needs a top-level page; Google Pay works in iframe with allow="payment".
-    openMode: method === 'apple' ? 'redirect' : 'iframe',
-    applePayAvailable: isApplePayConfigured(),
-    googlePayAvailable: isGooglePayConfigured(),
+    openMode: getGrowConfig().openMode,
     summary: {
       currency: draft.currency,
       subtotal: draft.subtotal,

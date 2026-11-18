@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Lock, Pencil, RefreshCw } from 'lucide-react';
+import { ExternalLink, Lock, Pencil, RefreshCw } from 'lucide-react';
 import Header from '@/components/Header';
 import CheckoutSteps from '@/components/checkout/CheckoutSteps';
 import TrustStrip from '@/components/checkout/TrustStrip';
@@ -15,31 +15,6 @@ import {
   type CheckoutSession,
 } from '@/lib/checkout-session';
 import { formatShekels as formatPrice } from '@/lib/format-price';
-
-type PayMethod = 'card' | 'apple' | 'google';
-
-function asPayMethod(value: string | undefined | null): PayMethod {
-  if (value === 'apple' || value === 'google') return value;
-  return 'card';
-}
-
-/** Prefer Apple Pay on Safari/iOS and Google Pay on Android Chrome when available. */
-function preferredWalletMethod(opts: {
-  apple: boolean;
-  google: boolean;
-}): PayMethod | null {
-  if (typeof navigator === 'undefined') return null;
-  const ua = navigator.userAgent || '';
-  const isAppleDevice = /iPhone|iPad|iPod|Macintosh/.test(ua);
-  const isSafari = /Safari/.test(ua) && !/Chrome|CriOS|Edg|Firefox/.test(ua);
-  const isAndroid = /Android/.test(ua);
-  if (opts.apple && (isAppleDevice || isSafari)) return 'apple';
-  if (opts.google && isAndroid) return 'google';
-  if (opts.apple && isAppleDevice) return 'apple';
-  if (opts.google) return 'google';
-  if (opts.apple) return 'apple';
-  return null;
-}
 
 function PaymentPageInner() {
   const router = useRouter();
@@ -53,11 +28,12 @@ function PaymentPageInner() {
   const [expired, setExpired] = useState(false);
   const [frameLoaded, setFrameLoaded] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [method, setMethod] = useState<PayMethod>('card');
-  const preferredApplied = useRef(false);
   const refreshedForCancel = useRef(false);
+  /** Set once the page was reached via a cancel – the customer then chooses when to retry. */
+  const cameFromCancel = useRef(false);
+  const redirected = useRef(false);
 
-  // Grow redirects to cancelUrl *inside* the iframe – move the whole window.
+  // Grow may redirect to cancelUrl *inside* the iframe – move the whole window.
   useEffect(() => {
     if (breakOutOfIframe()) return;
     const stored = loadCheckoutSession();
@@ -66,44 +42,18 @@ function PaymentPageInner() {
       return;
     }
     setSession(stored);
-    const apple = stored.applePayAvailable === true;
-    const google = stored.googlePayAvailable === true;
-    const preferred = preferredWalletMethod({ apple, google });
-    const initial = preferred && !preferredApplied.current ? preferred : asPayMethod(stored.method);
-    preferredApplied.current = true;
-    setMethod(initial);
     setReady(true);
-    if (preferred && preferred !== asPayMethod(stored.method) && (apple || google)) {
-      // Switch Grow session to the preferred wallet so it opens first.
-      void (async () => {
-        try {
-          const response = await fetch('/api/checkout/payment-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ref: stored.ref, sig: stored.sig, method: preferred }),
-          });
-          const data = (await response.json().catch(() => null)) as CheckoutSession | null;
-          if (response.ok && data?.paymentUrl) {
-            saveCheckoutSession(data);
-            setSession(data);
-            setMethod(asPayMethod(data.method));
-          }
-        } catch {
-          /* keep card session */
-        }
-      })();
-    }
   }, [router]);
 
   const requestFreshSession = useCallback(
-    async (current: CheckoutSession, nextMethod: PayMethod = 'card') => {
+    async (current: CheckoutSession) => {
       setRefreshing(true);
       setRefreshError(null);
       try {
         const response = await fetch('/api/checkout/payment-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ref: current.ref, sig: current.sig, method: nextMethod }),
+          body: JSON.stringify({ ref: current.ref, sig: current.sig }),
         });
         const data = (await response.json().catch(() => null)) as
           | (CheckoutSession & { error?: string; orderName?: string; message?: string })
@@ -118,7 +68,6 @@ function PaymentPageInner() {
         }
         saveCheckoutSession(data);
         setSession(data);
-        setMethod(asPayMethod(data.method));
         setExpired(false);
         setFrameLoaded(false);
         return data;
@@ -132,16 +81,17 @@ function PaymentPageInner() {
     [router]
   );
 
-  // After a cancel inside the form, open a fresh payment form once and explain what happened.
+  // After a cancel inside the form, open a fresh payment link once and explain what happened.
   useEffect(() => {
     if (!ready || !session || !cancelled || refreshedForCancel.current) return;
     refreshedForCancel.current = true;
+    cameFromCancel.current = true;
     setNotice('התשלום לא הושלם. אפשר לנסות שוב או לבחור אמצעי תשלום אחר — הפרטים שלך נשמרו.');
-    requestFreshSession(session, asPayMethod(session.method));
+    requestFreshSession(session);
     router.replace('/checkout/payment');
   }, [ready, session, cancelled, requestFreshSession, router]);
 
-  // Grow links are short-lived; refresh automatically when they expire.
+  // Re-open a fresh link after the stored one is considered stale.
   useEffect(() => {
     if (!session) return;
     const remaining = session.expiresAt - Date.now();
@@ -153,43 +103,27 @@ function PaymentPageInner() {
     return () => clearTimeout(timer);
   }, [session]);
 
-  const selectMethod = useCallback(
-    async (next: PayMethod) => {
-      if (!session || next === method || refreshing) return;
-      if (next === 'apple' && session.applePayAvailable === false) {
-        setRefreshError('Apple Pay עדיין לא מופעל בחשבון הסליקה.');
-        return;
-      }
-      if (next === 'google' && session.googlePayAvailable === false) {
-        setRefreshError('Google Pay עדיין לא מופעל בחשבון הסליקה.');
-        return;
-      }
-      const data = await requestFreshSession(session, next);
-      // Apple Pay must open top-level (not iframe) so Safari can show the wallet sheet.
-      if (data?.openMode === 'redirect' && data.paymentUrl) {
-        window.location.assign(data.paymentUrl);
-      }
-    },
-    [session, method, refreshing, requestFreshSession]
-  );
+  const isRedirectMode = session?.openMode === 'redirect';
 
-  const startApplePay = useCallback(async () => {
-    if (!session) return;
-    const data =
-      session.method === 'apple' && session.paymentUrl && !expired
-        ? session
-        : await requestFreshSession(session, 'apple');
+  // Redirect mode: hand the customer straight to the Grow payment page (not after a cancel).
+  useEffect(() => {
+    if (!ready || !session || !isRedirectMode || cancelled || cameFromCancel.current || expired || redirected.current) {
+      return;
+    }
+    redirected.current = true;
+    window.location.assign(session.paymentUrl);
+  }, [ready, session, isRedirectMode, cancelled, expired]);
+
+  const openPaymentPage = useCallback(async () => {
+    if (!session || refreshing) return;
+    const data = expired ? await requestFreshSession(session) : session;
     if (data?.paymentUrl) {
       window.location.assign(data.paymentUrl);
     }
-  }, [session, expired, requestFreshSession]);
+  }, [session, expired, refreshing, requestFreshSession]);
 
   const summary = session?.summary;
   const itemCount = useMemo(() => summary?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0, [summary]);
-  const showApple = session?.applePayAvailable === true;
-  const showGoogle = session?.googlePayAvailable === true;
-  const methodTabCount = 1 + (showApple ? 1 : 0) + (showGoogle ? 1 : 0);
-  const showMethodTabs = methodTabCount > 1;
 
   if (!ready || !session || !summary) {
     return (
@@ -204,14 +138,6 @@ function PaymentPageInner() {
       </div>
     );
   }
-
-  const isAppleView = method === 'apple';
-  const isGoogleView = method === 'google';
-  const usesIframe = method === 'card' || method === 'google';
-  const tabClass = (active: boolean) =>
-    `px-3 py-3 text-sm font-light transition-colors disabled:opacity-60 ${
-      active ? 'bg-white text-black border-b-2 border-black' : 'bg-[#faf9f7] text-black/55'
-    }`;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfcfb]">
@@ -323,61 +249,35 @@ function PaymentPageInner() {
                   </p>
                 </div>
 
-                {showMethodTabs && (
-                  <div
-                    className={`grid border-b border-gray-100 ${
-                      methodTabCount === 3 ? 'grid-cols-3' : 'grid-cols-2'
-                    }`}
-                    role="tablist"
-                    aria-label="אמצעי תשלום"
-                  >
-                    {(() => {
-                      const tabs: Array<{ id: PayMethod; label: string; show: boolean }> = [
-                        { id: 'apple', label: 'Apple Pay', show: showApple },
-                        { id: 'google', label: 'Google Pay', show: showGoogle },
-                        { id: 'card', label: 'כרטיס / Bit', show: true },
-                      ];
-                      // Preferred wallet first, then the other wallet, then card
-                      const preferred = preferredWalletMethod({ apple: showApple, google: showGoogle });
-                      const ordered = [...tabs].filter((t) => t.show).sort((a, b) => {
-                        if (preferred && a.id === preferred) return -1;
-                        if (preferred && b.id === preferred) return 1;
-                        if (a.id === 'card') return 1;
-                        if (b.id === 'card') return -1;
-                        return 0;
-                      });
-                      return ordered.map((tab) => (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          role="tab"
-                          aria-selected={method === tab.id}
-                          onClick={() => selectMethod(tab.id)}
-                          disabled={refreshing}
-                          className={tabClass(method === tab.id)}
-                        >
-                          {tab.label}
-                        </button>
-                      ));
-                    })()}
-                  </div>
-                )}
-
-                {!showMethodTabs && (
-                  <p className="px-4 py-2 text-[11px] font-light text-black/50 text-right border-b border-gray-100">
-                    אפשר לשלם גם ב־Bit מתוך טופס הכרטיס של Grow.
-                  </p>
-                )}
+                <p className="px-4 py-2 text-[11px] font-light text-black/50 text-right border-b border-gray-100">
+                  בטופס אפשר לשלם בכרטיס אשראי, ב־Bit או בארנק דיגיטלי (Apple Pay / Google Pay) — לפי הזמינות במכשיר.
+                </p>
 
                 <div className="relative min-h-[420px] md:min-h-[560px]">
-                  {expired && usesIframe ? (
+                  {isRedirectMode ? (
+                    <div className="flex flex-col items-center justify-center gap-5 px-6 py-16 text-center">
+                      <p className="text-sm font-light text-black/70 max-w-sm leading-relaxed">
+                        התשלום מתבצע בדף מאובטח של Grow. לאחר האישור תחזרו אוטומטית לאישור ההזמנה.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={openPaymentPage}
+                        disabled={refreshing}
+                        className="inline-flex items-center justify-center gap-2 min-w-[220px] bg-[#1a1a1a] text-white px-8 py-3.5 text-xs tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:opacity-60"
+                      >
+                        <Lock size={14} strokeWidth={1.5} aria-hidden />
+                        {refreshing ? 'מכין תשלום...' : 'המשך לתשלום מאובטח'}
+                      </button>
+                      {refreshError && <p className="text-xs text-red-600">{refreshError}</p>}
+                    </div>
+                  ) : expired ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
                       <p className="text-sm font-light text-black/70">
                         טופס התשלום פג תוקף מטעמי אבטחה. הפרטים שלך נשמרו — אפשר לפתוח אותו מחדש.
                       </p>
                       <button
                         type="button"
-                        onClick={() => requestFreshSession(session, method === 'google' ? 'google' : 'card')}
+                        onClick={() => requestFreshSession(session)}
                         disabled={refreshing}
                         className="inline-flex items-center gap-2 bg-[#1a1a1a] text-white px-6 py-3 text-xs tracking-luxury uppercase font-light hover:bg-[#2a2a2a] transition-luxury disabled:opacity-60"
                       >
@@ -386,35 +286,8 @@ function PaymentPageInner() {
                       </button>
                       {refreshError && <p className="text-xs text-red-600">{refreshError}</p>}
                     </div>
-                  ) : isAppleView ? (
-                    <div className="flex flex-col items-center justify-center gap-5 px-6 py-16 text-center">
-                      <p className="text-sm font-light text-black/70 max-w-sm leading-relaxed">
-                        תשלום מהיר ומאובטח עם Apple Pay. נפתח בדף מאובטח של Grow — לאחר האישור תחזרו אוטומטית לאישור ההזמנה.
-                      </p>
-                      <p className="text-[11px] font-light text-black/45">דורש Safari באייפון / מק עם כרטיס ב־Wallet</p>
-                      <button
-                        type="button"
-                        onClick={startApplePay}
-                        disabled={refreshing}
-                        className="inline-flex items-center justify-center min-w-[220px] bg-black text-white px-8 py-3.5 text-sm font-medium rounded-md hover:bg-[#111] transition-colors disabled:opacity-60"
-                        aria-label="שלם עם Apple Pay"
-                      >
-                        {refreshing ? 'מכין תשלום...' : 'שלם עם Apple Pay'}
-                      </button>
-                      {refreshError && <p className="text-xs text-red-600">{refreshError}</p>}
-                    </div>
                   ) : (
                     <>
-                      {method === 'card' && (
-                        <p className="px-4 pt-3 text-[11px] font-light text-black/50 text-right">
-                          בטופס אפשר לשלם בכרטיס אשראי או ב־Bit.
-                        </p>
-                      )}
-                      {isGoogleView && (
-                        <p className="px-4 pt-3 text-[11px] font-light text-black/50 text-right">
-                          Google Pay זמין ב־Chrome באנדרואיד בלבד.
-                        </p>
-                      )}
                       {(!frameLoaded || refreshing) && (
                         <div className="absolute inset-0 flex items-center justify-center bg-white" aria-hidden>
                           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1a1a1a]" />
@@ -424,7 +297,7 @@ function PaymentPageInner() {
                         <iframe
                           key={session.processId}
                           src={session.paymentUrl}
-                          title={isGoogleView ? 'Google Pay – Grow' : 'טופס תשלום מאובטח – Grow'}
+                          title="טופס תשלום מאובטח – Grow"
                           allow="payment *"
                           className={`block w-full h-[560px] md:h-[680px] border-0 transition-opacity duration-300 ${
                             frameLoaded ? 'opacity-100' : 'opacity-0'
@@ -440,6 +313,20 @@ function PaymentPageInner() {
                     </>
                   )}
                 </div>
+
+                {!isRedirectMode && !expired && (
+                  <div className="px-4 py-2 border-t border-gray-100 text-right">
+                    <a
+                      href={session.paymentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-light text-black/50 hover:text-black transition-colors"
+                    >
+                      <ExternalLink size={11} strokeWidth={1.5} aria-hidden />
+                      הטופס לא נטען? פתחו את דף התשלום בחלון נפרד
+                    </a>
+                  </div>
+                )}
               </div>
 
               <p className="mt-3 text-[11px] font-light text-black/50 text-right leading-relaxed">

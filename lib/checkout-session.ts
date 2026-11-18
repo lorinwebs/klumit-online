@@ -15,13 +15,12 @@ export interface CheckoutSession {
   ref: string;
   sig: string;
   draftName: string;
+  /** Grow payment link URL (card, Bit and wallets are all offered inside the page). */
   paymentUrl: string;
   processId: string;
   expiresAt: number;
-  method?: 'card' | 'apple' | 'google';
+  /** Full-page redirect (default) or iframe – decided server-side via GROW_OPEN_MODE. */
   openMode?: 'iframe' | 'redirect';
-  applePayAvailable?: boolean;
-  googlePayAvailable?: boolean;
   summary: {
     currency: string;
     subtotal: number;
