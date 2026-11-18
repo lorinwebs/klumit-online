@@ -28,6 +28,10 @@ const storefrontAccessToken = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_
 export const SHOPIFY_COLLECTION_SS26_HANDLE =
   process.env.NEXT_PUBLIC_SHOPIFY_COLLECTION_SS26_HANDLE || 'spring-summer-2026';
 
+/** Collection shown in the homepage "New Arrivals" section, in the order set for it in Shopify admin. */
+export const SHOPIFY_COLLECTION_HOME_HANDLE =
+  process.env.NEXT_PUBLIC_SHOPIFY_COLLECTION_HOME_HANDLE || 'winter-2026-2027';
+
 // הוסף .myshopify.com אם לא קיים
 const storeDomain = domain.includes('.myshopify.com')
   ? domain
@@ -171,60 +175,83 @@ export const PRODUCTS_QUERY = `
   }
 `;
 
+/** Grid card fields — no descriptions, fewer images/variants */
+const PRODUCT_LIST_FIELDS = `
+  id
+  title
+  handle
+  productType
+  vendor
+  tags
+  createdAt
+  priceRange {
+    minVariantPrice {
+      amount
+      currencyCode
+    }
+  }
+  compareAtPriceRange {
+    minVariantPrice {
+      amount
+      currencyCode
+    }
+  }
+  images(first: 4) {
+    edges {
+      node {
+        url
+        altText
+      }
+    }
+  }
+  variants(first: 12) {
+    edges {
+      node {
+        id
+        title
+        price {
+          amount
+          currencyCode
+        }
+        compareAtPrice {
+          amount
+          currencyCode
+        }
+        availableForSale
+        quantityAvailable
+        selectedOptions {
+          name
+          value
+        }
+      }
+    }
+  }
+`;
+
 /** Lightweight catalog/grid query — no descriptions, fewer images/variants */
 export const PRODUCTS_LIST_QUERY = `
   query getProductsList($first: Int!, $query: String, $sortKey: ProductSortKeys, $reverse: Boolean) {
     products(first: $first, query: $query, sortKey: $sortKey, reverse: $reverse) {
       edges {
         node {
-          id
-          title
-          handle
-          productType
-          vendor
-          tags
-          createdAt
-          priceRange {
-            minVariantPrice {
-              amount
-              currencyCode
-            }
-          }
-          compareAtPriceRange {
-            minVariantPrice {
-              amount
-              currencyCode
-            }
-          }
-          images(first: 4) {
-            edges {
-              node {
-                url
-                altText
-              }
-            }
-          }
-          variants(first: 12) {
-            edges {
-              node {
-                id
-                title
-                price {
-                  amount
-                  currencyCode
-                }
-                compareAtPrice {
-                  amount
-                  currencyCode
-                }
-                availableForSale
-                quantityAvailable
-                selectedOptions {
-                  name
-                  value
-                }
-              }
-            }
+          ${PRODUCT_LIST_FIELDS}
+        }
+      }
+    }
+  }
+`;
+
+/**
+ * One collection's grid products, in its Shopify admin sort order.
+ * The products search ignores `collection:` terms, so collections are read directly.
+ */
+export const COLLECTION_PRODUCTS_LIST_QUERY = `
+  query getCollectionProductsList($handle: String!, $first: Int!) {
+    collection(handle: $handle) {
+      products(first: $first, sortKey: COLLECTION_DEFAULT) {
+        edges {
+          node {
+            ${PRODUCT_LIST_FIELDS}
           }
         }
       }
@@ -233,17 +260,18 @@ export const PRODUCTS_LIST_QUERY = `
 `;
 
 /**
- * Server-side Shopify search query per category tab.
- * Only ss26 uses a Shopify query (collection); bags/wallets/belts rely on the
- * proven client-side title/type filter since store data mixes Hebrew/English.
+ * Server-side Shopify search query per category tab. Sold-out products are
+ * never listed. Only ss26 adds a category term (collection); bags/wallets/belts
+ * rely on the proven client-side title/type filter since store data mixes Hebrew/English.
  */
 export function getCategorySearchQuery(
   category: 'bags' | 'belts' | 'wallets' | 'all' | 'ss26' | 'sale'
-): string | undefined {
+): string {
+  const inStock = 'available_for_sale:true';
   if (category === 'ss26') {
-    return `collection:${SHOPIFY_COLLECTION_SS26_HANDLE}`;
+    return `collection:${SHOPIFY_COLLECTION_SS26_HANDLE} AND ${inStock}`;
   }
-  return undefined;
+  return inStock;
 }
 
 export const PRODUCT_QUERY = `

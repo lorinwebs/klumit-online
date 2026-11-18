@@ -2,6 +2,7 @@
 
 import MytheresaGrid from '@/components/MytheresaGrid';
 import { useLanguage } from '@/lib/LanguageContext';
+import { SHOPIFY_COLLECTION_HOME_HANDLE } from '@/lib/shopify';
 import type { CatalogProduct } from '@/lib/products-server';
 
 export default function HomeProductSection({
@@ -29,8 +30,7 @@ export default function HomeProductSection({
         </h2>
       </div>
       <MytheresaGrid
-        category="bags"
-        maxProducts={8}
+        collectionHandle={SHOPIFY_COLLECTION_HOME_HANDLE}
         showViewAll={true}
         embedOnHome
         initialProducts={initialProducts}

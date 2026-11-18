@@ -5,13 +5,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { shopifyClient, PRODUCTS_LIST_QUERY, getCategorySearchQuery } from '@/lib/shopify';
+import {
+  shopifyClient,
+  PRODUCTS_LIST_QUERY,
+  COLLECTION_PRODUCTS_LIST_QUERY,
+  getCategorySearchQuery,
+} from '@/lib/shopify';
 import { useLanguage } from '@/lib/LanguageContext';
 import { isProductSoldOut } from '@/lib/product-availability';
 import { getSaleInfo } from '@/lib/product-sale';
 import { matchesCatalogCategory, productMatchesSearch } from '@/lib/product-search';
 import type { CatalogProduct } from '@/lib/products-server';
-import SoldOutBadge from '@/components/SoldOutBadge';
 
 type Product = CatalogProduct;
 
@@ -27,9 +31,9 @@ interface MytheresaGridProps {
   searchQuery?: string;
   /** Server-fetched products so SSR HTML includes /products/{handle} links */
   initialProducts?: CatalogProduct[];
+  /** Show only this collection, in its Shopify admin order (sorting by "new" keeps that order) */
+  collectionHandle?: string;
 }
-
-const CARD_BACKGROUNDS = ['#f3efe8', '#f5f5f5', '#f0eeef', '#f6f1f3', '#eef1f0', '#f4f2ed'];
 
 /** Two rows: 2-col mobile → 4, 3-col md → 6, 4-col lg → 8 */
 function getTwoRowPageSize() {
@@ -47,12 +51,6 @@ function LoadMoreDots() {
       <span className="w-1.5 h-1.5 rounded-full bg-black/25 animate-pulse" style={{ animationDelay: '300ms' }} />
     </div>
   );
-}
-
-function getCardBackground(id: string) {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = (hash + id.charCodeAt(i) * (i + 1)) % CARD_BACKGROUNDS.length;
-  return CARD_BACKGROUNDS[Math.abs(hash) % CARD_BACKGROUNDS.length];
 }
 
 function getSizeOptions(product: Product) {
@@ -76,9 +74,7 @@ function ProductImageSlider({
   images,
   title,
   handle,
-  soldOut,
   sizes,
-  background,
   salePercent,
   isNew,
   priority = false,
@@ -86,9 +82,7 @@ function ProductImageSlider({
   images: Array<{ node: { url: string; altText: string | null } }>;
   title: string;
   handle: string;
-  soldOut?: boolean;
   sizes: string[];
-  background: string;
   salePercent?: number | null;
   isNew?: boolean;
   priority?: boolean;
@@ -121,17 +115,11 @@ function ProductImageSlider({
 
   return (
     <div
-      className="relative aspect-[3/4] mb-3 overflow-hidden group/image"
-      style={{ backgroundColor: background }}
+      className="relative aspect-[3/4] mb-3 overflow-hidden bg-white group/image"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <Link href={`/products/${handle}`} className="absolute inset-0 z-0 block">
-        <span
-          className="absolute inset-0 animate-pulse opacity-40"
-          style={{ backgroundColor: background }}
-          aria-hidden
-        />
         {images[currentImageIndex] ? (
           <Image
             key={currentImageIndex}
@@ -153,7 +141,7 @@ function ProductImageSlider({
       </Link>
 
       {/* Sale badges — top start (TaliaSol) */}
-      {salePercent != null && salePercent > 0 && !soldOut && (
+      {salePercent != null && salePercent > 0 && (
         <div className="absolute top-2 start-2 z-20 flex flex-col items-stretch gap-0 pointer-events-none">
           <span className="bg-white border border-black px-2 py-0.5 text-[10px] md:text-[11px] font-medium tracking-[0.12em] uppercase text-black text-center leading-none">
             {t('products.sale')}
@@ -164,13 +152,11 @@ function ProductImageSlider({
         </div>
       )}
 
-      {isNew && !soldOut && (
+      {isNew && (
         <div className="absolute top-2 end-2 z-20 bg-white border border-black px-2 py-0.5 text-[10px] md:text-[11px] font-medium tracking-[0.12em] uppercase text-black leading-none pointer-events-none">
           {t('products.newTag')}
         </div>
       )}
-
-      {soldOut && <SoldOutBadge />}
 
       {/* Image arrows — always on mobile, on hover on desktop (TaliaSol style) */}
       {images.length > 1 && (
@@ -255,6 +241,7 @@ export default function MytheresaGrid({
   initialVendor,
   searchQuery,
   initialProducts,
+  collectionHandle,
 }: MytheresaGridProps) {
   const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
@@ -295,25 +282,36 @@ export default function MytheresaGrid({
     async function fetchProducts() {
       setLoading(true);
       try {
-        const searchQuery = getCategorySearchQuery(category);
-        // Categories are filtered client-side, so fetch a wider slim page for them
-        const first =
-          typeof maxProducts === 'number' && category === 'ss26'
-            ? Math.min(Math.max(maxProducts + 4, 12), 24)
-            : 100;
+        let edges: Array<{ node: Product }>;
+        if (collectionHandle) {
+          const data = await shopifyClient.request<{
+            collection: { products: { edges: Array<{ node: Product }> } } | null;
+          }>(COLLECTION_PRODUCTS_LIST_QUERY, { handle: collectionHandle, first: 100 });
+          edges = data.collection?.products.edges ?? [];
+        } else {
+          const searchQuery = getCategorySearchQuery(category);
+          // Categories are filtered client-side, so fetch a wider slim page for them
+          const first =
+            typeof maxProducts === 'number' && category === 'ss26'
+              ? Math.min(Math.max(maxProducts + 4, 12), 24)
+              : 100;
 
-        const data = await shopifyClient.request<{
-          products: { edges: Array<{ node: Product }> };
-        }>(PRODUCTS_LIST_QUERY, {
-          first,
-          query: searchQuery,
-          sortKey: 'CREATED_AT',
-          reverse: true,
-        });
+          const data = await shopifyClient.request<{
+            products: { edges: Array<{ node: Product }> };
+          }>(PRODUCTS_LIST_QUERY, {
+            first,
+            query: searchQuery,
+            sortKey: 'CREATED_AT',
+            reverse: true,
+          });
+          edges = data.products.edges;
+        }
 
         if (cancelled) return;
 
-        let allProducts = data.products.edges.map((edge) => edge.node);
+        let allProducts = edges
+          .map((edge) => edge.node)
+          .filter((product) => !isProductSoldOut(product));
 
         // Sale tab — only discounted products
         if (category === 'sale') {
@@ -338,7 +336,7 @@ export default function MytheresaGrid({
     return () => {
       cancelled = true;
     };
-  }, [category, maxProducts]);
+  }, [category, maxProducts, collectionHandle]);
 
   // Close dropdowns on escape key
   useEffect(() => {
@@ -388,13 +386,9 @@ export default function MytheresaGrid({
       filtered = filtered.filter((p) => productMatchesSearch(p, q));
     }
 
-    return [...filtered].sort((a, b) => {
-      const aSold = isProductSoldOut(a);
-      const bSold = isProductSoldOut(b);
-      if (aSold !== bSold) {
-        return aSold ? 1 : -1;
-      }
+    if (collectionHandle && sortBy === 'new') return filtered;
 
+    return [...filtered].sort((a, b) => {
       if (sortBy === 'new') {
         const aIsNew = a.tags?.some((tag) => tag.toLowerCase() === 'new_arrival') || false;
         const bIsNew = b.tags?.some((tag) => tag.toLowerCase() === 'new_arrival') || false;
@@ -414,7 +408,7 @@ export default function MytheresaGrid({
         parseFloat(a.priceRange.minVariantPrice.amount)
       );
     });
-  }, [products, selectedVendors, sortBy, searchQuery]);
+  }, [products, selectedVendors, sortBy, searchQuery, collectionHandle]);
 
   const productPool = useMemo(
     () => (maxProducts ? sortedProducts.slice(0, maxProducts) : sortedProducts),
@@ -783,7 +777,6 @@ export default function MytheresaGrid({
       >
         <div className="grid grid-cols-2 gap-x-2 gap-y-8 md:grid-cols-3 md:gap-x-3 md:gap-y-10 lg:grid-cols-4 lg:gap-x-4">
           {visibleProducts.map((product, index) => {
-            const soldOut = isProductSoldOut(product);
             const sale = getSaleInfo(product);
             const sizes = getSizeOptions(product);
             const isNew = product.tags?.some((tag) => tag.toLowerCase() === 'new_arrival');
@@ -798,9 +791,7 @@ export default function MytheresaGrid({
                   images={product.images.edges}
                   title={product.title}
                   handle={product.handle}
-                  soldOut={soldOut}
                   sizes={sizes}
-                  background={getCardBackground(product.id)}
                   salePercent={sale?.percent}
                   isNew={isNew}
                   priority={index < 8}

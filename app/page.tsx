@@ -4,7 +4,8 @@ import HomeHero from '@/components/home/HomeHero';
 import HomeProductSection from '@/components/home/HomeProductSection';
 import dynamic from 'next/dynamic';
 import type { Metadata } from 'next';
-import { fetchCatalogProducts } from '@/lib/products-server';
+import { fetchCollectionProducts } from '@/lib/products-server';
+import { SHOPIFY_COLLECTION_HOME_HANDLE } from '@/lib/shopify';
 
 const HomeEditorialSplit = dynamic(() => import('@/components/home/HomeEditorialSplit'));
 const HomeBrandSplit = dynamic(() => import('@/components/home/HomeBrandSplit'));
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const initialProducts = await fetchCatalogProducts('bags', 8);
+  const initialProducts = await fetchCollectionProducts(SHOPIFY_COLLECTION_HOME_HANDLE);
 
   return (
     <div className="min-h-screen flex flex-col bg-cream">

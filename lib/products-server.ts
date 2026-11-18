@@ -1,9 +1,11 @@
 import {
   shopifyClient,
   PRODUCTS_LIST_QUERY,
+  COLLECTION_PRODUCTS_LIST_QUERY,
   getCategorySearchQuery,
 } from '@/lib/shopify';
 import { getSaleInfo } from '@/lib/product-sale';
+import { isProductSoldOut } from '@/lib/product-availability';
 import { matchesCatalogCategory, type CatalogCategory } from '@/lib/product-search';
 
 /** Catalog product shape returned by PRODUCTS_LIST_QUERY */
@@ -73,7 +75,9 @@ export async function fetchCatalogProducts(
       reverse: true,
     });
 
-    let allProducts = data.products.edges.map((edge) => edge.node);
+    let allProducts = data.products.edges
+      .map((edge) => edge.node)
+      .filter((product) => !isProductSoldOut(product));
 
     if (category === 'sale') {
       allProducts = allProducts.filter((product) => getSaleInfo(product) !== null);
@@ -90,6 +94,22 @@ export async function fetchCatalogProducts(
     return allProducts;
   } catch (error) {
     console.error('Error fetching catalog products:', error);
+    return [];
+  }
+}
+
+/** Server-side fetch of one collection, in its Shopify admin order — same as MytheresaGrid's collectionHandle. */
+export async function fetchCollectionProducts(handle: string): Promise<CatalogProduct[]> {
+  try {
+    const data = await shopifyClient.request<{
+      collection: { products: { edges: Array<{ node: CatalogProduct }> } } | null;
+    }>(COLLECTION_PRODUCTS_LIST_QUERY, { handle, first: 100 });
+
+    return (data.collection?.products.edges ?? [])
+      .map((edge) => edge.node)
+      .filter((product) => !isProductSoldOut(product));
+  } catch (error) {
+    console.error('Error fetching collection products:', error);
     return [];
   }
 }
