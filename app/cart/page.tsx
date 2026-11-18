@@ -11,6 +11,7 @@ import Toast from '@/components/Toast';
 import { trackViewCart, trackBeginCheckout } from '@/lib/analytics';
 import { useLanguage } from '@/lib/LanguageContext';
 import { getVariantStockState } from '@/lib/product-availability';
+import { formatShekels as formatPrice } from '@/lib/format-price';
 
 export default function CartPage() {
   const { t } = useLanguage();
@@ -51,11 +52,6 @@ export default function CartPage() {
     }
   }, [items, getTotal]);
 
-
-  // פורמט מחיר פרימיום
-  const formatPrice = (amount: number) => {
-    return Math.round(amount).toLocaleString('he-IL');
-  };
 
   // Convert color name to hex value
   const getColorHex = (colorName: string): string => {

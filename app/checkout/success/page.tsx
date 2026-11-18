@@ -10,6 +10,7 @@ import Footer from '@/components/Footer';
 import CheckoutSteps from '@/components/checkout/CheckoutSteps';
 import { useCartStore } from '@/store/cartStore';
 import { breakOutOfIframe, clearCheckoutSession, loadCheckoutSession } from '@/lib/checkout-session';
+import { formatShekels as formatPrice } from '@/lib/format-price';
 
 interface StatusResponse {
   state: 'paid' | 'pending' | 'not_found' | 'error';
@@ -24,8 +25,6 @@ interface StatusResponse {
 const POLL_INTERVAL_MS = 2500;
 const POLL_TIMEOUT_MS = 90_000;
 const WHATSAPP = 'https://wa.me/972549903139';
-
-const formatPrice = (amount: number) => Math.round(amount).toLocaleString('he-IL');
 
 function SuccessPageInner() {
   const router = useRouter();

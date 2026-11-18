@@ -14,6 +14,7 @@ import { useLanguage } from '@/lib/LanguageContext';
 import { useTranslateHTML } from '@/lib/hooks/useTranslateHTML';
 import SoldOutBadge from '@/components/SoldOutBadge';
 import { getVariantStockState, isProductSoldOut } from '@/lib/product-availability';
+import { formatShekels as formatPrice } from '@/lib/format-price';
 import {
   detectProductMaterial,
   materialTranslationKey,
@@ -716,11 +717,6 @@ export default function ProductClient({ product, relatedProducts: initialRelated
   };
 
   // פורמט מחיר פרימיום
-  const formatPrice = (amount: string) => {
-    const num = parseFloat(amount);
-    return Math.round(num).toLocaleString('he-IL');
-  };
-
   const price = currentVariant?.price.amount 
     ? formatPrice(currentVariant.price.amount) 
     : formatPrice(product.priceRange.minVariantPrice.amount);

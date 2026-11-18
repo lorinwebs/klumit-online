@@ -21,6 +21,7 @@ import {
   loadCheckoutForm,
   type CheckoutSession,
 } from '@/lib/checkout-session';
+import { formatShekels as formatPrice } from '@/lib/format-price';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -250,10 +251,6 @@ export default function CheckoutPage() {
     if (loadingProfile || !profileHydratedRef.current) return;
     saveCheckoutForm(formData);
   }, [formData, loadingProfile]);
-
-  const formatPrice = (amount: number) => {
-    return Math.round(amount).toLocaleString('he-IL');
-  };
 
   // חיפוש מיקוד אוטומטי לפי כתובת ועיר
   const lookupZipCode = useCallback(async (address: string, city: string) => {

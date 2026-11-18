@@ -14,8 +14,7 @@ import {
   saveCheckoutSession,
   type CheckoutSession,
 } from '@/lib/checkout-session';
-
-const formatPrice = (amount: number) => Math.round(amount).toLocaleString('he-IL');
+import { formatShekels as formatPrice } from '@/lib/format-price';
 
 type PayMethod = 'card' | 'apple' | 'google';
 
