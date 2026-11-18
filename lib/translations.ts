@@ -43,8 +43,6 @@ export interface Translations {
   'home.heroDescription': string;
   'home.heroCta': string;
   'home.heroCtaSecondary': string;
-  'home.heroPauseMotion': string;
-  'home.heroPlayMotion': string;
   'home.categoryEyebrow': string;
   'home.categoryTitle': string;
   'home.categoryTitleEm': string;
@@ -471,8 +469,6 @@ export const translations: Record<Language, Translations> = {
     'home.heroDescription': 'תיקים, חגורות וארנקים מאיטליה - במחירים מהיבואן לצרכן',
     'home.heroCta': 'לצפייה בקולקציה',
     'home.heroCtaSecondary': 'הסיפור שלנו',
-    'home.heroPauseMotion': 'עצירת התנועה בתמונה',
-    'home.heroPlayMotion': 'הפעלת התנועה בתמונה',
     'home.categoryEyebrow': 'קנו לפי קטגוריה',
     'home.categoryTitle': 'נבחרו במיוחד',
     'home.categoryTitleEm': 'בשבילך',
@@ -895,8 +891,6 @@ export const translations: Record<Language, Translations> = {
     'home.heroDescription': 'Bags, belts and wallets in Italian leather — timeless design you can feel.',
     'home.heroCta': 'Shop Now',
     'home.heroCtaSecondary': 'Our story',
-    'home.heroPauseMotion': 'Pause the motion in the photo',
-    'home.heroPlayMotion': 'Play the motion in the photo',
     'home.categoryEyebrow': 'Shop by category',
     'home.categoryTitle': 'Crafted for',
     'home.categoryTitleEm': 'you',
@@ -1319,8 +1313,6 @@ export const translations: Record<Language, Translations> = {
     'home.heroDescription': 'Сумки, ремни и кошельки из итальянской кожи — вечный дизайн и ощутимое качество.',
     'home.heroCta': 'Shop Now',
     'home.heroCtaSecondary': 'О нас',
-    'home.heroPauseMotion': 'Остановить движение на фото',
-    'home.heroPlayMotion': 'Включить движение на фото',
     'home.categoryEyebrow': 'Категории',
     'home.categoryTitle': 'Создано',
     'home.categoryTitleEm': 'для вас',

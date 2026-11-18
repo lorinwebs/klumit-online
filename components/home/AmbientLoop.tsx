@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useLanguage } from '@/lib/LanguageContext';
 
 type AmbientLoopProps = {
   /** Silent looping clip that starts on the same frame as the still underneath it */
@@ -10,8 +9,6 @@ type AmbientLoopProps = {
   desktopSrc?: string;
   /** Same fit classes as the still, so the two sit exactly on top of each other */
   className: string;
-  /** Where the pause button sits inside the frame */
-  buttonClassName?: string;
 };
 
 const DESKTOP_QUERY = '(min-width: 768px)';
@@ -21,16 +18,10 @@ const DESKTOP_QUERY = '(min-width: 768px)';
  *
  * The still is what loads first and what counts for page speed. The clip is fetched only
  * after the page has finished loading and the frame is close to the screen, then fades in.
- * It is skipped for visitors who asked for reduced motion or data saving, pauses while the
- * frame is off screen, and has a pause button.
+ * It is skipped for visitors who asked for reduced motion or data saving, and pauses while
+ * the frame is off screen.
  */
-export default function AmbientLoop({
-  src,
-  desktopSrc,
-  className,
-  buttonClassName = 'end-1.5 top-1.5',
-}: AmbientLoopProps) {
-  const { t } = useLanguage();
+export default function AmbientLoop({ src, desktopSrc, className }: AmbientLoopProps) {
   const sentinelRef = useRef<HTMLSpanElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [allowed, setAllowed] = useState(false);
@@ -38,7 +29,6 @@ export default function AmbientLoop({
   const [wasNear, setWasNear] = useState(false);
   const [inView, setInView] = useState(false);
   const [playingSrc, setPlayingSrc] = useState<string | null>(null);
-  const [pausedByUser, setPausedByUser] = useState(false);
 
   useEffect(() => {
     const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
@@ -78,7 +68,7 @@ export default function AmbientLoop({
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !videoSrc) return;
-    if (pausedByUser || !inView) {
+    if (!inView) {
       video.pause();
       return;
     }
@@ -86,7 +76,7 @@ export default function AmbientLoop({
     video.play().catch(() => {
       // Autoplay refused (e.g. low power mode): the still stays, which is fine
     });
-  }, [videoSrc, pausedByUser, inView]);
+  }, [videoSrc, inView]);
 
   return (
     <>
@@ -106,21 +96,6 @@ export default function AmbientLoop({
           onPlaying={() => setPlayingSrc(videoSrc)}
           className={`${className} transition-opacity duration-1000 ${playing ? 'opacity-100' : 'opacity-0'}`}
         />
-      )}
-      {playing && (
-        <button
-          type="button"
-          onClick={() => setPausedByUser((paused) => !paused)}
-          aria-label={t(pausedByUser ? 'home.heroPlayMotion' : 'home.heroPauseMotion')}
-          // The button is a full-size tap target; only the small ring inside it is drawn
-          className={`group focus-light absolute z-10 flex h-11 w-11 items-center justify-center ${buttonClassName}`}
-        >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/60 bg-black/25 text-white transition-colors duration-300 group-hover:border-white group-hover:bg-black/45 group-hover:text-white">
-            <svg width="8" height="8" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
-              {pausedByUser ? <path d="M2.5 1v10l8-5z" /> : <path d="M2 1h3v10H2zM7 1h3v10H7z" />}
-            </svg>
-          </span>
-        </button>
       )}
     </>
   );
