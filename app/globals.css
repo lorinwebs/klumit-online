@@ -179,12 +179,10 @@ section:has([class*="bg-black"]) a:focus-visible,
     }
   }
 
-  /* Studio product photos. Many arrive with a faintly grey backdrop or retouching patches
-     (values around 245–253 instead of 255); a small brightness lift pushes those to pure white
-     so the photo melts into the white page. The product itself is barely affected. */
-  .studio-photo {
-    filter: brightness(1.06);
-  }
+  /* Studio product photos (.studio-photo) are shown as they are, with no brightness lift.
+     On iPhones and Macs with HDR screens, Safari draws filter: brightness() above 1 brighter
+     than the page's own white, so the photos glow and the white page around them looks grey
+     (screenshots do not show it). A photo with a grey backdrop has to be fixed in the photo. */
 
   /* Refined selection color */
   ::selection {
