@@ -170,7 +170,7 @@ export default async function BlogPostPage({ params }: PageProps) {
               </nav>
 
               {/* Meta */}
-              <p className="mb-4 text-[10px] font-medium text-stone tracking-editorial uppercase">
+              <p className="mb-4 text-xs text-stone">
                 {new Date(article.publishedAt).toLocaleDateString('he-IL', {
                   year: 'numeric',
                   month: 'long',
@@ -241,7 +241,7 @@ export default async function BlogPostPage({ params }: PageProps) {
           <div className="mt-12 pt-8 border-t border-sand">
             <Link
               href="/blog"
-              className="inline-flex items-center gap-2 text-[11px] font-medium text-terracotta hover:text-terracotta-dark transition-colors duration-300 tracking-editorial uppercase"
+              className="inline-flex items-center gap-2 text-sm font-medium text-terracotta hover:text-terracotta-dark transition-colors duration-300"
             >
               &rarr; חזרה למגזין
             </Link>
@@ -251,7 +251,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         {/* More articles */}
         {moreArticles.length > 0 && (
           <section className="max-w-[1200px] mx-auto px-4 pb-16">
-            <h2 className="font-display text-xl md:text-2xl font-light text-espresso tracking-editorial uppercase text-center mb-8">
+            <h2 className="font-display text-2xl md:text-3xl text-espresso text-center mb-8">
               עוד במגזין
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">

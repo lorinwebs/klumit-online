@@ -50,9 +50,9 @@ export default async function BlogPage() {
   return (
     <div className="min-h-screen flex flex-col bg-cream">
       <Header />
-      <main className="flex-grow max-w-[1200px] mx-auto px-4 py-12 md:py-20 w-full">
+      <main className="flex-grow max-w-[1200px] mx-auto px-4 pt-12 pb-4 md:pt-20 md:pb-12 w-full">
         <div className="text-center mb-12 md:mb-16">
-          <h1 className="font-display text-3xl md:text-5xl font-light text-espresso tracking-editorial uppercase mb-4">
+          <h1 className="font-display text-[2rem] leading-tight md:text-5xl text-espresso mb-4">
             המגזין
           </h1>
           <div className="w-12 h-[1px] bg-terracotta mx-auto mb-4" />
@@ -66,7 +66,10 @@ export default async function BlogPage() {
             <p className="text-stone font-light">אין מאמרים עדיין. חזרו בקרוב!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-x-3 gap-y-8 md:gap-8 lg:grid-cols-3">
+          // Each card spans five shared rows (cover, date, headline, subtitle, read more), so cards side by
+          // side stay level even when one headline wraps and its neighbour doesn't. No row gap: inside a
+          // subgrid it would open between every row of the card, so the space between cards is the read-more padding.
+          <div className="grid grid-cols-2 gap-x-3 md:gap-x-8 lg:grid-cols-3">
             {articles.map((article, index) => {
               const cover = getArticleCover(article);
               // Some articles have their own title saved as the summary; showing it twice adds nothing
@@ -76,7 +79,7 @@ export default async function BlogPage() {
               const { headline, subtitle: titleSubtitle } = splitTitle(article.title);
               const subtitle = titleSubtitle ?? (showExcerpt ? excerpt : null);
               return (
-                <Link key={article.id} href={`/blog/${article.handle}`} className="group flex flex-col">
+                <Link key={article.id} href={`/blog/${article.handle}`} className="group row-span-5 grid grid-rows-subgrid">
                   {/* Portrait frame: covers are portrait, so a wide frame would cut them in half */}
                   <div className="relative aspect-[4/5] overflow-hidden bg-cream-warm border border-sand/60 mb-3 md:mb-4">
                     {cover ? (
@@ -95,30 +98,26 @@ export default async function BlogPage() {
                       </div>
                     )}
                   </div>
-                  <div className="mb-2 flex flex-col gap-1.5 md:gap-2">
-                    <p className="text-[10px] font-medium text-stone tracking-editorial uppercase">
-                      {new Date(article.publishedAt).toLocaleDateString('he-IL', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
+                  <p className="mb-1.5 text-xs text-stone md:mb-2">
+                    {new Date(article.publishedAt).toLocaleDateString('he-IL', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </p>
+                  {/* Headline and subtitle read as one block with no gap between them. The headline sits at the
+                      bottom of its row, so beside a two-line neighbour the spare line goes above it, not under it.
+                      One line each from md; narrow phone columns may wrap to two. */}
+                  <h2 className="self-end font-display text-sm md:text-xl font-bold text-espresso group-hover:text-terracotta transition-colors duration-500 leading-snug line-clamp-2 md:line-clamp-1">
+                    {headline}
+                  </h2>
+                  {subtitle && (
+                    <p className="text-xs md:text-sm font-light text-stone-dark leading-snug line-clamp-2 md:line-clamp-1">
+                      {subtitle}
                     </p>
-                    {/* Headline and subtitle read as one block: no gap and no reserved height between them.
-                        One line each from md; narrow phone columns may wrap to two. */}
-                    <div>
-                      <h2 className="font-display text-sm md:text-xl font-bold text-espresso group-hover:text-terracotta transition-colors duration-500 leading-snug line-clamp-2 md:line-clamp-1">
-                        {headline}
-                      </h2>
-                      {subtitle && (
-                        <p className="text-xs md:text-sm font-light text-stone-dark leading-snug line-clamp-2 md:line-clamp-1">
-                          {subtitle}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {/* Fills the card, so "read more" sits on one line across the row whatever the title length */}
-                  <div className="flex flex-1 flex-col gap-2">
-                    <span className="mt-auto inline-flex items-center gap-1 self-start pt-2 text-[10px] font-medium text-terracotta tracking-editorial uppercase group-hover:underline underline-offset-4">
+                  )}
+                  <div className="row-start-5 pb-8 pt-3">
+                    <span className="text-xs md:text-sm font-medium text-terracotta underline-offset-4 group-hover:underline">
                       קראו עוד &larr;
                     </span>
                   </div>
