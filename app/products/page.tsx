@@ -35,8 +35,8 @@ const TAB_META: Record<
     canonical: 'https://www.klumit-online.co.il/wallets',
   },
   ss26: {
-    title: 'אביב-קיץ 2026 | קלומית - Klumit',
-    description: 'קולקציית האביב-קיץ 2026 — עיצובים חדשים מאיטליה.',
+    title: 'סתיו-חורף 26/27 | קלומית - Klumit',
+    description: 'קולקציית הסתיו-חורף 26/27 — עיצובים חדשים מאיטליה.',
     canonical: 'https://www.klumit-online.co.il/products?tab=ss26',
   },
   sale: {

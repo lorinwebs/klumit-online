@@ -238,6 +238,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
       'navy': '#000080',
       'beige': '#F5F5DC',
       'khaki': '#C3B091',
+      'taupe': '#6B5A58',
       'tan': '#D2B48C',
       'camel': '#C19A6B',
       'camal': '#C19A6B',

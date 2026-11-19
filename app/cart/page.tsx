@@ -72,6 +72,7 @@ export default function CartPage() {
       'navy': '#000080',
       'beige': '#F5F5DC',
       'khaki': '#C3B091',
+      'taupe': '#6B5A58',
       'tan': '#D2B48C',
       'burgundy': '#800020',
       'maroon': '#800000',
