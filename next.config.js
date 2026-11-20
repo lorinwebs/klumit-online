@@ -5,16 +5,11 @@ const nextConfig = {
   // Allow LAN access in local development without cross-origin warnings
   allowedDevOrigins: ['127.0.0.1', 'localhost', '192.168.50.237'],
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'cdn.shopify.com',
-      },
-    ],
-    formats: ['image/avif', 'image/webp'],
+    // Shopify's CDN resizes product photos; Vercel's image optimizer is not used (see lib/image-loader.ts)
+    loader: 'custom',
+    loaderFile: './lib/image-loader.ts',
     deviceSizes: [640, 750, 828, 1080, 1200],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 31536000, // 1 year
     qualities: [70, 75],
   },
   async redirects() {
