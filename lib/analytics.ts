@@ -28,6 +28,17 @@ export interface CartData {
   currency?: string;
 }
 
+export interface PurchaseData {
+  /** Stable reference of the order, used to report each order only once */
+  orderRef: string;
+  /** Order number the customer sees, e.g. #1012 */
+  orderName?: string | null;
+  /** Amount charged, including shipping and after discounts */
+  total: number;
+  currency?: string;
+  items: Array<{ name: string; price: number; quantity: number }>;
+}
+
 // Initialize GA4 script (already loaded in layout.tsx, this is a fallback)
 export function initGA4(): void {
   if (typeof window === 'undefined') return;
@@ -455,6 +466,60 @@ export function trackBeginCheckout(cart: CartData): void {
     value: cart.totalValue,
     currency: cart.currency || 'ILS',
     num_items: cart.items.reduce((sum, item) => sum + (item.quantity || 1), 0),
+  });
+}
+
+/**
+ * The Meta Pixel and GA scripts load lazily (see layout.tsx), so on a freshly
+ * loaded page they may not exist yet. Run `send` as soon as the global is there.
+ */
+function whenLoaded(globalName: 'fbq' | 'gtag', send: () => void, waitedMs = 0): void {
+  if (typeof (window as any)[globalName] === 'function') {
+    send();
+  } else if (waitedMs < 15_000) {
+    setTimeout(() => whenLoaded(globalName, send, waitedMs + 250), 250);
+  }
+}
+
+/**
+ * Purchase - כשהתשלום אושר (דף התודה)
+ * PostHog gets this server-side as `order_paid` from the Shopify orders webhook.
+ */
+export function trackPurchase(order: PurchaseData): void {
+  if (typeof window === 'undefined') return;
+
+  // A refresh of the success page must not count the same order twice
+  const storageKey = `klumit.purchase.tracked.${order.orderRef}`;
+  try {
+    if (localStorage.getItem(storageKey)) return;
+    localStorage.setItem(storageKey, '1');
+  } catch {
+    // storage unavailable – report anyway
+  }
+
+  const currency = order.currency || 'ILS';
+
+  // Google Analytics
+  whenLoaded('gtag', () => {
+    sendEvent('purchase', {
+      transaction_id: order.orderName || order.orderRef,
+      currency,
+      value: order.total,
+      items: order.items.map(item => ({
+        item_name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+    });
+  });
+
+  // Meta Pixel - Purchase
+  whenLoaded('fbq', () => {
+    sendMetaPixelEvent('Purchase', {
+      value: order.total,
+      currency,
+      num_items: order.items.reduce((sum, item) => sum + item.quantity, 0),
+    });
   });
 }
 

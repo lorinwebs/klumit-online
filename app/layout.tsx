@@ -9,6 +9,7 @@ import { LanguageProvider } from '@/lib/LanguageContext';
 import { SaleProvider } from '@/lib/SaleContext';
 import { hasSaleProducts } from '@/lib/products-server';
 import PostHogAuth from '@/components/PostHogAuth';
+import { GoogleStoreBadge } from '@/components/GoogleCustomerReviews';
 import './globals.css';
 
 /* Display serif for headings and the wordmark — Hebrew + Latin in one family.
@@ -235,6 +236,7 @@ export default async function RootLayout({
           s.parentNode.insertBefore(t,s)}(window, document,'script',
           'https://connect.facebook.net/en_US/fbevents.js');
           fbq('init', '812488071826982');
+          fbq('init', '278579472818962');
           fbq('track', 'PageView');
         `}</Script>
         <noscript>
@@ -243,6 +245,13 @@ export default async function RootLayout({
             width="1" 
             style={{ display: 'none' }}
             src="https://www.facebook.com/tr?id=812488071826982&ev=PageView&noscript=1"
+            alt=""
+          />
+          <img 
+            height="1" 
+            width="1" 
+            style={{ display: 'none' }}
+            src="https://www.facebook.com/tr?id=278579472818962&ev=PageView&noscript=1"
             alt=""
           />
         </noscript>
@@ -266,6 +275,7 @@ export default async function RootLayout({
       </head>
       <body className={`${displayFont.variable} ${assistant.variable} font-sans overflow-x-clip`}>
         <PostHogAuth />
+        <GoogleStoreBadge />
         <LanguageProvider>
           <SaleProvider hasSale={hasSale}>
             <ConditionalLayout>

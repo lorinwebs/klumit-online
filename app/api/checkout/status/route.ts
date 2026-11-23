@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDraftOrderSummary, refToDraftGid, verifyRef } from '@/lib/checkout-orders';
+import { estimatedDeliveryDate } from '@/lib/store-policy';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,9 @@ export async function GET(request: NextRequest) {
         currency: draft.currency,
         items: draft.items,
         deliveryMethod: draft.deliveryMethod,
+        // The customer reaches the success page right after paying, so "now" is the order time.
+        // Store pickup has no stated timeframe; the home-delivery estimate is used for it too.
+        estimatedDeliveryDate: paid ? estimatedDeliveryDate(new Date()) : null,
         customer: {
           fullName: draft.customer.fullName,
           email: draft.customer.email,

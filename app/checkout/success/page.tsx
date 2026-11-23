@@ -8,7 +8,9 @@ import { CheckCircle2, Mail, MessageCircle, Store, Truck } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CheckoutSteps from '@/components/checkout/CheckoutSteps';
+import { GoogleReviewsOptIn } from '@/components/GoogleCustomerReviews';
 import { useCartStore } from '@/store/cartStore';
+import { trackPurchase } from '@/lib/analytics';
 import { breakOutOfIframe, clearCheckoutSession, loadCheckoutSession } from '@/lib/checkout-session';
 import { formatShekels as formatPrice } from '@/lib/format-price';
 import { PICKUP_LABEL, type DeliveryMethod } from '@/lib/store-policy';
@@ -21,6 +23,8 @@ interface StatusResponse {
   currency?: string;
   items?: Array<{ title: string; variantTitle: string | null; quantity: number; unitPrice: number; image: string | null }>;
   deliveryMethod?: DeliveryMethod;
+  /** YYYY-MM-DD, present once the order is paid */
+  estimatedDeliveryDate?: string | null;
   customer?: { fullName: string; email: string; addressLine: string; city: string };
 }
 
@@ -84,6 +88,19 @@ function SuccessPageInner() {
         setStatus(data);
         if (data.state === 'paid') {
           setPhase('paid');
+          if (typeof data.total === 'number') {
+            trackPurchase({
+              orderRef: activeRef,
+              orderName: data.orderName,
+              total: data.total,
+              currency: data.currency,
+              items: (data.items ?? []).map((item) => ({
+                name: item.title,
+                price: item.unitPrice,
+                quantity: item.quantity,
+              })),
+            });
+          }
           return;
         }
       } catch {
@@ -245,6 +262,13 @@ function SuccessPageInner() {
         </div>
       </main>
       <Footer />
+      {phase === 'paid' && status?.orderName && status.customer?.email && status.estimatedDeliveryDate && (
+        <GoogleReviewsOptIn
+          orderId={status.orderName.replace(/^#/, '')}
+          email={status.customer.email}
+          estimatedDeliveryDate={status.estimatedDeliveryDate}
+        />
+      )}
     </div>
   );
 }
