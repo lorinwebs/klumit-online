@@ -261,6 +261,7 @@ export default async function RootLayout({
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
           gtag('config', 'G-FZT27KSTMM', { send_page_view: false });
+          gtag('config', 'GTM-M9H3Z9M5');
         `}</Script>
         {/* Permissions Policy - allow unload for Supabase Realtime */}
         <meta httpEquiv="Permissions-Policy" content="unload=*" />
