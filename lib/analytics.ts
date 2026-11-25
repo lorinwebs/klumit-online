@@ -5,11 +5,10 @@
  * ה-checkout יטופל ע"י Custom Pixel ב-Shopify
  */
 
-import posthog from 'posthog-js';
+import { capturePostHog } from './posthog-client';
 
-// GA4 Measurement ID - הוסף ל-.env.local:
-// NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
-const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+// Google Analytics, the Meta pixels and PostHog are loaded by Google Tag Manager
+// (see app/layout.tsx). This module only reports events to them.
 
 // Types
 export interface ProductData {
@@ -39,14 +38,6 @@ export interface PurchaseData {
   items: Array<{ name: string; price: number; quantity: number }>;
 }
 
-// Initialize GA4 script (already loaded in layout.tsx, this is a fallback)
-export function initGA4(): void {
-  if (typeof window === 'undefined') return;
-  
-  // Script is already loaded in layout.tsx
-  // This function is kept for backwards compatibility
-}
-
 // Helper to send events to GA4
 function sendEvent(eventName: string, params?: Record<string, any>): void {
   if (typeof window === 'undefined' || !(window as any).gtag) return;
@@ -54,8 +45,7 @@ function sendEvent(eventName: string, params?: Record<string, any>): void {
 }
 
 function capturePostHogEvent(eventName: string, properties?: Record<string, unknown>): void {
-  if (typeof window === 'undefined') return;
-  posthog.capture(eventName, properties);
+  capturePostHog(eventName, properties);
 }
 
 // Helper to send standard events to Meta Pixel
@@ -79,10 +69,8 @@ function sendMetaPixelEvent(eventName: string, params?: Record<string, any>): vo
         fbq.callMethod.apply(fbq, ['track', eventName, params]);
       }
     } else {
-      // If fbq doesn't exist yet, create a minimal queue
-      // This shouldn't happen with proper Meta Pixel setup, but just in case
-      (window as any)._fbq = (window as any)._fbq || [];
-      (window as any)._fbq.push(['track', eventName, params]);
+      // Tag Manager has not loaded the pixel yet: send once it has
+      whenLoaded('fbq', () => sendMetaPixelEvent(eventName, params));
     }
   } catch (e) {
     // Log warning in development
@@ -109,8 +97,7 @@ function sendMetaPixelCustomEvent(eventName: string, params?: Record<string, any
         fbq.callMethod.apply(fbq, ['trackCustom', eventName, params]);
       }
     } else {
-      (window as any)._fbq = (window as any)._fbq || [];
-      (window as any)._fbq.push(['trackCustom', eventName, params]);
+      whenLoaded('fbq', () => sendMetaPixelCustomEvent(eventName, params));
     }
   } catch (e) {
     if (process.env.NODE_ENV === 'development') {
@@ -256,16 +243,10 @@ export function trackPageView(path?: string, title?: string): void {
   if (pagePath.startsWith('/family-schedule') || pagePath.startsWith('/tiberia-shifts') || pagePath.startsWith('/babysitter-summer')) return;
   const pageTitle = title || document.title || pagePath;
   
-  // Google Analytics
-  sendEvent('page_view', {
-    page_path: pagePath,
-    page_title: pageTitle,
-    page_location: window.location.href,
-  });
-  
-  // Meta Pixel - PageView (already tracked in layout.tsx, but track again for SPA navigation)
-  sendMetaPixelEvent('PageView');
-  
+  // Google Analytics and the Meta pixels count page views themselves (set up in
+  // Tag Manager), on the first load and on every move between pages. Sending one
+  // from here as well counted each page twice.
+
   // Telegram visit tracking
   updatePageHistory(pagePath, pageTitle);
   trackVisitToTelegram(pagePath, pageTitle);
@@ -529,34 +510,6 @@ export function trackPurchase(order: PurchaseData): void {
 export function trackSearch(searchTerm: string): void {
   sendEvent('search', {
     search_term: searchTerm,
-  });
-}
-
-/**
- * First Visit - כשמשתמש ייחודי נכנס לאתר בפעם הראשונה
- */
-export function trackFirstVisit(): void {
-  // בדוק אם זה ביקור ראשון
-  const hasVisited = typeof window !== 'undefined' && localStorage.getItem('ga_has_visited');
-  
-  if (!hasVisited) {
-    sendEvent('first_visit', {
-      engagement_time_msec: 0,
-    });
-    
-    // סמן שהמשתמש כבר ביקר
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ga_has_visited', 'true');
-    }
-  }
-}
-
-/**
- * User Engagement - מעקב אחר משתמש ייחודי
- */
-export function trackUserEngagement(): void {
-  sendEvent('user_engagement', {
-    engagement_time_msec: 1000, // זמן בסיסי
   });
 }
 

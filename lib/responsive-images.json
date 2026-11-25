@@ -1,0 +1,35 @@
+{
+  "/hero-bags-venice.jpg": {
+    "hash": "64ca438c",
+    "widths": [
+      640,
+      750,
+      828,
+      1080,
+      1200,
+      1600,
+      2160
+    ]
+  },
+  "/hero-bags-venice-mobile.jpg": {
+    "hash": "bc024fff",
+    "widths": [
+      640,
+      750,
+      828,
+      1080,
+      1200,
+      1440
+    ]
+  },
+  "/home-editorial.png": {
+    "hash": "eacda41f",
+    "widths": [
+      384,
+      640,
+      750,
+      828,
+      1024
+    ]
+  }
+}

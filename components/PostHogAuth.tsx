@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import posthog from 'posthog-js';
+import { identifyPostHog, resetPostHog } from '@/lib/posthog-client';
 import { supabase } from '@/lib/supabase';
 
 export default function PostHogAuth() {
@@ -19,7 +19,7 @@ export default function PostHogAuth() {
     }) => {
       const firstName = user.user_metadata?.first_name;
       const lastName = user.user_metadata?.last_name;
-      posthog.identify(user.id, {
+      identifyPostHog(user.id, {
         email: user.email,
         name: [firstName, lastName].filter(Boolean).join(' ') || undefined,
         phone: user.user_metadata?.phone,
@@ -34,7 +34,7 @@ export default function PostHogAuth() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
-        posthog.reset();
+        resetPostHog();
       } else if (session?.user) {
         identifyUser(session.user);
       }

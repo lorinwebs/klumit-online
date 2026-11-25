@@ -225,42 +225,14 @@ export default async function RootLayout({
             `,
           }}
         />
-        {/* Meta Pixel + GA deferred so they don't block shopping UI */}
-        <Script id="meta-pixel" strategy="lazyOnload">{`
-          !function(f,b,e,v,n,t,s)
-          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-          n.queue=[];t=b.createElement(e);t.async=!0;
-          t.src=v;s=b.getElementsByTagName(e)[0];
-          s.parentNode.insertBefore(t,s)}(window, document,'script',
-          'https://connect.facebook.net/en_US/fbevents.js');
-          fbq('init', '812488071826982');
-          fbq('init', '278579472818962');
-          fbq('track', 'PageView');
-        `}</Script>
-        <noscript>
-          <img 
-            height="1" 
-            width="1" 
-            style={{ display: 'none' }}
-            src="https://www.facebook.com/tr?id=812488071826982&ev=PageView&noscript=1"
-            alt=""
-          />
-          <img 
-            height="1" 
-            width="1" 
-            style={{ display: 'none' }}
-            src="https://www.facebook.com/tr?id=278579472818962&ev=PageView&noscript=1"
-            alt=""
-          />
-        </noscript>
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-FZT27KSTMM" strategy="lazyOnload" />
-        <Script id="google-analytics" strategy="lazyOnload">{`
+        {/* GTM-M9H3Z9M5 is the only Google tag. The container loads Analytics,
+            both Meta pixels and PostHog. The site reports its own events through
+            window.gtag, window.fbq and window.posthog (see lib/analytics.ts). */}
+        <Script src="https://www.googletagmanager.com/gtag/js?id=GTM-M9H3Z9M5" strategy="lazyOnload" />
+        <Script id="google-tag" strategy="lazyOnload">{`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', 'G-FZT27KSTMM', { send_page_view: false });
           gtag('config', 'GTM-M9H3Z9M5');
         `}</Script>
         {/* Permissions Policy - allow unload for Supabase Realtime */}

@@ -4,6 +4,7 @@ import { getImageProps } from 'next/image';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/LanguageContext';
 import { homeImages } from '@/lib/home-images';
+import { resizedSrcSet } from '@/lib/image-loader';
 import AmbientLoop from './AmbientLoop';
 
 /**
@@ -21,9 +22,9 @@ export default function HomeHero() {
   const { t, language } = useLanguage();
   const { video: desktopVideo, ...desktopStill } = homeImages.hero;
   const { video: mobileVideo, ...mobileStill } = homeImages.heroMobile;
-  const {
-    props: { srcSet: desktopSrcSet },
-  } = getImageProps({ ...desktopStill, alt: '', sizes: '50vw' });
+  // Listed by hand rather than by next/image, whose sizes stop at 1200px: the desktop
+  // photo fills half the screen, and large retina screens need the bigger copies.
+  const desktopSrcSet = resizedSrcSet(desktopStill.src);
   const {
     // `style` and `loading` are set on the <img> below
     props: { style: _style, loading: _loading, ...mobileImg },

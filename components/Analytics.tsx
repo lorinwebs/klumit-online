@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { initGA4, trackPageView, trackFirstVisit, trackUserEngagement } from '@/lib/analytics';
+import { trackPageView } from '@/lib/analytics';
 
 /**
  * Analytics tracker — must sit alone inside Suspense (uses useSearchParams).
@@ -11,15 +11,6 @@ import { initGA4, trackPageView, trackFirstVisit, trackUserEngagement } from '@/
 export function AnalyticsProvider() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
-  // Initialize GA4 on mount
-  useEffect(() => {
-    initGA4();
-    // Track first visit for unique users
-    trackFirstVisit();
-    // Track user engagement
-    trackUserEngagement();
-  }, []);
 
   // Track page views on route change
   useEffect(() => {

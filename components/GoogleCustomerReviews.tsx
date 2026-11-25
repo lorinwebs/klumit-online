@@ -2,7 +2,7 @@
 
 import Script from 'next/script';
 import { usePathname } from 'next/navigation';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 /**
  * Google Customer Reviews (Merchant Center):
@@ -130,8 +130,35 @@ const BADGE_PATHS = [
   '/accessibility',
 ];
 
+const FIRST_ACTIONS = ['pointerdown', 'pointermove', 'keydown', 'scroll', 'touchstart'] as const;
+const BADGE_WAIT_MS = 5000;
+
+/**
+ * False while the page is opening; true once the visitor scrolls, moves the pointer, taps
+ * or types, or after a few seconds. Google's badge is about 300 KB of script, and
+ * running it while the page is still starting up made the page slow to respond.
+ */
+function usePageSettled() {
+  const [settled, setSettled] = useState(false);
+
+  useEffect(() => {
+    const settle = () => setSettled(true);
+    const timer = window.setTimeout(settle, BADGE_WAIT_MS);
+    FIRST_ACTIONS.forEach((name) =>
+      window.addEventListener(name, settle, { once: true, passive: true })
+    );
+    return () => {
+      window.clearTimeout(timer);
+      FIRST_ACTIONS.forEach((name) => window.removeEventListener(name, settle));
+    };
+  }, []);
+
+  return settled;
+}
+
 export function GoogleStoreBadge() {
   const pathname = usePathname();
+  const settled = usePageSettled();
   // The server doesn't reliably know the page: Vercel prerenders the home page as "/index",
   // so CSS chosen there differs from the browser's and React reports a hydration error (#418).
   // Nothing is rendered on the server; the badge only ever exists in the browser anyway.
@@ -172,7 +199,7 @@ export function GoogleStoreBadge() {
 
   return (
     <>
-      {onBadgePage && (
+      {onBadgePage && settled && (
         <Script
           src="https://www.gstatic.com/shopping/merchant/merchantwidget.js"
           strategy="lazyOnload"

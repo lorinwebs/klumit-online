@@ -12,7 +12,8 @@
     "type-check": "tsc --noEmit",
     "prebuild": "npm run type-check",
     "check": "npm run lint && npm run type-check",
-    "audit:product-copy": "tsx scripts/audit-product-copy.ts"
+    "audit:product-copy": "tsx scripts/audit-product-copy.ts",
+    "images": "node scripts/optimize-images.mjs"
   },
   "dependencies": {
     "@hebcal/core": "^5.10.1",
@@ -30,7 +31,6 @@
     "lucide-react": "^0.294.0",
     "next": "^16.2.10",
     "nodemailer": "^9.0.3",
-    "posthog-js": "^1.404.1",
     "posthog-node": "^5.45.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

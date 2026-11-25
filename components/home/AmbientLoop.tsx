@@ -17,7 +17,8 @@ const DESKTOP_QUERY = '(min-width: 768px)';
  * Brings a still photo to life: place it inside a `relative` frame, right after the still.
  *
  * The still is what loads first and what counts for page speed. The clip is fetched only
- * after the page has finished loading and the frame is close to the screen, then fades in.
+ * after the page has finished loading, the still itself has arrived and the frame is close
+ * to the screen, then fades in.
  * It is skipped for visitors who asked for reduced motion or data saving, and pauses while
  * the frame is off screen.
  */
@@ -36,13 +37,29 @@ export default function AmbientLoop({ src, desktopSrc, className }: AmbientLoopP
 
     const desktop = window.matchMedia(DESKTOP_QUERY);
     const onBreakpoint = () => setIsDesktop(desktop.matches);
-    const allow = () => setAllowed(true);
+    // The still sits in the same frame, just before the clip
+    const still = sentinelRef.current?.parentElement?.querySelector('img');
+    let timer = 0;
+    // A moment after the still, so the clip never competes with it for the connection
+    const allow = () => {
+      timer = window.setTimeout(() => setAllowed(true), 300);
+    };
+    const whenStillShown = () => {
+      if (!still || still.complete) allow();
+      else {
+        still.addEventListener('load', allow, { once: true });
+        still.addEventListener('error', allow, { once: true });
+      }
+    };
     onBreakpoint();
-    if (document.readyState === 'complete') allow();
-    else window.addEventListener('load', allow, { once: true });
+    if (document.readyState === 'complete') whenStillShown();
+    else window.addEventListener('load', whenStillShown, { once: true });
     desktop.addEventListener('change', onBreakpoint);
     return () => {
-      window.removeEventListener('load', allow);
+      window.clearTimeout(timer);
+      window.removeEventListener('load', whenStillShown);
+      still?.removeEventListener('load', allow);
+      still?.removeEventListener('error', allow);
       desktop.removeEventListener('change', onBreakpoint);
     };
   }, []);
