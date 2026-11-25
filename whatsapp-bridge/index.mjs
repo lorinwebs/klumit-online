@@ -1,5 +1,6 @@
 import http from 'node:http';
-import { rm } from 'node:fs/promises';
+import path from 'node:path';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import pino from 'pino';
 import QRCode from 'qrcode';
 import { createClient } from '@supabase/supabase-js';
@@ -40,6 +41,30 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 const logger = pino({ level: 'warn' });
 
 const REPLY_CMD = /^\s*תגיב\s+([\s\S]+)$/;
+
+// WhatsApp may address the manager by LID instead of phone, so his chat JIDs are learned and persisted
+const MANAGER_FILE = path.join(AUTH_DIR, 'manager-jids.json');
+const managerJids = new Set();
+
+async function loadManagerJids() {
+  try {
+    for (const jid of JSON.parse(await readFile(MANAGER_FILE, 'utf8'))) managerJids.add(jid);
+  } catch {
+    // first run – nothing learned yet
+  }
+}
+
+async function rememberManagerJid(jid) {
+  if (!jid || managerJids.has(jid)) return;
+  managerJids.add(jid);
+  console.log('learned manager jid', jid);
+  try {
+    await mkdir(AUTH_DIR, { recursive: true });
+    await writeFile(MANAGER_FILE, JSON.stringify([...managerJids]));
+  } catch (e) {
+    console.error('failed to persist manager jids', e?.message || e);
+  }
+}
 
 let currentQr = null;
 let status = 'starting';
@@ -106,17 +131,9 @@ const TYPE_LABEL = {
 // Manager reply: Mor replies to a forwarded message with "תגיב <text>"
 // ---------------------------------------------------------------------------
 
-async function handleManagerCommand(sock, quotedId, text) {
-  const reply = text.match(REPLY_CMD)?.[1]?.trim();
-  if (!reply) return; // not a reply command → nothing to do
-
-  if (!quotedId) {
-    await sock.sendMessage(FORWARD_JID, {
-      text: '❗ כדי לשלוח ללקוח, יש לעשות Reply על ההודעה שהועברה ולכתוב "תגיב ..."',
-    });
-    return;
-  }
-
+/** Customer chat behind a forwarded message, or null. Only the manager ever receives forwarded messages. */
+async function findForwardedChat(quotedId) {
+  if (!quotedId) return null;
   const { data, error } = await supabase
     .from(TABLE)
     .select('chat_jid')
@@ -124,14 +141,27 @@ async function handleManagerCommand(sock, quotedId, text) {
     .limit(1)
     .maybeSingle();
   if (error) throw new Error(`lookup failed: ${error.message}`);
+  return data?.chat_jid || null;
+}
 
-  if (!data) {
-    await sock.sendMessage(FORWARD_JID, { text: '❗ לא מצאתי את הלקוח של ההודעה הזו' });
+async function handleManagerCommand(sock, managerChat, targetChat, text) {
+  const reply = text.match(REPLY_CMD)?.[1]?.trim();
+  if (!reply) return; // not a reply command → nothing to do
+
+  if (!targetChat) {
+    await sock.sendMessage(managerChat, {
+      text: '❗ כדי לשלוח ללקוח, יש לעשות Reply על ההודעה שהועברה ולכתוב "תגיב ..."',
+    });
     return;
   }
 
-  await sock.sendMessage(data.chat_jid, { text: reply });
-  await sock.sendMessage(FORWARD_JID, { text: '✅ נשלח ללקוח' });
+  try {
+    await sock.sendMessage(targetChat, { text: reply });
+  } catch (e) {
+    await sock.sendMessage(managerChat, { text: `❌ השליחה ללקוח נכשלה: ${e?.message || e}` });
+    throw e;
+  }
+  await sock.sendMessage(managerChat, { text: '✅ נשלח ללקוח' });
 }
 
 // ---------------------------------------------------------------------------
@@ -152,13 +182,12 @@ async function handleMessage(sock, msg, upsertType) {
   const chatJid = key.remoteJid;
   const isGroup = chatJid.endsWith('@g.us');
   const fromMe = !!key.fromMe;
-  const senderJid = fromMe
-    ? sock.user?.id
+  const jidCandidates = fromMe
+    ? [sock.user?.id]
     : isGroup
-      ? key.participantAlt || key.participant
-      : key.remoteJidAlt?.endsWith('@s.whatsapp.net')
-        ? key.remoteJidAlt
-        : chatJid;
+      ? [key.participantAlt, key.participantPn, key.participant]
+      : [key.remoteJidAlt, key.senderPn, chatJid];
+  const senderJid = jidCandidates.find((jid) => jid?.endsWith('@s.whatsapp.net')) || jidCandidates.at(-1);
   const senderPhone = phoneOf(senderJid);
   const senderName = msg.pushName || null;
 
@@ -208,10 +237,13 @@ async function handleMessage(sock, msg, upsertType) {
   if (upsertType !== 'notify' || fromMe) return;
 
   // Messages from the manager himself → commands, never forwarded back to him
-  if (senderPhone === FORWARD_PHONE) {
-    if (!isGroup && parsed.text) {
+  const targetChat = isGroup ? null : await findForwardedChat(quotedId);
+  const isManager = !isGroup && (senderPhone === FORWARD_PHONE || managerJids.has(chatJid) || targetChat !== null);
+  if (isManager) {
+    await rememberManagerJid(chatJid);
+    if (parsed.text) {
       try {
-        await handleManagerCommand(sock, quotedId, parsed.text);
+        await handleManagerCommand(sock, chatJid, targetChat, parsed.text);
       } catch (e) {
         console.error('manager command failed', key.id, e?.message || e);
       }
@@ -335,7 +367,9 @@ http
   })
   .listen(Number(PORT), () => console.log(`bridge listening on :${PORT}`));
 
-start().catch((e) => {
-  console.error('fatal', e);
-  process.exit(1);
-});
+loadManagerJids()
+  .then(start)
+  .catch((e) => {
+    console.error('fatal', e);
+    process.exit(1);
+  });
