@@ -1,6 +1,8 @@
 // Website Telegram — @Klumitbot (primary: TELEGRAM_BOT_TOKEN_KLUMIT_EVENTS)
 // Sends only for production host klumit-online.co.il / www (not localhost, not *.vercel.app, not מקיף ח paths).
 
+import { sendWhatsAppNotification } from '@/lib/whatsapp-notify';
+
 // Single source of chat IDs for all message types — always the same recipients.
 const TELEGRAM_CHAT_IDS =
   process.env.TELEGRAM_CHAT_ID_KLUMIT?.split(',')
@@ -234,16 +236,22 @@ export async function sendCriticalTelegramMessage(
     return false;
   }
 
+  // Same critical events also go to the manager's WhatsApp (independent of Telegram config)
+  const whatsapp = sendWhatsAppNotification(text);
+
   const token = resolveCriticalBotToken();
+  let telegramOk = false;
   if (!token || TELEGRAM_CHAT_IDS.length === 0) {
     console.warn(
       'Telegram Critical: Missing bot token or chat IDs',
       JSON.stringify({ hasToken: Boolean(token), chatIds: TELEGRAM_CHAT_IDS.length })
     );
-    return false;
+  } else {
+    telegramOk = await postTelegramMessages(token, TELEGRAM_CHAT_IDS, text);
   }
 
-  return postTelegramMessages(token, TELEGRAM_CHAT_IDS, text);
+  const whatsappOk = await whatsapp;
+  return telegramOk || whatsappOk;
 }
 
 export function escapeHtml(text: string): string {
@@ -329,7 +337,11 @@ export async function notifyNewOrder(
 📝 מוצרים: ${orderData.itemsCount}
 📅 תאריך: ${new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })}`;
 
-  return sendTelegramMessage(message, gate);
+  const [telegramOk, whatsappOk] = await Promise.all([
+    sendTelegramMessage(message, gate),
+    isSendGateAllowed(gate) ? sendWhatsAppNotification(message) : Promise.resolve(false),
+  ]);
+  return telegramOk || whatsappOk;
 }
 
 export async function notifyCheckoutVisit(

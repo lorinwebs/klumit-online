@@ -68,6 +68,7 @@ async function rememberManagerJid(jid) {
 
 let currentQr = null;
 let status = 'starting';
+let activeSock = null;
 
 // ---------------------------------------------------------------------------
 // Message parsing
@@ -318,11 +319,13 @@ async function start() {
       status = 'waiting_for_scan';
     }
     if (connection === 'open') {
+      activeSock = sock;
       currentQr = null;
       status = 'connected';
       console.log('WhatsApp connected as', sock.user?.id);
     }
     if (connection === 'close') {
+      if (activeSock === sock) activeSock = null;
       status = 'disconnected';
       const code = lastDisconnect?.error?.output?.statusCode;
       console.warn('WhatsApp connection closed, code:', code);
@@ -344,9 +347,39 @@ async function start() {
 // HTTP: health check + QR page (protected by ADMIN_KEY)
 // ---------------------------------------------------------------------------
 
+async function readJson(req, limit = 20_000) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > limit) throw new Error('payload too large');
+    chunks.push(chunk);
+  }
+  return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
+}
+
 http
   .createServer(async (req, res) => {
     const url = new URL(req.url || '/', 'http://localhost');
+
+    // Site → manager notifications: POST /notify { text } with "Authorization: Bearer <ADMIN_KEY>"
+    if (req.method === 'POST' && url.pathname === '/notify') {
+      const json = (code, body) => {
+        res.writeHead(code, { 'content-type': 'application/json' });
+        res.end(JSON.stringify(body));
+      };
+      if (req.headers.authorization !== `Bearer ${ADMIN_KEY}`) return json(401, { ok: false, reason: 'unauthorized' });
+      if (!activeSock) return json(503, { ok: false, reason: 'whatsapp_not_connected' });
+      try {
+        const { text } = await readJson(req);
+        if (typeof text !== 'string' || !text.trim()) return json(400, { ok: false, reason: 'missing_text' });
+        await activeSock.sendMessage(FORWARD_JID, { text: text.slice(0, 4000) });
+        return json(200, { ok: true });
+      } catch (e) {
+        console.error('notify failed', e?.message || e);
+        return json(500, { ok: false, reason: 'send_failed' });
+      }
+    }
 
     if (url.pathname === '/qr') {
       if (url.searchParams.get('key') !== ADMIN_KEY) {
