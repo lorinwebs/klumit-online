@@ -2,6 +2,7 @@
 
 import Script from 'next/script';
 import { usePathname } from 'next/navigation';
+import { useSyncExternalStore } from 'react';
 
 /**
  * Google Customer Reviews (Merchant Center):
@@ -131,6 +132,14 @@ const BADGE_PATHS = [
 
 export function GoogleStoreBadge() {
   const pathname = usePathname();
+  // The server doesn't reliably know the page: Vercel prerenders the home page as "/index",
+  // so CSS chosen there differs from the browser's and React reports a hydration error (#418).
+  // Nothing is rendered on the server; the badge only ever exists in the browser anyway.
+  const inBrowser = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const onBadgePage =
     pathname === '/' || BADGE_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
   const onProductPage = pathname.startsWith('/products/');
@@ -158,6 +167,8 @@ export function GoogleStoreBadge() {
   ]
     .filter(Boolean)
     .join('\n');
+
+  if (!inBrowser) return null;
 
   return (
     <>
