@@ -37,6 +37,7 @@
   ],
   "exclude": [
     "node_modules",
+    "whatsapp-bridge",
     "**/_debug.tsx"
   ]
 }
