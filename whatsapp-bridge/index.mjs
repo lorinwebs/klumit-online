@@ -39,6 +39,8 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 });
 const logger = pino({ level: 'warn' });
 
+const REPLY_CMD = /^\s*תגיב\s+([\s\S]+)$/;
+
 let currentQr = null;
 let status = 'starting';
 
@@ -101,6 +103,38 @@ const TYPE_LABEL = {
 };
 
 // ---------------------------------------------------------------------------
+// Manager reply: Mor replies to a forwarded message with "תגיב <text>"
+// ---------------------------------------------------------------------------
+
+async function handleManagerCommand(sock, quotedId, text) {
+  const reply = text.match(REPLY_CMD)?.[1]?.trim();
+  if (!reply) return; // not a reply command → nothing to do
+
+  if (!quotedId) {
+    await sock.sendMessage(FORWARD_JID, {
+      text: '❗ כדי לשלוח ללקוח, יש לעשות Reply על ההודעה שהועברה ולכתוב "תגיב ..."',
+    });
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('chat_jid')
+    .contains('forward_message_ids', [quotedId])
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`lookup failed: ${error.message}`);
+
+  if (!data) {
+    await sock.sendMessage(FORWARD_JID, { text: '❗ לא מצאתי את הלקוח של ההודעה הזו' });
+    return;
+  }
+
+  await sock.sendMessage(data.chat_jid, { text: reply });
+  await sock.sendMessage(FORWARD_JID, { text: '✅ נשלח ללקוח' });
+}
+
+// ---------------------------------------------------------------------------
 // Handler: save to DB, then forward
 // ---------------------------------------------------------------------------
 
@@ -109,8 +143,11 @@ async function handleMessage(sock, msg, upsertType) {
   if (!key?.id || !key.remoteJid) return;
   if (key.remoteJid === 'status@broadcast' || key.remoteJid.endsWith('@newsletter')) return;
 
-  const parsed = parse(unwrap(msg.message));
+  const rawMessage = unwrap(msg.message);
+  const parsed = parse(rawMessage);
   if (!parsed) return;
+
+  const quotedId = rawMessage?.extendedTextMessage?.contextInfo?.stanzaId || null;
 
   const chatJid = key.remoteJid;
   const isGroup = chatJid.endsWith('@g.us');
@@ -146,7 +183,7 @@ async function handleMessage(sock, msg, upsertType) {
     .select('id');
 
   if (error) throw new Error(`DB insert failed: ${error.message}`);
-  if (!inserted?.length) return; // already stored (reconnect / history replay) → never forward twice
+  if (!inserted?.length) return; // already stored (reconnect / history replay) → never process twice
 
   const rowId = inserted[0].id;
 
@@ -167,9 +204,23 @@ async function handleMessage(sock, msg, upsertType) {
     }
   }
 
-  // Forward only live, incoming messages that don't come from the recipient himself
-  if (upsertType !== 'notify' || fromMe || senderPhone === FORWARD_PHONE) return;
+  // Live incoming messages only
+  if (upsertType !== 'notify' || fromMe) return;
 
+  // Messages from the manager himself → commands, never forwarded back to him
+  if (senderPhone === FORWARD_PHONE) {
+    if (!isGroup && parsed.text) {
+      try {
+        await handleManagerCommand(sock, quotedId, parsed.text);
+      } catch (e) {
+        console.error('manager command failed', key.id, e?.message || e);
+      }
+    }
+    return;
+  }
+
+  // Customer message → forward to manager, remember which forwarded message maps to this chat
+  const forwardIds = [];
   try {
     const label = TYPE_LABEL[parsed.type];
     const header = [
@@ -177,25 +228,36 @@ async function handleMessage(sock, msg, upsertType) {
       `👤 ${senderName || 'ללא שם'}${senderPhone ? ` · +${senderPhone}` : ''}`,
       label,
       parsed.text,
+      '',
+      'להשיב ללקוח: Reply על ההודעה ← "תגיב ..."',
     ]
-      .filter(Boolean)
+      .filter((line) => line !== undefined && line !== null && line !== '')
       .join('\n');
 
-    await sock.sendMessage(FORWARD_JID, { text: header });
+    const sentHeader = await sock.sendMessage(FORWARD_JID, { text: header });
+    if (sentHeader?.key?.id) forwardIds.push(sentHeader.key.id);
 
     if (buffer && parsed.media) {
       const { kind, mime, fileName, ptt } = parsed.media;
-      if (kind === 'image') await sock.sendMessage(FORWARD_JID, { image: buffer });
-      else if (kind === 'video') await sock.sendMessage(FORWARD_JID, { video: buffer });
-      else if (kind === 'audio') await sock.sendMessage(FORWARD_JID, { audio: buffer, mimetype: mime, ptt });
-      else if (kind === 'sticker') await sock.sendMessage(FORWARD_JID, { sticker: buffer });
-      else await sock.sendMessage(FORWARD_JID, { document: buffer, mimetype: mime, fileName });
+      let sentMedia;
+      if (kind === 'image') sentMedia = await sock.sendMessage(FORWARD_JID, { image: buffer });
+      else if (kind === 'video') sentMedia = await sock.sendMessage(FORWARD_JID, { video: buffer });
+      else if (kind === 'audio') sentMedia = await sock.sendMessage(FORWARD_JID, { audio: buffer, mimetype: mime, ptt });
+      else if (kind === 'sticker') sentMedia = await sock.sendMessage(FORWARD_JID, { sticker: buffer });
+      else sentMedia = await sock.sendMessage(FORWARD_JID, { document: buffer, mimetype: mime, fileName });
+      if (sentMedia?.key?.id) forwardIds.push(sentMedia.key.id);
     }
 
-    await supabase.from(TABLE).update({ forwarded_at: new Date().toISOString() }).eq('id', rowId);
+    await supabase
+      .from(TABLE)
+      .update({ forwarded_at: new Date().toISOString(), forward_message_ids: forwardIds })
+      .eq('id', rowId);
   } catch (e) {
     console.error('forward failed', key.id, e?.message || e);
-    await supabase.from(TABLE).update({ forward_error: String(e?.message || e).slice(0, 500) }).eq('id', rowId);
+    await supabase
+      .from(TABLE)
+      .update({ forward_error: String(e?.message || e).slice(0, 500), forward_message_ids: forwardIds })
+      .eq('id', rowId);
   }
 }
 
