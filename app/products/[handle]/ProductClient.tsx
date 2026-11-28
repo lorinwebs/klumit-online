@@ -604,6 +604,16 @@ export default function ProductClient({ product, relatedProducts: initialRelated
     }
   };
 
+  const isRtl = language === 'he';
+
+  // Mobile carousel: show the image at this position, wrapping around at either end
+  const showMobileImage = (index: number) => {
+    const count = filteredImages.length;
+    const wrapped = (index + count) % count;
+    setCurrentImageIndex(wrapped);
+    setSelectedImage(filteredImages[wrapped].node.url);
+  };
+
   // Handle image click to open zoom modal
   const handleImageClick = (index: number) => {
     setZoomImageIndex(index);
@@ -908,7 +918,12 @@ export default function ProductClient({ product, relatedProducts: initialRelated
               <div className="md:hidden mb-1">
                 <div
                   className="relative overflow-hidden"
-                  onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+                  onTouchStart={(e) => {
+                    // Start both from the same point, so a tap (on an arrow or a dot) is not read
+                    // as a swipe measured against where the previous swipe ended
+                    touchStartX.current = e.touches[0].clientX;
+                    touchEndX.current = e.touches[0].clientX;
+                  }}
                   onTouchMove={(e) => { touchEndX.current = e.touches[0].clientX; }}
                   onTouchEnd={() => {
                     const diff = touchStartX.current - touchEndX.current;
@@ -925,7 +940,7 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                 >
                   <div
                     className="flex transition-transform duration-300 ease-out"
-                    style={{ transform: `translateX(${currentImageIndex * 100}%)` }}
+                    style={{ transform: `translateX(${(isRtl ? 1 : -1) * currentImageIndex * 100}%)` }}
                   >
                     {filteredImages.map(({ node }, index) => (
                       <div
@@ -946,6 +961,28 @@ export default function ProductClient({ product, relatedProducts: initialRelated
                       </div>
                     ))}
                   </div>
+                  {/* Side arrows. The next image sits on the left in Hebrew and on the right otherwise,
+                      so each arrow brings in the image from its own side; past the last image it wraps. */}
+                  {filteredImages.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => showMobileImage(currentImageIndex + (isRtl ? 1 : -1))}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-11 h-11 flex items-center justify-center text-espresso"
+                        aria-label={t(isRtl ? 'products.nextImage' : 'products.previousImage')}
+                      >
+                        <ChevronLeft size={28} strokeWidth={1.25} aria-hidden />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => showMobileImage(currentImageIndex + (isRtl ? -1 : 1))}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-11 h-11 flex items-center justify-center text-espresso"
+                        aria-label={t(isRtl ? 'products.previousImage' : 'products.nextImage')}
+                      >
+                        <ChevronRight size={28} strokeWidth={1.25} aria-hidden />
+                      </button>
+                    </>
+                  )}
                   {/* Dot indicators — the button keeps a comfortable tap area, the visible dot stays small
                       (the global 44px touch-target rule would otherwise inflate the dots themselves) */}
                   {filteredImages.length > 1 && (
